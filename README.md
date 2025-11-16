@@ -1,6 +1,6 @@
-# Consultant TODO App - Reference Architecture
+# AI-Driven Development Architecture
 
-コンサルタント向けTODO管理アプリケーションのリファレンス実装です。クリーンアーキテクチャとDDDの原則に基づいて設計された、モダンなWebアプリケーションの学習用プロジェクトです。
+AI駆動 × DDD × サーバレスによる爆速開発を研究するリポジトリです。
 
 ## 📚 プロジェクト構成
 
@@ -241,16 +241,16 @@ const todo = await api.todos.post({
 /sa TODOをプロジェクトごとに管理できる機能を追加してください。フロントエンドの実装を参照してください
 ```
 
-### `/rd` - Requirements Designer Agent
-
-要件定義・設計専用エージェント を検討中。以下は素案
-後工程（Server Architect Agent、Frontend Engineer Agent）に渡すためのドキュメントを作成する
-git worktreeによりClaude Codeを並列実行することを念頭にドキュメントは機能カットで分割したい
-https://qiita.com/yonaka15/items/9b0260de6dabaadf13d8
-
 **実装範囲:** `server/src/` - Domain, UseCase, Infrastructure, Handler, DI, Tests
 
 詳細: [.claude/agents/server-architect.md](./.claude/agents/server-architect.md)
+
+### `/rd` - Requirements Designer Agent
+
+要件定義・設計専用エージェント を検討中。以下は素案  
+後工程（Server Architect Agent、Frontend Engineer Agent）に渡すためのドキュメントを作成する.
+git worktreeによりClaude Codeを並列実行することを念頭にドキュメントは機能カットで分割したい  
+https://qiita.com/yonaka15/items/9b0260de6dabaadf13d8
 
 ### 使い分け
 
@@ -494,7 +494,3 @@ npm run validate
 - [DDD (Domain-Driven Design)](https://en.wikipedia.org/wiki/Domain-driven_design)
 - [AWS Lambda ベストプラクティス](https://docs.aws.amazon.com/lambda/latest/dg/best-practices.html)
 - [DynamoDB ベストプラクティス](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/best-practices.html)
-
-## ライセンス
-
-MIT

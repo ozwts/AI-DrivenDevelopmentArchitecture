@@ -88,7 +88,7 @@ const updatedTodo = todo.changeStatus("DONE", now);
 
 3. **リポジトリの集約**: 子エンティティ専用のリポジトリは作らず、親の集約ルートリポジトリに統合
 
-   - 例: `TodoRepository`に`addAttachment()`, `listAttachments()`, `removeAttachment()`等を追加
+   - 基本的には`TodoRepository`に`addAttachment()`は作らず、ドメインモデルの集約として`save()`で対応する。ただし、パフォーマンス懸念がある場合はその限りではない
 
 4. **技術的詳細の漏洩防止**:
    - ドメインモデルにAWS、S3、DynamoDB、Cognito等の技術要素を一切含めない
