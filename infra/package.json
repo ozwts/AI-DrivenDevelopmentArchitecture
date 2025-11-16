@@ -1,0 +1,24 @@
+{
+  "name": "infra",
+  "version": "0.0.0",
+  "scripts": {
+    "api:build": "cd .. && npm run api:build -w server",
+    "build": "cd .. && npm run client:build && npm run api:build -w server",
+    "client:build": "cd .. && npm run client:build",
+    "config:dev": "terraform -chdir=terraform/environments/dev init --reconfigure",
+    "deploy:dev": "npm run build && npm run config:dev && terraform -chdir=terraform/environments/dev apply --auto-approve",
+    "deploy:api:dev": "npm run api:build && terraform -chdir=terraform/environments/dev apply -target=module.db -target=module.server --auto-approve",
+    "deploy:web:dev": "npm run client:build && terraform -chdir=terraform/environments/dev apply -target=module.static_site --auto-approve",
+    "destroy:dev": "terraform -chdir=terraform/environments/dev destroy",
+    "diff:dev": "npm run build && npm run config:dev && terraform -chdir=terraform/environments/dev plan",
+    "config:upgrade:dev": "terraform -chdir=terraform/environments/dev init -upgrade",
+    "fix": "npm run fix:format",
+    "fix:format": "terraform fmt -recursive terraform/",
+    "validate": "npm run validate:format && npm run validate:tf",
+    "validate:format": "terraform fmt -check -recursive terraform/",
+    "validate:tf": "npm run validate:tf:dev && npm run validate:tf:stg && npm run validate:tf:prd",
+    "validate:tf:dev": "terraform -chdir=terraform/environments/dev validate",
+    "validate:tf:stg": "terraform -chdir=terraform/environments/stg validate",
+    "validate:tf:prd": "terraform -chdir=terraform/environments/prd validate"
+  }
+}

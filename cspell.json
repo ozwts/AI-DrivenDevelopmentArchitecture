@@ -1,0 +1,24 @@
+{
+  "words": [
+    "codegen",
+    "msword",
+    "networkidle",
+    "newuser",
+    "officedocument",
+    "openxmlformats",
+    "presigner",
+    "rrggbb",
+    "spreadsheetml",
+    "sssz",
+    "todoid",
+    "usecase",
+    "wordprocessingml"
+  ],
+  "ignorePaths": [
+    "node_modules/**",
+    "dist/**",
+    "build/**",
+    "**/config.*.ts",
+    "**/config.ts"
+  ]
+}

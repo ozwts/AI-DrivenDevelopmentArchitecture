@@ -1,0 +1,164 @@
+import { useState, useRef } from "react";
+import { PaperClipIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { Button } from "../../components/Button";
+import { Alert } from "../../components/Alert";
+import { useUploadAttachment } from "../../hooks/useAttachments";
+import { useToast } from "../../contexts/ToastContext";
+
+interface AttachmentUploadProps {
+  todoId: string;
+  onUploadComplete?: () => void;
+}
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const ALLOWED_FILE_TYPES = [
+  "image/png",
+  "image/jpeg",
+  "image/gif",
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "text/plain",
+  "text/markdown",
+  "application/x-yaml",
+];
+
+export const AttachmentUpload = ({
+  todoId,
+  onUploadComplete,
+}: AttachmentUploadProps) => {
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [error, setError] = useState<string>("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const uploadAttachment = useUploadAttachment();
+  const toast = useToast();
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // ファイルサイズチェック
+    if (file.size > MAX_FILE_SIZE) {
+      setError("ファイルサイズは10MB以下にしてください");
+      return;
+    }
+
+    // ファイルタイプチェック
+    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+      setError("許可されていないファイル形式です");
+      return;
+    }
+
+    setError("");
+    setSelectedFile(file);
+  };
+
+  const handleUpload = async () => {
+    if (!selectedFile) return;
+
+    try {
+      await uploadAttachment.mutateAsync({ todoId, file: selectedFile });
+      toast?.showToast("success", "ファイルをアップロードしました");
+      setSelectedFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      onUploadComplete?.();
+    } catch (err) {
+      console.error("アップロードエラー:", err);
+      toast?.showToast("error", "ファイルのアップロードに失敗しました");
+    }
+  };
+
+  const handleCancel = () => {
+    setSelectedFile(null);
+    setError("");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
+  };
+
+  return (
+    <div className="space-y-3">
+      {/* ファイル選択ボタン */}
+      <div className="flex items-center gap-3">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept={ALLOWED_FILE_TYPES.join(",")}
+          onChange={handleFileSelect}
+          className="hidden"
+          id={`file-upload-${todoId}`}
+        />
+        <label
+          htmlFor={`file-upload-${todoId}`}
+          className="inline-flex items-center justify-center font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors duration-200 px-3 py-1.5 text-sm bg-white text-secondary-600 border-2 border-secondary-600 hover:bg-secondary-50 focus:ring-secondary-400 cursor-pointer"
+        >
+          <PaperClipIcon className="h-4 w-4 mr-2" />
+          ファイルを選択
+        </label>
+        {selectedFile && (
+          <span className="text-sm text-text-secondary">
+            {selectedFile.name} ({formatFileSize(selectedFile.size)})
+          </span>
+        )}
+      </div>
+
+      {/* エラーメッセージ */}
+      {error && <Alert variant="error">{error}</Alert>}
+
+      {/* 選択中のファイル情報とアクション */}
+      {selectedFile && !error && (
+        <div className="flex items-center gap-2 p-3 bg-background-surface rounded-md border border-border-light">
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <PaperClipIcon className="h-4 w-4 text-text-tertiary" />
+              <span className="text-sm font-medium text-text-primary">
+                {selectedFile.name}
+              </span>
+            </div>
+            <p className="text-xs text-text-tertiary mt-1">
+              {formatFileSize(selectedFile.size)} • {selectedFile.type}
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleUpload}
+              disabled={uploadAttachment.isPending}
+            >
+              {uploadAttachment.isPending
+                ? "アップロード中..."
+                : "アップロード"}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleCancel}
+              disabled={uploadAttachment.isPending}
+              className="!p-2"
+            >
+              <XMarkIcon className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* ヘルプテキスト */}
+      <p className="text-xs text-text-tertiary">
+        対応形式: PNG, JPEG, GIF, PDF, Word, Excel, テキスト（最大10MB）
+      </p>
+    </div>
+  );
+};

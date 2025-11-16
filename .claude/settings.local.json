@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(npm:*)",
+      "Bash(cat:*)",
+      "SlashCommand(/sa)",
+      "SlashCommand(/fe)",
+      "Bash(npx vitest:*)",
+      "Bash(git mv:*)",
+      "Bash(for file in register update get)",
+      "Bash(do sed -i '' 's/convertToTodoResponse(result\\.data)/convertToTodoResponse(result.data, [])/g' \"/Users/toshiaki_ozawa/Documents/workspace/KemuriLog/AIOpsLab/hands-on/server/src/handler/hono-handler/todo/$file-todo-handler.ts\")",
+      "Bash(done)",
+      "Bash(terraform fmt:*)",
+      "Bash(npx tsc:*)",
+      "mcp__ide__getDiagnostics"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

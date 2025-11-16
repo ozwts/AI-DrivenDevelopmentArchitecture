@@ -1,0 +1,14 @@
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "streetsidesoftware.code-spell-checker",
+    "redhat.vscode-yaml",
+    "Arjun.swagger-viewer",
+    "hediet.vscode-drawio",
+    "bierner.markdown-mermaid",
+    "vscode-icons-team.vscode-icons",
+    "wayou.vscode-todo-highlight",
+    "hediet.vscode-drawio"
+  ]
+}

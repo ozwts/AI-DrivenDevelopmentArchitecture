@@ -1,0 +1,154 @@
+import { test, expect, describe } from "vitest";
+import { ListTodosUseCaseImpl } from "./list-todos-use-case";
+import { TodoRepositoryDummy } from "@/domain/model/todo/todo-repository.dummy";
+import { todoDummyFrom } from "@/domain/model/todo/todo.dummy";
+import { UnexpectedError } from "@/util/error-util";
+
+describe("ListTodosUseCaseのテスト", () => {
+  describe("execute", () => {
+    test("全てのTODOを取得できること", async () => {
+      const todos = [
+        todoDummyFrom({ id: "todo-1", title: "タスク1" }),
+        todoDummyFrom({ id: "todo-2", title: "タスク2" }),
+        todoDummyFrom({ id: "todo-3", title: "タスク3" }),
+      ];
+
+      const listTodosUseCase = new ListTodosUseCaseImpl({
+        todoRepository: new TodoRepositoryDummy({
+          findAllReturnValue: {
+            success: true,
+            data: todos,
+          },
+        }),
+      });
+
+      const result = await listTodosUseCase.execute({});
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data).toHaveLength(3);
+        expect(result.data).toEqual(todos);
+      }
+    });
+
+    test("ステータスを指定してTODOを取得できること", async () => {
+      const inProgressTodos = [
+        todoDummyFrom({ id: "todo-1", status: "IN_PROGRESS" }),
+        todoDummyFrom({ id: "todo-2", status: "IN_PROGRESS" }),
+      ];
+
+      const listTodosUseCase = new ListTodosUseCaseImpl({
+        todoRepository: new TodoRepositoryDummy({
+          findByStatusReturnValue: {
+            success: true,
+            data: inProgressTodos,
+          },
+        }),
+      });
+
+      const result = await listTodosUseCase.execute({
+        status: "IN_PROGRESS",
+      });
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data).toHaveLength(2);
+        expect(result.data.every((todo) => todo.status === "IN_PROGRESS")).toBe(
+          true,
+        );
+      }
+    });
+
+    test("プロジェクトIDを指定してTODOを取得できること", async () => {
+      const projectTodos = [
+        todoDummyFrom({ id: "todo-1", projectId: "project-123" }),
+        todoDummyFrom({ id: "todo-2", projectId: "project-123" }),
+        todoDummyFrom({ id: "todo-3", projectId: "project-123" }),
+      ];
+
+      const listTodosUseCase = new ListTodosUseCaseImpl({
+        todoRepository: new TodoRepositoryDummy({
+          findByProjectIdReturnValue: {
+            success: true,
+            data: projectTodos,
+          },
+        }),
+      });
+
+      const result = await listTodosUseCase.execute({
+        projectId: "project-123",
+      });
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data).toHaveLength(3);
+        expect(
+          result.data.every((todo) => todo.projectId === "project-123"),
+        ).toBe(true);
+      }
+    });
+
+    test("TODOが0件の場合は空配列を返すこと", async () => {
+      const listTodosUseCase = new ListTodosUseCaseImpl({
+        todoRepository: new TodoRepositoryDummy({
+          findAllReturnValue: {
+            success: true,
+            data: [],
+          },
+        }),
+      });
+
+      const result = await listTodosUseCase.execute({});
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data).toHaveLength(0);
+        expect(result.data).toEqual([]);
+      }
+    });
+
+    test("リポジトリからエラーが返された場合はそのエラーを返すこと", async () => {
+      const listTodosUseCase = new ListTodosUseCaseImpl({
+        todoRepository: new TodoRepositoryDummy({
+          findAllReturnValue: {
+            success: false,
+            error: new UnexpectedError(),
+          },
+        }),
+      });
+
+      const result = await listTodosUseCase.execute({});
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toBeInstanceOf(UnexpectedError);
+      }
+    });
+
+    test("TODOステータスでのフィルタリングが正しく動作すること", async () => {
+      const doneTodos = [
+        todoDummyFrom({ id: "todo-1", status: "DONE", title: "完了タスク1" }),
+        todoDummyFrom({ id: "todo-2", status: "DONE", title: "完了タスク2" }),
+      ];
+
+      const listTodosUseCase = new ListTodosUseCaseImpl({
+        todoRepository: new TodoRepositoryDummy({
+          findByStatusReturnValue: {
+            success: true,
+            data: doneTodos,
+          },
+        }),
+      });
+
+      const result = await listTodosUseCase.execute({
+        status: "DONE",
+      });
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data).toHaveLength(2);
+        expect(result.data.every((todo) => todo.status === "DONE")).toBe(true);
+      }
+    });
+  });
+});
