@@ -537,13 +537,15 @@ export const S3UploadResponseDummy = [
   ),
 ];
 
-export const startMockServer = async () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let response: any[] = [];
-
-  switch (config.mockType ?? "HAS_ALL") {
+// ハンドラーセットの定義
+const getHandlersByType = (type: string) => {
+  switch (type) {
     case "HAS_ALL":
-      response = [
+      // データをリセット
+      todos = [...allTodos];
+      projects = [...allProjects];
+      attachments = [...allAttachments];
+      return [
         ...TodosResponseDummy,
         ...TodoResponseDummy,
         ...CreateTodoResponseDummy,
@@ -568,9 +570,12 @@ export const startMockServer = async () => {
         ...DownloadUrlResponseDummy,
         ...S3UploadResponseDummy,
       ];
-      break;
-    default:
-      response = [
+    case "EMPTY":
+      // 空データのみ（CRUD操作は可能だが、初期状態は空）
+      todos = [];
+      projects = [];
+      attachments = [];
+      return [
         ...TodosResponseDummy,
         ...TodoResponseDummy,
         ...CreateTodoResponseDummy,
@@ -588,9 +593,44 @@ export const startMockServer = async () => {
         ...UserResponseDummy,
         ...RegisterUserResponseDummy,
       ];
-      break;
+    default:
+      return [
+        ...TodosResponseDummy,
+        ...TodoResponseDummy,
+        ...CreateTodoResponseDummy,
+        ...UpdateTodoResponseDummy,
+        ...DeleteTodoResponseDummy,
+        ...ProjectsResponseDummy,
+        ...ProjectResponseDummy,
+        ...CreateProjectResponseDummy,
+        ...UpdateProjectResponseDummy,
+        ...DeleteProjectResponseDummy,
+        ...UsersResponseDummy,
+        ...CurrentUserResponseDummy,
+        ...UpdateCurrentUserResponseDummy,
+        ...DeleteCurrentUserResponseDummy,
+        ...UserResponseDummy,
+        ...RegisterUserResponseDummy,
+      ];
   }
+};
+
+export const startMockServer = async () => {
+  const response = getHandlersByType(config.mockType ?? "HAS_ALL");
 
   const worker = setupWorker(...response);
   await worker.start();
+
+  // PlaywrightテストからMSWハンドラーを動的に切り替えられるようにする
+  window.msw = {
+    worker,
+    rest,
+    // ハンドラーを切り替える関数
+    setHandlers: (type: string) => {
+      const handlers = getHandlersByType(type);
+      worker.resetHandlers(...handlers);
+    },
+  };
+
+  return worker;
 };

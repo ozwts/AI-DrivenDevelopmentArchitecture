@@ -1,10 +1,21 @@
 import { test, expect } from "@playwright/test";
-import { config } from "../../config";
-import urlJoin from "url-join";
 
 test("[SS]プロジェクトページが表示される", async ({ page }) => {
   // ブラウザの時間を固定 (2025-01-15 12:00:00 JST)
   await page.clock.install({ time: new Date("2025-01-15T03:00:00Z") });
+
+  // MSWハンドラーをHAS_ALLモードに設定
+  await page.addInitScript(() => {
+    const checkMswAndSetHandlers = () => {
+      const msw = (window as any).msw;
+      if (!msw) {
+        setTimeout(checkMswAndSetHandlers, 50);
+        return;
+      }
+      msw.setHandlers("HAS_ALL");
+    };
+    checkMswAndSetHandlers();
+  });
 
   await page.goto("/projects");
   await page.waitForLoadState("networkidle");
@@ -15,14 +26,23 @@ test("[SS]プロジェクトページ（空の状態）が表示される", asyn
   // ブラウザの時間を固定 (2025-01-15 12:00:00 JST)
   await page.clock.install({ time: new Date("2025-01-15T03:00:00Z") });
 
-  // 空データでモックを上書き
-  await page.route(urlJoin(config.apiUrl, "/projects"), (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify([]),
-    }),
-  );
+  // MSWハンドラーを空データに切り替えるスクリプトをページロード前に注入
+  await page.addInitScript(() => {
+    // MSWが起動するまで待機してからハンドラーを切り替え
+    const checkMswAndSetHandlers = () => {
+      const msw = (window as any).msw;
+      if (!msw) {
+        // MSWがまだ利用可能でない場合は少し待ってから再試行
+        setTimeout(checkMswAndSetHandlers, 50);
+        return;
+      }
+
+      // 空データハンドラーに切り替え
+      msw.setHandlers("EMPTY");
+    };
+
+    checkMswAndSetHandlers();
+  });
 
   await page.goto("/projects");
   await page.waitForLoadState("networkidle");
@@ -41,6 +61,19 @@ test("[SS]プロジェクトページ（作成モーダル）が表示される"
       counter++;
       return value;
     };
+  });
+
+  // MSWハンドラーをHAS_ALLモードに設定
+  await page.addInitScript(() => {
+    const checkMswAndSetHandlers = () => {
+      const msw = (window as any).msw;
+      if (!msw) {
+        setTimeout(checkMswAndSetHandlers, 50);
+        return;
+      }
+      msw.setHandlers("HAS_ALL");
+    };
+    checkMswAndSetHandlers();
   });
 
   // ブラウザの時間を固定 (2025-01-15 12:00:00 JST)

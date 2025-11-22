@@ -1,4 +1,4 @@
-export type MockType = "HAS_ALL";
+export type MockType = "HAS_ALL" | "EMPTY";
 
 export type Config = {
   apiUrl: string;

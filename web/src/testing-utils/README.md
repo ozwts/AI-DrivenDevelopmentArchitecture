@@ -88,9 +88,29 @@ Mock Service Worker (MSW) を使用して、開発環境でAPIレスポンスを
 - プロジェクト関連API
 - TODO関連API
 
-### 永続性について
+### モード
 
-MSWはインメモリで動作するため、作成・更新・削除操作は**ブラウザリロードで初期化**されます。
+- **HAS_ALL**: サンプルデータあり（デフォルト）
+- **EMPTY**: データなし（CRUD操作は可能）
+
+開発環境: `src/config.local.ts` の `mockType` で設定
+
+**テストでのモード指定（重要）**:
+
+```typescript
+// スナップショットテストでは必ずモードを明示的に指定
+await page.addInitScript(() => {
+  const checkMswAndSetHandlers = () => {
+    const msw = (window as any).msw;
+    if (!msw) {
+      setTimeout(checkMswAndSetHandlers, 50);
+      return;
+    }
+    msw.setHandlers("HAS_ALL"); // または "EMPTY"
+  };
+  checkMswAndSetHandlers();
+});
+```
 
 ---
 

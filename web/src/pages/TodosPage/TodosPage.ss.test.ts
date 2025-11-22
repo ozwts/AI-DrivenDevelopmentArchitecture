@@ -1,51 +1,94 @@
 import { test, expect } from "@playwright/test";
-import { config } from "../../config";
-import urlJoin from "url-join";
 
 test("[SS]TODOページが表示される", async ({ page }) => {
   // ブラウザの時間を固定 (2025-01-15 12:00:00 JST)
   await page.clock.install({ time: new Date("2025-01-15T03:00:00Z") });
+
+  // MSWハンドラーをHAS_ALLモードに設定
+  await page.addInitScript(() => {
+    const checkMswAndSetHandlers = () => {
+      const msw = (window as any).msw;
+      if (!msw) {
+        setTimeout(checkMswAndSetHandlers, 50);
+        return;
+      }
+      msw.setHandlers("HAS_ALL");
+    };
+    checkMswAndSetHandlers();
+  });
 
   await page.goto("/todos");
   await page.waitForLoadState("networkidle");
   await expect(page).toHaveScreenshot({ fullPage: true });
 });
 
-// FIXME: 正しくフィルター出来ていない
 test("[SS]TODOページ（TODOフィルター）が表示される", async ({ page }) => {
   // ブラウザの時間を固定 (2025-01-15 12:00:00 JST)
   await page.clock.install({ time: new Date("2025-01-15T03:00:00Z") });
+
+  // MSWハンドラーをHAS_ALLモードに設定
+  await page.addInitScript(() => {
+    const checkMswAndSetHandlers = () => {
+      const msw = (window as any).msw;
+      if (!msw) {
+        setTimeout(checkMswAndSetHandlers, 50);
+        return;
+      }
+      msw.setHandlers("HAS_ALL");
+    };
+    checkMswAndSetHandlers();
+  });
 
   await page.goto("/todos?status=TODO");
   await page.waitForLoadState("networkidle");
   await expect(page).toHaveScreenshot({ fullPage: true });
 });
 
-// FIXME: 正しくフィルターできていない
 test("[SS]TODOページ（プロジェクトフィルター）が表示される", async ({
   page,
 }) => {
   // ブラウザの時間を固定 (2025-01-15 12:00:00 JST)
   await page.clock.install({ time: new Date("2025-01-15T03:00:00Z") });
 
-  await page.goto("/todos?projectId=1");
+  // MSWハンドラーをHAS_ALLモードに設定
+  await page.addInitScript(() => {
+    const checkMswAndSetHandlers = () => {
+      const msw = (window as any).msw;
+      if (!msw) {
+        setTimeout(checkMswAndSetHandlers, 50);
+        return;
+      }
+      msw.setHandlers("HAS_ALL");
+    };
+    checkMswAndSetHandlers();
+  });
+
+  await page.goto("/todos?projectId=project-1");
   await page.waitForLoadState("networkidle");
   await expect(page).toHaveScreenshot({ fullPage: true });
 });
 
-// FIXME: 空データで上書きしてもMSWが優先される様子。MSWとの共存方法を模索中
 test("[SS]TODOページ（空の状態）が表示される", async ({ page }) => {
   // ブラウザの時間を固定 (2025-01-15 12:00:00 JST)
   await page.clock.install({ time: new Date("2025-01-15T03:00:00Z") });
 
-  // 空データでモックを上書き
-  await page.route(urlJoin(config.apiUrl, "/todos"), (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify([]),
-    }),
-  );
+  // MSWハンドラーを空データに切り替えるスクリプトをページロード前に注入
+  await page.addInitScript(() => {
+    // MSWが起動するまで待機してからハンドラーを切り替え
+    const checkMswAndSetHandlers = () => {
+      const msw = (window as any).msw;
+      if (!msw) {
+        // MSWがまだ利用可能でない場合は少し待ってから再試行
+        setTimeout(checkMswAndSetHandlers, 50);
+        return;
+      }
+
+      // 空データハンドラーに切り替え
+      msw.setHandlers("EMPTY");
+    };
+
+    checkMswAndSetHandlers();
+  });
 
   await page.goto("/todos");
   await page.waitForLoadState("networkidle");
@@ -55,6 +98,19 @@ test("[SS]TODOページ（空の状態）が表示される", async ({ page }) =
 test("[SS]TODOページ（作成モーダル）が表示される", async ({ page }) => {
   // ブラウザの時間を固定 (2025-01-15 12:00:00 JST)
   await page.clock.install({ time: new Date("2025-01-15T03:00:00Z") });
+
+  // MSWハンドラーをHAS_ALLモードに設定
+  await page.addInitScript(() => {
+    const checkMswAndSetHandlers = () => {
+      const msw = (window as any).msw;
+      if (!msw) {
+        setTimeout(checkMswAndSetHandlers, 50);
+        return;
+      }
+      msw.setHandlers("HAS_ALL");
+    };
+    checkMswAndSetHandlers();
+  });
 
   await page.goto("/todos");
   await page.waitForLoadState("networkidle");
@@ -74,6 +130,19 @@ test("[SS]TODOページ（詳細モーダル・添付ファイルあり）が表
   // ブラウザの時間を固定 (2025-01-15 12:00:00 JST)
   await page.clock.install({ time: new Date("2025-01-15T03:00:00Z") });
 
+  // MSWハンドラーをHAS_ALLモードに設定
+  await page.addInitScript(() => {
+    const checkMswAndSetHandlers = () => {
+      const msw = (window as any).msw;
+      if (!msw) {
+        setTimeout(checkMswAndSetHandlers, 50);
+        return;
+      }
+      msw.setHandlers("HAS_ALL");
+    };
+    checkMswAndSetHandlers();
+  });
+
   await page.goto("/todos");
   await page.waitForLoadState("networkidle");
 
@@ -89,12 +158,24 @@ test("[SS]TODOページ（詳細モーダル・添付ファイルあり）が表
   await expect(page).toHaveScreenshot({ fullPage: true });
 });
 
-// FIXME: 添付ファイルが表示される
 test("[SS]TODOページ（詳細モーダル・添付ファイルなし）が表示される", async ({
   page,
 }) => {
   // ブラウザの時間を固定 (2025-01-15 12:00:00 JST)
   await page.clock.install({ time: new Date("2025-01-15T03:00:00Z") });
+
+  // MSWハンドラーをHAS_ALLモードに設定
+  await page.addInitScript(() => {
+    const checkMswAndSetHandlers = () => {
+      const msw = (window as any).msw;
+      if (!msw) {
+        setTimeout(checkMswAndSetHandlers, 50);
+        return;
+      }
+      msw.setHandlers("HAS_ALL");
+    };
+    checkMswAndSetHandlers();
+  });
 
   await page.goto("/todos");
   await page.waitForLoadState("networkidle");

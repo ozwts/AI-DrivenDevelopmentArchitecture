@@ -114,7 +114,7 @@ export const AttachmentDummy2: AttachmentResponse = {
 
 export const AttachmentDummy3: AttachmentResponse = {
   id: "attachment-3",
-  todoId: "2",
+  todoId: "3",
   filename: "api-specification.yaml",
   contentType: "application/x-yaml",
   size: 256000,
@@ -176,7 +176,7 @@ export const TodoDummy3: TodoResponse = {
   projectId: "project-1",
   assigneeUserId: "user-3",
   createdBy: "user-3",
-  attachments: [],
+  attachments: [AttachmentDummy3],
   createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
   updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
 };

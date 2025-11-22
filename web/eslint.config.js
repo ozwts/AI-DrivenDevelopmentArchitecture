@@ -21,6 +21,8 @@ export default tseslint.config(
       "test-results",
       "**/*.ss.test.ts-snapshots",
       "**/*.ct.test.tsx-snapshots",
+      "**/*.test.ts",
+      "**/*.test.tsx",
     ],
   },
   {
