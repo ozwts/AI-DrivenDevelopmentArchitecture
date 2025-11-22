@@ -43,9 +43,14 @@ export const TodosPage = () => {
 
   const toast = useToast();
 
-  // URL クエリパラメータからプロジェクトIDを取得
+  // URL クエリパラメータからフィルタを取得
   useEffect(() => {
+    const statusParam = searchParams.get("status");
     const projectIdParam = searchParams.get("projectId");
+
+    if (statusParam) {
+      setFilterStatus(statusParam as TodoStatus);
+    }
     if (projectIdParam) {
       setFilterProjectId(projectIdParam);
     }
