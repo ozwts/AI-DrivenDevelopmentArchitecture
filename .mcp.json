@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "guardrails": {
+      "command": "npx",
+      "args": [
+        "tsx",
+        "guardrails/index.ts"
+      ]
+    }
+  }
+}

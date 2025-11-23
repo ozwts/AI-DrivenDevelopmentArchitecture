@@ -15,9 +15,15 @@
       "Bash(npx tsc:*)",
       "mcp__ide__getDiagnostics",
       "Bash(tree:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(test:*)",
+      "Bash(node:*)",
+      "WebSearch",
+      "mcp__guardrails__review_with_policy",
+      "Bash(npx tsx:*)"
     ],
     "deny": [],
     "ask": []
-  }
+  },
+  "enableAllProjectMcpServers": true
 }
