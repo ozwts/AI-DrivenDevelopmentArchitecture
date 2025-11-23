@@ -61,7 +61,9 @@ await page.addInitScript(() => {
 // Math.random() を固定値に置き換え（色のランダム生成を固定）
 await page.addInitScript(() => {
   let counter = 0;
-  const fixedRandomValues = [0.12345, 0.23456, 0.34567, 0.45678, 0.56789, 0.6789];
+  const fixedRandomValues = [
+    0.12345, 0.23456, 0.34567, 0.45678, 0.56789, 0.6789,
+  ];
   Math.random = () => {
     const value = fixedRandomValues[counter % fixedRandomValues.length];
     counter++;
@@ -205,7 +207,9 @@ test("[SS]プロジェクトページ（作成モーダル）", async ({ page })
   // Math.random() を固定値に置き換え（色のランダム生成を固定）
   await page.addInitScript(() => {
     let counter = 0;
-    const fixedRandomValues = [0.12345, 0.23456, 0.34567, 0.45678, 0.56789, 0.6789];
+    const fixedRandomValues = [
+      0.12345, 0.23456, 0.34567, 0.45678, 0.56789, 0.6789,
+    ];
     Math.random = () => {
       const value = fixedRandomValues[counter % fixedRandomValues.length];
       counter++;

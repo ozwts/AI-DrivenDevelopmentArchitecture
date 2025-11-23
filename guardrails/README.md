@@ -38,12 +38,12 @@ guardrails/
 
 ## 三権分立の対応
 
-| 役割       | フォルダ        | 説明                                     | 担当     |
-| ---------- | --------------- | ---------------------------------------- | -------- |
-| 憲法       | constitution/   | 最高原則・価値・法令・倫理               | 人間     |
-| 立法       | policy/         | 憲法を具体化したルール群                 | 人間     |
-| 司法       | review/         | Policyに従って審査するシステム（MCP）    | AI       |
-| 行政       | procedure/      | Policyに従って動く実行・オペレーション   | AI/人間  |
+| 役割 | フォルダ      | 説明                                   | 担当    |
+| ---- | ------------- | -------------------------------------- | ------- |
+| 憲法 | constitution/ | 最高原則・価値・法令・倫理             | 人間    |
+| 立法 | policy/       | 憲法を具体化したルール群               | 人間    |
+| 司法 | review/       | Policyに従って審査するシステム（MCP）  | AI      |
+| 行政 | procedure/    | Policyに従って動く実行・オペレーション | AI/人間 |
 
 ## セットアップ
 
@@ -75,9 +75,7 @@ export ANTHROPIC_API_KEY="your-api-key-here"
   "mcpServers": {
     "guardrails": {
       "command": "node",
-      "args": [
-        "/Users/your-username/path/to/guardrails/dist/index.js"
-      ],
+      "args": ["/Users/your-username/path/to/guardrails/dist/index.js"],
       "env": {
         "ANTHROPIC_API_KEY": "your-api-key-here"
       }
@@ -170,12 +168,13 @@ export ANTHROPIC_API_KEY="your-api-key-here"
 
 ## ファイル種別とポリシーの対応
 
-| ファイル種別       | 選択されるポリシー（並列読み込み）                           |
-| ------------------ | ------------------------------------------------------------ |
-| `*.ct.test.tsx`    | `10-test-strategy-overview.md` + `20-component-test.md`      |
-| `*.ss.test.ts`     | `10-test-strategy-overview.md` + `30-snapshot-test.md`       |
+| ファイル種別    | 選択されるポリシー（並列読み込み）                      |
+| --------------- | ------------------------------------------------------- |
+| `*.ct.test.tsx` | `10-test-strategy-overview.md` + `20-component-test.md` |
+| `*.ss.test.ts`  | `10-test-strategy-overview.md` + `30-snapshot-test.md`  |
 
 **重要**:
+
 - 一つのツールは、一つの律法（policy/web/test-strategy/）のフォルダ内のファイルを並列で読み込みます
 - コンポーネントテストのポリシーはスナップショットテストに適用されません（逆も同様）
 - `review_files_parallel` では、各ファイルが個別にポリシーを選択されます

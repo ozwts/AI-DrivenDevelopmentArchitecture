@@ -6,7 +6,16 @@
   "main": "index.ts",
   "scripts": {
     "dev": "tsx index.ts",
-    "start": "tsx index.ts"
+    "start": "tsx index.ts",
+    "fix": "run-s fix:*",
+    "fix:format": "prettier --cache --write '**/*.{ts,json,yml,yaml,md}'",
+    "fix:lint": "eslint --cache --max-warnings 0 --fix \"**/*.ts\"",
+    "sort": "sort-package-json",
+    "validate": "run-p validate:lint validate:tsc",
+    "validate:format": "prettier --cache -c '**/*.{ts,json,yml,yaml,md}'",
+    "validate:lint": "eslint --cache --max-warnings 0 \"**/*.ts\"",
+    "validate:tsc": "tsc --noEmit",
+    "validate:tsc:watch": "tsc --watch"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
@@ -15,7 +24,20 @@
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
-    "typescript": "^5.7.2",
-    "tsx": "^4.19.2"
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.57.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-config-prettier": "9.1.0",
+    "eslint-plugin-import": "^2.29.0",
+    "eslint-plugin-unused-imports": "4.1.3",
+    "npm-run-all": "4.1.5",
+    "prettier": "^3.0.0",
+    "sort-package-json": "2.10.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=22.0.0"
   }
 }

@@ -1,34 +1,37 @@
 /**
- * 複数ファイルを並列でレビュー（Claude Agent SDK Tool Use）
+ * 個別テストレビュー専用
  */
 
 import Anthropic from "@anthropic-ai/sdk";
 import * as fs from "fs/promises";
 import * as path from "path";
-import { selectPolicies, loadPolicies } from "./policy-loader.js";
 
-export interface FileReviewInput {
-  targetFilePaths: string[];
-  guardrailsRoot: string;
-  apiKey: string;
-}
+type PolicySelection = {
+  policyFiles: string[];
+};
 
-export interface FileReviewResult {
+type FileReviewResult = {
   filePath: string;
   policies: string[];
   review: string;
   success: boolean;
   error?: string;
-}
+};
 
-export interface ParallelReviewResult {
+export type ParallelReviewResult = {
   results: FileReviewResult[];
   summary: {
     total: number;
     successful: number;
     failed: number;
   };
-}
+};
+
+export type FileReviewInput = {
+  targetFilePaths: string[];
+  guardrailsRoot: string;
+  apiKey: string;
+};
 
 /**
  * ファイル読み込みツール定義
@@ -49,45 +52,75 @@ const READ_FILE_TOOL: Anthropic.Messages.Tool = {
 };
 
 /**
- * 複数ファイルを並列でレビュー
+ * ファイルパスから適切なポリシーファイルのリストを取得
  */
-export async function reviewFilesInParallel(
-  input: FileReviewInput
-): Promise<ParallelReviewResult> {
-  const { targetFilePaths, guardrailsRoot, apiKey } = input;
+const selectPolicies = async (
+  targetFilePath: string,
+  guardrailsRoot: string,
+): Promise<PolicySelection> => {
+  const fileName = path.basename(targetFilePath);
+  const isComponentTest = fileName.endsWith(".ct.test.tsx");
+  const isSnapshotTest = fileName.endsWith(".ss.test.ts");
 
-  // Claude APIクライアント
-  const anthropic = new Anthropic({ apiKey });
-
-  // 各ファイルを並列でレビュー
-  const results = await Promise.all(
-    targetFilePaths.map((filePath) =>
-      reviewSingleFile(filePath, guardrailsRoot, anthropic)
-    )
+  // ポリシーディレクトリのベースパス
+  const policyBase = path.join(
+    guardrailsRoot,
+    "policy",
+    "web",
+    "test-strategy",
   );
 
-  // サマリーを生成
-  const successful = results.filter((r) => r.success).length;
-  const failed = results.filter((r) => !r.success).length;
+  let policyFiles: string[] = [];
 
-  return {
-    results,
-    summary: {
-      total: results.length,
-      successful,
-      failed,
-    },
-  };
-}
+  if (isComponentTest) {
+    // コンポーネントテスト: 全体像 + コンポーネントテスト
+    policyFiles = [
+      path.join(policyBase, "10-test-strategy-overview.md"),
+      path.join(policyBase, "20-component-test.md"),
+    ];
+  } else if (isSnapshotTest) {
+    // スナップショットテスト: 全体像 + スナップショットテスト
+    policyFiles = [
+      path.join(policyBase, "10-test-strategy-overview.md"),
+      path.join(policyBase, "30-snapshot-test.md"),
+    ];
+  } else {
+    throw new Error(`サポートされていないファイル形式です: ${fileName}`);
+  }
+
+  // 全てのポリシーファイルが存在するか確認
+  await Promise.all(
+    policyFiles.map(async (file) => {
+      try {
+        await fs.access(file);
+      } catch (error) {
+        throw new Error(`ポリシーファイルが見つかりません: ${file}`);
+      }
+    }),
+  );
+
+  return { policyFiles };
+};
+
+/**
+ * ポリシーファイルを並列で読み込む
+ */
+const loadPolicies = async (policyFiles: string[]): Promise<string[]> =>
+  Promise.all(
+    policyFiles.map(async (file) => {
+      const content = await fs.readFile(file, "utf-8");
+      return `# Policy: ${path.basename(file)}\n\n${content}`;
+    }),
+  );
 
 /**
  * 単一ファイルをレビュー（Tool Use）
  */
-async function reviewSingleFile(
+const reviewSingleFile = async (
   filePath: string,
   guardrailsRoot: string,
-  anthropic: Anthropic
-): Promise<FileReviewResult> {
+  anthropic: Anthropic,
+): Promise<FileReviewResult> => {
   try {
     // 1. ポリシーファイルを選択
     const { policyFiles } = await selectPolicies(filePath, guardrailsRoot);
@@ -112,7 +145,7 @@ ${policySection}
 対象ファイルを読み込む必要がある場合は、read_fileツールを使用してください。ファイルパス: ${filePath}`;
 
     // 4. Claude APIでレビュー実行（Tool Use）
-    let messages: Anthropic.Messages.MessageParam[] = [
+    const messages: Anthropic.Messages.MessageParam[] = [
       {
         role: "user",
         content: `${filePath} のファイルを、提供されたポリシーに基づいてレビューしてください。まず read_file ツールを使用してファイルの内容を読み込んでください。`,
@@ -123,6 +156,7 @@ ${policySection}
     let continueLoop = true;
 
     while (continueLoop) {
+      // eslint-disable-next-line no-await-in-loop
       const response = await anthropic.messages.create({
         model: "claude-haiku-4-5",
         max_tokens: 4096,
@@ -134,12 +168,17 @@ ${policySection}
       // Tool Useがあれば実行
       const toolUseBlock = response.content.find(
         (block): block is Anthropic.Messages.ToolUseBlock =>
-          block.type === "tool_use"
+          block.type === "tool_use",
       );
 
-      if (toolUseBlock && toolUseBlock.name === "read_file") {
+      if (
+        toolUseBlock !== null &&
+        toolUseBlock !== undefined &&
+        toolUseBlock.name === "read_file"
+      ) {
         // ファイルを読み込み
         const input = toolUseBlock.input as { path: string };
+        // eslint-disable-next-line no-await-in-loop
         const fileContent = await fs.readFile(input.path, "utf-8");
 
         // Tool結果を追加
@@ -161,9 +200,15 @@ ${policySection}
         // Textレスポンスを取得
         const textBlock = response.content.find(
           (block): block is Anthropic.Messages.TextBlock =>
-            block.type === "text"
+            block.type === "text",
         );
-        reviewText = textBlock?.text || "";
+        reviewText =
+          textBlock !== null &&
+          textBlock !== undefined &&
+          typeof textBlock.text === "string" &&
+          textBlock.text !== ""
+            ? textBlock.text
+            : "";
         continueLoop = false;
       }
     }
@@ -184,4 +229,36 @@ ${policySection}
       error: errorMessage,
     };
   }
-}
+};
+
+/**
+ * 複数ファイルを並列でレビュー
+ */
+export const reviewFilesInParallel = async (
+  input: FileReviewInput,
+): Promise<ParallelReviewResult> => {
+  const { targetFilePaths, guardrailsRoot, apiKey } = input;
+
+  // Claude APIクライアント
+  const anthropic = new Anthropic({ apiKey });
+
+  // 各ファイルを並列でレビュー
+  const results = await Promise.all(
+    targetFilePaths.map((filePath) =>
+      reviewSingleFile(filePath, guardrailsRoot, anthropic),
+    ),
+  );
+
+  // サマリーを生成
+  const successful = results.filter((r) => r.success).length;
+  const failed = results.filter((r) => !r.success).length;
+
+  return {
+    results,
+    summary: {
+      total: results.length,
+      successful,
+      failed,
+    },
+  };
+};
