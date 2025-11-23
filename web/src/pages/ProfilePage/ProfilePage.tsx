@@ -82,6 +82,7 @@ export const ProfilePage = () => {
                 variant="secondary"
                 size="sm"
                 onClick={() => setIsEditModalOpen(true)}
+                data-testid="edit-button"
               >
                 <PencilIcon className="h-4 w-4 mr-1" />
                 編集

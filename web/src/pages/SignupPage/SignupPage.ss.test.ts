@@ -45,17 +45,15 @@ test("[SS]サインアップページ（確認コード入力）が表示され�
   await page.waitForLoadState("networkidle");
 
   // サインアップフォームに入力
-  await page.fill('input[id="email"]', "test@example.com");
-  await page.fill('input[id="password"]', "TestPassword123!");
-  await page.fill('input[id="confirmPassword"]', "TestPassword123!");
+  await page.getByTestId("email-input").fill("test@example.com");
+  await page.getByTestId("password-input").fill("TestPassword123!");
+  await page.getByTestId("confirm-password-input").fill("TestPassword123!");
 
-  // サインアップボタンをクリック（MSWでモックされているため成功する）
-  await page.click('button[type="submit"]');
+  // サインアップボタンをクリック
+  await page.getByTestId("submit-button").click();
 
   // 確認コード入力フォームが表示されるのを待つ
-  await page.waitForSelector('input[id="confirmationCode"]', {
-    timeout: 5000,
-  });
+  await page.getByTestId("confirmation-code-input").waitFor({ timeout: 5000 });
 
   await expect(page).toHaveScreenshot({ fullPage: true });
 });

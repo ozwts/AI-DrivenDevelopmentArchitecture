@@ -83,10 +83,10 @@ test("[SS]プロジェクトページ（作成モーダル）が表示される"
   await page.waitForLoadState("networkidle");
 
   // 新規作成ボタンをクリック
-  await page.click('button:has-text("新規プロジェクト")');
+  await page.getByTestId("create-project-button").click();
 
-  // モーダルが表示されるのを待つ
-  await page.waitForSelector('[role="dialog"]');
+  // モーダルのレンダリング完了を待機
+  await page.waitForLoadState("networkidle");
 
   await expect(page).toHaveScreenshot({ fullPage: true });
 });

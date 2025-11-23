@@ -45,16 +45,13 @@ test("[SS]パスワードリセットページ（新しいパスワード設定�
   await page.waitForLoadState("networkidle");
 
   // メールアドレス入力
-  await page.fill('input[type="email"]', "test@example.com");
+  await page.getByTestId("email-input").fill("test@example.com");
 
-  // 確認コード送信ボタンをクリック（実際には送信されないが、UIの状態変更のみ）
-  // MSWでモックされているため、ステップが進む
-  await page.click('button[type="submit"]');
+  // 確認コード送信ボタンをクリック
+  await page.getByTestId("submit-button").click();
 
   // ステップ変更を待機（confirmステップに移行）
-  await page.waitForSelector('input[id="confirmationCode"]', {
-    timeout: 5000,
-  });
+  await page.getByTestId("confirmation-code-input").waitFor({ timeout: 5000 });
 
   await expect(page).toHaveScreenshot({ fullPage: true });
 });

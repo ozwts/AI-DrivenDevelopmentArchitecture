@@ -2,103 +2,257 @@
 
 テストおよび開発時に使用するモックデータとユーティリティを提供します。
 
-## 概要
+## 📋 目次
 
-このディレクトリには以下の2つの主要な機能があります：
+1. [Playwrightテスト戦略](#playwrightテスト戦略) ⭐ 重要
+2. [モックデータ](#モックデータ-mock-datats)
+3. [MSWモックサーバー](#mswモックサーバー-mockts)
+4. [テストコマンド](#テストコマンド)
 
-1. **モックデータの定義** - テストで使用する再現可能なダミーデータ
-2. **MSWモックサーバー** - 開発時のAPIモック
+---
 
-## ディレクトリ構成
+## Playwrightテスト戦略
 
+### テストタイプと役割分担
+
+| テストタイプ | ファイル | 目的 | 粒度 | 検証方法 |
+|------------|---------|------|------|---------|
+| **コンポーネントテスト** | `*.ct.test.tsx` | 機能・アクセシビリティ | **細分化**（1機能=1テスト） | `expect()` |
+| **スナップショットテスト** | `*.ss.test.ts` | 視覚的回帰 | **粗分化**（1画面状態=1テスト） | `toHaveScreenshot()` |
+
+### セレクタ戦略
+
+**基本方針:**
+- **操作**: `data-testid` （安定性・国際化対応）
+- **検証**: `getByRole`, `getByLabel` （アクセシビリティ保証）
+
+| 用途 | コンポーネントテスト | スナップショットテスト |
+|------|-------------------|---------------------|
+| 要素取得 | `getByTestId()` | `getByTestId()` |
+| a11y検証 | `getByRole()`, `getByLabel()` | **不要** |
+| 結果検証 | `expect().toBeVisible()` | `toHaveScreenshot()` |
+
+**命名規則:**
+```typescript
+// ボタン
+data-testid="create-button" | "submit-button" | "cancel-button"
+
+// 入力フィールド
+data-testid="input-{name}"  // input-title, input-email
+
+// 動的要素
+data-testid="{type}-{id}"   // todo-card-123, user-item-456
+
+// セクション
+data-testid="{name}-section" // file-upload-section, error-section
 ```
-testing-utils/
-├── README.md          # このファイル
-├── mock-data.ts       # モックデータ定義
-└── mock.ts            # MSW モックサーバー設定
+
+### ✅ Do / ❌ Don't
+
+<details>
+<summary><b>✅ Good: data-testid + アクセシビリティ検証</b></summary>
+
+```typescript
+// コンポーネント
+<button data-testid="submit-button" onClick={handleSubmit}>送信</button>
+
+// コンポーネントテスト
+test('送信ボタン', async ({ mount }) => {
+  const component = await mount(<Form {...props} />);
+  const btn = component.getByTestId('submit-button');
+
+  // a11y検証
+  await expect(btn).toHaveRole('button');
+  await expect(btn).toHaveAttribute('type', 'submit');
+
+  // 操作
+  await btn.click();
+});
+
+// スナップショットテスト
+test('[SS]フォーム表示', async ({ page }) => {
+  await page.goto('/form');
+  await page.waitForLoadState("networkidle");
+  await expect(page).toHaveScreenshot({ fullPage: true });
+  // ↑ ボタンの表示はスクリーンショットで確認
+});
 ```
+</details>
+
+<details>
+<summary><b>❌ Bad: テキストセレクタ・過剰な検証</b></summary>
+
+```typescript
+// ❌ テキストセレクタ（国際化で壊れる）
+await page.click('button:has-text("送信")');
+await component.getByText("ファイル添付").click();
+
+// ❌ CSSセレクタ（リファクタリングで壊れる）
+await page.click('.btn-primary');
+
+// ❌ スナップショットテストで過剰な検証
+test('[SS]フォーム表示', async ({ page }) => {
+  await page.goto('/form');
+  await expect(page.getByRole('button')).toBeVisible(); // ← 不要
+  await expect(page).toHaveScreenshot(); // ← これで十分
+});
+```
+</details>
+
+### コンポーネントテスト（*.ct.test.tsx）
+
+**粒度: 1テストケース = 1機能**
+
+```typescript
+// ✅ 機能ごとに分割
+test("タイトルが編集可能", async ({ mount }) => { ... });
+test("バリデーションエラー: 空のタイトル", async ({ mount }) => { ... });
+test("バリデーションエラー: 201文字のタイトル", async ({ mount }) => { ... });
+test("境界値: 200文字のタイトル", async ({ mount }) => { ... });
+
+// ❌ 1テストに複数機能を詰め込まない
+test("フォームが動作する", async ({ mount }) => {
+  // タイトル入力、バリデーション、送信... ← 失敗原因が特定しにくい
+});
+```
+
+**分割基準:**
+- 機能単位（入力、選択、削除）
+- バリデーション単位（必須、文字数、形式）
+- 境界値単位（最小値、最大値、範囲外）
+- 状態単位（新規、編集、読み取り専用）
+
+**テンプレート:**
+
+```typescript
+test('機能名', async ({ mount }) => {
+  const component = await mount(<Component {...props} />);
+
+  // 1. 要素取得（data-testid）
+  const element = component.getByTestId('element-name');
+
+  // 2. アクセシビリティ検証
+  await expect(element).toHaveRole('button');
+  await expect(element).toHaveAttribute('type', 'submit');
+
+  // 3. 操作
+  await element.click();
+
+  // 4. 結果確認
+  await expect(component.getByTestId('result')).toBeVisible();
+});
+```
+
+**エラーメッセージの検証:**
+
+```typescript
+// ✅ Good: role="alert" でスコープ限定
+const errorAlert = component.getByRole('alert');
+await expect(errorAlert).toBeVisible();
+await expect(errorAlert).toContainText(/200.*文字/);
+
+// ❌ Bad: グローバルにテキスト検索
+await expect(component.getByText(/200.*文字/)).toBeVisible();
+```
+
+**動的コンテンツ:**
+
+```typescript
+// ✅ 許容（コメント推奨）
+// ファイル名は動的コンテンツのためgetByTextを使用
+await expect(component.getByText('test.txt')).toBeVisible();
+```
+
+### スナップショットテスト（*.ss.test.ts）
+
+**粒度: 1テストケース = 1画面状態**
+
+```typescript
+// ✅ 画面状態ごとに分割
+test("[SS]TODOページ", async ({ page }) => { ... });
+test("[SS]TODOページ（空）", async ({ page }) => { ... });
+test("[SS]TODOページ（モーダル表示）", async ({ page }) => { ... });
+
+// ❌ 細かすぎる分割
+test("[SS]ボタン表示", async ({ page }) => { ... }); // ← 通常状態に含まれる
+test("[SS]リスト表示", async ({ page }) => { ... }); // ← 通常状態に含まれる
+```
+
+**分割基準:**
+- ページ状態（通常、空、ローディング、エラー）
+- モーダル・ダイアログ（作成、編集、削除確認）
+- フィルター・検索結果
+- データ有無（添付ファイルあり/なし）
+
+**テンプレート:**
+
+```typescript
+test('[SS]画面名（状態）', async ({ page }) => {
+  // 1. 時間固定
+  await page.clock.install({ time: new Date("2025-01-15T03:00:00Z") });
+
+  // 2. MSW設定
+  await page.addInitScript(() => {
+    const checkMswAndSetHandlers = () => {
+      const msw = (window as any).msw;
+      if (!msw) {
+        setTimeout(checkMswAndSetHandlers, 50);
+        return;
+      }
+      msw.setHandlers("HAS_ALL"); // or "EMPTY"
+    };
+    checkMswAndSetHandlers();
+  });
+
+  // 3. ページ遷移
+  await page.goto('/path');
+  await page.waitForLoadState("networkidle");
+
+  // 4. 操作（必要な場合のみ）
+  await page.getByTestId('action-button').click();
+  await page.waitForLoadState("networkidle");
+
+  // 5. スクリーンショット（検証はこれのみ）
+  await expect(page).toHaveScreenshot({ fullPage: true });
+});
+```
+
+**重要な原則:**
+- スクリーンショット = 表示の証明
+- `expect().toBeVisible()` は不要（冗長）
+- アクセシビリティ検証は不要（コンポーネントテストで実施）
 
 ---
 
 ## モックデータ (mock-data.ts)
 
-テストの種類に応じて2つのデータセットを提供しています。
+| 種類 | 命名規則 | 用途 | 特徴 |
+|------|---------|------|------|
+| コンポーネントテスト用 | `mock*` | `*.ct.test.tsx` | 固定日付、最小限の構造 |
+| スナップショット/MSW用 | `*Dummy*` | `*.ss.test.ts`, 開発環境 | 相対日付、リアルなデータ |
 
-### 1. コンポーネントテスト用データ
-
-**用途**: Playwrightコンポーネントテスト（`*.ct.test.tsx`）
-
-**特徴**:
-
-- 完全に固定された日付を使用
-- シンプルで最小限のデータ構造
-- 予測可能性を重視
-
-**命名規則**: `mock*` (例: `mockUser`, `mockProject`, `mockTodo`)
-
-### 2. スナップショットテスト / モックサーバー用データ
-
-**用途**:
-
-- Playwrightスナップショットテスト（`*.ss.test.ts`）
-- 開発用モックサーバー
-
-**特徴**:
-
-- 動的な相対日付（`Date.now()` ベース）
-- リアルなデータ内容
-- 複数のバリエーション
-
-**命名規則**: `*Dummy*` (例: `UserDummy1`, `TodoDummy1`)
-
-### 日付の扱い
-
-スナップショットテスト用データは相対的な日付計算を使用しているため、テスト実行時にブラウザ側の時間を固定する必要があります。
-
-**Playwrightでの時間固定**:
+**時間の固定（重要）:**
 
 ```typescript
-// テスト内で時間を固定
+// スナップショットテストでは必ず時間を固定
 await page.clock.install({ time: new Date("2025-01-15T03:00:00Z") });
 ```
-
-これにより、以下が安定します：
-
-- 相対的な日付表示（「3日前」「残り2日」など）
-- タイムスタンプのソート順
-- 期限ベースのフィルタリング
 
 ---
 
 ## MSWモックサーバー (mock.ts)
 
-### 概要
+Mock Service Worker (MSW) で開発環境のAPIをモック。`main.tsx`で自動起動。
 
-Mock Service Worker (MSW) を使用して、開発環境でAPIレスポンスをモックします。
+**モード:**
+- `HAS_ALL`: サンプルデータあり（デフォルト）
+- `EMPTY`: データなし
 
-### 自動起動
+**開発環境:** `src/config.local.ts` の `mockType` で設定
 
-開発サーバー起動時に自動的に有効化されます（`main.tsx`で初期化）。
-
-### モックの範囲
-
-以下のエンドポイントをモックします：
-
-- ユーザー関連API
-- プロジェクト関連API
-- TODO関連API
-
-### モード
-
-- **HAS_ALL**: サンプルデータあり（デフォルト）
-- **EMPTY**: データなし（CRUD操作は可能）
-
-開発環境: `src/config.local.ts` の `mockType` で設定
-
-**テストでのモード指定（重要）**:
+**テストでのモード指定:**
 
 ```typescript
-// スナップショットテストでは必ずモードを明示的に指定
 await page.addInitScript(() => {
   const checkMswAndSetHandlers = () => {
     const msw = (window as any).msw;
@@ -106,7 +260,7 @@ await page.addInitScript(() => {
       setTimeout(checkMswAndSetHandlers, 50);
       return;
     }
-    msw.setHandlers("HAS_ALL"); // または "EMPTY"
+    msw.setHandlers("HAS_ALL"); // or "EMPTY"
   };
   checkMswAndSetHandlers();
 });
@@ -114,64 +268,20 @@ await page.addInitScript(() => {
 
 ---
 
-## スナップショットテストのベストプラクティス
-
-### 1. 時間の固定
-
-日付に依存する表示がある場合、必ずブラウザ時間を固定してください。
-
-**固定される要素**:
-
-- `Date.now()`, `new Date()`
-- `setTimeout()`, `setInterval()`
-- 相対的な日付計算
-
-### 2. ランダム値の固定
-
-ランダムに生成される要素（色、ID等）は `Math.random()` をモックして固定します。
-
-**方法**:
-
-```typescript
-await page.addInitScript(() => {
-  const fixedValues = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6];
-  let counter = 0;
-  Math.random = () => fixedValues[counter++ % fixedValues.length];
-});
-```
-
-### 3. 非同期処理の完了待機
-
-スナップショット取得前に、必要なリソースの読み込みとレンダリングが完了していることを確認してください。
-
-**推奨される待機方法**:
-
-- `page.waitForLoadState("networkidle")` - ネットワークアイドル待機
-- `page.waitForSelector('[role="dialog"]')` - 特定要素の表示待機
-
----
-
 ## テストコマンド
 
-### コンポーネントテスト
-
 ```bash
-npm run test:ct        # 実行
-npm run test:ct:ui     # UIモードで実行
-```
+# コンポーネントテスト
+npm run test:ct              # 実行
+npm run test:ct:ui           # UIモード
 
-### スナップショットテスト
+# スナップショットテスト
+npm run test:ss              # 実行
+npm run test:ss:update       # スクリーンショット更新
+npm run test:ss:refresh      # スクリーンショット再生成
+npm run test:ss:ui           # UIモード
 
-```bash
-npm run test:ss             # 実行
-npm run test:ss:update      # スナップショット更新
-npm run test:ss:refresh     # スナップショット再生成（削除 + 更新）
-npm run test:ss:ui          # UIモードで実行
-```
-
-### すべてのテスト
-
-```bash
+# すべてのテスト
 npm run test
 ```
 
@@ -179,50 +289,18 @@ npm run test
 
 ## トラブルシューティング
 
-### スナップショットテストが不安定
-
-**症状**: 同じコードでスナップショットの差分が発生
-
-**主な原因**:
-
-1. **時間依存の表示** → `page.clock.install()` で時間固定
-2. **ランダム値の生成** → `Math.random()` のモック
-3. **非同期処理未完了** → 適切な待機処理の追加
-
-### モックサーバーが動作しない
-
-**確認事項**:
-
-1. Service Workerファイルの存在確認（`public/mockServiceWorker.js`）
-2. ブラウザコンソールでMSW起動ログの確認
-3. モックサーバー初期化コードの確認
-
-**再インストール**:
-
-```bash
-npx msw init public/ --save
-```
-
----
-
-## アーキテクチャ原則
-
-### データの分離
-
-コンポーネントテスト用とスナップショットテスト用でデータを分離することで、それぞれのテストの目的に最適化されたデータ構造を維持します。
-
-### 時間の決定性
-
-スナップショットテストでは、Playwrightの`clock` APIを使用して時間を制御し、テストの再現性を確保します。
-
-### モックの透過性
-
-MSWを使用することで、実装コードを変更せずにAPIレスポンスをモックできます。これにより、本番コードとテストコードの分離が保たれます。
+| 問題 | 原因 | 解決策 |
+|------|------|--------|
+| スナップショット差分 | 時間依存の表示 | `page.clock.install()` で時間固定 |
+| スナップショット差分 | ランダム値 | `Math.random()` のモック |
+| スナップショット差分 | 非同期未完了 | `waitForLoadState("networkidle")` 追加 |
+| MSW動作しない | Service Worker未インストール | `npx msw init public/ --save` |
 
 ---
 
 ## 参考資料
 
 - [Playwright Documentation](https://playwright.dev/)
+- [Playwright Testing Library](https://playwright.dev/docs/best-practices)
 - [Mock Service Worker (MSW)](https://mswjs.io/)
-- [Playwright Clock API](https://playwright.dev/docs/clock)
+- [Web Accessibility (a11y)](https://www.w3.org/WAI/WCAG21/quickref/)

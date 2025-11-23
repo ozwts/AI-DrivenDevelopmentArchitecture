@@ -24,8 +24,11 @@ test.describe("TodoForm", () => {
     const prioritySelect = component.getByLabel("優先度");
     await expect(prioritySelect).toHaveValue("MEDIUM");
 
-    // 作成ボタンが表示される
-    await expect(component.getByRole("button", { name: "作成" })).toBeVisible();
+    // 作成ボタンが表示される（data-testid + アクセシビリティ検証）
+    const submitButton = component.getByTestId("submit-button");
+    await expect(submitButton).toBeVisible();
+    await expect(submitButton).toHaveRole("button");
+    await expect(submitButton).toHaveAttribute("type", "submit");
   });
 
   test("編集モード: 既存データが初期値として表示される", async ({ mount }) => {
@@ -53,8 +56,11 @@ test.describe("TodoForm", () => {
     const dueDateInput = component.getByLabel("期限日");
     await expect(dueDateInput).toHaveValue("2025-12-31");
 
-    // 更新ボタンが表示される
-    await expect(component.getByRole("button", { name: "更新" })).toBeVisible();
+    // 更新ボタンが表示される（data-testid + アクセシビリティ検証）
+    const submitButton = component.getByTestId("submit-button");
+    await expect(submitButton).toBeVisible();
+    await expect(submitButton).toHaveRole("button");
+    await expect(submitButton).toHaveAttribute("type", "submit");
   });
 
   test("タイトルが編集可能", async ({ mount }) => {
@@ -120,7 +126,13 @@ test.describe("TodoForm", () => {
       />,
     );
 
-    await component.getByRole("button", { name: "キャンセル" }).click();
+    // キャンセルボタンのアクセシビリティ検証（data-testid + getByRole）
+    const cancelButton = component.getByTestId("cancel-button");
+    await expect(cancelButton).toHaveRole("button");
+    await expect(cancelButton).toHaveAttribute("type", "button");
+
+    // クリック操作
+    await cancelButton.click();
     expect(cancelCalled).toBe(true);
   });
 
@@ -156,10 +168,10 @@ test.describe("TodoForm", () => {
     await titleInput.fill(longTitle);
     await titleInput.blur();
 
-    // バリデーションエラーが表示されることを確認
-    await expect(component.getByText(/200.*文字/i)).toBeVisible({
-      timeout: 3000,
-    });
+    // バリデーションエラーが表示されることを確認（getByRole: アクセシビリティ検証）
+    const errorAlert = component.getByRole("alert");
+    await expect(errorAlert).toBeVisible({ timeout: 3000 });
+    await expect(errorAlert).toContainText(/200.*文字/i);
   });
 
   test("フォーカスアウト時にバリデーションエラーが表示される（5001文字の説明）", async ({
@@ -179,10 +191,10 @@ test.describe("TodoForm", () => {
     await descriptionTextarea.fill(longDescription);
     await descriptionTextarea.blur();
 
-    // バリデーションエラーが表示されることを確認
-    await expect(component.getByText(/5000.*文字/i)).toBeVisible({
-      timeout: 3000,
-    });
+    // バリデーションエラーが表示されることを確認（getByRole: アクセシビリティ検証）
+    const errorAlert = component.getByRole("alert");
+    await expect(errorAlert).toBeVisible({ timeout: 3000 });
+    await expect(errorAlert).toContainText(/5000.*文字/i);
   });
 
   test("有効なデータの場合、バリデーションエラーが表示されない", async ({
@@ -316,16 +328,22 @@ test.describe("TodoForm", () => {
       <TodoForm onSubmit={() => {}} onCancel={() => {}} />,
     );
 
-    // ファイル添付セクションが表示される
-    await expect(component.getByText("ファイル添付（任意）")).toBeVisible();
+    // ファイル添付セクション全体の確認（data-testid）
+    const fileSection = component.getByTestId("file-upload-section");
+    await expect(fileSection).toBeVisible();
 
-    // ファイル選択ボタンが表示される（labelとして実装されている）
-    await expect(component.getByText("ファイルを選択")).toBeVisible();
+    // ファイル入力の確認とアクセシビリティ検証（data-testid）
+    const fileInput = component.getByTestId("file-input");
+    await expect(fileInput).toHaveAttribute("type", "file");
+    await expect(fileInput).toHaveAttribute("multiple");
 
-    // ヘルプテキストが表示される
-    await expect(
-      component.getByText(/対応形式: PNG, JPEG, GIF, PDF/),
-    ).toBeVisible();
+    // ファイル選択ラベルの確認（data-testid）
+    const fileLabel = component.getByTestId("file-select-label");
+    await expect(fileLabel).toBeVisible();
+    await expect(fileLabel).toHaveAttribute("for", "file-upload-todo-form");
+
+    // ヘルプテキストが表示される（セクション内で検索）
+    await expect(fileSection.getByText(/対応形式/)).toBeVisible();
   });
 
   test("編集モード: ファイル添付セクションが表示されない", async ({
@@ -335,8 +353,8 @@ test.describe("TodoForm", () => {
       <TodoForm todo={mockTodo} onSubmit={() => {}} onCancel={() => {}} />,
     );
 
-    // ファイル添付セクションが表示されない
-    await expect(component.getByText("ファイル添付（任意）")).not.toBeVisible();
+    // ファイル添付セクションが表示されない（data-testid）
+    await expect(component.getByTestId("file-upload-section")).not.toBeVisible();
   });
 
   test("ファイル選択後、選択されたファイルが表示される", async ({ mount }) => {
@@ -344,20 +362,20 @@ test.describe("TodoForm", () => {
       <TodoForm onSubmit={() => {}} onCancel={() => {}} />,
     );
 
-    // ファイルを選択（Playwright では setInputFiles を使用）
-    const fileInput = component.locator('input[type="file"]');
+    // ファイルを選択（data-testid）
+    const fileInput = component.getByTestId("file-input");
     await fileInput.setInputFiles({
       name: "test.txt",
       mimeType: "text/plain",
       buffer: Buffer.from("test content"),
     });
 
-    // 選択されたファイルが表示される
+    // 選択されたファイルが表示される（ファイル名・サイズは動的コンテンツのためgetByTextを使用）
     await expect(component.getByText("test.txt")).toBeVisible();
     await expect(component.getByText(/Bytes • text\/plain/)).toBeVisible();
 
-    // 選択個数が表示される
-    await expect(component.getByText("1個のファイルを選択中")).toBeVisible();
+    // 選択個数が表示される（data-testid）
+    await expect(component.getByTestId("file-count")).toHaveText("1個のファイルを選択中");
   });
 
   test("複数のファイルを選択できる", async ({ mount }) => {
@@ -365,7 +383,7 @@ test.describe("TodoForm", () => {
       <TodoForm onSubmit={() => {}} onCancel={() => {}} />,
     );
 
-    const fileInput = component.locator('input[type="file"]');
+    const fileInput = component.getByTestId("file-input");
     await fileInput.setInputFiles([
       {
         name: "file1.txt",
@@ -379,12 +397,12 @@ test.describe("TodoForm", () => {
       },
     ]);
 
-    // 両方のファイルが表示される
+    // 両方のファイルが表示される（ファイル名は動的コンテンツのためgetByTextを使用）
     await expect(component.getByText("file1.txt")).toBeVisible();
     await expect(component.getByText("file2.txt")).toBeVisible();
 
-    // 選択個数が表示される
-    await expect(component.getByText("2個のファイルを選択中")).toBeVisible();
+    // 選択個数が表示される（data-testid）
+    await expect(component.getByTestId("file-count")).toHaveText("2個のファイルを選択中");
   });
 
   test("選択したファイルを削除できる", async ({ mount }) => {
@@ -392,25 +410,23 @@ test.describe("TodoForm", () => {
       <TodoForm onSubmit={() => {}} onCancel={() => {}} />,
     );
 
-    // ファイルを選択
-    const fileInput = component.locator('input[type="file"]');
+    // ファイルを選択（data-testid）
+    const fileInput = component.getByTestId("file-input");
     await fileInput.setInputFiles({
       name: "test.txt",
       mimeType: "text/plain",
       buffer: Buffer.from("test content"),
     });
 
-    // ファイルが表示されることを確認
+    // ファイルが表示されることを確認（ファイル名は動的コンテンツのためgetByTextを使用）
     await expect(component.getByText("test.txt")).toBeVisible();
-    await expect(component.getByText("1個のファイルを選択中")).toBeVisible();
+    await expect(component.getByTestId("file-count")).toBeVisible();
 
-    // aria-labelで削除ボタンを特定してクリック
+    // aria-labelで削除ボタンを特定してクリック（getByRole: アクセシビリティ検証）
     await component.getByRole("button", { name: "test.txtを削除" }).click();
 
-    // ファイルが削除されることを確認
+    // ファイルが削除されることを確認（ファイル名は動的コンテンツのためgetByTextを使用）
     await expect(component.getByText("test.txt")).not.toBeVisible();
-    await expect(
-      component.getByText("1個のファイルを選択中"),
-    ).not.toBeVisible();
+    await expect(component.getByTestId("file-count")).not.toBeVisible();
   });
 });

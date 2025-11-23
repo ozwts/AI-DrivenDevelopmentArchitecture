@@ -43,10 +43,10 @@ test("[SS]プロフィールページ（編集モーダル）が表示される"
   await page.waitForLoadState("networkidle");
 
   // 編集ボタンをクリック
-  await page.click('button:has-text("編集")');
+  await page.getByTestId("edit-button").click();
 
-  // モーダルが表示されるのを待つ
-  await page.waitForSelector('[role="dialog"]');
+  // モーダルのレンダリング完了を待機
+  await page.waitForLoadState("networkidle");
 
   await expect(page).toHaveScreenshot({ fullPage: true });
 });

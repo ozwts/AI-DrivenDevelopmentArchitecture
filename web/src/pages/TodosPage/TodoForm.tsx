@@ -249,7 +249,7 @@ export const TodoForm = ({
 
       {/* ファイル添付（新規作成時のみ） */}
       {!todo && (
-        <div className="space-y-3 pt-2 border-t border-border-light">
+        <div className="space-y-3 pt-2 border-t border-border-light" data-testid="file-upload-section">
           <label className="block text-sm font-medium text-text-primary">
             ファイル添付（任意）
           </label>
@@ -264,16 +264,18 @@ export const TodoForm = ({
               className="hidden"
               id="file-upload-todo-form"
               multiple
+              data-testid="file-input"
             />
             <label
               htmlFor="file-upload-todo-form"
               className="inline-flex items-center justify-center font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors duration-200 px-3 py-1.5 text-sm bg-white text-secondary-600 border-2 border-secondary-600 hover:bg-secondary-50 focus:ring-secondary-400 cursor-pointer"
+              data-testid="file-select-label"
             >
               <PaperClipIcon className="h-4 w-4 mr-2" />
               ファイルを選択
             </label>
             {selectedFiles.length > 0 && (
-              <span className="text-sm text-text-secondary">
+              <span className="text-sm text-text-secondary" data-testid="file-count">
                 {selectedFiles.length}個のファイルを選択中
               </span>
             )}
@@ -322,10 +324,10 @@ export const TodoForm = ({
       )}
 
       <div className="flex justify-end gap-2 pt-4">
-        <Button type="button" variant="ghost" onClick={onCancel}>
+        <Button type="button" variant="ghost" onClick={onCancel} data-testid="cancel-button">
           キャンセル
         </Button>
-        <Button type="submit" variant="primary" isLoading={isLoading}>
+        <Button type="submit" variant="primary" isLoading={isLoading} data-testid="submit-button">
           {todo ? "更新" : "作成"}
         </Button>
       </div>

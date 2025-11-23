@@ -72,13 +72,14 @@ export const ProfileEditForm = ({
       </div>
 
       <div className="flex justify-end gap-2 pt-4">
-        <Button type="button" variant="ghost" onClick={onCancel}>
+        <Button type="button" variant="ghost" onClick={onCancel} data-testid="cancel-button">
           キャンセル
         </Button>
         <Button
           type="submit"
           variant="primary"
           isLoading={updateUser.isPending}
+          data-testid="submit-button"
         >
           更新
         </Button>

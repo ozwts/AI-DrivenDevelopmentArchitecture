@@ -118,6 +118,7 @@ export const ProjectsPage = () => {
             variant="primary"
             onClick={() => setIsCreateModalOpen(true)}
             className="flex items-center gap-2"
+            data-testid="create-project-button"
           >
             <PlusIcon className="h-5 w-5" />
             新規プロジェクト
@@ -148,6 +149,7 @@ export const ProjectsPage = () => {
             <Button
               variant="primary"
               onClick={() => setIsCreateModalOpen(true)}
+              data-testid="create-project-button"
             >
               <PlusIcon className="h-5 w-5 mr-2" />
               新規プロジェクト

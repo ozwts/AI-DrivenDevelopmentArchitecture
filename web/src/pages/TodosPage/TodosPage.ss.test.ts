@@ -116,10 +116,10 @@ test("[SS]TODOページ（作成モーダル）が表示される", async ({ pag
   await page.waitForLoadState("networkidle");
 
   // 新規作成ボタンをクリック
-  await page.click('button:has-text("新規TODO")');
+  await page.getByTestId("create-todo-button").click();
 
-  // モーダルが表示されるのを待つ
-  await page.waitForSelector('[role="dialog"]');
+  // モーダルのレンダリング完了を待機
+  await page.waitForLoadState("networkidle");
 
   await expect(page).toHaveScreenshot({ fullPage: true });
 });
@@ -146,14 +146,11 @@ test("[SS]TODOページ（詳細モーダル・添付ファイルあり）が表
   await page.goto("/todos");
   await page.waitForLoadState("networkidle");
 
-  // 「データベース設計を完了する」の詳細を見るボタンをクリック
+  // 詳細を見るボタンをクリック
   await page.getByTestId("todo-detail-button").first().click();
 
-  // 詳細モーダルが表示されるのを待つ
-  await page.waitForSelector('[role="dialog"]');
-
-  // 添付ファイルリストが表示されるのを待つ
-  await page.waitForSelector("text=添付ファイル");
+  // モーダルと添付ファイルのレンダリング完了を待機
+  await page.waitForLoadState("networkidle");
 
   await expect(page).toHaveScreenshot({ fullPage: true });
 });
@@ -180,16 +177,10 @@ test("[SS]TODOページ（詳細モーダル・添付ファイルなし）が表
   await page.goto("/todos");
   await page.waitForLoadState("networkidle");
 
-  // 「API実装」の詳細を見るボタンをクリック（2番目のカード）
+  // 詳細を見るボタンをクリック（2番目のカード）
   await page.getByTestId("todo-detail-button").nth(1).click();
 
-  // 詳細モーダルが表示されるのを待つ
-  await page.waitForSelector('[role="dialog"]');
-
-  // 添付ファイルセクションが表示されるのを待つ
-  await page.waitForSelector("text=添付ファイル");
-
-  // ネットワークが落ち着くのを待つ
+  // モーダルと添付ファイルのレンダリング完了を待機
   await page.waitForLoadState("networkidle");
 
   await expect(page).toHaveScreenshot({ fullPage: true });

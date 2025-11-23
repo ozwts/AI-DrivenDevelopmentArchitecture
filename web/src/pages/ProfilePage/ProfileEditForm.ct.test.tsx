@@ -39,9 +39,15 @@ test.describe("ProfileEditForm", () => {
       />,
     );
 
-    await component.getByRole("button", { name: "キャンセル" }).click();
+    // キャンセルボタンのアクセシビリティ検証（data-testid + getByRole）
+    const cancelButton = component.getByTestId("cancel-button");
+    await expect(cancelButton).toHaveRole("button");
+    await expect(cancelButton).toHaveAttribute("type", "button");
 
-    // onCancelが呼ばれたことを確認（実際にはモックを使うべきだが、ここではシンプルに）
+    // クリック操作
+    await cancelButton.click();
+
+    // onCancelが呼ばれたことを確認
     expect(cancelCalled).toBe(true);
   });
 
@@ -54,7 +60,11 @@ test.describe("ProfileEditForm", () => {
       />,
     );
 
-    await expect(component.getByRole("button", { name: "更新" })).toBeVisible();
+    // 更新ボタンが表示される（data-testid + アクセシビリティ検証）
+    const submitButton = component.getByTestId("submit-button");
+    await expect(submitButton).toBeVisible();
+    await expect(submitButton).toHaveRole("button");
+    await expect(submitButton).toHaveAttribute("type", "submit");
   });
 
   test("名前フィールドが編集可能", async ({ mount }) => {
@@ -87,18 +97,16 @@ test.describe("ProfileEditForm", () => {
     await nameInput.fill("");
 
     // フォームを送信
-    await component.getByRole("button", { name: "更新" }).click();
+    await component.getByTestId("submit-button").click();
 
-    // バリデーションエラーが表示されることを確認
-    // zod-i18n-mapの実際の日本語メッセージを使用
-    await expect(
-      component.getByText("1文字以上の文字列である必要があります。"),
-    ).toBeVisible({ timeout: 3000 });
+    // バリデーションエラーが表示されることを確認（getByRole: アクセシビリティ検証）
+    const errorAlert = component.getByRole("alert");
+    await expect(errorAlert).toBeVisible({ timeout: 3000 });
+    await expect(errorAlert).toContainText(/1文字以上/);
   });
 
   test("フォーム送信時にバリデーションエラーが表示される（101文字）", async ({
     mount,
-    page,
   }) => {
     const component = await mount(
       <ProfileEditForm
@@ -114,20 +122,12 @@ test.describe("ProfileEditForm", () => {
     await nameInput.fill(longName);
 
     // フォームを送信
-    await component.getByRole("button", { name: "更新" }).click();
+    await component.getByTestId("submit-button").click();
 
-    // デバッグ: エラーメッセージを確認
-    await page.waitForTimeout(1000);
-    const errorMessage = await component
-      .locator("p.text-red-600")
-      .textContent();
-    console.log("Error message (101 chars):", errorMessage);
-
-    // バリデーションエラーが表示されることを確認
-    // 実際のメッセージに合わせて調整
-    await expect(component.getByText(/100.*文字/i)).toBeVisible({
-      timeout: 3000,
-    });
+    // バリデーションエラーが表示されることを確認（getByRole: アクセシビリティ検証）
+    const errorAlert = component.getByRole("alert");
+    await expect(errorAlert).toBeVisible({ timeout: 3000 });
+    await expect(errorAlert).toContainText(/100.*文字/i);
   });
 
   test("有効な名前の場合、バリデーションエラーが表示されない", async ({
@@ -146,7 +146,7 @@ test.describe("ProfileEditForm", () => {
     await nameInput.fill("田中太郎");
 
     // フォームを送信
-    await component.getByRole("button", { name: "更新" }).click();
+    await component.getByTestId("submit-button").click();
 
     // エラーメッセージが表示されないことを確認
     await expect(component.getByRole("alert")).not.toBeVisible();
@@ -166,7 +166,7 @@ test.describe("ProfileEditForm", () => {
     const nameInput = component.getByLabel("ユーザー名");
     await nameInput.fill("太");
 
-    await component.getByRole("button", { name: "更新" }).click();
+    await component.getByTestId("submit-button").click();
 
     // エラーメッセージが表示されないことを確認
     await expect(component.getByRole("alert")).not.toBeVisible();
@@ -187,7 +187,7 @@ test.describe("ProfileEditForm", () => {
     const validName = "あ".repeat(100);
     await nameInput.fill(validName);
 
-    await component.getByRole("button", { name: "更新" }).click();
+    await component.getByTestId("submit-button").click();
 
     // エラーメッセージが表示されないことを確認
     await expect(component.getByRole("alert")).not.toBeVisible();

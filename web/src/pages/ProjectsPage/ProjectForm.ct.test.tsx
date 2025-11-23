@@ -19,8 +19,11 @@ test.describe("ProjectForm", () => {
     // カラーパレットが表示される
     await expect(component.getByText("プロジェクトカラー")).toBeVisible();
 
-    // 作成ボタンが表示される
-    await expect(component.getByRole("button", { name: "作成" })).toBeVisible();
+    // 作成ボタンが表示される（data-testid + アクセシビリティ検証）
+    const submitButton = component.getByTestId("submit-button");
+    await expect(submitButton).toBeVisible();
+    await expect(submitButton).toHaveRole("button");
+    await expect(submitButton).toHaveAttribute("type", "submit");
   });
 
   test("編集モード: 既存データが初期値として表示される", async ({ mount }) => {
@@ -40,8 +43,11 @@ test.describe("ProjectForm", () => {
     const descriptionTextarea = component.getByLabel("説明");
     await expect(descriptionTextarea).toHaveValue("既存プロジェクトの説明");
 
-    // 更新ボタンが表示される
-    await expect(component.getByRole("button", { name: "更新" })).toBeVisible();
+    // 更新ボタンが表示される（data-testid + アクセシビリティ検証）
+    const submitButton = component.getByTestId("submit-button");
+    await expect(submitButton).toBeVisible();
+    await expect(submitButton).toHaveRole("button");
+    await expect(submitButton).toHaveAttribute("type", "submit");
   });
 
   test("プロジェクト名が編集可能", async ({ mount }) => {
@@ -90,7 +96,13 @@ test.describe("ProjectForm", () => {
       />,
     );
 
-    await component.getByRole("button", { name: "キャンセル" }).click();
+    // キャンセルボタンのアクセシビリティ検証（data-testid + getByRole）
+    const cancelButton = component.getByTestId("cancel-button");
+    await expect(cancelButton).toHaveRole("button");
+    await expect(cancelButton).toHaveAttribute("type", "button");
+
+    // クリック操作
+    await cancelButton.click();
     expect(cancelCalled).toBe(true);
   });
 
@@ -106,9 +118,9 @@ test.describe("ProjectForm", () => {
     await nameInput.fill("");
 
     // フォームを送信
-    await component.getByRole("button", { name: "作成" }).click();
+    await component.getByTestId("submit-button").click();
 
-    // バリデーションエラーが表示されることを確認
+    // バリデーションエラーが表示されることを確認（getByRole: アクセシビリティ検証）
     await expect(component.getByRole("alert")).toBeVisible({
       timeout: 3000,
     });
@@ -127,12 +139,12 @@ test.describe("ProjectForm", () => {
     await nameInput.fill(longName);
 
     // フォームを送信
-    await component.getByRole("button", { name: "作成" }).click();
+    await component.getByTestId("submit-button").click();
 
-    // バリデーションエラーが表示されることを確認
-    await expect(component.getByText(/100.*文字/i)).toBeVisible({
-      timeout: 3000,
-    });
+    // バリデーションエラーが表示されることを確認（getByRole: アクセシビリティ検証）
+    const errorAlert = component.getByRole("alert");
+    await expect(errorAlert).toBeVisible({ timeout: 3000 });
+    await expect(errorAlert).toContainText(/100.*文字/i);
   });
 
   test("フォーム送信時にバリデーションエラーが表示される（1001文字の説明）", async ({
@@ -152,12 +164,12 @@ test.describe("ProjectForm", () => {
     await descriptionTextarea.fill(longDescription);
 
     // フォームを送信
-    await component.getByRole("button", { name: "作成" }).click();
+    await component.getByTestId("submit-button").click();
 
-    // バリデーションエラーが表示されることを確認
-    await expect(component.getByText(/1000.*文字/i)).toBeVisible({
-      timeout: 3000,
-    });
+    // バリデーションエラーが表示されることを確認（getByRole: アクセシビリティ検証）
+    const errorAlert = component.getByRole("alert");
+    await expect(errorAlert).toBeVisible({ timeout: 3000 });
+    await expect(errorAlert).toContainText(/1000.*文字/i);
   });
 
   test("有効なデータの場合、バリデーションエラーが表示されない", async ({
@@ -176,7 +188,7 @@ test.describe("ProjectForm", () => {
     await descriptionTextarea.fill("詳細説明");
 
     // フォームを送信
-    await component.getByRole("button", { name: "作成" }).click();
+    await component.getByTestId("submit-button").click();
 
     // エラーメッセージが表示されないことを確認
     await expect(component.getByRole("alert")).not.toBeVisible();
@@ -192,7 +204,7 @@ test.describe("ProjectForm", () => {
     const nameInput = component.getByLabel("プロジェクト名");
     await nameInput.fill("A");
 
-    await component.getByRole("button", { name: "作成" }).click();
+    await component.getByTestId("submit-button").click();
 
     // エラーメッセージが表示されないことを確認
     await expect(component.getByRole("alert")).not.toBeVisible();
@@ -209,7 +221,7 @@ test.describe("ProjectForm", () => {
     const validName = "あ".repeat(100);
     await nameInput.fill(validName);
 
-    await component.getByRole("button", { name: "作成" }).click();
+    await component.getByTestId("submit-button").click();
 
     // エラーメッセージが表示されないことを確認
     await expect(component.getByRole("alert")).not.toBeVisible();
@@ -229,7 +241,7 @@ test.describe("ProjectForm", () => {
     const validDescription = "あ".repeat(1000);
     await descriptionTextarea.fill(validDescription);
 
-    await component.getByRole("button", { name: "作成" }).click();
+    await component.getByTestId("submit-button").click();
 
     // エラーメッセージが表示されないことを確認
     await expect(component.getByRole("alert")).not.toBeVisible();

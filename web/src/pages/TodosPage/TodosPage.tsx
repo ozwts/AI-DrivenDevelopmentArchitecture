@@ -223,6 +223,7 @@ export const TodosPage = () => {
             variant="primary"
             onClick={() => setIsCreateModalOpen(true)}
             className="flex items-center gap-2"
+            data-testid="create-todo-button"
           >
             <PlusIcon className="h-5 w-5" />
             新規TODO
@@ -279,6 +280,7 @@ export const TodosPage = () => {
             <Button
               variant="primary"
               onClick={() => setIsCreateModalOpen(true)}
+              data-testid="create-todo-button"
             >
               <PlusIcon className="h-5 w-5 mr-2" />
               新規TODO
@@ -422,7 +424,7 @@ export const TodosPage = () => {
             </div>
 
             {/* 添付ファイルセクション */}
-            <div className="border-t border-border-light pt-6">
+            <div className="border-t border-border-light pt-6" data-testid="attachment-section">
               <h4 className="text-md font-semibold text-text-primary mb-4">
                 添付ファイル
               </h4>

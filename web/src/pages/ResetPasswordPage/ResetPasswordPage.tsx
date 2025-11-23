@@ -100,6 +100,7 @@ export function ResetPasswordPage(): JSX.Element {
                 disabled={isLoading}
                 className="w-full px-4 py-2 border border-border rounded-md text-text-primary bg-white focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
                 placeholder="user@example.com"
+                data-testid="email-input"
               />
               <p className="mt-1 text-xs text-text-tertiary">
                 登録されているメールアドレスに確認コードを送信します
@@ -124,6 +125,7 @@ export function ResetPasswordPage(): JSX.Element {
               size="lg"
               isLoading={isLoading}
               className="w-full"
+              data-testid="submit-button"
             >
               確認コードを送信
             </Button>
@@ -156,6 +158,7 @@ export function ResetPasswordPage(): JSX.Element {
                 className="w-full px-4 py-2 border border-border rounded-md text-text-primary bg-white focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
                 placeholder="123456"
                 maxLength={6}
+                data-testid="confirmation-code-input"
               />
               <p className="mt-1 text-xs text-text-tertiary">
                 メールに記載されている6桁の確認コードを入力してください
