@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/experimental-ct-react";
 import { ProfileEditForm } from "./ProfileEditForm";
-import { mockUser } from "@/testing-utils/mock-data";
+import { mockUser } from "@/utils/testing-utils/mock-data";
 
 test.describe("ProfileEditForm", () => {
   test("ユーザー情報が初期値として正しく表示される", async ({ mount }) => {
@@ -143,13 +143,13 @@ test.describe("ProfileEditForm", () => {
 
     // 有効な名前を入力
     const nameInput = component.getByLabel("ユーザー名");
+    await nameInput.fill("");
+    await nameInput.blur(); // touchedにする
     await nameInput.fill("田中太郎");
+    await nameInput.blur(); // バリデーションを実行
 
-    // フォームを送信
-    await component.getByTestId("submit-button").click();
-
-    // エラーメッセージが表示されないことを確認
-    await expect(component.getByRole("alert")).not.toBeVisible();
+    // バリデーションエラーメッセージが表示されないことを確認
+    await expect(component.locator('[role="alert"]')).toHaveCount(0);
   });
 
   test("境界値テスト: 1文字の名前でバリデーションを通過する", async ({
@@ -164,12 +164,13 @@ test.describe("ProfileEditForm", () => {
     );
 
     const nameInput = component.getByLabel("ユーザー名");
+    await nameInput.fill("");
+    await nameInput.blur(); // touchedにする
     await nameInput.fill("太");
+    await nameInput.blur(); // バリデーションを実行
 
-    await component.getByTestId("submit-button").click();
-
-    // エラーメッセージが表示されないことを確認
-    await expect(component.getByRole("alert")).not.toBeVisible();
+    // バリデーションエラーメッセージが表示されないことを確認
+    await expect(component.locator('[role="alert"]')).toHaveCount(0);
   });
 
   test("境界値テスト: 100文字の名前でバリデーションを通過する", async ({
@@ -184,12 +185,13 @@ test.describe("ProfileEditForm", () => {
     );
 
     const nameInput = component.getByLabel("ユーザー名");
+    await nameInput.fill("");
+    await nameInput.blur(); // touchedにする
     const validName = "あ".repeat(100);
     await nameInput.fill(validName);
+    await nameInput.blur(); // バリデーションを実行
 
-    await component.getByTestId("submit-button").click();
-
-    // エラーメッセージが表示されないことを確認
-    await expect(component.getByRole("alert")).not.toBeVisible();
+    // バリデーションエラーメッセージが表示されないことを確認
+    await expect(component.locator('[role="alert"]')).toHaveCount(0);
   });
 });

@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/experimental-ct-react";
 import { ProjectForm } from "./ProjectForm";
-import { mockProject } from "@/testing-utils/mock-data";
+import { mockProject } from "@/utils/testing-utils/mock-data";
 
 test.describe("ProjectForm", () => {
   test("新規作成モード: 初期値が空で表示される", async ({ mount }) => {

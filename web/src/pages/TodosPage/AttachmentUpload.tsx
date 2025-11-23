@@ -2,38 +2,20 @@ import { useState, useRef } from "react";
 import { PaperClipIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { Button } from "../../components/Button";
 import { Alert } from "../../components/Alert";
-import { useUploadAttachment } from "../../hooks/useAttachments";
-import { useToast } from "../../contexts/ToastContext";
+import { MAX_FILE_SIZE, ALLOWED_FILE_TYPES } from "./constants";
 
 interface AttachmentUploadProps {
-  todoId: string;
-  onUploadComplete?: () => void;
+  onUpload: (file: File) => void;
+  isUploading?: boolean;
 }
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-const ALLOWED_FILE_TYPES = [
-  "image/png",
-  "image/jpeg",
-  "image/gif",
-  "application/pdf",
-  "application/msword",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "application/vnd.ms-excel",
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  "text/plain",
-  "text/markdown",
-  "application/x-yaml",
-];
-
 export const AttachmentUpload = ({
-  todoId,
-  onUploadComplete,
+  onUpload,
+  isUploading = false,
 }: AttachmentUploadProps) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [error, setError] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const uploadAttachment = useUploadAttachment();
-  const toast = useToast();
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -55,20 +37,14 @@ export const AttachmentUpload = ({
     setSelectedFile(file);
   };
 
-  const handleUpload = async () => {
+  const handleUpload = () => {
     if (!selectedFile) return;
 
-    try {
-      await uploadAttachment.mutateAsync({ todoId, file: selectedFile });
-      toast?.showToast("success", "ファイルをアップロードしました");
-      setSelectedFile(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-      onUploadComplete?.();
-    } catch (err) {
-      console.error("アップロードエラー:", err);
-      toast?.showToast("error", "ファイルのアップロードに失敗しました");
+    onUpload(selectedFile);
+    setSelectedFile(null);
+    setError("");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
   };
 
@@ -89,7 +65,7 @@ export const AttachmentUpload = ({
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" data-testid="attachment-upload">
       {/* ファイル選択ボタン */}
       <div className="flex items-center gap-3">
         <input
@@ -98,11 +74,13 @@ export const AttachmentUpload = ({
           accept={ALLOWED_FILE_TYPES.join(",")}
           onChange={handleFileSelect}
           className="hidden"
-          id={`file-upload-${todoId}`}
+          id="attachment-upload-input"
+          data-testid="attachment-upload-input"
         />
         <label
-          htmlFor={`file-upload-${todoId}`}
+          htmlFor="attachment-upload-input"
           className="inline-flex items-center justify-center font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors duration-200 px-3 py-1.5 text-sm bg-white text-secondary-600 border-2 border-secondary-600 hover:bg-secondary-50 focus:ring-secondary-400 cursor-pointer"
+          data-testid="attachment-upload-label"
         >
           <PaperClipIcon className="h-4 w-4 mr-2" />
           ファイルを選択
@@ -136,17 +114,15 @@ export const AttachmentUpload = ({
               variant="primary"
               size="sm"
               onClick={handleUpload}
-              disabled={uploadAttachment.isPending}
+              disabled={isUploading}
             >
-              {uploadAttachment.isPending
-                ? "アップロード中..."
-                : "アップロード"}
+              {isUploading ? "アップロード中..." : "アップロード"}
             </Button>
             <Button
               variant="ghost"
               size="sm"
               onClick={handleCancel}
-              disabled={uploadAttachment.isPending}
+              disabled={isUploading}
               className="!p-2"
             >
               <XMarkIcon className="h-4 w-4" />

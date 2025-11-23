@@ -18,3 +18,21 @@ export const PRIORITY_VALUE_LABEL_PAIRS: [
   ["MEDIUM", "中"],
   ["HIGH", "高"],
 ];
+
+/**
+ * ステータスラベルを取得
+ */
+export const getStatusLabel = (status: TodoStatus): string => {
+  const pair = STATUS_VALUE_LABEL_PAIRS.find(([value]) => value === status);
+  return pair ? pair[1] : status;
+};
+
+/**
+ * 優先度ラベルを取得
+ */
+export const getPriorityLabel = (priority: TodoPriority): string => {
+  const pair = PRIORITY_VALUE_LABEL_PAIRS.find(
+    ([value]) => value === priority,
+  );
+  return pair ? pair[1] : priority;
+};

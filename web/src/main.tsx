@@ -9,7 +9,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { AuthProvider } from "./auth/AuthProvider";
 import { AuthInitializer } from "./auth/AuthInitializer";
 import { config } from "./config";
-import { startMockServer } from "./testing-utils/mock";
+import { startMockServer } from "./utils/testing-utils/mock";
 import { z } from "zod";
 import { makeZodI18nMap } from "zod-i18n-map";
 import translation from "zod-i18n-map/locales/ja/zod.json";

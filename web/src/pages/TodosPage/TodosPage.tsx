@@ -9,7 +9,7 @@ import {
 } from "../../hooks/useTodos";
 import { useProjects } from "../../hooks/useProjects";
 import { useUsers } from "../../hooks/useUsers";
-import { apiClient } from "../../api/client";
+import { useFileUpload } from "../../hooks/useFileUpload";
 import {
   Button,
   Modal,
@@ -20,8 +20,7 @@ import {
 } from "../../components";
 import { TodoForm } from "./TodoForm";
 import { TodoCard } from "./TodoCard";
-import { AttachmentUpload } from "./AttachmentUpload";
-import { AttachmentList } from "./AttachmentList";
+import { TodoDetail } from "./TodoDetail";
 import { useToast } from "../../contexts/ToastContext";
 import { z } from "zod";
 import { schemas } from "../../generated/zod-schemas";
@@ -39,7 +38,6 @@ export const TodosPage = () => {
   const [viewingTodo, setViewingTodo] = useState<TodoResponse | undefined>();
   const [filterStatus, setFilterStatus] = useState<TodoStatus | "">("");
   const [filterProjectId, setFilterProjectId] = useState<string>("");
-  const [isUploadingFiles, setIsUploadingFiles] = useState(false);
 
   const toast = useToast();
 
@@ -67,53 +65,26 @@ export const TodosPage = () => {
   const createTodo = useCreateTodo();
   const updateTodo = useUpdateTodo();
   const deleteTodo = useDeleteTodo();
+  const { uploadFiles, isUploading: isUploadingFiles } = useFileUpload();
 
   const handleCreate = async (data: RegisterTodoParams, files: File[]) => {
     try {
-      // 1. TODO作成
+      // TODO作成
       const newTodo = await createTodo.mutateAsync(data);
       setIsCreateModalOpen(false);
 
-      // 2. ファイルがある場合はアップロード処理
+      // ファイルアップロード処理
       if (files.length > 0) {
-        setIsUploadingFiles(true);
-        const failedFiles: string[] = [];
+        const result = await uploadFiles(newTodo.id, files);
 
-        for (const file of files) {
-          try {
-            // 2-1. アップロード準備（uploadUrlとattachmentを取得）
-            const { uploadUrl, attachment } = await apiClient.prepareAttachment(
-              newTodo.id,
-              {
-                filename: file.name,
-                contentType: file.type,
-                size: file.size,
-              },
-            );
-
-            // 2-2. S3に直接アップロード
-            await apiClient.uploadFileToS3(uploadUrl, file);
-
-            // 2-3. ステータスをUPLOADEDに更新
-            await apiClient.updateAttachment(newTodo.id, attachment.id, {
-              status: "UPLOADED",
-            });
-          } catch (error) {
-            console.error(`ファイルアップロードエラー (${file.name}):`, error);
-            failedFiles.push(file.name);
-          }
-        }
-
-        setIsUploadingFiles(false);
-
-        // 3. 結果通知と詳細画面への遷移
-        if (failedFiles.length === 0) {
+        // 結果に応じた通知
+        if (result.failedFiles.length === 0) {
           toast.success(
-            `TODOを作成し、${files.length}個のファイルをアップロードしました`,
+            `TODOを作成し、${result.totalFiles}個のファイルをアップロードしました`,
           );
-        } else if (failedFiles.length < files.length) {
+        } else if (result.successCount > 0) {
           toast.warning(
-            `TODOを作成しました。一部のファイルのアップロードに失敗しました: ${failedFiles.join(", ")}`,
+            `TODOを作成しました。一部のファイルのアップロードに失敗しました: ${result.failedFiles.join(", ")}`,
           );
         } else {
           toast.error(
@@ -128,7 +99,6 @@ export const TodosPage = () => {
       }
     } catch {
       toast.error("TODOの作成に失敗しました");
-      setIsUploadingFiles(false);
     }
   };
 
@@ -362,79 +332,10 @@ export const TodosPage = () => {
         size="lg"
       >
         {viewingTodo && (
-          <div className="space-y-6">
-            {/* TODO基本情報 */}
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-lg font-bold text-text-primary">
-                  {viewingTodo.title}
-                </h3>
-                {viewingTodo.description && (
-                  <p className="text-text-secondary mt-2">
-                    {viewingTodo.description}
-                  </p>
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <span className="text-sm text-text-tertiary">
-                    ステータス:
-                  </span>
-                  <p className="text-text-primary font-medium">
-                    {viewingTodo.status === "TODO"
-                      ? "未着手"
-                      : viewingTodo.status === "IN_PROGRESS"
-                        ? "進行中"
-                        : "完了"}
-                  </p>
-                </div>
-                <div>
-                  <span className="text-sm text-text-tertiary">優先度:</span>
-                  <p className="text-text-primary font-medium">
-                    {viewingTodo.priority === "LOW"
-                      ? "低"
-                      : viewingTodo.priority === "MEDIUM"
-                        ? "中"
-                        : "高"}
-                  </p>
-                </div>
-                {viewingTodo.dueDate && (
-                  <div>
-                    <span className="text-sm text-text-tertiary">期限:</span>
-                    <p className="text-text-primary font-medium">
-                      {new Date(viewingTodo.dueDate).toLocaleDateString(
-                        "ja-JP",
-                      )}
-                    </p>
-                  </div>
-                )}
-                {viewingTodo.projectId &&
-                  getProjectById(viewingTodo.projectId) && (
-                    <div>
-                      <span className="text-sm text-text-tertiary">
-                        プロジェクト:
-                      </span>
-                      <p className="text-text-primary font-medium">
-                        {getProjectById(viewingTodo.projectId)?.name}
-                      </p>
-                    </div>
-                  )}
-              </div>
-            </div>
-
-            {/* 添付ファイルセクション */}
-            <div className="border-t border-border-light pt-6" data-testid="attachment-section">
-              <h4 className="text-md font-semibold text-text-primary mb-4">
-                添付ファイル
-              </h4>
-
-              <div className="space-y-4">
-                <AttachmentUpload todoId={viewingTodo.id} />
-                <AttachmentList todoId={viewingTodo.id} />
-              </div>
-            </div>
-          </div>
+          <TodoDetail
+            todo={viewingTodo}
+            project={getProjectById(viewingTodo.projectId)}
+          />
         )}
       </Modal>
     </div>

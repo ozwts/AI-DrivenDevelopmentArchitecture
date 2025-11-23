@@ -1,20 +1,20 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { PaperClipIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { Button } from "../../components/Button";
 import { Input } from "../../components/Input";
 import { Textarea } from "../../components/Textarea";
 import { Select } from "../../components/Select";
-import { Alert } from "../../components/Alert";
 import {
   STATUS_VALUE_LABEL_PAIRS,
   PRIORITY_VALUE_LABEL_PAIRS,
-} from "../../constants/labels";
+} from "../../utils/label-util";
 import { schemas } from "../../generated/zod-schemas";
 import { useProjects } from "../../hooks/useProjects";
 import { useUsers } from "../../hooks/useUsers";
+import { FileUploadSection } from "./FileUploadSection";
+import { MAX_FILE_SIZE, ALLOWED_FILE_TYPES } from "./constants";
 
 type RegisterTodoParams = z.infer<typeof schemas.RegisterTodoParams>;
 type UpdateTodoParams = z.infer<typeof schemas.UpdateTodoParams>;
@@ -33,21 +33,6 @@ interface TodoFormPropsUpdate {
   onCancel: () => void;
   isLoading?: boolean;
 }
-
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-const ALLOWED_FILE_TYPES = [
-  "image/png",
-  "image/jpeg",
-  "image/gif",
-  "application/pdf",
-  "application/msword",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "application/vnd.ms-excel",
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  "text/plain",
-  "text/markdown",
-  "application/x-yaml",
-];
 
 const statusOptions = STATUS_VALUE_LABEL_PAIRS.map(([value, label]) => ({
   value,
@@ -69,7 +54,6 @@ export const TodoForm = ({
   const { data: users } = useUsers();
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [fileError, setFileError] = useState<string>("");
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
     register,
@@ -153,14 +137,6 @@ export const TodoForm = ({
   const handleRemoveFile = (index: number) => {
     setSelectedFiles(selectedFiles.filter((_, i) => i !== index));
     setFileError("");
-  };
-
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return "0 Bytes";
-    const k = 1024;
-    const sizes = ["Bytes", "KB", "MB", "GB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
   };
 
   const onFormSubmit = (data: RegisterTodoParams | UpdateTodoParams) => {
@@ -249,78 +225,12 @@ export const TodoForm = ({
 
       {/* ファイル添付（新規作成時のみ） */}
       {!todo && (
-        <div className="space-y-3 pt-2 border-t border-border-light" data-testid="file-upload-section">
-          <label className="block text-sm font-medium text-text-primary">
-            ファイル添付（任意）
-          </label>
-
-          {/* ファイル選択ボタン */}
-          <div className="flex items-center gap-3">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept={ALLOWED_FILE_TYPES.join(",")}
-              onChange={handleFileSelect}
-              className="hidden"
-              id="file-upload-todo-form"
-              multiple
-              data-testid="file-input"
-            />
-            <label
-              htmlFor="file-upload-todo-form"
-              className="inline-flex items-center justify-center font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors duration-200 px-3 py-1.5 text-sm bg-white text-secondary-600 border-2 border-secondary-600 hover:bg-secondary-50 focus:ring-secondary-400 cursor-pointer"
-              data-testid="file-select-label"
-            >
-              <PaperClipIcon className="h-4 w-4 mr-2" />
-              ファイルを選択
-            </label>
-            {selectedFiles.length > 0 && (
-              <span className="text-sm text-text-secondary" data-testid="file-count">
-                {selectedFiles.length}個のファイルを選択中
-              </span>
-            )}
-          </div>
-
-          {/* エラーメッセージ */}
-          {fileError && <Alert variant="error">{fileError}</Alert>}
-
-          {/* 選択中のファイル一覧 */}
-          {selectedFiles.length > 0 && (
-            <div className="space-y-2">
-              {selectedFiles.map((file, index) => (
-                <div
-                  key={`${file.name}-${index}`}
-                  className="flex items-center gap-2 p-3 bg-background-surface rounded-md border border-border-light"
-                >
-                  <PaperClipIcon className="h-4 w-4 text-text-tertiary flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-text-primary truncate">
-                      {file.name}
-                    </p>
-                    <p className="text-xs text-text-tertiary">
-                      {formatFileSize(file.size)} • {file.type}
-                    </p>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleRemoveFile(index)}
-                    className="!p-2 flex-shrink-0"
-                    aria-label={`${file.name}を削除`}
-                  >
-                    <XMarkIcon className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* ヘルプテキスト */}
-          <p className="text-xs text-text-tertiary">
-            対応形式: PNG, JPEG, GIF, PDF, Word, Excel, テキスト（最大10MB）
-          </p>
-        </div>
+        <FileUploadSection
+          selectedFiles={selectedFiles}
+          onFileSelect={handleFileSelect}
+          onFileRemove={handleRemoveFile}
+          fileError={fileError}
+        />
       )}
 
       <div className="flex justify-end gap-2 pt-4">

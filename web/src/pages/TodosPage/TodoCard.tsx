@@ -179,16 +179,18 @@ export const TodoCard = ({
               size="sm"
               onClick={() => onEdit(todo)}
               className="!p-2"
+              aria-label="編集"
             >
-              <PencilIcon className="h-4 w-4" />
+              <PencilIcon className="h-4 w-4" aria-hidden="true" />
             </Button>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => onDelete(todo)}
               className="!p-2 text-red-600 hover:text-red-700"
+              aria-label="削除"
             >
-              <TrashIcon className="h-4 w-4" />
+              <TrashIcon className="h-4 w-4" aria-hidden="true" />
             </Button>
           </div>
         </div>

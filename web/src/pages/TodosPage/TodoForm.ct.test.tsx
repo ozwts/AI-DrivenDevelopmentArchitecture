@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/experimental-ct-react";
 import { TodoForm } from "./TodoForm";
-import { mockTodo } from "@/testing-utils/mock-data";
+import { mockTodo } from "@/utils/testing-utils/mock-data";
 
 test.describe("TodoForm", () => {
   test("新規作成モード: 初期値が正しく表示される", async ({ mount }) => {

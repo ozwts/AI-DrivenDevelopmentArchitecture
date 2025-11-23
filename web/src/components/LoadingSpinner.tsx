@@ -14,7 +14,12 @@ export const LoadingSpinner = ({
   className = "",
 }: LoadingSpinnerProps) => {
   return (
-    <div className={`flex items-center justify-center ${className}`}>
+    <div
+      className={`flex items-center justify-center ${className}`}
+      role="status"
+      aria-live="polite"
+      aria-label="読み込み中"
+    >
       <div
         className={`
           animate-spin rounded-full

@@ -47,6 +47,7 @@ export const Alert = ({ variant, title, children, onClose }: AlertProps) => {
 
   return (
     <div
+      role="alert"
       className={`
         rounded-lg border p-4
         ${config.bgColor}

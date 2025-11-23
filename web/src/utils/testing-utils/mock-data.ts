@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { schemas } from "../generated/zod-schemas";
+import { schemas } from "../../generated/zod-schemas";
 
 type UserResponse = z.infer<typeof schemas.UserResponse>;
 type ProjectResponse = z.infer<typeof schemas.ProjectResponse>;
