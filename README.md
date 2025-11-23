@@ -23,7 +23,7 @@ AI駆動 × DDD × サーバレスによる爆速開発を研究するリポジ�
 - **フロントエンド**: React 18, Vite, TailwindCSS, TanStack Query
 - **バックエンド**: Node.js 22, Hono, DynamoDB, InversifyJS (DI)
 - **API仕様**: OpenAPI 3.1 (型安全なAPI通信)
-- **コード生成**: aspida (API Client), Zod schemas (validation)
+- **コード生成**: openapi-zod-client (Zodスキーマ + TypeScript型定義)
 - **インフラ**: AWS (Lambda, API Gateway, DynamoDB, CloudFront, S3)
 - **IaC**: Terraform 1.11.3
 - **テスト**: Vitest (server), Playwright (web schema tests)
@@ -91,10 +91,10 @@ npm run dev:local
 # フロントエンド開発サーバー（AWS API）
 npm run dev
 
-# コード生成（OpenAPI → TypeScript型 + Zod + aspida）
+# コード生成（OpenAPI → Zodスキーマ + TypeScript型定義）
 npm run codegen
 # - server: Zodスキーマ、TypeScript型定義
-# - web: aspida APIクライアント、TypeScript型定義
+# - web: Zodスキーマ、TypeScript型定義
 
 # バリデーション（TypeScript + ESLint + cspell）
 npm run validate
@@ -169,8 +169,8 @@ npm run codegen
    - Zodバリデーションスキーマ（リクエスト検証）
 
 2. **フロントエンド側**（`web/src/generated/`）
-   - aspida APIクライアント（型安全なHTTPリクエスト）
-   - TypeScript型定義
+   - Zodスキーマ（`zod-schemas.ts`）
+   - TypeScript型定義（型推論）
 
 **開発フロー**:
 
@@ -183,7 +183,7 @@ npm run codegen
 
 # 3. 生成されたコードを使用
 # - server: Zodスキーマでリクエストバリデーション
-# - web: aspidaクライアントで型安全なAPI呼び出し
+# - web: Zodスキーマから型推論した型で型安全なAPI呼び出し
 
 # 4. バリデーション
 npm run validate
@@ -204,15 +204,19 @@ app.post("/todos", async (c) => {
 });
 ```
 
-**フロントエンド側**（aspida）:
+**フロントエンド側**（TanStack Query + カスタムAPIクライアント）:
 
 ```typescript
-// 自動生成されたAPIクライアントを使用
-import api from "@/api/client";
+// 自動生成されたZodスキーマから型を推論
+import { z } from "zod";
+import { schemas } from "@/generated/zod-schemas";
+import { apiClient } from "@/api/client";
 
-const todo = await api.todos.post({
-  body: { title: "新規TODO" }, // 型安全: OpenAPI仕様と一致しない型はコンパイルエラー
-});
+type RegisterTodoParams = z.infer<typeof schemas.RegisterTodoParams>;
+
+// TanStack Queryで型安全なAPI呼び出し
+const { mutate } = useCreateTodo();
+mutate({ title: "新規TODO", description: "説明" }); // 型安全: OpenAPI仕様と一致しない型はコンパイルエラー
 ```
 
 **詳細**: CLAUDE.mdの「OpenAPI Code Generation」セクションを参照
@@ -229,7 +233,7 @@ const todo = await api.todos.post({
 /fe TODOをプロジェクトごとに管理できる機能を追加してください
 ```
 
-**実装範囲:** `web/src/` - React, MSWモック, Yupスキーマ, Tailwind CSS
+**実装範囲:** `web/src/` - React, MSWモック, Zodスキーマ, Tailwind CSS
 
 詳細: [.claude/agents/frontend-engineer.md](./.claude/agents/frontend-engineer.md)
 

@@ -201,7 +201,9 @@ test("削除ボタンをクリックするとonDeleteが呼ばれる", async ({ 
   expect(deletedTodo).toEqual(mockTodo);
 });
 
-test("ステータスが「未着手」の場合、「開始」ボタンが表示される", async ({ mount }) => {
+test("ステータスが「未着手」の場合、「開始」ボタンが表示される", async ({
+  mount,
+}) => {
   const component = await mount(
     <TodoCard
       todo={mockTodo}
@@ -214,7 +216,9 @@ test("ステータスが「未着手」の場合、「開始」ボタンが表�
   await expect(component.getByRole("button", { name: "開始" })).toBeVisible();
 });
 
-test("ステータスが「進行中」の場合、「完了」ボタンが表示される", async ({ mount }) => {
+test("ステータスが「進行中」の場合、「完了」ボタンが表示される", async ({
+  mount,
+}) => {
   const inProgressTodo: TodoResponse = {
     ...mockTodo,
     status: "IN_PROGRESS",
@@ -232,7 +236,9 @@ test("ステータスが「進行中」の場合、「完了」ボタンが表�
   await expect(component.getByRole("button", { name: "完了" })).toBeVisible();
 });
 
-test("ステータスが「完了」の場合、ステータス変更ボタンが表示されない", async ({ mount }) => {
+test("ステータスが「完了」の場合、ステータス変更ボタンが表示されない", async ({
+  mount,
+}) => {
   const doneTodo: TodoResponse = {
     ...mockTodo,
     status: "DONE",
@@ -247,8 +253,12 @@ test("ステータスが「完了」の場合、ステータス変更ボタン�
     />,
   );
 
-  await expect(component.getByRole("button", { name: "開始" })).not.toBeVisible();
-  await expect(component.getByRole("button", { name: "完了" })).not.toBeVisible();
+  await expect(
+    component.getByRole("button", { name: "開始" }),
+  ).not.toBeVisible();
+  await expect(
+    component.getByRole("button", { name: "完了" }),
+  ).not.toBeVisible();
 });
 
 test("「開始」ボタンをクリックするとステータスが「進行中」に変更される", async ({
@@ -315,7 +325,9 @@ test("詳細を見るボタンをクリックするとonViewが呼ばれる", as
   expect(viewedTodo).toEqual(mockTodo);
 });
 
-test("添付ファイルがある場合、添付ファイル数が表示される", async ({ mount }) => {
+test("添付ファイルがある場合、添付ファイル数が表示される", async ({
+  mount,
+}) => {
   const todoWithAttachments: TodoResponse = {
     ...mockTodo,
     attachments: [

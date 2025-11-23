@@ -354,7 +354,9 @@ test.describe("TodoForm", () => {
     );
 
     // ファイル添付セクションが表示されない（data-testid）
-    await expect(component.getByTestId("file-upload-section")).not.toBeVisible();
+    await expect(
+      component.getByTestId("file-upload-section"),
+    ).not.toBeVisible();
   });
 
   test("ファイル選択後、選択されたファイルが表示される", async ({ mount }) => {
@@ -375,7 +377,9 @@ test.describe("TodoForm", () => {
     await expect(component.getByText(/Bytes • text\/plain/)).toBeVisible();
 
     // 選択個数が表示される（data-testid）
-    await expect(component.getByTestId("file-count")).toHaveText("1個のファイルを選択中");
+    await expect(component.getByTestId("file-count")).toHaveText(
+      "1個のファイルを選択中",
+    );
   });
 
   test("複数のファイルを選択できる", async ({ mount }) => {
@@ -402,7 +406,9 @@ test.describe("TodoForm", () => {
     await expect(component.getByText("file2.txt")).toBeVisible();
 
     // 選択個数が表示される（data-testid）
-    await expect(component.getByTestId("file-count")).toHaveText("2個のファイルを選択中");
+    await expect(component.getByTestId("file-count")).toHaveText(
+      "2個のファイルを選択中",
+    );
   });
 
   test("選択したファイルを削除できる", async ({ mount }) => {

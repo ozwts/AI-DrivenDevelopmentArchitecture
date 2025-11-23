@@ -66,9 +66,7 @@ export const TodoDetail = ({
           )}
           {todo.projectId && project && (
             <div>
-              <span className="text-sm text-text-tertiary">
-                プロジェクト:
-              </span>
+              <span className="text-sm text-text-tertiary">プロジェクト:</span>
               <p className="text-text-primary font-medium">{project.name}</p>
             </div>
           )}

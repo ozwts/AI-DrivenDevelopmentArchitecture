@@ -583,9 +583,7 @@ export class TodoRepositoryImpl implements TodoRepository {
       );
 
       // 既存のattachmentsのうち、新しいattachmentsに含まれていないものを削除
-      const deleteAttachmentOperations = (
-        existingAttachmentsResult.Items ?? []
-      )
+      const deleteAttachmentOperations = (existingAttachmentsResult.Items ?? [])
         .map((item) => attachmentTableItemSchema.parse(item))
         .filter((item) => !newAttachmentIds.has(item.attachmentId))
         .map((item) => ({

@@ -737,7 +737,7 @@ await page.click('button:has-text("送信")');
 await page.click(".btn-primary");
 
 // submitボタンクリック後にAPI失敗エラーが出る
-await component.getByTestId('submit-button').click(); // ← APIがモックされていないと失敗Alert表示
+await component.getByTestId("submit-button").click(); // ← APIがモックされていないと失敗Alert表示
 await expect(component.getByRole("alert")).not.toBeVisible(); // ← 失敗
 ```
 

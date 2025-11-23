@@ -7,7 +7,7 @@ test.describe("ProfileEditForm", () => {
     const component = await mount(
       <ProfileEditForm
         user={mockUser}
-        onSuccess={() => {}}
+        onSubmit={() => {}}
         onCancel={() => {}}
       />,
     );
@@ -32,7 +32,7 @@ test.describe("ProfileEditForm", () => {
     const component = await mount(
       <ProfileEditForm
         user={mockUser}
-        onSuccess={() => {}}
+        onSubmit={() => {}}
         onCancel={() => {
           cancelCalled = true;
         }}
@@ -55,7 +55,7 @@ test.describe("ProfileEditForm", () => {
     const component = await mount(
       <ProfileEditForm
         user={mockUser}
-        onSuccess={() => {}}
+        onSubmit={() => {}}
         onCancel={() => {}}
       />,
     );
@@ -71,7 +71,7 @@ test.describe("ProfileEditForm", () => {
     const component = await mount(
       <ProfileEditForm
         user={mockUser}
-        onSuccess={() => {}}
+        onSubmit={() => {}}
         onCancel={() => {}}
       />,
     );
@@ -81,13 +81,38 @@ test.describe("ProfileEditForm", () => {
     await expect(nameInput).toHaveValue("新しい名前");
   });
 
+  test("フォーム送信時にonSubmitが呼ばれる（有効なデータ）", async ({
+    mount,
+  }) => {
+    let submittedData = null;
+    const component = await mount(
+      <ProfileEditForm
+        user={mockUser}
+        onSubmit={(data) => {
+          submittedData = data;
+        }}
+        onCancel={() => {}}
+      />,
+    );
+
+    // 名前を変更
+    const nameInput = component.getByLabel("ユーザー名");
+    await nameInput.fill("新しい名前");
+
+    // フォームを送信
+    await component.getByTestId("submit-button").click();
+
+    // onSubmitが正しいデータで呼ばれたことを確認
+    expect(submittedData).toEqual({ name: "新しい名前" });
+  });
+
   test("フォーム送信時にバリデーションエラーが表示される（空文字列）", async ({
     mount,
   }) => {
     const component = await mount(
       <ProfileEditForm
         user={mockUser}
-        onSuccess={() => {}}
+        onSubmit={() => {}}
         onCancel={() => {}}
       />,
     );
@@ -111,7 +136,7 @@ test.describe("ProfileEditForm", () => {
     const component = await mount(
       <ProfileEditForm
         user={mockUser}
-        onSuccess={() => {}}
+        onSubmit={() => {}}
         onCancel={() => {}}
       />,
     );
@@ -136,7 +161,7 @@ test.describe("ProfileEditForm", () => {
     const component = await mount(
       <ProfileEditForm
         user={mockUser}
-        onSuccess={() => {}}
+        onSubmit={() => {}}
         onCancel={() => {}}
       />,
     );
@@ -158,7 +183,7 @@ test.describe("ProfileEditForm", () => {
     const component = await mount(
       <ProfileEditForm
         user={mockUser}
-        onSuccess={() => {}}
+        onSubmit={() => {}}
         onCancel={() => {}}
       />,
     );
@@ -179,7 +204,7 @@ test.describe("ProfileEditForm", () => {
     const component = await mount(
       <ProfileEditForm
         user={mockUser}
-        onSuccess={() => {}}
+        onSubmit={() => {}}
         onCancel={() => {}}
       />,
     );
@@ -193,5 +218,29 @@ test.describe("ProfileEditForm", () => {
 
     // バリデーションエラーメッセージが表示されないことを確認
     await expect(component.locator('[role="alert"]')).toHaveCount(0);
+  });
+
+  test("isLoading=trueの時、ボタンがローディング状態になる", async ({
+    mount,
+  }) => {
+    const component = await mount(
+      <ProfileEditForm
+        user={mockUser}
+        onSubmit={() => {}}
+        onCancel={() => {}}
+        isLoading={true}
+      />,
+    );
+
+    // キャンセルボタンが無効化される
+    const cancelButton = component.getByTestId("cancel-button");
+    await expect(cancelButton).toBeDisabled();
+
+    // 送信ボタンがローディング状態になる
+    const submitButton = component.getByTestId("submit-button");
+    await expect(submitButton).toBeDisabled();
+
+    // ローディングスピナーが表示される
+    await expect(component.getByRole("status")).toBeVisible();
   });
 });

@@ -149,4 +149,3 @@ test("AttachmentListコンポーネントが表示される", async ({ mount }) 
   // AttachmentListコンポーネントが表示されることを確認（空の状態、動的コンテンツ）
   await expect(component.getByText("添付ファイルなし")).toBeVisible();
 });
-

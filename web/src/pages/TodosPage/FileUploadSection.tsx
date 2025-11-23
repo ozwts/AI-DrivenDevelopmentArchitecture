@@ -50,7 +50,10 @@ export const FileUploadSection = ({
           ファイルを選択
         </label>
         {selectedFiles.length > 0 && (
-          <span className="text-sm text-text-secondary" data-testid="file-count">
+          <span
+            className="text-sm text-text-secondary"
+            data-testid="file-count"
+          >
             {selectedFiles.length}個のファイルを選択中
           </span>
         )}

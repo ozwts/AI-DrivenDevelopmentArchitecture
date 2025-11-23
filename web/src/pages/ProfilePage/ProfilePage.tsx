@@ -5,19 +5,42 @@ import {
   TrashIcon,
   ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
-import { useCurrentUser, useDeleteCurrentUser } from "../../hooks/useUsers";
+import {
+  useCurrentUser,
+  useUpdateCurrentUser,
+  useDeleteCurrentUser,
+} from "../../hooks/useUsers";
 import { Card } from "../../components/Card";
 import { Button } from "../../components/Button";
 import { Modal } from "../../components/Modal";
 import { Alert } from "../../components/Alert";
 import { ProfileEditForm } from "./ProfileEditForm";
+import { DeleteAccountConfirmation } from "./DeleteAccountConfirmation";
+import { useToast } from "../../contexts/ToastContext";
+import { z } from "zod";
+import { schemas } from "../../generated/zod-schemas";
+
+type UpdateUserParams = z.infer<typeof schemas.UpdateUserParams>;
 
 export const ProfilePage = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const { data: user, isLoading, error } = useCurrentUser();
+  const updateUser = useUpdateCurrentUser();
   const deleteUser = useDeleteCurrentUser();
+  const toast = useToast();
+
+  const handleUpdate = async (data: UpdateUserParams) => {
+    try {
+      await updateUser.mutateAsync(data);
+      setIsEditModalOpen(false);
+      toast.success("プロフィールを更新しました");
+    } catch (error) {
+      console.error("プロフィール更新エラー:", error);
+      toast.error("プロフィールの更新に失敗しました");
+    }
+  };
 
   const handleDelete = async () => {
     try {
@@ -25,6 +48,8 @@ export const ProfilePage = () => {
       // 削除成功後、useDeleteCurrentUser内でログインページにリダイレクト
     } catch (error) {
       console.error("ユーザー削除エラー:", error);
+      toast.error("アカウントの削除に失敗しました");
+      setIsDeleteModalOpen(false);
     }
   };
 
@@ -39,10 +64,7 @@ export const ProfilePage = () => {
   if (error !== null) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8">
-        <Alert variant="error">
-          ユーザー情報の取得に失敗しました。{" "}
-          {error instanceof Error ? error.message : ""}
-        </Alert>
+        <Alert variant="error">ユーザー情報の取得に失敗しました。</Alert>
       </div>
     );
   }
@@ -71,7 +93,10 @@ export const ProfilePage = () => {
           {/* User Icon and Name */}
           <div className="flex items-center gap-4">
             <div className="flex-shrink-0">
-              <UserCircleIcon className="h-20 w-20 text-text-tertiary" />
+              <UserCircleIcon
+                className="h-20 w-20 text-text-tertiary"
+                aria-hidden="true"
+              />
             </div>
             <div className="flex-1">
               <h2 className="text-2xl font-bold text-text-dark">{user.name}</h2>
@@ -83,8 +108,9 @@ export const ProfilePage = () => {
                 size="sm"
                 onClick={() => setIsEditModalOpen(true)}
                 data-testid="edit-button"
+                aria-label="プロフィールを編集"
               >
-                <PencilIcon className="h-4 w-4 mr-1" />
+                <PencilIcon className="h-4 w-4 mr-1" aria-hidden="true" />
                 編集
               </Button>
             </div>
@@ -92,7 +118,7 @@ export const ProfilePage = () => {
 
           {/* User Details */}
           <div className="border-t border-border-light pt-6 space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <dt className="text-sm font-medium text-text-tertiary">
                   ユーザーID
@@ -123,7 +149,7 @@ export const ProfilePage = () => {
                   {new Date(user.updatedAt).toLocaleString("ja-JP")}
                 </dd>
               </div>
-            </div>
+            </dl>
           </div>
         </div>
       </Card>
@@ -134,7 +160,10 @@ export const ProfilePage = () => {
           <div className="space-y-4">
             {/* Header */}
             <div className="flex items-start gap-3">
-              <ExclamationTriangleIcon className="h-6 w-6 text-red-600 flex-shrink-0 mt-0.5" />
+              <ExclamationTriangleIcon
+                className="h-6 w-6 text-red-600 flex-shrink-0 mt-0.5"
+                aria-hidden="true"
+              />
               <div className="flex-1">
                 <h3 className="text-lg font-bold text-red-900">危険な操作</h3>
                 <p className="mt-1 text-sm text-red-700">
@@ -159,8 +188,9 @@ export const ProfilePage = () => {
                     variant="danger"
                     size="md"
                     onClick={() => setIsDeleteModalOpen(true)}
+                    aria-label="アカウント削除確認ダイアログを開く"
                   >
-                    <TrashIcon className="h-5 w-5 mr-2" />
+                    <TrashIcon className="h-5 w-5 mr-2" aria-hidden="true" />
                     アカウントを削除
                   </Button>
                 </div>
@@ -178,8 +208,9 @@ export const ProfilePage = () => {
       >
         <ProfileEditForm
           user={user}
-          onSuccess={() => setIsEditModalOpen(false)}
+          onSubmit={handleUpdate}
           onCancel={() => setIsEditModalOpen(false)}
+          isLoading={updateUser.isPending}
         />
       </Modal>
 
@@ -189,72 +220,12 @@ export const ProfilePage = () => {
         onClose={() => setIsDeleteModalOpen(false)}
         title="アカウント削除の確認"
       >
-        <div className="space-y-6">
-          {/* Warning Alert */}
-          <Alert variant="error">
-            <div className="flex items-start gap-3">
-              <ExclamationTriangleIcon className="h-6 w-6 flex-shrink-0" />
-              <div>
-                <p className="font-semibold">この操作は取り消せません</p>
-                <p className="mt-1 text-sm">
-                  アカウントを削除すると、すべてのデータが完全に失われます。
-                </p>
-              </div>
-            </div>
-          </Alert>
-
-          {/* Account Information */}
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 space-y-3">
-            <div>
-              <p className="text-sm font-medium text-red-900">
-                削除されるアカウント
-              </p>
-              <p className="mt-1 text-base font-bold text-red-900">
-                {user.name} ({user.email})
-              </p>
-            </div>
-            <div className="border-t border-red-200 pt-3">
-              <p className="text-sm font-medium text-red-900 mb-2">
-                削除されるデータ:
-              </p>
-              <ul className="text-sm text-red-800 space-y-1 list-disc list-inside">
-                <li>プロフィール情報</li>
-                <li>作成したTODO</li>
-                <li>参加しているプロジェクト</li>
-                <li>アカウント設定</li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Warning Text */}
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <p className="text-sm text-yellow-900">
-              <strong>注意:</strong>{" "}
-              削除後は自動的にログアウトされ、このアカウントでの再ログインはできなくなります。
-            </p>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex justify-end gap-3 pt-2">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => setIsDeleteModalOpen(false)}
-              disabled={deleteUser.isPending}
-            >
-              キャンセル
-            </Button>
-            <Button
-              type="button"
-              variant="danger"
-              onClick={handleDelete}
-              isLoading={deleteUser.isPending}
-            >
-              <TrashIcon className="h-5 w-5 mr-2" />
-              完全に削除する
-            </Button>
-          </div>
-        </div>
+        <DeleteAccountConfirmation
+          user={user}
+          onConfirm={handleDelete}
+          onCancel={() => setIsDeleteModalOpen(false)}
+          isDeleting={deleteUser.isPending}
+        />
       </Modal>
     </div>
   );

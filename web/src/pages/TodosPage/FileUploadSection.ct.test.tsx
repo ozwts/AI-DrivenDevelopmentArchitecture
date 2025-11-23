@@ -185,9 +185,7 @@ test("ファイル削除ボタンをクリックするとonFileRemoveが呼ば�
     />,
   );
 
-  await component
-    .getByRole("button", { name: "test.txtを削除" })
-    .click();
+  await component.getByRole("button", { name: "test.txtを削除" }).click();
   expect(removedIndex).toBe(0);
 });
 

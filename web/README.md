@@ -10,7 +10,8 @@ React + Vite + TailwindCSSを使用したモダンなフロントエンドアプ
 - **State Management**: TanStack Query (React Query) 4
 - **Form**: React Hook Form 7 + Zod 3 (バリデーション)
 - **Routing**: React Router 6
-- **HTTP Client**: Aspida (OpenAPI自動生成)
+- **HTTP Client**: カスタムAPIクライアント (fetchベース)
+- **Code Generation**: openapi-zod-client (Zodスキーマ + TypeScript型定義)
 - **Mock Server**: MSW (Mock Service Worker) 1.3
 - **Testing**: Playwright 1.56 (コンポーネントテスト + スナップショットテスト)
 - **Icons**: Heroicons 2
@@ -21,13 +22,12 @@ React + Vite + TailwindCSSを使用したモダンなフロントエンドアプ
 web/
 ├── public/             # 静的ファイル（MSW Service Worker含む）
 ├── src/
-│   ├── api/            # API クライアント (Aspida生成)
+│   ├── api/            # APIクライアント（カスタム実装）
 │   ├── components/     # 共有コンポーネント
-│   ├── generated/      # OpenAPI自動生成（型定義、Aspidaクライアント）
+│   ├── generated/      # OpenAPI自動生成（Zodスキーマ + TypeScript型定義）
 │   ├── hooks/          # カスタムフック（TanStack Query）
 │   ├── pages/          # ページコンポーネント（ページ固有コンポーネント含む）
 │   ├── routes/         # React Router設定
-│   ├── schemas/        # Yupバリデーションスキーマとテスト
 │   ├── testing-utils/  # MSW モックハンドラ
 │   ├── config*.ts      # 環境別設定（dev, local）
 │   └── main.tsx        # エントリーポイント
@@ -45,7 +45,7 @@ npm run dev:local
 # AWS APIに接続して開発（デプロイ済みバックエンド必要）
 npm run dev
 
-# コード生成（OpenAPI → Aspida APIクライアント + 型定義）
+# コード生成（OpenAPI → Zodスキーマ + TypeScript型定義）
 npm run codegen
 
 # すべてのテスト実行（コンポーネント + スナップショット）
@@ -285,13 +285,16 @@ components/
 ### データ取得
 
 ```typescript
-export const useTodos = (filters?: { status?: string }) => {
+import { apiClient } from "../api/client";
+import { z } from "zod";
+import { schemas } from "../generated/zod-schemas";
+
+type TodoStatus = z.infer<typeof schemas.TodoStatus>;
+
+export const useTodos = (filters?: { status?: TodoStatus }) => {
   return useQuery({
     queryKey: ["todos", filters],
-    queryFn: async () => {
-      const response = await apiClient.todos.$get({ query: filters });
-      return response.data;
-    },
+    queryFn: () => apiClient.getTodos(filters),
   });
 };
 ```
@@ -299,14 +302,16 @@ export const useTodos = (filters?: { status?: string }) => {
 ### ミューテーション
 
 ```typescript
+import { z } from "zod";
+import { schemas } from "../generated/zod-schemas";
+
+type RegisterTodoParams = z.infer<typeof schemas.RegisterTodoParams>;
+
 export const useCreateTodo = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: CreateTodoParams) => {
-      const response = await apiClient.todos.$post({ body: data });
-      return response.data;
-    },
+    mutationFn: (data: RegisterTodoParams) => apiClient.createTodo(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["todos"] });
     },
@@ -874,8 +879,9 @@ export const UsersPage = () => {
 
 **スキーマ整合性:**
 
-- OpenAPIスキーマ（`todo.openapi.yaml`）、yupスキーマ（`updateUserSchema.ts`）、フォーム実装の3者で一貫性を保つ
+- OpenAPIスキーマ（`todo.openapi.yaml`）から自動生成されたZodスキーマ（`generated/zod-schemas.ts`）を使用
 - `assigneeUserId`フィールドは、TODO作成・更新の両スキーマに追加（オプショナル）
+- スキーマ変更は`todo.openapi.yaml`で行い、`npm run codegen`で自動反映
 
 ## 参考資料
 
@@ -884,6 +890,6 @@ export const UsersPage = () => {
 - [TailwindCSS](https://tailwindcss.com/)
 - [TanStack Query](https://tanstack.com/query/latest)
 - [React Hook Form](https://react-hook-form.com/)
-- [Yup](https://github.com/jquense/yup)
+- [Zod](https://zod.dev/)
 - [MSW](https://mswjs.io/)
-- [Aspida](https://github.com/aspida/aspida)
+- [openapi-zod-client](https://github.com/astahmer/openapi-zod-client)

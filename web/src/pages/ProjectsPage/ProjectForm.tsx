@@ -134,10 +134,20 @@ export const ProjectForm = ({
 
       {/* フォームフッター */}
       <div className="flex justify-end gap-3 pt-4">
-        <Button variant="ghost" onClick={onCancel} type="button" data-testid="cancel-button">
+        <Button
+          variant="ghost"
+          onClick={onCancel}
+          type="button"
+          data-testid="cancel-button"
+        >
           キャンセル
         </Button>
-        <Button variant="primary" type="submit" isLoading={isLoading} data-testid="submit-button">
+        <Button
+          variant="primary"
+          type="submit"
+          isLoading={isLoading}
+          data-testid="submit-button"
+        >
           {project ? "更新" : "作成"}
         </Button>
       </div>

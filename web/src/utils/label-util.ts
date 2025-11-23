@@ -31,8 +31,6 @@ export const getStatusLabel = (status: TodoStatus): string => {
  * 優先度ラベルを取得
  */
 export const getPriorityLabel = (priority: TodoPriority): string => {
-  const pair = PRIORITY_VALUE_LABEL_PAIRS.find(
-    ([value]) => value === priority,
-  );
+  const pair = PRIORITY_VALUE_LABEL_PAIRS.find(([value]) => value === priority);
   return pair ? pair[1] : priority;
 };

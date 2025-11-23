@@ -234,10 +234,20 @@ export const TodoForm = ({
       )}
 
       <div className="flex justify-end gap-2 pt-4">
-        <Button type="button" variant="ghost" onClick={onCancel} data-testid="cancel-button">
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={onCancel}
+          data-testid="cancel-button"
+        >
           キャンセル
         </Button>
-        <Button type="submit" variant="primary" isLoading={isLoading} data-testid="submit-button">
+        <Button
+          type="submit"
+          variant="primary"
+          isLoading={isLoading}
+          data-testid="submit-button"
+        >
           {todo ? "更新" : "作成"}
         </Button>
       </div>
