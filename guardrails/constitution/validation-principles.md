@@ -7,261 +7,207 @@
 - **Mutually Exclusive（相互排他的）**: 同じバリデーションを複数箇所で重複して行わない
 - **Collectively Exhaustive（網羅的）**: すべての入力に対して適切な検証を行う
 
-## 責務の分離
+## 理念
 
-### 1. OpenAPI自動生成Zodスキーマ（最優先）
+### なぜMECEか
 
-**責務**: 型レベルの基本的なバリデーション
+**重複の問題**:
 
-- **型の正しさ**: string, number, boolean等
-- **必須フィールド**: required/optional
-- **基本的な制約**: minLength, maxLength, pattern, minimum, maximum等
-- **列挙型**: enum（"TODO" | "IN_PROGRESS" | "DONE"）
+- 重複したバリデーションはメンテナンスコストを増大させる
+- ルール変更時に複数箇所の修正が必要となり、整合性が失われるリスクがある
+- どこで何が検証されるかが不明瞭になり、開発者が混乱する
 
-**実施箇所**:
+**漏れの問題**:
 
-- フロントエンド: フォームバリデーション（react-hook-form + Zod）
-- サーバー: Honoハンドラー（Zodバリデーター）
+- 検証漏れはシステムの脆弱性につながる
+- 不正なデータがシステムに侵入し、予期しない動作を引き起こす
+- セキュリティリスク、データ整合性の破綻を招く
 
-**原則**: OpenAPIで定義できるバリデーションは、**必ずOpenAPIに記述する**
+**責務の明確化**:
 
-```yaml
-# todo.openapi.yaml
-components:
-  schemas:
-    RegisterTodoParams:
-      type: object
-      required:
-        - title
-      properties:
-        title:
-          type: string
-          minLength: 1
-          maxLength: 200
-        priority:
-          type: string
-          enum: [LOW, MEDIUM, HIGH]
-        dueDate:
-          type: string
-          format: date-time
-```
+- 各層が明確な責務を持つことで、変更の影響範囲を限定できる
+- テストが容易になり、品質を担保しやすくなる
 
-**自動生成されるZod:**
+### MECEによって得られる価値
 
-```typescript
-// 自動生成: server/src/generated/zod-schemas.ts
-export const RegisterTodoParamsSchema = z.object({
-  title: z.string().min(1).max(200),
-  priority: z.enum(["LOW", "MEDIUM", "HIGH"]).optional(),
-  dueDate: z.string().datetime().optional(),
-});
-```
+**保守性（Maintainability）**:
 
-### 2. Value Object（ドメインルール）
+- バリデーションルールの変更が一箇所で完結する
+- ルールの追加・変更・削除が容易で、影響範囲が明確
+- チーム全体で一貫したバリデーション戦略を共有できる
 
-**責務**: ドメイン固有の形式・制約
+**信頼性（Reliability）**:
 
-- **複雑な形式**: 正規表現パターン（メールアドレス、URL、カラーコード等）
-- **ドメイン固有の制約**: ビジネス上の値の範囲や形式
-- **値の整合性**: 関連する値同士の整合性
+- すべての入力が適切に検証され、不正なデータがシステムに入らない
+- 各層の責務が明確で、検証漏れを防止できる
+- 多層防御ではなく、適切な層での適切な検証により、システムの安全性を担保
 
-**実施箇所**: `domain/model/{entity}/{value-object}.ts`
+**理解性（Understandability）**:
 
-**条件**: OpenAPIで表現できない複雑なバリデーションルールがある場合のみ
+- どこで何が検証されるかが明確で、開発者が迷わない
+- 新規参加者がバリデーション戦略を理解しやすい
+- コードレビュー時に責務の逸脱を容易に発見できる
 
-```typescript
-// Value Object: OpenAPIでは表現できない複雑なルール
-export class ProjectColor {
-  static fromString(value: string): Result<ProjectColor, ValidationError> {
-    const hexColorPattern = /^#[0-9A-Fa-f]{6}$/;
-    if (!hexColorPattern.test(value)) {
-      return { success: false, error: new ValidationError(...) };
-    }
-    return { success: true, data: new ProjectColor(value) };
-  }
-}
-```
+**テスタビリティ（Testability）**:
 
-**注意**: 単純な長さ制約や必須チェックはOpenAPIで定義するため、Value Objectでは不要
+- 各層のバリデーションを独立してテストできる
+- モックやスタブを使った単体テストが容易
+- テストの重複を排除し、効率的なテスト戦略を実現
 
-### 3. UseCase（ビジネスルール）
+## 制度：三権分立による実現
 
-**責務**: ビジネスロジック上のバリデーション
+### Policy（立法）
 
-- **権限チェック**: ユーザーが操作可能か
-- **状態チェック**: エンティティの現在状態で操作可能か
-- **関連チェック**: 関連エンティティの存在確認
-- **ビジネス制約**: 「完了したTODOは編集不可」等
+各レイヤーのバリデーション責務を明文化する。
 
-**実施箇所**: `use-case/{entity}/{use-case}.ts`
+#### 責務の階層化
 
-**条件**: リクエスト時点では判断できない、データベース参照が必要なルール
+バリデーションを4つの階層に分類し、各階層の責務を定義：
 
-```typescript
-// UseCase: ビジネスルール
-export class UpdateTodoUseCaseImpl {
-  async execute(input: UpdateTodoUseCaseInput) {
-    // 1. Zodで基本バリデーション済み（ハンドラー層で実施）
+1. **型レベルのバリデーション**: データの形式・長さ・型・必須性
+2. **ドメインルール**: ドメイン固有の制約・形式（OpenAPIで表現できない複雑なルール）
+3. **ビジネスルール**: 権限チェック・状態チェック・関連チェック
+4. **構造的整合性**: エンティティの不変条件・集約ルールの保護
 
-    // 2. ビジネスルール: 存在確認
-    const todoResult = await this.todoRepository.findById({ id: input.id });
-    if (!todoResult.success || !todoResult.data) {
-      return { success: false, error: new NotFoundError("TODO not found") };
-    }
+#### 単一の真実の情報源（Single Source of Truth）
 
-    // 3. ビジネスルール: 権限チェック
-    if (todoResult.data.assigneeUserId !== currentUserId) {
-      return { success: false, error: new ForbiddenError("Not authorized") };
-    }
+型レベルのバリデーションは、APIスキーマ定義（OpenAPI等）に集約する。
 
-    // 4. ビジネスルール: 状態チェック
-    if (todoResult.data.status === "DONE") {
-      return {
-        success: false,
-        error: new ValidationError("Cannot update completed TODO"),
-      };
-    }
+**原則**:
 
-    // ...
-  }
-}
-```
+- 各バリデーションルールは一箇所でのみ定義
+- 自動生成により、フロントエンド・サーバー双方で同じルールを適用
+- 手動でのルール重複実装を禁止
 
-### 4. Entity（構造的整合性）
+**利点**:
 
-**責務**: エンティティの構造的な整合性（最小限）
+- ルール変更時の修正が一箇所で完結
+- フロントエンド・サーバー間のバリデーション不整合を防止
+- 仕様書（OpenAPI）とコードの乖離を防止
 
-- **集約ルールの保護**: 親子関係の整合性
-- **不変条件**: エンティティが常に満たすべき条件
+#### ポリシーの役割
 
-**実施箇所**: `domain/model/{entity}/{entity}.ts`
+各レイヤー・カテゴリごとに、具体的なバリデーション責務を定義：
 
-**条件**: エンティティの内部状態の整合性を保つ場合のみ
+- `policy/server/domain-model/` - サーバー側ドメインモデルのバリデーション責務
+- `policy/web/test-strategy/` - フロントエンド側のバリデーション責務
+- `policy/api/` - API境界でのバリデーション責務（将来対応）
 
-```typescript
-// Entity: 構造的整合性のみ（基本的にバリデーションしない）
-export class Todo {
-  constructor(props: {
-    id: string;
-    title: string;
-    // ...
-  }) {
-    // バリデーションはハンドラー（Zod）とUseCaseで完了しているため、
-    // ここでは何もしない
-    this.id = props.id;
-    this.title = props.title;
-  }
-}
-```
+### Procedure（行政）
 
-## レイヤー別バリデーション戦略
+バリデーションを実装・実行する。
 
-### フロントエンド
+#### 実行の流れ
 
 ```
-ユーザー入力
+外部入力
   ↓
-フォームバリデーション（react-hook-form + 自動生成Zod）
+入口での検証（型レベル）
   ↓ OK
-API呼び出し
-```
-
-**必須**: すべてのフォームで自動生成Zodスキーマを使用
-
-### サーバー
-
-```
-HTTPリクエスト
-  ↓
-ハンドラー（Honoバリデーター + 自動生成Zod）← 必須
+ドメイン検証（ドメインルール）
   ↓ OK
-UseCase（ビジネスルール）
+ビジネス検証（ビジネスルール）
   ↓ OK
-Repository（データ永続化）
+データ永続化
 ```
 
-**必須**: すべてのハンドラーで自動生成Zodスキーマを使用
+**各段階の役割**:
 
-## 重複禁止の具体例
+1. **入口での検証**: クライアント入力を型レベルで検証（フォーム、APIハンドラー）
+   - すべての外部境界で必須
+   - スキーマ定義から自動生成された検証コードを使用
+2. **ドメイン検証**: ドメイン固有ルールを適用
+   - OpenAPIで表現できない複雑なルールのみ
+   - Value Objectパターンで実装
+3. **ビジネス検証**: データベース参照を伴うビジネスルールを適用
+   - UseCaseレイヤーで実装
+   - 権限・状態・関連チェック等
+4. **構造保証**: エンティティの不変条件を保護
+   - Entityレイヤーで実装（最小限）
+   - 基本的にはバリデーションを実施しない
 
-### ❌ 悪い例: バリデーションの重複
+#### 自動化の原則
 
-```yaml
-# OpenAPI
-title:
-  type: string
-  minLength: 1
-  maxLength: 200
-```
+手動実装を最小限に抑え、自動生成を活用する。
 
-```typescript
-// ❌ UseCase: OpenAPIと重複
-if (input.title.length === 0 || input.title.length > 200) {
-  return { success: false, error: new ValidationError(...) };
-}
-```
+**自動生成すべきもの**:
 
-**問題**:
+- 型レベルのバリデーションコード（OpenAPI → Zod等）
+- API型定義（OpenAPI → TypeScript型）
 
-- OpenAPIで定義済みなのに、UseCaseで重複チェック
-- メンテナンスコストが2倍
-- 整合性が取れなくなるリスク
+**手動実装すべきもの**:
 
-### ✅ 良い例: 責務の分離
+- OpenAPIで表現できない複雑なドメインルール
+- データベース参照を伴うビジネスルール
 
-```yaml
-# OpenAPI: 型レベルの制約
-title:
-  type: string
-  minLength: 1
-  maxLength: 200
-```
+#### レイヤー間の信頼
 
-```typescript
-// ✅ ハンドラー: Zodで自動バリデーション
-app.post(
-  "/todos",
-  zValidator("json", schemas.RegisterTodoParamsSchema),
-  async (c) => {
-    const body = c.req.valid("json"); // すでにバリデーション済み
-    // ...
-  },
-);
-```
+**上位レイヤーの検証は下位レイヤーで重複しない**:
 
-```typescript
-// ✅ UseCase: ビジネスルールのみ
-export class RegisterTodoUseCaseImpl {
-  async execute(input: RegisterTodoUseCaseInput) {
-    // 型レベルのバリデーションはハンドラーで完了
+- ハンドラーで検証済みの型制約を、ドメイン層・ユースケース層で再度検証しない
+- 下位レイヤーは上位レイヤーの検証が完了していることを前提とする
 
-    // ビジネスルール: ユーザー存在確認のみ
-    const userResult = await this.userRepository.findBySub({
-      sub: input.userSub,
-    });
-    if (!userResult.success || !userResult.data) {
-      return { success: false, error: new NotFoundError("User not found") };
-    }
+**検証の連鎖**:
 
-    // ...
-  }
-}
-```
+- 各層は自身の責務に応じたバリデーションのみを実施
+- 上位層の検証結果を信頼し、重複検証を避ける
 
-## 実装チェックリスト
+### Review（司法）
 
-新しいAPI追加時の確認事項：
+実装がMECE原則に準拠しているかを審査する。
 
-- [ ] OpenAPIにすべての型制約を定義（required, minLength, maxLength, pattern, enum等）
-- [ ] フロントエンドフォームで自動生成Zodスキーマを使用
-- [ ] サーバーハンドラーで自動生成Zodバリデーターを使用
-- [ ] UseCaseでは型レベルのバリデーションを重複実装しない
-- [ ] UseCaseではビジネスルールのみを実装
-- [ ] Value Objectは複雑なドメインルールがある場合のみ作成
-- [ ] Entityのコンストラクタではバリデーションしない
+#### 審査項目
 
-## 関連ポリシー
+**MECE準拠の確認**:
 
-- `policy/server/domain-model/20-entity-design.md` - Value Objectの詳細
-- `policy/server/domain-model/10-domain-model-overview.md` - Result型パターン
-- OpenAPI仕様書: `todo.openapi.yaml` - 唯一の真実の情報源（Single Source of Truth）
+- 型レベルのバリデーションがスキーマ定義に記述されているか
+- 同じバリデーションが複数箇所で重複していないか
+- すべての入力経路で適切な検証が行われているか（網羅性）
+- 各層の責務を超えたバリデーションが実装されていないか（相互排他性）
+
+**違反パターンの検出**:
+
+- 手動でのバリデーション重複（OpenAPIで定義可能なのに手動実装）
+- スキーマ定義の欠落（型制約が定義されていない）
+- 責務の逸脱（例: エンティティでのビジネスルール検証、UseCaseでの型チェック）
+- 検証漏れ（外部入力経路での検証欠如）
+
+#### レビューの実施
+
+**自動レビュー（MCP）**:
+
+- コード変更時に自動的にMCPツールが実行
+- MECE原則に準拠しているかをAIが審査
+- 違反箇所を指摘し、修正案を提示
+
+**手動レビュー**:
+
+- コードレビュー時に責務の逸脱をチェック
+- 新規API追加時のバリデーション戦略確認
+
+## 原則の適用
+
+### 検証の網羅性
+
+すべての入力経路で、適切なレベルの検証を実施する。
+
+**外部境界での検証必須**:
+
+- ユーザー入力（フォーム）
+- API入力（ハンドラー）
+- 外部システムからの入力
+
+**内部境界での検証**:
+
+- 基本的に不要（上位層で検証済みのため）
+- 例外: ドメイン固有ルール、ビジネスルール
+
+### レイヤー別の責務
+
+各レイヤーは自身の責務に応じたバリデーションのみを実施する。
+
+**型レベル → ドメインルール → ビジネスルール → 構造的整合性**:
+
+- 上流から下流へとバリデーションが流れる
+- 下流レイヤーは上流の検証完了を前提とする
+- 各レイヤーで重複しない

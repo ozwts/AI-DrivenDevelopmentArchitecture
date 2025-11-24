@@ -21,8 +21,8 @@ guardrails/
 ├── tsconfig.json         # TypeScript設定
 ├── index.ts              # MCPサーバー（統合エントリーポイント）
 ├── constitution/         # 憲法（最高原則・価値・法令・倫理）
-│   ├── validation-principles.md  # バリデーション原則（MECE）
-│   └── logging-principles.md     # ロギング原則（構造化ログ）
+│   ├── validation-principles.md     # バリデーション原則（MECE）
+│   └── observability-principles.md  # 可観測性原則（AI自律開発と人間の責任担保）
 ├── policy/              # 立法（憲法を具体化したルール群）
 │   ├── web/
 │   │   └── test-strategy/

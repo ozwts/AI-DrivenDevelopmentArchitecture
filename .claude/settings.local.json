@@ -20,7 +20,8 @@
       "Bash(node:*)",
       "WebSearch",
       "mcp__guardrails__review_with_policy",
-      "Bash(npx tsx:*)"
+      "Bash(npx tsx:*)",
+      "mcp__guardrails__review_web_tests"
     ],
     "deny": [],
     "ask": []
