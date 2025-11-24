@@ -18,6 +18,7 @@ import {
   GetSecretValueCommand,
 } from "@aws-sdk/client-secrets-manager";
 import { handleReviewWebTests } from "./review/web/test-strategy";
+import { handleReviewDomainModels } from "./review/server/domain-model";
 
 // ESMで__dirnameを取得
 const __filename = fileURLToPath(import.meta.url);
@@ -105,6 +106,52 @@ const main = async (): Promise<void> => {
     async ({ targetFilePaths }) => {
       try {
         const result = await handleReviewWebTests({
+          targetFilePaths,
+          guardrailsRoot: GUARDRAILS_ROOT,
+          apiKey: process.env.ANTHROPIC_API_KEY ?? "",
+        });
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: result,
+            },
+          ],
+        };
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        return {
+          content: [
+            {
+              type: "text",
+              text: `エラー: ${errorMessage}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    },
+  );
+
+  // review_domain_models ツールを登録
+  server.registerTool(
+    "review_domain_models",
+    {
+      description:
+        "作成・修正したサーバー側のドメインモデルファイルがドメインモデルポリシーに準拠しているかを審査します。対象：エンティティ（*.ts）、リポジトリインターフェース（*-repository.ts）",
+      inputSchema: {
+        targetFilePaths: z
+          .array(z.string())
+          .describe(
+            "作成・修正したドメインモデルファイルの絶対パスの配列（例: ['/path/to/server/src/domain/model/todo/todo.ts', '/path/to/server/src/domain/model/todo/todo-repository.ts']）",
+          ),
+      },
+    },
+    async ({ targetFilePaths }) => {
+      try {
+        const result = await handleReviewDomainModels({
           targetFilePaths,
           guardrailsRoot: GUARDRAILS_ROOT,
           apiKey: process.env.ANTHROPIC_API_KEY ?? "",
