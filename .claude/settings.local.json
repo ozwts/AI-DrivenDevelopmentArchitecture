@@ -21,7 +21,8 @@
       "WebSearch",
       "mcp__guardrails__review_with_policy",
       "Bash(npx tsx:*)",
-      "mcp__guardrails__review_web_tests"
+      "mcp__guardrails__review_web_tests",
+      "Bash(rm:*)"
     ],
     "deny": [],
     "ask": []
