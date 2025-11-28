@@ -49,11 +49,63 @@ await expect(component.getByText("test.txt")).toBeVisible();
 
 ## 必須ルール
 
-1. **全てのページ固有コンポーネントに、必ずコンポーネントテスト（\*.ct.test.tsx）を作成**
-2. **全てのページに、必ずスナップショットテスト（\*.ss.test.ts）を作成**
-3. **操作には `data-testid`、検証には `getByRole`/`getByLabel` を使用**
-4. **バリデーションは境界値とエラー条件の両方を網羅**
-5. **動的コンテンツに `getByText` を使う場合は、必ずコメントで理由を記載**
+### テストカバレッジ要件
+
+**コンポーネントとテストは1対1で対応する。テストのない実装は存在してはならない。**
+
+1. **コンポーネントテスト**: `{Name}.tsx` → `{Name}.ct.test.tsx` が必須
+2. **スナップショットテスト**: `{Feature}Page.tsx` → `{Feature}Page.ss.test.ts` が必須
+
+**例外（テスト不要）:**
+- `index.ts`
+- `constants.ts`, `types.ts`, `*.d.ts`
+
+### テスト実装要件
+
+1. **操作には `data-testid`、検証には `getByRole`/`getByLabel` を使用**
+2. **バリデーションは境界値とエラー条件の両方を網羅**
+3. **動的コンテンツに `getByText` を使う場合は、必ずコメントで理由を記載**
+
+## 典型的なページ構成
+
+### シンプルなページ
+
+```
+HomePage/
+├── HomePage.tsx
+├── HomePage.ss.test.ts
+└── index.ts
+```
+
+### CRUD機能
+
+```
+TodosPage/
+├── TodosPage.tsx
+├── TodoCard.tsx
+├── TodoCard.ct.test.tsx
+├── TodoForm.tsx
+├── TodoForm.ct.test.tsx
+├── TodosPage.ss.test.ts
+└── index.ts
+```
+
+### 複雑な機能
+
+```
+TodosPage/
+├── TodosPage.tsx
+├── TodoCard.tsx
+├── TodoCard.ct.test.tsx
+├── TodoForm.tsx
+├── TodoForm.ct.test.tsx
+├── FileUploadSection.tsx
+├── FileUploadSection.ct.test.tsx
+├── AttachmentList.tsx
+├── AttachmentList.ct.test.tsx
+├── TodosPage.ss.test.ts
+└── index.ts
+```
 
 ## テスト戦略の思想
 

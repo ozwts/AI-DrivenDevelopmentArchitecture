@@ -1,14 +1,12 @@
 /**
- * ドメインモデルレビュー専用
+ * ドメインモデルレビュー専用（1ショットレビュー）
  */
 
 import Anthropic from "@anthropic-ai/sdk";
 import * as fs from "fs/promises";
 import * as path from "path";
-
-type PolicySelection = {
-  policyFiles: string[];
-};
+import { loadAgentPrompt } from "../../agent-loader";
+import { ALL_TOOLS, executeToolUse } from "../../tool-executor";
 
 type FileReviewResult = {
   filePath: string;
@@ -18,7 +16,7 @@ type FileReviewResult = {
   error?: string;
 };
 
-export type ParallelReviewResult = {
+export type ReviewResult = {
   results: FileReviewResult[];
   summary: {
     total: number;
@@ -34,30 +32,12 @@ export type FileReviewInput = {
 };
 
 /**
- * ファイル読み込みツール定義
- */
-const READ_FILE_TOOL: Anthropic.Messages.Tool = {
-  name: "read_file",
-  description: "指定されたパスのファイルの内容を読み込みます",
-  input_schema: {
-    type: "object",
-    properties: {
-      path: {
-        type: "string",
-        description: "読み込むファイルの絶対パス",
-      },
-    },
-    required: ["path"],
-  },
-};
-
-/**
  * ファイルパスから適切なポリシーファイルのリストを取得
  */
-const selectPolicies = async (
+const selectPolicies = (
   targetFilePath: string,
-  guardrailsRoot: string,
-): Promise<PolicySelection> => {
+  policyBase: string,
+): string[] => {
   const fileName = path.basename(targetFilePath);
   const isEntity = fileName.endsWith(".ts") && !fileName.includes("repository");
   const isRepository = fileName.includes("repository.ts");
@@ -73,7 +53,33 @@ const selectPolicies = async (
     );
   }
 
-  // ポリシーディレクトリのベースパス
+  if (isEntity) {
+    return [
+      path.join(policyBase, "10-domain-model-overview.md"),
+      path.join(policyBase, "20-entity-design.md"),
+      path.join(policyBase, "40-aggregate-pattern.md"),
+    ];
+  }
+
+  if (isRepository) {
+    return [
+      path.join(policyBase, "10-domain-model-overview.md"),
+      path.join(policyBase, "30-repository-interface.md"),
+      path.join(policyBase, "40-aggregate-pattern.md"),
+    ];
+  }
+
+  throw new Error(`サポートされていないファイル形式です: ${fileName}`);
+};
+
+/**
+ * 全ファイルを1ショットでレビュー
+ */
+export const reviewFilesInParallel = async (
+  input: FileReviewInput,
+): Promise<ReviewResult> => {
+  const { targetFilePaths, guardrailsRoot, apiKey } = input;
+
   const policyBase = path.join(
     guardrailsRoot,
     "policy",
@@ -81,88 +87,64 @@ const selectPolicies = async (
     "domain-model",
   );
 
-  let policyFiles: string[] = [];
-
-  if (isEntity) {
-    // エンティティ: 全体像 + エンティティ設計 + 集約パターン
-    policyFiles = [
-      path.join(policyBase, "10-domain-model-overview.md"),
-      path.join(policyBase, "20-entity-design.md"),
-      path.join(policyBase, "40-aggregate-pattern.md"),
-    ];
-  } else if (isRepository) {
-    // リポジトリインターフェース: 全体像 + リポジトリ設計 + 集約パターン
-    policyFiles = [
-      path.join(policyBase, "10-domain-model-overview.md"),
-      path.join(policyBase, "30-repository-interface.md"),
-      path.join(policyBase, "40-aggregate-pattern.md"),
-    ];
-  } else {
-    throw new Error(`サポートされていないファイル形式です: ${fileName}`);
-  }
-
-  // 全てのポリシーファイルが存在するか確認
-  await Promise.all(
-    policyFiles.map(async (file) => {
-      try {
-        await fs.access(file);
-      } catch (error) {
-        throw new Error(`ポリシーファイルが見つかりません: ${file}`);
-      }
-    }),
-  );
-
-  return { policyFiles };
-};
-
-/**
- * ポリシーファイルを並列で読み込む
- */
-const loadPolicies = async (policyFiles: string[]): Promise<string[]> =>
-  Promise.all(
-    policyFiles.map(async (file) => {
-      const content = await fs.readFile(file, "utf-8");
-      return `# Policy: ${path.basename(file)}\n\n${content}`;
-    }),
-  );
-
-/**
- * 単一ファイルをレビュー（Tool Use）
- */
-const reviewSingleFile = async (
-  filePath: string,
-  guardrailsRoot: string,
-  anthropic: Anthropic,
-): Promise<FileReviewResult> => {
   try {
-    // 1. ポリシーファイルを選択
-    const { policyFiles } = await selectPolicies(filePath, guardrailsRoot);
+    // 1. エージェントプロンプトを読み込み
+    const agentPath = path.join(
+      guardrailsRoot,
+      "..",
+      ".claude",
+      "agents",
+      "guardrails-reviewer.md",
+    );
+    const agentPrompt = await loadAgentPrompt(agentPath);
 
-    // 2. ポリシーを並列で読み込み
-    const policyContents = await loadPolicies(policyFiles);
-    const policies = policyFiles.map((file, index) => ({
-      name: path.basename(file),
-      content: policyContents[index],
-    }));
+    // 2. 全ファイルのポリシーを収集（重複排除）
+    const allPolicyFiles = new Set<string>();
+    const filePolicyMap: Record<string, string[]> = {};
 
-    // 3. レビュー指示を生成
-    const policySection = policies
-      .map((p, index) => `## Policy ${index + 1}: ${p.name}\n\n${p.content}`)
-      .join("\n\n---\n\n");
+    for (const filePath of targetFilePaths) {
+      const policies = selectPolicies(filePath, policyBase);
+      filePolicyMap[filePath] = policies;
+      policies.forEach((p) => allPolicyFiles.add(p));
+    }
 
-    const systemPrompt = `あなたはGuardrailsポリシーシステムに従うコードレビュアーです。
-提供されたポリシーに基づいてドメインモデルコードをレビューし、建設的なフィードバックを提供してください。
+    // 3. ポリシーファイルを読み込み
+    const policyContents: Record<string, string> = {};
+    await Promise.all(
+      Array.from(allPolicyFiles).map(async (policyPath) => {
+        const content = await fs.readFile(policyPath, "utf-8");
+        policyContents[policyPath] = content;
+      }),
+    );
 
-${policySection}
+    // 4. システムプロンプトを構築
+    let systemPrompt = agentPrompt;
+    systemPrompt += "\n\n# Policies\n\n";
 
-対象ファイルを読み込む必要がある場合は、read_fileツールを使用してください。ファイルパス: ${filePath}`;
+    for (const [policyPath, content] of Object.entries(policyContents)) {
+      systemPrompt += `## ${path.basename(policyPath)}\n\n${content}\n\n---\n\n`;
+    }
 
-    // 4. Claude APIでレビュー実行（Tool Use）
+    // 5. レビュー指示を構築
+    let userPrompt = "以下のファイルをレビューしてください。\n\n";
+
+    for (const filePath of targetFilePaths) {
+      const fileName = path.basename(filePath);
+      const policies = filePolicyMap[filePath]
+        .map((p) => path.basename(p))
+        .join(", ");
+      userPrompt += `## ${fileName}\n`;
+      userPrompt += `- パス: ${filePath}\n`;
+      userPrompt += `- 適用ポリシー: ${policies}\n\n`;
+    }
+
+    userPrompt +=
+      "\nまず read_file ツールを使用して各ファイルの内容を読み込んでください。";
+
+    // 6. Claude APIでレビュー実行
+    const anthropic = new Anthropic({ apiKey });
     const messages: Anthropic.Messages.MessageParam[] = [
-      {
-        role: "user",
-        content: `${filePath} のファイルを、提供されたポリシーに基づいてレビューしてください。まず read_file ツールを使用してファイルの内容を読み込んでください。`,
-      },
+      { role: "user", content: userPrompt },
     ];
 
     let reviewText = "";
@@ -172,42 +154,33 @@ ${policySection}
       // eslint-disable-next-line no-await-in-loop
       const response = await anthropic.messages.create({
         model: "claude-haiku-4-5",
-        max_tokens: 4096,
+        max_tokens: 8192,
         system: systemPrompt,
         messages,
-        tools: [READ_FILE_TOOL],
+        tools: ALL_TOOLS,
       });
 
       // Tool Useがあれば実行
-      const toolUseBlock = response.content.find(
+      const toolUseBlocks = response.content.filter(
         (block): block is Anthropic.Messages.ToolUseBlock =>
           block.type === "tool_use",
       );
 
-      if (
-        toolUseBlock !== null &&
-        toolUseBlock !== undefined &&
-        toolUseBlock.name === "read_file"
-      ) {
-        // ファイルを読み込み
-        const input = toolUseBlock.input as { path: string };
-        // eslint-disable-next-line no-await-in-loop
-        const fileContent = await fs.readFile(input.path, "utf-8");
-
-        // Tool結果を追加
+      if (toolUseBlocks.length > 0) {
+        // 全ツールを実行
         messages.push({
           role: "assistant",
           content: response.content,
         });
+
+        // eslint-disable-next-line no-await-in-loop
+        const toolResults = await Promise.all(
+          toolUseBlocks.map((block) => executeToolUse(block)),
+        );
+
         messages.push({
           role: "user",
-          content: [
-            {
-              type: "tool_result",
-              tool_use_id: toolUseBlock.id,
-              content: fileContent,
-            },
-          ],
+          content: toolResults,
         });
       } else {
         // Textレスポンスを取得
@@ -218,60 +191,47 @@ ${policySection}
         reviewText =
           textBlock !== null &&
           textBlock !== undefined &&
-          typeof textBlock.text === "string" &&
-          textBlock.text !== ""
+          typeof textBlock.text === "string"
             ? textBlock.text
             : "";
         continueLoop = false;
       }
     }
 
-    return {
+    // 7. 結果を構造化
+    const results: FileReviewResult[] = targetFilePaths.map((filePath) => ({
       filePath,
-      policies: policies.map((p) => p.name),
+      policies: filePolicyMap[filePath].map((p) => path.basename(p)),
       review: reviewText,
       success: true,
+    }));
+
+    return {
+      results,
+      summary: {
+        total: results.length,
+        successful: results.length,
+        failed: 0,
+      },
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    return {
+
+    const results: FileReviewResult[] = targetFilePaths.map((filePath) => ({
       filePath,
       policies: [],
       review: "",
       success: false,
       error: errorMessage,
+    }));
+
+    return {
+      results,
+      summary: {
+        total: results.length,
+        successful: 0,
+        failed: results.length,
+      },
     };
   }
-};
-
-/**
- * 複数ファイルを並列でレビュー
- */
-export const reviewFilesInParallel = async (
-  input: FileReviewInput,
-): Promise<ParallelReviewResult> => {
-  const { targetFilePaths, guardrailsRoot, apiKey } = input;
-
-  // Claude APIクライアント
-  const anthropic = new Anthropic({ apiKey });
-
-  // 各ファイルを並列でレビュー
-  const results = await Promise.all(
-    targetFilePaths.map((filePath) =>
-      reviewSingleFile(filePath, guardrailsRoot, anthropic),
-    ),
-  );
-
-  // サマリーを生成
-  const successful = results.filter((r) => r.success).length;
-  const failed = results.filter((r) => !r.success).length;
-
-  return {
-    results,
-    summary: {
-      total: results.length,
-      successful,
-      failed,
-    },
-  };
 };

@@ -69,19 +69,13 @@ cd guardrails
 npm install
 ```
 
-### 2. ビルド
-
-```bash
-npm run build
-```
-
-### 3. 環境変数の設定
+### 2. 環境変数の設定
 
 ```bash
 export ANTHROPIC_API_KEY="your-api-key-here"
 ```
 
-### 4. Claude Desktop設定
+### 3. Claude Desktop設定
 
 `~/Library/Application Support/Claude/claude_desktop_config.json` に以下を追加：
 
@@ -89,8 +83,8 @@ export ANTHROPIC_API_KEY="your-api-key-here"
 {
   "mcpServers": {
     "guardrails": {
-      "command": "node",
-      "args": ["/Users/your-username/path/to/guardrails/dist/index.js"],
+      "command": "npx",
+      "args": ["tsx", "/Users/your-username/path/to/guardrails/index.ts"],
       "env": {
         "ANTHROPIC_API_KEY": "your-api-key-here"
       }
@@ -124,11 +118,13 @@ export ANTHROPIC_API_KEY="your-api-key-here"
 
 #### 処理フロー
 
-1. **各ファイルを並列処理**（Promise.all）
+1. **全ファイルのポリシーを収集**（重複排除）
    - ファイル種別判定（.ct.test.tsx / .ss.test.ts）
-   - ポリシー選択・並列読み込み
-   - Claude APIでレビュー実行
-2. **結果を集約**して返す
+   - 必要なポリシーを並列読み込み
+2. **1回のClaude API呼び出しで全ファイルをレビュー**
+   - read_fileツールで各ファイルを読み込み
+   - 全ファイルをまとめて審査
+3. **結果を構造化**して返す
 
 #### 出力例
 
@@ -179,11 +175,13 @@ export ANTHROPIC_API_KEY="your-api-key-here"
 
 #### 処理フロー
 
-1. **各ファイルを並列処理**（Promise.all）
+1. **全ファイルのポリシーを収集**（重複排除）
    - ファイル種別判定（エンティティ / リポジトリ）
-   - ポリシー選択・並列読み込み
-   - Claude APIでレビュー実行
-2. **結果を集約**して返す
+   - 必要なポリシーを並列読み込み
+2. **1回のClaude API呼び出しで全ファイルをレビュー**
+   - read_fileツールで各ファイルを読み込み
+   - 全ファイルをまとめて審査
+3. **結果を構造化**して返す
 
 #### 出力例
 
@@ -310,8 +308,8 @@ review/
 # 開発モード（ビルド + 実行）
 npm run dev
 
-# ビルドのみ
-npm run build
+# 型チェック
+npm run validate:tsc
 
 # 実行のみ
 npm start
@@ -319,14 +317,16 @@ npm start
 
 ## アーキテクチャのポイント
 
-1. **並列処理**
-   - ポリシーファイルの読み込み: Promise.all
-   - 複数ファイルのレビュー: Promise.all
+1. **1ショットレビュー**
+   - 全ファイルを1回のClaude API呼び出しでレビュー
+   - コスト効率とレスポンス時間の最適化
+   - ポリシーファイルの読み込みはPromise.allで並列化
 
 2. **ポリシー選択の自動化**
    - ファイル拡張子からポリシーを自動選択
-   - 適切なポリシーのみを読み込み
+   - 重複ポリシーを排除して効率的に読み込み
 
 3. **Claude Agent SDK統合**
    - MCPツール内でClaude APIを直接呼び出し
-   - レビュー結果を自動で集約
+   - read_fileツールで対象ファイルを動的に読み込み
+   - レビュー結果を構造化して返却

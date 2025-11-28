@@ -3,14 +3,12 @@
  */
 
 import * as path from "path";
-import { ParallelReviewResult } from "./domain-reviewer";
+import { ReviewResult } from "./domain-reviewer";
 
 /**
  * レビュー結果を整形
  */
-export const formatReviewResults = (
-  reviewResult: ParallelReviewResult,
-): string => {
+export const formatReviewResults = (reviewResult: ReviewResult): string => {
   const { results, summary } = reviewResult;
 
   let output = "";

@@ -3,40 +3,17 @@
  */
 
 import * as path from "path";
-import { CoverageCheckResult } from "./coverage-checker";
-import { ParallelReviewResult } from "./test-reviewer";
+import { ReviewResult } from "./test-reviewer";
 
 /**
- * レビュー結果を整形（カバレッジチェック + 個別レビュー）
+ * レビュー結果を整形
  */
-export const formatReviewResults = (
-  coverageResults: CoverageCheckResult[],
-  reviewResult: ParallelReviewResult,
-): string => {
-  let output = "";
-
-  // カバレッジチェック結果
-  if (coverageResults.length > 0) {
-    output += "# 📊 テストカバレッジチェック\n\n";
-
-    coverageResults.forEach((c) => {
-      const dirName = path.basename(c.pageDirectory);
-      output += `## ${dirName}\n\n`;
-
-      if (c.success) {
-        output += `${c.review}\n\n`;
-      } else {
-        output += `### エラー\n\n${c.error}\n\n`;
-      }
-
-      output += "---\n\n";
-    });
-  }
-
-  // 個別テストレビュー結果
+export const formatReviewResults = (reviewResult: ReviewResult): string => {
   const { results, summary } = reviewResult;
 
-  output += "# 📝 個別テストファイルレビュー\n\n";
+  let output = "";
+
+  output += "# 📝 テストファイルレビュー\n\n";
   output += "## サマリー\n\n";
   output += `- 総ファイル数: ${summary.total}\n`;
   output += `- 成功: ${summary.successful}\n`;
