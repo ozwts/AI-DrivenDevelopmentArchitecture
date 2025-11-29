@@ -5,7 +5,7 @@
 OpenAPIスキーマは**空文字列ではなくオプショナル**を使用する。
 
 **関連ドキュメント**:
-- **OpenAPI全体像**: `10-openapi-overview.md`
+- **OpenAPI全体像**: `10-api-overview.md`
 - **エンドポイント設計**: `20-endpoint-design.md`
 
 ## 空文字列禁止原則
@@ -217,7 +217,7 @@ status:
   description: ステータス
 ```
 
-**注意**: enum定義は大文字スネークケースで統一（`10-openapi-overview.md`参照）。
+**注意**: enum定義は大文字スネークケースで統一（`10-api-overview.md`参照）。
 
 ## Do / Don't
 

@@ -62,22 +62,26 @@ Review code against Guardrails policies. Report violations objectively. **You ON
 - Glob で該当ディレクトリの `*0-*-overview.md` を検索
 - ファイル名からトピックを推論（entity → entity-overview.md等）
 
-## 3. Load Policies（段階的読み込み）
+## 3. Load Policies（段階的読み込み - ツール使用）
 
-**Step 1: 概要ファイルのみ読み込み**
+**利用可能なツール:**
+- `list_overview_files`: ポリシーディレクトリから Overview ファイル (*0-*-overview.md) の一覧を取得
+- `list_files`: ポリシーディレクトリから全ファイルの一覧を取得
+- `read_file`: 指定されたファイルの内容を読み込み
 
-該当ポリシーディレクトリで `*0-*-overview.md` パターンのファイルを読み込む。
+**Step 1: Overview ファイルを読み込み**
 
-各概要ファイルから抽出:
-- 核心原則（1-2文）
-- 責務（実施すること/しないこと）
-- チェックリスト
+1. `list_overview_files` ツールでポリシーディレクトリから概要ファイル一覧を取得
+2. 各 Overview ファイルを `read_file` で読み込み
+3. 核心原則、責務、チェックリストを把握
 
-**Step 2: 違反検出時に詳細ファイルを参照**
+**Step 2: 必要に応じて詳細ファイルを読み込み**
 
-違反を検出した場合のみ、`*1-*-{detail}.md` から `*9-*-{detail}.md` のパターンで関連詳細ファイルを読み込む。
+1. レビュー対象コードの特性に応じて、追加のポリシーファイルが必要か判断
+2. `list_files` で詳細ファイル一覧を確認
+3. 関連する詳細ファイル (*1-*-*.md ~ *9-*-*.md) を `read_file` で読み込み
 
-**メリット**: トークン消費最小化、レイテンシ削減
+**メリット**: トークン消費最小化、必要なポリシーのみ読み込み、LLMによる適切な判断
 
 ## 4. Review Code and Check for Missing Implementations
 

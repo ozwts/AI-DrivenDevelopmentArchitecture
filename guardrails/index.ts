@@ -12,13 +12,16 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import * as path from "path";
 import { fileURLToPath } from "url";
-import { z } from "zod";
 import {
   SecretsManagerClient,
   GetSecretValueCommand,
 } from "@aws-sdk/client-secrets-manager";
-import { handleReviewWebTests } from "./review/web/test-strategy";
-import { handleReviewDomainModels } from "./review/server/domain-model";
+import { createReviewHandler } from "./review/review-handler";
+import {
+  REVIEW_RESPONSIBILITIES,
+  STATIC_ANALYSIS_RESPONSIBILITIES,
+} from "./review/responsibilities";
+import { createStaticAnalysisHandler } from "./review/static-analysis-handler";
 
 // ESMで__dirnameを取得
 const __filename = fileURLToPath(import.meta.url);
@@ -89,97 +92,112 @@ const main = async (): Promise<void> => {
     version: "1.0.0",
   });
 
-  // review_web_tests ツールを登録
-  server.registerTool(
-    "review_web_tests",
-    {
-      description:
-        "作成・修正したフロントエンドのテストファイルがテスト戦略ポリシーに準拠しているかを審査します。対象：コンポーネントテスト（*.ct.test.tsx）、スナップショットテスト（*.ss.test.ts）",
-      inputSchema: {
-        targetFilePaths: z
-          .array(z.string())
-          .describe(
-            "作成・修正したテストファイルの絶対パスの配列（例: ['/path/to/TodoForm.ct.test.tsx', '/path/to/TodoCard.ct.test.tsx']）",
-          ),
+  // ========================================
+  // Review (司法): ポリシーに基づくコードレビュー
+  // ========================================
+
+  // ----- 定性的レビュー (Qualitative Review) -----
+  // LLMを使用したポリシーベースのコードレビュー
+  // 責務定義（review/responsibilities.ts）から動的にツールを登録
+  // 新しいレビュー責務を追加する場合は、responsibilities.ts に定義を追加するだけで自動登録されます
+  //
+  // 例: review_server_domain_models, review_web_tests
+  for (const responsibility of REVIEW_RESPONSIBILITIES) {
+    const handler = createReviewHandler(responsibility);
+
+    server.registerTool(
+      responsibility.id,
+      {
+        description: responsibility.toolDescription,
+        inputSchema: responsibility.inputSchema,
       },
-    },
-    async ({ targetFilePaths }) => {
-      try {
-        const result = await handleReviewWebTests({
-          targetFilePaths,
-          guardrailsRoot: GUARDRAILS_ROOT,
-          apiKey: process.env.ANTHROPIC_API_KEY ?? "",
-        });
+      async ({ targetFilePaths }) => {
+        try {
+          const result = await handler({
+            targetFilePaths,
+            guardrailsRoot: GUARDRAILS_ROOT,
+            apiKey: process.env.ANTHROPIC_API_KEY ?? "",
+          });
 
-        return {
-          content: [
-            {
-              type: "text",
-              text: result,
-            },
-          ],
-        };
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : String(error);
-        return {
-          content: [
-            {
-              type: "text",
-              text: `エラー: ${errorMessage}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-    },
-  );
-
-  // review_domain_models ツールを登録
-  server.registerTool(
-    "review_domain_models",
-    {
-      description:
-        "作成・修正したサーバー側のドメインモデルファイルがドメインモデルポリシーに準拠しているかを審査します。対象：エンティティ（*.ts）、リポジトリインターフェース（*-repository.ts）",
-      inputSchema: {
-        targetFilePaths: z
-          .array(z.string())
-          .describe(
-            "作成・修正したドメインモデルファイルの絶対パスの配列（例: ['/path/to/server/src/domain/model/todo/todo.ts', '/path/to/server/src/domain/model/todo/todo-repository.ts']）",
-          ),
+          return {
+            content: [
+              {
+                type: "text",
+                text: result,
+              },
+            ],
+          };
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          return {
+            content: [
+              {
+                type: "text",
+                text: `エラー: ${errorMessage}`,
+              },
+            ],
+            isError: true,
+          };
+        }
       },
-    },
-    async ({ targetFilePaths }) => {
-      try {
-        const result = await handleReviewDomainModels({
-          targetFilePaths,
-          guardrailsRoot: GUARDRAILS_ROOT,
-          apiKey: process.env.ANTHROPIC_API_KEY ?? "",
-        });
+    );
+  }
 
-        return {
-          content: [
-            {
-              type: "text",
-              text: result,
-            },
-          ],
-        };
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : String(error);
-        return {
-          content: [
-            {
-              type: "text",
-              text: `エラー: ${errorMessage}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-    },
-  );
+  // ----- 静的解析レビュー (Static Analysis Review) -----
+  // TypeScript型チェック・ESLintによる静的解析
+  // 責務定義（review/responsibilities.ts）から動的にツールを登録
+  //
+  // 例: review_server_static_analysis
+  for (const responsibility of STATIC_ANALYSIS_RESPONSIBILITIES) {
+    const handler = createStaticAnalysisHandler();
+
+    server.registerTool(
+      responsibility.id,
+      {
+        description: responsibility.toolDescription,
+        inputSchema: responsibility.inputSchema,
+      },
+      async ({ workspace, targetFilePaths, analysisType }) => {
+        try {
+          const result = await handler({
+            workspace,
+            targetFilePaths,
+            analysisType,
+            guardrailsRoot: GUARDRAILS_ROOT,
+          });
+
+          return {
+            content: [
+              {
+                type: "text",
+                text: result,
+              },
+            ],
+          };
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          return {
+            content: [
+              {
+                type: "text",
+                text: `エラー: ${errorMessage}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+      },
+    );
+  }
+
+  // ========================================
+  // Procedure (行政): ポリシーに従った手順実行
+  // ========================================
+  // TODO: 将来実装予定
+  // ポリシーに定義された手順を自動実行するツールを登録
+  // 例: execute_migration_procedure, execute_deployment_procedure, etc.
 
   // Stdio経由で通信
   const transport = new StdioServerTransport();

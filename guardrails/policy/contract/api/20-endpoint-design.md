@@ -103,7 +103,7 @@ const result = await useCase.execute({
 
 ### レスポンスボディに親IDを含める
 
-**参照**: `10-openapi-overview.md` - ネストされたリソースの親ID
+**参照**: `10-api-overview.md` - ネストされたリソースの親ID
 
 ```yaml
 AttachmentResponse:

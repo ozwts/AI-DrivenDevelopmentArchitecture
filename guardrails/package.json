@@ -18,11 +18,12 @@
     "validate:tsc:watch": "tsc --watch"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.4",
     "@anthropic-ai/sdk": "^0.32.1",
-    "@aws-sdk/client-secrets-manager": "^3.0.0"
+    "@aws-sdk/client-secrets-manager": "^3.0.0",
+    "@modelcontextprotocol/sdk": "^1.0.4"
   },
   "devDependencies": {
+    "@types/glob": "^8.1.0",
     "@types/node": "^22.10.2",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
