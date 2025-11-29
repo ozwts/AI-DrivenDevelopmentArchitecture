@@ -250,12 +250,9 @@ AttachmentResponse:
 ```typescript
 // ビジネスルール: PREPARED → UPLOADED のみ許可
 if (attachment.status !== 'PREPARED') {
-  return {
-    success: false,
-    error: new ValidationError(
-      'ステータスはPREPAREDからUPLOADEDにのみ更新できます'
-    ),
-  };
+  return Result.err(new ValidationError(
+    'ステータスはPREPAREDからUPLOADEDにのみ更新できます'
+  ));
 }
 
 // 状態遷移
@@ -295,12 +292,9 @@ GetAttachmentDownloadUrlResponse:
 ```typescript
 // ビジネスルール: UPLOADEDでなければダウンロード不可
 if (attachment.status !== 'UPLOADED') {
-  return {
-    success: false,
-    error: new ValidationError(
-      'アップロード完了していないファイルはダウンロードできません'
-    ),
-  };
+  return Result.err(new ValidationError(
+    'アップロード完了していないファイルはダウンロードできません'
+  ));
 }
 
 const downloadUrl = await s3Adapter.generatePresignedUrl({
@@ -377,13 +371,10 @@ export class Filename {
     const ext = path.extname(value).toLowerCase();
 
     if (!allowedExtensions.includes(ext)) {
-      return {
-        success: false,
-        error: new ValidationError('許可されていない拡張子です'),
-      };
+      return Result.err(new ValidationError('許可されていない拡張子です'));
     }
 
-    return { success: true, data: new Filename(value) };
+    return Result.ok(new Filename(value));
   }
 }
 ```
@@ -395,10 +386,7 @@ export class Filename {
 const attachments = await attachmentRepository.findByTodoId({ todoId });
 
 if (attachments.length >= 10) {
-  return {
-    success: false,
-    error: new ValidationError('添付ファイルは最大10個までです'),
-  };
+  return Result.err(new ValidationError('添付ファイルは最大10個までです'));
 }
 ```
 

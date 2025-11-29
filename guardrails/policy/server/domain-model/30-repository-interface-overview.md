@@ -21,16 +21,44 @@ export type TodoRepository = {
 
 ### 2. Result型を使用
 
+**参照**: `@/util/result` - Result型の定義
+
 すべてのメソッドは `Result<T, E>` 型を返す。
 
 ```typescript
 import type { Result } from "@/util/result";
 import type { UnexpectedError } from "@/util/error-util";
 
+// 型エイリアス定義
 export type FindByIdResult = Result<Todo | undefined, UnexpectedError>;
 export type FindAllResult = Result<Todo[], UnexpectedError>;
 export type SaveResult = Result<void, UnexpectedError>;
 export type RemoveResult = Result<void, UnexpectedError>;
+
+// リポジトリインターフェース
+export type TodoRepository = {
+  findById(props: { id: string }): Promise<FindByIdResult>;
+  findAll(): Promise<FindAllResult>;
+  save(props: { todo: Todo }): Promise<SaveResult>;
+  remove(props: { id: string }): Promise<RemoveResult>;
+};
+```
+
+**使用パターン**:
+```typescript
+// リポジトリ呼び出し
+const result = await todoRepository.findById({ id: "123" });
+
+// Result型の判定
+if (!result.success) {
+  return Result.err(result.error);  // UnexpectedError
+}
+
+if (!result.data) {
+  return Result.err(new NotFoundError("TODOが見つかりません"));
+}
+
+const todo = result.data;  // Todo型が使用可能
 ```
 
 ### 3. Propsパターン
@@ -184,4 +212,87 @@ export type TodoRepository = {
   // save()で子エンティティも一緒に保存される
   save(props: { todo: Todo }): Promise<SaveResult>;
 };
+```
+
+## 実装の必要最小限化
+
+**憲法参照**: `guardrails/constitution/implementation-minimization-principles.md`
+
+### 1. 使っていないメソッドは実装しない
+
+**現在のユースケースで使用されていないメソッドは実装しない。**
+
+```typescript
+// ❌ Bad: 使わないメソッドを「念のため」実装
+interface TodoRepository {
+  findById(props: { id: string }): Promise<FindByIdResult>;
+  findAll(): Promise<FindAllResult>;           // どこでも使っていない
+  count(): Promise<CountResult>;               // どこでも使っていない
+  exists(props: { id: string }): Promise<ExistsResult>; // findByIdで代替可能
+}
+
+// ✅ Good: 現在必要なメソッドのみ実装
+interface TodoRepository {
+  findById(props: { id: string }): Promise<FindByIdResult>;
+}
+```
+
+### 2. 非効率な実装を検出したら即座にリファクタリング
+
+**findByIdをループで使っている箇所を発見したら、目先の修正で終わらせず、findByIdsを実装する。**
+
+```typescript
+// ❌ Bad: findByIdをループ（目先の修正）
+for (const id of todoIds) {
+  const result = await todoRepository.findById({ id });
+  if (result.success) todos.push(result.data);
+}
+
+// ✅ Good: findByIdsを実装（継続的リファクタリング）
+export type TodoRepository = {
+  findById(props: { id: string }): Promise<FindByIdResult>;
+  findByIds(props: { ids: string[] }): Promise<FindByIdsResult>;  // インターフェースに遡って追加
+};
+
+const todosResult = await todoRepository.findByIds({ ids: todoIds });
+```
+
+**重要**: findByIdのループを見つけたら、その場で止まらず、インターフェースに遡ってfindByIdsを追加する。
+
+### 3. 都度都度インターフェースを見直す
+
+**新しいユースケースが追加されるたびに、既存インターフェースが最適かを検証する。**
+
+```typescript
+// 初期実装
+export type TodoRepository = {
+  findById(props: { id: string }): Promise<FindByIdResult>;
+};
+
+// ユースケース追加: 複数TODO一括取得 → findByIds追加
+export type TodoRepository = {
+  findById(props: { id: string }): Promise<FindByIdResult>;
+  findByIds(props: { ids: string[] }): Promise<FindByIdsResult>;
+};
+
+// さらに追加: プロジェクト別TODO取得 → 専用メソッド追加（findByIdのループは許さない）
+export type TodoRepository = {
+  findById(props: { id: string }): Promise<FindByIdResult>;
+  findByIds(props: { ids: string[] }): Promise<FindByIdsResult>;
+  findByProjectId(props: { projectId: string }): Promise<FindByProjectIdResult>;
+};
+```
+
+### 4. 既存メソッドで代替可能なら新規実装不要
+
+```typescript
+// ❌ Bad: 既存メソッドで代替可能なのに新規実装
+export type TodoRepository = {
+  findById(props: { id: string }): Promise<FindByIdResult>;
+  exists(props: { id: string }): Promise<ExistsResult>;  // findByIdで代替可能
+};
+
+// ✅ Good: 既存メソッドを活用
+const result = await todoRepository.findById({ id });
+const exists = result.success && result.data !== undefined;
 ```

@@ -40,13 +40,189 @@ export class {Action}{Entity}UseCaseImpl
     }
 
     // 5. 成功レスポンス返却
-    return {
-      success: true,
-      data: { /* output */ },
-    };
+    return Result.ok({ /* output */ });
   }
 }
 ```
+
+## executeメソッドの実装原則
+
+### プライベートメソッドを作らない
+
+**原則**: executeメソッド内で全体の流れを書き切り、プライベートメソッドに分割しない。
+
+**理由**:
+- **全体像の把握**: executeメソッドを読むだけでユースケース全体の流れが理解できる
+- **追跡容易性**: ロジックが一箇所に集約され、デバッグ・修正が容易
+- **単一責任原則**: 1ユースケース = 1ユーザーアクション = 1メソッド
+- **AI支援の恩恵**: LLMがexecuteメソッド全体を一度に理解・修正可能
+
+### ✅ Good: executeメソッドで書き切る
+
+```typescript
+export class CreateProjectUseCaseImpl implements CreateProjectUseCase {
+  async execute(input: CreateProjectUseCaseInput): Promise<CreateProjectUseCaseResult> {
+    const { projectRepository, logger, fetchNow } = this.#props;
+
+    // 1. ID・時刻生成
+    const projectId = projectRepository.projectId();
+    const now = fetchNow();
+
+    // 2. Value Object生成
+    const colorResult = ProjectColor.from({ value: input.color });
+    if (!colorResult.success) {
+      logger.warn("プロジェクト色のバリデーションエラー", { color: input.color });
+      return Result.err(colorResult.error);
+    }
+
+    // 3. Entity生成
+    const project = new Project({
+      id: projectId,
+      name: input.name,
+      description: input.description,
+      color: colorResult.data,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    // 4. 永続化
+    const saveResult = await projectRepository.save({ project });
+    if (!saveResult.success) {
+      logger.error("プロジェクト保存エラー", { projectId, error: saveResult.error });
+      return Result.err(saveResult.error);
+    }
+
+    logger.info("プロジェクト作成成功", { projectId });
+    return Result.ok({ project });
+  }
+}
+```
+
+### ❌ Bad: プライベートメソッドで分割
+
+```typescript
+export class CreateProjectUseCaseImpl implements CreateProjectUseCase {
+  async execute(input: CreateProjectUseCaseInput): Promise<CreateProjectUseCaseResult> {
+    // ❌ executeメソッドだけ見ても全体像が分からない
+    const colorResult = await this.#validateColor(input.color);
+    if (!colorResult.success) {
+      return Result.err(colorResult.error);
+    }
+
+    const project = this.#createProjectEntity(input, colorResult.data);
+    return await this.#saveProject(project);
+  }
+
+  // ❌ プライベートメソッドに分割すると、各メソッドを追いかける必要がある
+  async #validateColor(color: string): Promise<Result<ProjectColor, DomainError>> {
+    const colorResult = ProjectColor.from({ value: color });
+    if (!colorResult.success) {
+      this.#props.logger.warn("プロジェクト色のバリデーションエラー", { color });
+    }
+    return colorResult;
+  }
+
+  #createProjectEntity(input: CreateProjectUseCaseInput, color: ProjectColor): Project {
+    const projectId = this.#props.projectRepository.projectId();
+    const now = this.#props.fetchNow();
+    return new Project({
+      id: projectId,
+      name: input.name,
+      description: input.description,
+      color,
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
+  async #saveProject(project: Project): Promise<CreateProjectUseCaseResult> {
+    const saveResult = await this.#props.projectRepository.save({ project });
+    if (!saveResult.success) {
+      this.#props.logger.error("プロジェクト保存エラー", { projectId: project.id, error: saveResult.error });
+      return Result.err(saveResult.error);
+    }
+
+    this.#props.logger.info("プロジェクト作成成功", { projectId: project.id });
+    return Result.ok({ project });
+  }
+}
+```
+
+### 複雑になる場合の対処法
+
+**executeメソッドが長くなる場合**: ドメインモデルのメソッドに抽出する
+
+```typescript
+// ❌ Bad: UseCase内で複雑なステータス遷移ロジックを実装
+export class UpdateTodoUseCaseImpl implements UpdateTodoUseCase {
+  async execute(input: UpdateTodoUseCaseInput): Promise<UpdateTodoUseCaseResult> {
+    const existingTodo = /* ... */;
+
+    // ❌ ステータス遷移ロジックがUseCase内に記述されている
+    if (existingTodo.status === "COMPLETED" && input.status !== "COMPLETED") {
+      return Result.err(new DomainError("完了済みTODOのステータスは変更できません"));
+    }
+    if (input.status === "COMPLETED" && !existingTodo.dueDate) {
+      return Result.err(new DomainError("期限のないTODOは完了できません"));
+    }
+
+    const updatedTodo = existingTodo.updateStatus(input.status);
+    // ...
+  }
+}
+
+// ✅ Good: ドメインモデルのメソッドに抽出
+export class UpdateTodoUseCaseImpl implements UpdateTodoUseCase {
+  async execute(input: UpdateTodoUseCaseInput): Promise<UpdateTodoUseCaseResult> {
+    const { todoRepository, fetchNow } = this.#props;
+
+    const existingTodoResult = await todoRepository.findById({ id: input.todoId });
+    if (!existingTodoResult.success || !existingTodoResult.data) {
+      return Result.err(new NotFoundError("TODOが見つかりません"));
+    }
+
+    const statusResult = TodoStatus.from({ value: input.status });
+    if (!statusResult.success) {
+      return Result.err(statusResult.error);
+    }
+
+    // ✅ ステータス遷移ロジックはEntityメソッドに委譲
+    const updatedTodoResult = existingTodoResult.data.changeStatus(statusResult.data, fetchNow());
+    if (!updatedTodoResult.success) {
+      return Result.err(updatedTodoResult.error);
+    }
+
+    const saveResult = await todoRepository.save({ todo: updatedTodoResult.data });
+    if (!saveResult.success) {
+      return Result.err(saveResult.error);
+    }
+
+    return Result.ok({ todo: updatedTodoResult.data });
+  }
+}
+
+// Todo Entity
+export class Todo {
+  changeStatus(newStatus: TodoStatus, updatedAt: string): Result<Todo, DomainError> {
+    // ✅ ステータス遷移ロジックはEntity内に集約
+    const canTransitionResult = this.status.canTransitionTo(newStatus);
+    if (!canTransitionResult.success) {
+      return canTransitionResult;
+    }
+
+    if (newStatus.isCompleted() && this.dueDate === undefined) {
+      return Result.err(new DomainError("期限のないTODOは完了できません"));
+    }
+
+    return Result.ok(new Todo({ ...this, status: newStatus, updatedAt }));
+  }
+}
+```
+
+**ポイント**:
+- **UseCase層**: オーケストレーション（リポジトリ呼び出し、Entity操作の組み合わせ）
+- **Domain層**: ビジネスロジック（ステータス遷移、不変条件チェック）
+- プライベートメソッドではなく、ドメインメソッドに抽出することで、他のユースケースでも再利用可能
 
 ## Props型の設計
 
@@ -96,10 +272,7 @@ if (!projectResult.success) {
 }
 
 if (projectResult.data === undefined) {
-  return {
-    success: false,
-    error: new NotFoundError("プロジェクトが見つかりません"),
-  };
+  return Result.err(new NotFoundError("プロジェクトが見つかりません"));
 }
 ```
 
@@ -108,10 +281,7 @@ if (projectResult.data === undefined) {
 ```typescript
 // プロジェクトの所有者確認
 if (project.userSub !== input.userSub) {
-  return {
-    success: false,
-    error: new ForbiddenError("プロジェクトへのアクセス権限がありません"),
-  };
+  return Result.err(new ForbiddenError("プロジェクトへのアクセス権限がありません"));
 }
 ```
 
@@ -127,10 +297,7 @@ if (!existingResult.success) {
 }
 
 if (existingResult.data !== undefined) {
-  return {
-    success: false,
-    error: new ConflictError("このメールアドレスは既に登録されています"),
-  };
+  return Result.err(new ConflictError("このメールアドレスは既に登録されています"));
 }
 ```
 
@@ -139,10 +306,7 @@ if (existingResult.data !== undefined) {
 ```typescript
 // TODOのステータス遷移ルール検証
 if (currentStatus === "COMPLETED" && newStatus === "PENDING") {
-  return {
-    success: false,
-    error: new DomainError("完了済みTODOを未完了に戻すことはできません"),
-  };
+  return Result.err(new DomainError("完了済みTODOを未完了に戻すことはできません"));
 }
 ```
 
@@ -170,10 +334,7 @@ if (!findResult.success) {
 
 // undefinedチェック（NotFoundError）
 if (findResult.data === undefined) {
-  return {
-    success: false,
-    error: new NotFoundError("TODOが見つかりません"),
-  };
+  return Result.err(new NotFoundError("TODOが見つかりません"));
 }
 
 const todo = findResult.data;
@@ -217,19 +378,19 @@ async execute(input: Input): Promise<Result> {
       // 成功時は自動commit
     });
 
-    return { success: true, data: undefined };
+    return Result.ok(undefined);
   } catch (error) {
     // 失敗時は自動rollback済み
     if (error instanceof DomainError) {
-      return { success: false, error };
+      return Result.err(error);
     }
     if (error instanceof NotFoundError) {
-      return { success: false, error };
+      return Result.err(error);
     }
     if (error instanceof ForbiddenError) {
-      return { success: false, error };
+      return Result.err(error);
     }
-    return { success: false, error: new UnexpectedError() };
+    return Result.err(new UnexpectedError());
   }
 }
 ```
@@ -250,10 +411,7 @@ async execute(input: Input): Promise<Result> {
 const findResult = await this.#props.userRepository.findBySub({ sub: userSub });
 if (!findResult.success) {
   this.#props.logger.error("ユーザー情報の取得に失敗", findResult.error);
-  return {
-    success: false,
-    error: findResult.error,
-  };
+  return Result.err(findResult.error);
 }
 ```
 
@@ -334,13 +492,13 @@ async execute(input: UpdateTodoUseCaseInput): Promise<Result> {
     id: input.todoId,
   });
   if (!existingResult.success || !existingResult.data) {
-    return { success: false, error: new NotFoundError() };
+    return Result.err(new NotFoundError());
   }
   const existing = existingResult.data;
 
   // 2. 権限チェック
   if (existing.userSub !== input.userSub) {
-    return { success: false, error: new ForbiddenError() };
+    return Result.err(new ForbiddenError());
   }
 
   // 3. 変更されたフィールドのみValue Object生成
@@ -377,7 +535,7 @@ async execute(input: UpdateTodoUseCaseInput): Promise<Result> {
   });
 
   if (!reconstructResult.success) {
-    return { success: false, error: reconstructResult.error };
+    return Result.err(reconstructResult.error);
   }
 
   const updated = reconstructResult.data;
@@ -388,7 +546,7 @@ async execute(input: UpdateTodoUseCaseInput): Promise<Result> {
     return saveResult;
   }
 
-  return { success: true, data: updated };
+  return Result.ok(updated);
 }
 ```
 
@@ -418,10 +576,7 @@ if (!findResult.success) {
 // Value Objectエラーの適切な変換
 const colorResult = ProjectColor.fromString(input.color);
 if (!colorResult.success) {
-  return {
-    success: false,
-    error: colorResult.error,
-  };
+  return Result.err(colorResult.error);
 }
 
 // 時刻取得の注入
@@ -453,7 +608,7 @@ const reconstructResult = Todo.reconstruct({
 });
 
 if (!reconstructResult.success) {
-  return { success: false, error: reconstructResult.error };
+  return Result.err(reconstructResult.error);
 }
 
 const updated = reconstructResult.data;

@@ -38,7 +38,7 @@ describe("from", () => {
   describe("正常系", () => {
     it("有効な値からValue Objectを作成できる", () => {
       // Act
-      const result = TodoStatus.from({ value: "TODO" });
+      const result = TodoStatus.from({ status: "TODO" });
 
       // Assert
       expect(result.success).toBe(true);
@@ -48,9 +48,9 @@ describe("from", () => {
     });
 
     it("すべての有効なステータスから作成できる", () => {
-      const todoResult = TodoStatus.from({ value: "TODO" });
-      const inProgressResult = TodoStatus.from({ value: "IN_PROGRESS" });
-      const completedResult = TodoStatus.from({ value: "COMPLETED" });
+      const todoResult = TodoStatus.from({ status: "TODO" });
+      const inProgressResult = TodoStatus.from({ status: "IN_PROGRESS" });
+      const completedResult = TodoStatus.from({ status: "COMPLETED" });
 
       expect(todoResult.success).toBe(true);
       expect(inProgressResult.success).toBe(true);
@@ -59,7 +59,7 @@ describe("from", () => {
 
     it("小文字でも作成できる（大文字小文字の柔軟性）", () => {
       // OpenAPIではenumで大文字のみだが、Value Objectで柔軟に対応
-      const result = TodoStatus.from({ value: "todo" });
+      const result = TodoStatus.from({ status: "todo" });
 
       expect(result.success).toBe(true);
       if (result.success) {
@@ -71,7 +71,7 @@ describe("from", () => {
   describe("異常系", () => {
     it("無効なステータス文字列の場合DomainErrorを返す", () => {
       // Act
-      const result = TodoStatus.from({ value: "INVALID_STATUS" });
+      const result = TodoStatus.from({ status: "INVALID_STATUS" });
 
       // Assert
       expect(result.success).toBe(false);
@@ -82,7 +82,7 @@ describe("from", () => {
     });
 
     it("空文字列の場合DomainErrorを返す", () => {
-      const result = TodoStatus.from({ value: "" });
+      const result = TodoStatus.from({ status: "" });
 
       expect(result.success).toBe(false);
       if (!result.success) {
@@ -91,8 +91,8 @@ describe("from", () => {
     });
 
     it("nullやundefinedの場合DomainErrorを返す", () => {
-      const resultNull = TodoStatus.from({ value: null as any });
-      const resultUndefined = TodoStatus.from({ value: undefined as any });
+      const resultNull = TodoStatus.from({ status: null as any });
+      const resultUndefined = TodoStatus.from({ status: undefined as any });
 
       expect(resultNull.success).toBe(false);
       expect(resultUndefined.success).toBe(false);
@@ -179,8 +179,8 @@ describe("equals", () => {
   });
 
   it("静的ファクトリメソッドから生成した同じステータスは等価である", () => {
-    const status1Result = TodoStatus.from({ value: "TODO" });
-    const status2Result = TodoStatus.from({ value: "TODO" });
+    const status1Result = TodoStatus.from({ status: "TODO" });
+    const status2Result = TodoStatus.from({ status: "TODO" });
 
     expect(status1Result.success).toBe(true);
     expect(status2Result.success).toBe(true);
@@ -234,7 +234,7 @@ describe("toString", () => {
   });
 
   it("静的ファクトリメソッドから生成したValue Objectの文字列表現", () => {
-    const statusResult = TodoStatus.from({ value: "COMPLETED" });
+    const statusResult = TodoStatus.from({ status: "COMPLETED" });
 
     expect(statusResult.success).toBe(true);
     if (statusResult.success) {
@@ -327,7 +327,7 @@ const status = TodoStatus.todo();
 const completed = TodoStatus.completed();
 
 // または from()
-const statusResult = TodoStatus.from({ value: "TODO" });
+const statusResult = TodoStatus.from({ status: "TODO" });
 expect(statusResult.success).toBe(true);
 if (statusResult.success) {
   const status = statusResult.data;
@@ -351,7 +351,7 @@ describe("TodoStatus", () => {
   describe("from", () => {
     describe("正常系", () => {
       it("有効な値からValue Objectを作成できる", () => {
-        const result = TodoStatus.from({ value: "TODO" });
+        const result = TodoStatus.from({ status: "TODO" });
 
         expect(result.success).toBe(true);
         if (result.success) {
@@ -360,9 +360,9 @@ describe("TodoStatus", () => {
       });
 
       it("すべての有効なステータスから作成できる", () => {
-        const todoResult = TodoStatus.from({ value: "TODO" });
-        const inProgressResult = TodoStatus.from({ value: "IN_PROGRESS" });
-        const completedResult = TodoStatus.from({ value: "COMPLETED" });
+        const todoResult = TodoStatus.from({ status: "TODO" });
+        const inProgressResult = TodoStatus.from({ status: "IN_PROGRESS" });
+        const completedResult = TodoStatus.from({ status: "COMPLETED" });
 
         expect(todoResult.success).toBe(true);
         expect(inProgressResult.success).toBe(true);
@@ -370,7 +370,7 @@ describe("TodoStatus", () => {
       });
 
       it("小文字でも作成できる", () => {
-        const result = TodoStatus.from({ value: "todo" });
+        const result = TodoStatus.from({ status: "todo" });
 
         expect(result.success).toBe(true);
         if (result.success) {
@@ -381,7 +381,7 @@ describe("TodoStatus", () => {
 
     describe("異常系", () => {
       it("無効なステータス文字列の場合DomainErrorを返す", () => {
-        const result = TodoStatus.from({ value: "INVALID" });
+        const result = TodoStatus.from({ status: "INVALID" });
 
         expect(result.success).toBe(false);
         if (!result.success) {

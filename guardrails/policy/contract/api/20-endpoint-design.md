@@ -470,36 +470,36 @@ export class UpdateTodoUseCaseImpl implements UpdateTodoUseCase {
     });
 
     if (!existingResult.success || !existingResult.data) {
-      return { success: false, error: new NotFoundError('TODOが見つかりません') };
+      return Result.err(new NotFoundError('TODOが見つかりません'));
     }
 
     const existing = existingResult.data;
 
     // 権限チェック
     if (existing.userSub !== input.userSub) {
-      return { success: false, error: new ForbiddenError() };
+      return Result.err(new ForbiddenError());
     }
 
     // Value Object生成（送信されたフィールドのみ）
     const titleResult = input.title
-      ? TodoTitle.fromString(input.title)
-      : { success: true, data: existing.title };
-    if (!titleResult.success) return { success: false, error: titleResult.error };
+      ? TodoTitle.from({ title: input.title })
+      : Result.ok(existing.title);
+    if (!titleResult.success) return Result.err(titleResult.error);
 
     const statusResult = input.status
-      ? TodoStatus.fromString(input.status)
-      : { success: true, data: existing.status };
-    if (!statusResult.success) return { success: false, error: statusResult.error };
+      ? TodoStatus.from({ status: input.status })
+      : Result.ok(existing.status);
+    if (!statusResult.success) return Result.err(statusResult.error);
 
     const dueDateResult = input.dueDate !== undefined
-      ? (input.dueDate ? DueDate.fromIsoString(input.dueDate) : { success: true, data: undefined })
-      : { success: true, data: existing.dueDate };
-    if (!dueDateResult.success) return { success: false, error: dueDateResult.error };
+      ? (input.dueDate ? DueDate.fromIsoString(input.dueDate) : Result.ok(undefined))
+      : Result.ok(existing.dueDate);
+    if (!dueDateResult.success) return Result.err(dueDateResult.error);
 
     const priorityResult = input.priority
       ? TodoPriority.fromNumber(input.priority)
-      : { success: true, data: existing.priority };
-    if (!priorityResult.success) return { success: false, error: priorityResult.error };
+      : Result.ok(existing.priority);
+    if (!priorityResult.success) return Result.err(priorityResult.error);
 
     // Aggregate再構築（マージロジック）
     const reconstructResult = Todo.reconstruct({
@@ -517,7 +517,7 @@ export class UpdateTodoUseCaseImpl implements UpdateTodoUseCase {
     // reconstruct()内で不変条件検証（Aggregate全体を見て判定）
     // 完了TODOには期限が必要という複数値の関係性チェック → DomainError
     if (!reconstructResult.success) {
-      return { success: false, error: reconstructResult.error };
+      return Result.err(reconstructResult.error);
     }
 
     const updatedTodo = reconstructResult.data;
@@ -525,10 +525,10 @@ export class UpdateTodoUseCaseImpl implements UpdateTodoUseCase {
     // 保存
     const saveResult = await this.#todoRepository.save({ todo: updatedTodo });
     if (!saveResult.success) {
-      return { success: false, error: saveResult.error };
+      return Result.err(saveResult.error);
     }
 
-    return { success: true, data: updatedTodo };
+    return Result.ok(updatedTodo);
   }
 }
 ```

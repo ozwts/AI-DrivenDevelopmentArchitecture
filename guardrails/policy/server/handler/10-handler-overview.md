@@ -408,3 +408,122 @@ export const buildGetProjectHandler = ({ container }: { container: Container }) 
     return c.json(project, 200);
   };
 ```
+
+## 実装の必要最小限化
+
+**憲法参照**: `guardrails/constitution/implementation-minimization-principles.md`
+
+### 1. 使われていないエンドポイントは実装しない
+
+**現在のユーザー要件に必要なエンドポイントのみを実装する。**
+
+```typescript
+// ❌ Bad: 使われていないエンドポイントを「念のため」実装
+// GET /projects/:projectId/export - 要件にない
+// POST /projects/bulk-create - まだ必要ない
+// PATCH /projects/:projectId/archive - 今のところ不要
+
+// ✅ Good: 現在必要なエンドポイントのみ実装
+// POST /projects - 必要
+// GET /projects/:projectId - 必要
+// GET /projects - 必要
+// PATCH /projects/:projectId - 必要
+// DELETE /projects/:projectId - 必要
+```
+
+### 2. レスポンスマッパーの重複を避ける
+
+**同じ変換ロジックを複数のハンドラーで重複実装せず、共通の変換関数を使う。**
+
+```typescript
+// ❌ Bad: 各ハンドラーで同じ変換ロジックを重複実装
+// get-project-handler.ts
+const responseData = {
+  projectId: project.id,
+  name: project.name,
+  color: project.color.toString(),
+  createdAt: project.createdAt,
+};
+
+// list-projects-handler.ts
+const responseData = projects.map((project) => ({
+  projectId: project.id,
+  name: project.name,
+  color: project.color.toString(),
+  createdAt: project.createdAt,
+}));
+
+// ✅ Good: 共通の変換関数を使用
+// project-response-mapper.ts
+export const convertToProjectResponse = (project: Project): ProjectResponse => ({
+  projectId: project.id,
+  name: project.name,
+  color: project.color.toString(),
+  createdAt: project.createdAt,
+});
+
+// 各ハンドラーで使用
+const responseData = convertToProjectResponse(project);
+const responseData = projects.map(convertToProjectResponse);
+```
+
+### 3. エラーハンドリングの共通化
+
+**エラー変換ロジックを共通関数に抽出する。**
+
+```typescript
+// ❌ Bad: 各ハンドラーでエラー変換を重複実装
+// create-project-handler.ts
+if (!result.success) {
+  if (result.error instanceof ValidationError) {
+    return c.json({ name: "ValidationError", message: result.error.message }, 400);
+  }
+  if (result.error instanceof DomainError) {
+    return c.json({ name: "DomainError", message: result.error.message }, 422);
+  }
+  return c.json({ name: "UnexpectedError", message: "予期しないエラー" }, 500);
+}
+
+// ✅ Good: 共通のエラーハンドラーを使用
+// error-handler.ts
+export const handleError = (error: Error, c: Context, logger: Logger): Response => {
+  if (error instanceof ValidationError) {
+    return c.json({ name: "ValidationError", message: error.message }, 400);
+  }
+  if (error instanceof DomainError) {
+    return c.json({ name: "DomainError", message: error.message }, 422);
+  }
+  if (error instanceof NotFoundError) {
+    return c.json({ name: "NotFoundError", message: error.message }, 404);
+  }
+  if (error instanceof ForbiddenError) {
+    return c.json({ name: "ForbiddenError", message: error.message }, 403);
+  }
+  logger.error("予期しないエラー", error);
+  return c.json({ name: "UnexpectedError", message: "予期しないエラー" }, 500);
+};
+
+// 各ハンドラーで使用
+if (!result.success) {
+  return handleError(result.error, c, logger);
+}
+```
+
+### 4. 不要な中間レイヤーを作らない
+
+**シンプルで直接的な実装を優先する。**
+
+```typescript
+// ❌ Bad: 不要な抽象化レイヤーを追加
+// base-handler.ts（使われていない共通基底クラス）
+export abstract class BaseHandler {
+  abstract handle(c: Context): Promise<Response>;
+}
+
+// ✅ Good: ビルダーパターンで直接的に実装
+export const buildCreateProjectHandler =
+  ({ container }: { container: Container }) =>
+  async (c: Context) => {
+    // 直接的なハンドラー実装
+  };
+```

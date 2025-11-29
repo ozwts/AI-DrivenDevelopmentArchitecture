@@ -36,39 +36,64 @@ export class Todo {
 }
 ```
 
-### 3. コンストラクタはPropsパターン
+### 3. コンストラクタはPropsパターン（型エイリアス使用）
 
-コンストラクタの引数はオブジェクト形式（Propsパターン）。
+**原則**: コンストラクタの引数は `<Entity>Props` 型エイリアスで定義する。
 
 **重要**: `analyzability-principles.md` に基づき、すべてのフィールドを `| undefined` で必須化し、型システムで実装漏れを検出可能にする。
 
 ```typescript
-constructor(props: {
+/**
+ * Todoエンティティのコンストラクタ引数型
+ */
+export type TodoProps = {
   id: string;
   title: string;
-  description: string | undefined;  // 必須（undefinedを明示的に渡す）
-  status: TodoStatus;               // Value Object
-  dueDate: string | undefined;      // 必須（undefinedを明示的に渡す）
-  completedAt: string | undefined;  // 必須（undefinedを明示的に渡す）
+  description: string | undefined;   // Tier 3: 必須で渡すが値はundefined可
+  status: TodoStatus;                // Value Object
+  dueDate: string | undefined;       // Tier 2: undefinedに業務的意味がある
+  completedAt: string | undefined;   // Tier 2: undefinedに業務的意味がある
   createdAt: string;
   updatedAt: string;
-}) {
-  this.id = props.id;
-  this.title = props.title;
-  this.description = props.description;
-  this.status = props.status;
-  this.dueDate = props.dueDate;
-  this.completedAt = props.completedAt;
-  this.createdAt = props.createdAt;
-  this.updatedAt = props.updatedAt;
+};
+
+export class Todo {
+  readonly id: string;
+  readonly title: string;
+  readonly description?: string;     // フィールドはオプショナル
+  readonly status: TodoStatus;
+  readonly dueDate: string | undefined;
+  readonly completedAt: string | undefined;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+
+  constructor(props: TodoProps) {
+    this.id = props.id;
+    this.title = props.title;
+    this.description = props.description;
+    this.status = props.status;
+    this.dueDate = props.dueDate;
+    this.completedAt = props.completedAt;
+    this.createdAt = props.createdAt;
+    this.updatedAt = props.updatedAt;
+  }
 }
 ```
 
-**メリット（analyzability-principles.md 原則1）**:
-- フィールドの省略を型システムで検出（省略するとコンパイルエラー）
-- `reconstruct()` と型定義が一致（一貫性）
-- すべてのフィールドを意識することを強制（実装漏れ防止）
-- 解析可能性レベル3（型システムで完全に追跡可能）
+**Tier 3フィールドの重要な区別**:
+- **Props型（コンストラクタ引数）**: `description: string | undefined` （`?` なし - 必須で渡す）
+- **クラスフィールド**: `description?: string` （`?` あり - オプショナル）
+
+この違いにより、analyzability原則に準拠：
+- コンストラクタでは全フィールドを明示的に渡すことを強制（`| undefined` で型システムが検出）
+- クラス内部ではオプショナルフィールドとして扱う（`?` で実装を簡潔に）
+
+**Props型エイリアスのメリット**:
+- **再利用性**: 更新メソッドでも同じ型を使用可能
+- **可読性**: 型定義が一箇所にまとまる
+- **保守性**: フィールド追加時、Props型を修正するだけで全体に反映
+- **analyzability-principles.md 原則1準拠**: フィールドの省略を型システムで検出
+- **一貫性**: `reconstruct()` と型定義が一致
 
 ### 4. コンストラクタではバリデーションしない
 
@@ -111,13 +136,23 @@ constructor(props: { title: string }) {
  * 不変条件チェックはTodoStatus Value Object内で実施済み
  */
 changeStatus(newStatus: TodoStatus, updatedAt: string): Todo {
-  // Value Objectで検証済み → シンプルにEntityを返す
+  // Props型を使って新しいインスタンスを生成
   return new Todo({
-    id: this.id,
-    title: this.title,
-    description: this.description,
+    ...this,      // 既存のプロパティをスプレッド
     status: newStatus,  // Value Object（検証済み）
-    createdAt: this.createdAt,
+    updatedAt,
+  });
+}
+
+```
+
+**Props型を使った更新メソッドのパターン**:
+```typescript
+// スプレッド構文を使用した簡潔な実装
+updateDescription(description: string | undefined, updatedAt: string): Todo {
+  return new Todo({
+    ...this,
+    description,
     updatedAt,
   });
 }
@@ -328,17 +363,93 @@ markAsCompleted(completedAt: string, updatedAt: string): Result<Todo, DomainErro
 
 **使い分けの判断基準**:
 
-| パターン | 使用ケース | メリット | デメリット |
-|---------|----------|---------|-----------|
-| **パターンA** | 基本的な更新 | メソッドチェーン可能、Entity層が薄い | - |
-| **パターンB** | PATCH更新（複数値関係性チェックあり） | 汎用的、フィールド単位の更新 | メソッドチェーン不可 |
-| **パターンC** | 重要なビジネス操作 | ビジネス意図が明確 | メソッドチェーン不可 |
+| パターン | 返り値 | 使用ケース | メリット |
+|---------|-------|-----------|---------|
+| **パターンA** | `Entity` | バリデーション不要な基本的な更新 | Entity層が薄い、`Result.ok()`のボイラープレート不要 |
+| **パターンB** | `Result<Entity, DomainError>` | PATCH更新・リポジトリ復元（`reconstruct`）<br/>※ドメインバリデーションの有無に関わらず常にResult型 | 型安全性（フィールド省略を検出）、一貫性、実装漏れ防止 |
+| **パターンC** | `Result<Entity, DomainError>` | 重要なビジネス操作（複数値関係性チェックあり） | ビジネス意図が明確 |
 
 **重要**:
-- **基本はパターンA**を使用（Entity層が薄く、メソッドチェーン可能）
+- **すべてのパターンでメソッドチェーン可能** - `Result.then()`が`Entity`を自動で`Result.ok()`に包むため
+- **基本はパターンA**を使用（Entity層が薄く、ボイラープレート最小）
 - 複数値関係性バリデーションは必要最小限にとどめる
 - 複数値関係性バリデーションはDomainErrorを返す
 - 単一Value Objectの不変条件はValue Object層に委譲
+
+**メソッドチェーンの例**:
+
+```typescript
+// ✅ EntityとResult型を混在させてフラットにチェーン可能
+const result = Todo.reconstruct(props)                // Result<Todo>
+  .then(t => t.updateDescription("新しい", now))       // Todoを返す → 自動でResult.ok()に包む
+  .then(t => t.markAsCompleted(now, now))            // Result<Todo>を返す → そのまま
+  .then(t => repository.save(t));                    // 完全にフラット
+```
+
+### ResultとEntityの返り値設計方針
+
+**設計判断**: reconstructは常にResult型、インスタンスメソッドは柔軟に使い分ける。
+
+#### reconstruct静的メソッド: ドメインバリデーションの有無に関わらず常にResult型
+
+```typescript
+static reconstruct(props: {
+  id: string;
+  description: string | undefined;  // ✅ undefinedを明示的に渡す必要がある
+  dueDate: string | undefined;      // ✅ 省略するとコンパイルエラー
+  // ...
+}): Result<Todo, DomainError> {
+  // ドメインバリデーション（複数値関係性チェック）がある場合
+  if (props.status.isCompleted() && !props.dueDate) {
+    return Result.err(new DomainError('完了TODOには期限が必要です'));
+  }
+
+  // ドメインバリデーションがなくても、Result型を返す
+  return Result.ok(new Todo(props));
+}
+```
+
+**理由（reconstructの特殊性）**:
+
+reconstructは、**インスタンスメソッドとは異なり、ドメインバリデーションの有無に関わらず常にResult型を返す**。
+
+1. **型安全性（最重要）**: オプショナルフィールドも `| undefined` として必須化し、省略を型システムで検出（analyzability-principles.md 原則1）
+   - リポジトリ復元時・PATCH更新時のフィールド省略を防ぐ
+   - `undefined`を明示的に渡すことで、マージロジックがUseCase層にあることが一目で分かる
+2. **一貫性**: reconstructは常にResult型という明確なルール（ドメインバリデーションの有無を気にせず使える）
+3. **実装漏れ防止**: リポジトリ復元・PATCH更新の信頼性を担保
+
+**パターンAとの違い**:
+- **パターンA（インスタンスメソッド）**: バリデーション不要ならEntityを返す（柔軟性・ボイラープレート削減）
+- **reconstruct**: 常にResult型を返す（型安全性・一貫性を優先）
+
+#### インスタンスメソッド: バリデーションの有無で使い分け
+
+```typescript
+// ✅ バリデーション不要 → Entityを返す
+updateDescription(description: string, updatedAt: string): Todo {
+  return new Todo({ ...this, description, updatedAt });
+}
+
+// ✅ バリデーション必要 → Result型を返す
+markAsCompleted(completedAt: string, updatedAt: string): Result<Todo, DomainError> {
+  if (!this.dueDate) {
+    return Result.err(new DomainError('期限のないTODOは完了できません'));
+  }
+  return Result.ok(new Todo({ ...this, status: TodoStatus.completed(), completedAt, updatedAt }));
+}
+```
+
+**理由**:
+1. **YAGNI原則**: バリデーション不要な場合、冗長な`Result.ok()`を書かない
+2. **Entity層を薄く保つ**: シンプルなデータ変換はEntityを直接返す
+3. **メソッドの意図が明確**: Result型を返す = バリデーションあり
+4. **実用上の問題なし**: `Result.then()`が`Entity`を自動で`Result.ok()`に包むため、メソッドチェーンで混在可能
+
+**設計のメリット**:
+- ✅ reconstructの型安全性とインスタンスメソッドの柔軟性を両立
+- ✅ `Result.then()`により、EntityとResult型を自然にチェーン可能
+- ✅ ボイラープレートの最小化（バリデーション不要なら`Result.ok()`不要）
 
 ### 2. mutableなプロパティ
 
@@ -425,12 +536,9 @@ constructor(props: { title: string }) {
 changeStatus(status: TodoStatus, updatedAt: string): Result<Todo, DomainError> {
   // ❌ 状態遷移ルールはTodoStatus Value Object内で実施すべき
   if (this.status.isCompleted() && !status.isCompleted()) {
-    return {
-      success: false,
-      error: new DomainError('完了済みTODOのステータスは変更できません'),
-    };
+    return Result.err(new DomainError('完了済みTODOのステータスは変更できません'));
   }
-  return { success: true, data: new Todo({ ...this, status, updatedAt }) };
+  return Result.ok(new Todo({ ...this, status, updatedAt }));
 }
 
 // ✅ 正しい: 単一Value Objectの不変条件はValue Objectでチェック
@@ -443,15 +551,9 @@ changeStatus(newStatus: TodoStatus, updatedAt: string): Todo {
 markAsCompleted(completedAt: string, updatedAt: string): Result<Todo, DomainError> {
   // ✅ 複数の値の関係性チェック（Entity全体を見た不変条件）
   if (!this.dueDate) {
-    return {
-      success: false,
-      error: new DomainError('期限のないTODOは完了できません'),
-    };
+    return Result.err(new DomainError('期限のないTODOは完了できません'));
   }
-  return {
-    success: true,
-    data: new Todo({ ...this, status: TodoStatus.completed(), completedAt, updatedAt }),
-  };
+  return Result.ok(new Todo({ ...this, status: TodoStatus.completed(), completedAt, updatedAt }));
 }
 ```
 
@@ -522,12 +624,9 @@ readonly status: string;           // ❌ TodoStatus Value Objectにすべき
 changeStatus(status: TodoStatus, updatedAt: string): Result<Todo, DomainError> {
   // ❌ Entity内で不変条件チェック（Value Objectに委譲すべき）
   if (this.status === 'COMPLETED' && status !== 'COMPLETED') {
-    return {
-      success: false,
-      error: new DomainError('完了済みTODOのステータスは変更できません'),
-    };
+    return Result.err(new DomainError('完了済みTODOのステータスは変更できません'));
   }
-  return { success: true, data: new Todo({ ...this, status, updatedAt }) };
+  return Result.ok(new Todo({ ...this, status, updatedAt }));
 }
 
 // Entity内メソッドでthrowを使用

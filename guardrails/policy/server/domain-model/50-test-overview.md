@@ -145,8 +145,8 @@ original.update({ title: "Updated" });
 expect(original.title).toBe("元のタスク");  // 不変であることを確認
 
 // 状態遷移パターンをテスト
-const todoResult = TodoStatus.from({ value: "TODO" });
-const completedResult = TodoStatus.from({ value: "COMPLETED" });
+const todoResult = TodoStatus.from({ status: "TODO" });
+const completedResult = TodoStatus.from({ status: "COMPLETED" });
 
 // Dummyファクトリを活用
 const todo = todoDummyFrom({ title: "テスト" });
@@ -156,7 +156,7 @@ const todo = todoDummyFrom({ title: "テスト" });
 
 ```typescript
 // Result型をチェックせずdata参照
-const result = TodoStatus.from({ value: "TODO" });
+const result = TodoStatus.from({ status: "TODO" });
 expect(result.data.isTodo()).toBe(true);  // ❌ errorの可能性
 
 // エラー型を検証しない

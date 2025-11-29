@@ -24,7 +24,8 @@
       "mcp__guardrails__review_web_tests",
       "Bash(rm:*)",
       "Bash(for file in 20-entity-overview.md 21-entity-field-classification.md 22-entity-implementation.md 50-test-overview.md 10-domain-model-overview.md)",
-      "Bash(do sed -i '' 's/26-validation-strategy/11-validation-strategy/g' \"$file\")"
+      "Bash(do sed -i '' 's/26-validation-strategy/11-validation-strategy/g' \"$file\")",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": []

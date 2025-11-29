@@ -25,10 +25,7 @@ describe("{Action}{Entity}UseCaseのテスト", () => {
     test("{アクション}が成功する", async () => {
       const useCase = new {Action}{Entity}UseCaseImpl({
         {entity}Repository: new {Entity}RepositoryDummy({
-          saveReturnValue: {
-            success: true,
-            data: undefined,
-          },
+          saveReturnValue: Result.ok(undefined),
         }),
         logger: new LoggerDummy(),
         fetchNow,
@@ -45,10 +42,7 @@ describe("{Action}{Entity}UseCaseのテスト", () => {
     test("リソースが存在しない場合NotFoundErrorを返す", async () => {
       const useCase = new {Action}{Entity}UseCaseImpl({
         {entity}Repository: new {Entity}RepositoryDummy({
-          findByIdReturnValue: {
-            success: true,
-            data: undefined,
-          },
+          findByIdReturnValue: Result.ok(undefined),
         }),
         logger: new LoggerDummy(),
         fetchNow,
@@ -90,22 +84,10 @@ export class ProjectRepositoryDummy implements ProjectRepository {
 
   constructor(props?: ProjectRepositoryDummyProps) {
     this.#projectIdReturnValue = props?.projectIdReturnValue ?? uuid();
-    this.#findByIdReturnValue = props?.findByIdReturnValue ?? {
-      success: true,
-      data: projectDummyFrom(),
-    };
-    this.#findAllReturnValue = props?.findAllReturnValue ?? {
-      success: true,
-      data: [projectDummyFrom()],
-    };
-    this.#saveReturnValue = props?.saveReturnValue ?? {
-      success: true,
-      data: undefined,
-    };
-    this.#removeReturnValue = props?.removeReturnValue ?? {
-      success: true,
-      data: undefined,
-    };
+    this.#findByIdReturnValue = props?.findByIdReturnValue ?? Result.ok(projectDummyFrom());
+    this.#findAllReturnValue = props?.findAllReturnValue ?? Result.ok([projectDummyFrom()]);
+    this.#saveReturnValue = props?.saveReturnValue ?? Result.ok(undefined);
+    this.#removeReturnValue = props?.removeReturnValue ?? Result.ok(undefined);
   }
 
   projectId(): string {
@@ -152,10 +134,7 @@ test("正常なデータで{アクション}が成功する", async () => {
 ```typescript
 test("権限がない場合ForbiddenErrorを返す", async () => {
   // リソースの所有者と異なるユーザーでアクセス
-  dummyRepository.setFindByIdResult({
-    success: true,
-    data: projectOwnedByOtherUser,
-  });
+  dummyRepository.setFindByIdResult(Result.ok(projectOwnedByOtherUser));
 
   const result = await useCase.execute({ userSub: "different-user" });
 
@@ -170,10 +149,7 @@ test("権限がない場合ForbiddenErrorを返す", async () => {
 
 ```typescript
 test("リソースが存在しない場合NotFoundErrorを返す", async () => {
-  dummyRepository.setFindByIdResult({
-    success: true,
-    data: undefined,
-  });
+  dummyRepository.setFindByIdResult(Result.ok(undefined));
 
   const result = await useCase.execute({ id: "non-existent-id" });
 
@@ -188,10 +164,7 @@ test("リソースが存在しない場合NotFoundErrorを返す", async () => {
 
 ```typescript
 test("既に存在するリソースの場合ConflictErrorを返す", async () => {
-  dummyRepository.setFindByEmailResult({
-    success: true,
-    data: existingUser,
-  });
+  dummyRepository.setFindByEmailResult(Result.ok(existingUser));
 
   const result = await useCase.execute({ email: "existing@example.com" });
 
@@ -226,10 +199,7 @@ test("不正なカラー値の場合ValidationErrorを返す", async () => {
 test("保存に失敗した場合はUnexpectedErrorを返す", async () => {
   const useCase = new CreateProjectUseCaseImpl({
     projectRepository: new ProjectRepositoryDummy({
-      saveReturnValue: {
-        success: false,
-        error: new UnexpectedError(),
-      },
+      saveReturnValue: Result.err(new UnexpectedError()),
     }),
     logger: new LoggerDummy(),
     fetchNow,
@@ -412,10 +382,7 @@ npm test
 // テストケースごとに新しいインスタンス生成
 const useCase = new CreateProjectUseCaseImpl({
   projectRepository: new ProjectRepositoryDummy({
-    saveReturnValue: {
-      success: true,
-      data: undefined,
-    },
+    saveReturnValue: Result.ok(undefined),
   }),
   logger: new LoggerDummy(),
   fetchNow: buildFetchNowDummy(now),
@@ -429,10 +396,7 @@ if (result.success) {
 
 // コンストラクタで戻り値を指定
 const repository = new ProjectRepositoryDummy({
-  findByIdReturnValue: {
-    success: true,
-    data: testProject,
-  },
+  findByIdReturnValue: Result.ok(testProject),
 });
 
 // エラー型を明示的に検証

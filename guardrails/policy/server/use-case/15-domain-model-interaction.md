@@ -46,6 +46,8 @@
 
 ### ステップ2: Entityメソッドのパターン選択
 
+**参照**: `20-entity-overview.md` - Entity設計の3つのパターン、メソッドチェーンの詳細
+
 **パターンA: 単純なデータ変換メソッド（Entity返却、メソッドチェーン可能）**
 
 条件:
@@ -54,32 +56,28 @@
 - メソッドチェーンを活用したい
 
 ```typescript
-// Domain層（Todo Entity）
-changeTitle(title: TodoTitle, updatedAt: string): Todo {
-  return new Todo({ ...this, title, updatedAt });
-}
-
-changeStatus(status: TodoStatus, updatedAt: string): Todo {
-  return new Todo({ ...this, status, updatedAt });
-}
-
-// UseCase層
-const titleResult = TodoTitle.fromString(input.title);
+// UseCase層 - Result.then()でメソッドチェーン
+const titleResult = TodoTitle.from({ title: input.title });
 if (!titleResult.success) {
-  return { success: false, error: titleResult.error };
+  return Result.err(titleResult.error);
 }
 
-const statusResult = TodoStatus.fromString(input.status);
+const statusResult = TodoStatus.from({ status: input.status });
 if (!statusResult.success) {
-  return { success: false, error: statusResult.error };
+  return Result.err(statusResult.error);
 }
 
 const now = dateToIsoString(this.#props.fetchNow());
 
-// メソッドチェーンで複数の更新を適用
-const updated = existing
-  .changeTitle(titleResult.data, now)
-  .changeStatus(statusResult.data, now);
+// Result.ok()で包んでメソッドチェーン開始
+const result = Result.ok(existing)
+  .then(t => t.changeTitle(titleResult.data, now))
+  .then(t => t.changeStatus(statusResult.data, now))
+  .then(t => repository.save(t));
+
+if (!result.success) {
+  return result;
+}
 ```
 
 **パターンB: reconstruct()使用（Result型返却）**
@@ -105,27 +103,21 @@ static reconstruct(props: {
 }): Result<Todo, DomainError> {
   // Entity全体の整合性チェック（複数値の関係性）
   if (props.status.isCompleted() && !props.dueDate) {
-    return {
-      success: false,
-      error: new DomainError('完了TODOには期限が必要です'),
-    };
+    return Result.err(new DomainError('完了TODOには期限が必要です'));
   }
 
-  return {
-    success: true,
-    data: new Todo(props),
-  };
+  return Result.ok(new Todo(props));
 }
 
 // UseCase層
-const titleResult = TodoTitle.fromString(input.title);
+const titleResult = TodoTitle.from({ title: input.title });
 if (!titleResult.success) {
-  return { success: false, error: titleResult.error };
+  return Result.err(titleResult.error);
 }
 
-const statusResult = TodoStatus.fromString(input.status);
+const statusResult = TodoStatus.from({ status: input.status });
 if (!statusResult.success) {
-  return { success: false, error: statusResult.error };
+  return Result.err(statusResult.error);
 }
 
 // reconstruct()はResult型を返す
@@ -143,7 +135,7 @@ const reconstructResult = Todo.reconstruct({
 });
 
 if (!reconstructResult.success) {
-  return { success: false, error: reconstructResult.error };
+  return Result.err(reconstructResult.error);
 }
 
 const updated = reconstructResult.data;
@@ -168,21 +160,18 @@ markAsCompleted(completedAt: string, updatedAt: string): Result<Todo, DomainErro
   }
 
   // 複数フィールド連動
-  return {
-    success: true,
-    data: new Todo({
-      ...this,
-      status: TodoStatus.completed(),
-      completedAt,
-      updatedAt,
-    }),
-  };
+  return Result.ok(new Todo({
+    ...this,
+    status: TodoStatus.completed(),
+    completedAt,
+    updatedAt,
+  }));
 }
 
 // UseCase層
 const result = existing.markAsCompleted(now, now);
 if (!result.success) {
-  return { success: false, error: result.error };
+  return Result.err(result.error);
 }
 const completed = result.data;
 ```
@@ -197,12 +186,12 @@ async execute(input: RegisterTodoUseCaseInput): Promise<Result> {
   // 1. Value Object生成
   const titleResult = TodoTitle.fromString(input.title);
   if (!titleResult.success) {
-    return { success: false, error: titleResult.error };
+    return Result.err(titleResult.error);
   }
 
   const statusResult = TodoStatus.fromString(input.status);
   if (!statusResult.success) {
-    return { success: false, error: statusResult.error };
+    return Result.err(statusResult.error);
   }
 
   // 2. ID生成
@@ -223,10 +212,10 @@ async execute(input: RegisterTodoUseCaseInput): Promise<Result> {
   // 4. リポジトリ保存
   const saveResult = await this.#props.todoRepository.save({ todo });
   if (!saveResult.success) {
-    return { success: false, error: saveResult.error };
+    return Result.err(saveResult.error);
   }
 
-  return { success: true, data: todo };
+  return Result.ok(todo);
 }
 ```
 
@@ -244,24 +233,24 @@ async execute(input: UpdateTodoUseCaseInput): Promise<Result> {
     id: input.todoId,
   });
   if (!existingResult.success || !existingResult.data) {
-    return { success: false, error: new NotFoundError() };
+    return Result.err(new NotFoundError());
   }
   const existing = existingResult.data;
 
   // 2. 権限チェック
   if (existing.userSub !== input.userSub) {
-    return { success: false, error: new ForbiddenError() };
+    return Result.err(new ForbiddenError());
   }
 
   // 3. Value Object生成（すべてのフィールド）
   const titleResult = TodoTitle.fromString(input.title);
   if (!titleResult.success) {
-    return { success: false, error: titleResult.error };
+    return Result.err(titleResult.error);
   }
 
   const statusResult = TodoStatus.fromString(input.status);
   if (!statusResult.success) {
-    return { success: false, error: statusResult.error };
+    return Result.err(statusResult.error);
   }
 
   // 4. Entity再構築（Result型を返す）
@@ -278,7 +267,7 @@ async execute(input: UpdateTodoUseCaseInput): Promise<Result> {
   });
 
   if (!reconstructResult.success) {
-    return { success: false, error: reconstructResult.error };
+    return Result.err(reconstructResult.error);
   }
 
   const updated = reconstructResult.data;
@@ -286,10 +275,10 @@ async execute(input: UpdateTodoUseCaseInput): Promise<Result> {
   // 5. 保存
   const saveResult = await this.#props.todoRepository.save({ todo: updated });
   if (!saveResult.success) {
-    return { success: false, error: saveResult.error };
+    return Result.err(saveResult.error);
   }
 
-  return { success: true, data: updated };
+  return Result.ok(updated);
 }
 ```
 
@@ -309,13 +298,13 @@ async execute(input: UpdateTodoUseCaseInput): Promise<Result> {
     id: input.todoId,
   });
   if (!existingResult.success || !existingResult.data) {
-    return { success: false, error: new NotFoundError() };
+    return Result.err(new NotFoundError());
   }
   const existing = existingResult.data;
 
   // 2. 権限チェック
   if (existing.userSub !== input.userSub) {
-    return { success: false, error: new ForbiddenError() };
+    return Result.err(new ForbiddenError());
   }
 
   // 3. 変更されたフィールドのみValue Object生成
@@ -352,7 +341,7 @@ async execute(input: UpdateTodoUseCaseInput): Promise<Result> {
   });
 
   if (!reconstructResult.success) {
-    return { success: false, error: reconstructResult.error };
+    return Result.err(reconstructResult.error);
   }
 
   const updated = reconstructResult.data;
@@ -360,10 +349,10 @@ async execute(input: UpdateTodoUseCaseInput): Promise<Result> {
   // 6. 保存
   const saveResult = await this.#props.todoRepository.save({ todo: updated });
   if (!saveResult.success) {
-    return { success: false, error: saveResult.error };
+    return Result.err(saveResult.error);
   }
 
-  return { success: true, data: updated };
+  return Result.ok(updated);
 }
 ```
 
@@ -386,15 +375,12 @@ markAsCompleted(completedAt: string, updatedAt: string): Result<Todo, DomainErro
     };
   }
 
-  return {
-    success: true,
-    data: new Todo({
-      ...this,
-      status: TodoStatus.completed(),
-      completedAt,
-      updatedAt,
-    }),
-  };
+  return Result.ok(new Todo({
+    ...this,
+    status: TodoStatus.completed(),
+    completedAt,
+    updatedAt,
+  }));
 }
 
 // UseCase層
@@ -404,20 +390,20 @@ async execute(input: CompleteTodoUseCaseInput): Promise<Result> {
     id: input.todoId,
   });
   if (!existingResult.success || !existingResult.data) {
-    return { success: false, error: new NotFoundError() };
+    return Result.err(new NotFoundError());
   }
   const existing = existingResult.data;
 
   // 2. 権限チェック
   if (existing.userSub !== input.userSub) {
-    return { success: false, error: new ForbiddenError() };
+    return Result.err(new ForbiddenError());
   }
 
   // 3. ビジネスメソッド呼び出し
   const now = dateToIsoString(this.#props.fetchNow());
   const completedResult = existing.markAsCompleted(now, now);
   if (!completedResult.success) {
-    return { success: false, error: completedResult.error };
+    return Result.err(completedResult.error);
   }
 
   // 4. 保存
@@ -425,10 +411,10 @@ async execute(input: CompleteTodoUseCaseInput): Promise<Result> {
     todo: completedResult.data,
   });
   if (!saveResult.success) {
-    return { success: false, error: saveResult.error };
+    return Result.err(saveResult.error);
   }
 
-  return { success: true, data: completedResult.data };
+  return Result.ok(completedResult.data);
 }
 ```
 
@@ -440,10 +426,7 @@ const colorResult = ProjectColor.fromString(input.color);
 
 if (!colorResult.success) {
   // Value Objectのエラーをそのまま伝播（新しいエラーで包まない）
-  return {
-    success: false,
-    error: colorResult.error,
-  };
+  return Result.err(colorResult.error);
 }
 
 // 型安全に使用
@@ -475,7 +458,7 @@ const color = colorResult.data;
    // ✅ Good: 期限の有無をチェック
    markAsCompleted(completedAt: string, updatedAt: string): Result<Todo, DomainError> {
      if (!this.dueDate) {
-       return { success: false, error: new DomainError() };
+       return Result.err(new DomainError());
      }
      // ...
    }
@@ -495,7 +478,7 @@ const color = colorResult.data;
    // ❌ Bad: Value Objectで検証すべき
    changeColor(color: string): Result<Project, DomainError> {
      if (!/^#[0-9A-Fa-f]{6}$/.test(color)) {
-       return { success: false, error: new DomainError() };
+       return Result.err(new DomainError());
      }
      // ...
    }
@@ -515,22 +498,16 @@ const color = colorResult.data;
 class Todo {
   markAsCompleted(completedAt: string, updatedAt: string): Result<Todo, DomainError> {
     if (!this.dueDate) {
-      return {
-        success: false,
-        error: new DomainError('期限のないTODOは完了できません'),
-      };
+      return Result.err(new DomainError('期限のないTODOは完了できません'));
     }
-    return {
-      success: true,
-      data: new Todo({ ...this, status: TodoStatus.completed(), completedAt, updatedAt }),
-    };
+    return Result.ok(new Todo({ ...this, status: TodoStatus.completed(), completedAt, updatedAt }));
   }
 }
 
 // UseCase層は調整のみ
 const result = existing.markAsCompleted(now, now);
 if (!result.success) {
-  return { success: false, error: result.error };
+  return Result.err(result.error);
 }
 ```
 
@@ -558,7 +535,7 @@ const reconstructResult = Todo.reconstruct({
   updatedAt: now,
 });
 if (!reconstructResult.success) {
-  return { success: false, error: reconstructResult.error };
+  return Result.err(reconstructResult.error);
 }
 ```
 

@@ -42,13 +42,13 @@ TodoPriority:
 
 TodoStatus:
   type: string
-  enum: [TODO, IN_PROGRESS, COMPLETED]  # ドメイン層: TodoStatus.from({ value: "TODO" }) と一致
+  enum: [TODO, IN_PROGRESS, COMPLETED]  # ドメイン層: TodoStatus.from({ status: "TODO" }) と一致
   description: TODOのステータス
 ```
 
 **重要**: OpenAPIのenum値は、ドメイン層の型エイリアスまたはValue Objectの入力値と**完全に一致**させる必要がある。
 - 型エイリアス例: `type TodoPriority = "LOW" | "MEDIUM" | "HIGH"`
-- Value Object例: `TodoStatus.from({ value: "TODO" })`, `TodoStatus.from({ value: "COMPLETED" })`
+- Value Object例: `TodoStatus.from({ status: "TODO" })`, `TodoStatus.from({ status: "COMPLETED" })`
 
 **OpenAPIとドメイン層の責務分担**:
 - **OpenAPI（本ポリシー）**: enum値を定義し、型レベルバリデーション（ValidationError、400 Bad Request）

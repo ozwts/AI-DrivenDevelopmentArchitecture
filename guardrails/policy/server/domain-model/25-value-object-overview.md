@@ -119,7 +119,7 @@ Value Objectは以下のメソッドを実装する。
 |---------|--------------|------|-----|
 | **ValueObject<T>型実装** | 必須 | 基底型を実装 | `implements ValueObject<TodoStatus>` |
 | **プライベートコンストラクタ** | 必須 | 外部からの直接生成を防ぐ | `private constructor(value: string)` |
-| **from()** | 必須 | Value Objectを生成、Result型を返す（**常にpropsパターン**） | `static from(props: { value: string }): Result<TodoStatus, DomainError>`<br>`static from(props: { firstName: string; lastName: string }): Result<FullName, DomainError>` |
+| **from()** | 必須 | Value Objectを生成、Result型を返す（**常にProps型エイリアス**） | `export type TodoStatusProps = { status: string };`<br>`static from(props: TodoStatusProps): Result<TodoStatus, DomainError>`<br>`export type FullNameProps = { firstName: string; lastName: string };`<br>`static from(props: FullNameProps): Result<FullName, DomainError>` |
 | **equals()** | 必須 | 値の等価性を判断 | `equals(other: Email): boolean` |
 | **toString()** | 必須 | デバッグ・ログ用の文字列表現を返す（`from()`との対称性は不要） | `toString(): string` |
 | **getter** | 複数パラメータの場合 | 個別の値にアクセス | `get firstName(): string`, `get lastName(): string` |
@@ -144,19 +144,25 @@ Value Objectは以下のメソッドを実装する。
 
 バリデーション結果を明示的に返す。例外は使わない。
 
-**重要**: `from()`は**常にpropsパターン**を使用する（Entityの`reconstruct()`と統一）。
+**重要**: `from()`は**常にProps型エイリアスパターン**を使用する（Entityのコンストラクタと統一）。
 
-**単一パラメータの場合**:
+**単一パラメータの例**:
 ```typescript
-static from(props: { value: string }): Result<TodoStatus, DomainError>
+export type TodoStatusProps = {
+  status: string;
+};
+
+static from(props: TodoStatusProps): Result<TodoStatus, DomainError>
 ```
 
-**複数パラメータの場合**:
+**複数パラメータの例**:
 ```typescript
-static from(props: {
+export type FullNameProps = {
   firstName: string;
   lastName: string;
-}): Result<FullName, DomainError>
+};
+
+static from(props: FullNameProps): Result<FullName, DomainError>
 ```
 
 ### 4. equals()メソッド
@@ -198,15 +204,15 @@ email:
 
 ```typescript
 // ✅ Value Object: ドメイン固有のバリデーション
-Email.fromString("user@gmail.com"); // エラー: 会社ドメインのみ許可
-Email.fromString("user@company.com"); // OK
+Email.from({ email: "user@gmail.com" }); // エラー: 会社ドメインのみ許可
+Email.from({ email: "user@company.com" }); // OK
 ```
 
 ### UseCase層: ビジネスルール（必須チェック・権限等）
 
 ```typescript
 // ✅ UseCase: ビジネスバリデーション
-const emailResult = Email.fromString(input.email);
+const emailResult = Email.from({ email: input.email });
 if (!emailResult.success) {
   return emailResult;
 }
@@ -242,7 +248,7 @@ domain/model/todo/
 └── todo-repository.ts
 ```
 
-**注**: Value Objectは通常Dummyファクトリ不要（`fromString()`や静的ファクトリメソッドで生成）
+**注**: Value Objectは通常Dummyファクトリ不要（`from()`や静的ファクトリメソッドで生成）
 
 ## テスト戦略
 
@@ -252,8 +258,8 @@ Value Objectは必ずユニットテスト（`.small.test.ts`）を作成する�
 
 **必須テスト**:
 ```
-[ ] fromString() - 正常系（代表値、境界値）
-[ ] fromString() - 異常系（不正形式、空文字列、境界値外）
+[ ] from() - 正常系（代表値、境界値）
+[ ] from() - 異常系（不正形式、空文字列、境界値外）
 [ ] equals() - 同じ値、異なる値
 [ ] toString() - 文字列表現の検証
 [ ] Result型の正しいチェック（success分岐）
@@ -274,11 +280,16 @@ Value Objectは必ずユニットテスト（`.small.test.ts`）を作成する�
 ### ✅ Good
 
 ```typescript
-// ValueObject<T>型を実装（常にpropsパターン）
+// Props型エイリアス定義
+export type TodoStatusProps = {
+  status: string;
+};
+
+// ValueObject<T>型を実装（Props型エイリアス使用）
 export class TodoStatus implements ValueObject<TodoStatus> {
   private constructor(private readonly value: string) {}
 
-  static from(props: { value: string }): Result<TodoStatus, DomainError> {
+  static from(props: TodoStatusProps): Result<TodoStatus, DomainError> {
     // バリデーション
   }
 
@@ -294,12 +305,11 @@ export class TodoStatus implements ValueObject<TodoStatus> {
 // 不変条件をValue Object内に配置
 canTransitionTo(newStatus: TodoStatus): Result<void, DomainError> {
   if (this.isCompleted() && !newStatus.isCompleted()) {
-    return {
-      success: false,
-      error: new DomainError('完了済みTODOのステータスは変更できません'),
-    };
+    return Result.err(
+      new DomainError('完了済みTODOのステータスは変更できません')
+    );
   }
-  return { success: true, data: undefined };
+  return Result.ok(undefined);
 }
 ```
 
@@ -321,17 +331,19 @@ class Todo {
   changeStatus(status: TodoStatus): Result<Todo, DomainError> {
     // ❌ Value Objectに委譲すべき
     if (this.status === 'COMPLETED' && status !== 'COMPLETED') {
-      return { success: false, error: ... };
+      return Result.err(new DomainError('...'));
     }
   }
 }
 
 // throwを使用
-static from(props: { value: string }): TodoStatus {
-  if (!validValues.includes(props.value)) {
+export type TodoStatusProps = { status: string };
+
+static from(props: TodoStatusProps): TodoStatus {
+  if (!validValues.includes(props.status)) {
     throw new Error('Invalid status');  // ❌ Result型を返すべき
   }
-  return new TodoStatus(props.value);
+  return new TodoStatus(props.status);
 }
 ```
 
@@ -351,7 +363,8 @@ static from(props: { value: string }): TodoStatus {
 ```
 [ ] ValueObject<T>型を実装
 [ ] プライベートコンストラクタ
-[ ] Result型を返すfrom()（常にpropsパターン：`props: { value: string }` または `props: { ... }`）
+[ ] Props型エイリアス定義（`export type <ValueObject>Props = { ... }`）
+[ ] Result型を返すfrom()（Props型エイリアス使用、具体的なプロパティ名）
 [ ] equals()メソッド実装
 [ ] toString()メソッド実装（デバッグ用、from()との対称性不要）
 [ ] getter実装（複数パラメータの場合）

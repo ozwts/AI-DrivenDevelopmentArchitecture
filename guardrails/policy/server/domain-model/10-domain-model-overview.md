@@ -177,10 +177,7 @@ export class Todo {
       return canTransitionResult;
     }
 
-    return {
-      success: true,
-      data: new Todo({ ...this, status: newStatus, updatedAt }),
-    };
+    return Result.ok(new Todo({ ...this, status: newStatus, updatedAt }));
   }
 }
 ```
@@ -193,9 +190,9 @@ export class Todo {
 // ✅ Good（常にpropsパターン）
 static from(props: { value: string }): Result<TodoStatus, DomainError> {
   if (!validValues.includes(props.value)) {
-    return { success: false, error: new DomainError('無効なステータス') };
+    return Result.err(new DomainError('無効なステータス'));
   }
-  return { success: true, data: new TodoStatus(props.value) };
+  return Result.ok(new TodoStatus(props.value));
 }
 
 // ❌ Bad
@@ -255,8 +252,8 @@ export class Todo {
 | パターン | メソッド返り値 | 使用ケース | メソッドチェーン |
 |---------|--------------|-----------|----------------|
 | **パターン1** | `Entity` | バリデーション不要なフィールド更新 | ✅ 可能 |
-| **パターン2** | `Result<Entity, DomainError>` | ドメインルール/不変条件チェックが必要な更新 | ❌ 不可 |
-| **パターン3** | `Result<Entity, DomainError>` | reconstruct（必ずResult型） | ❌ 不可 |
+| **パターン2** | `Result<Entity, DomainError>` | ドメインルール/不変条件チェックが必要な更新 | ✅ 可能（`Result.then()`） |
+| **パターン3** | `Result<Entity, DomainError>` | reconstruct（必ずResult型） | ✅ 可能（`Result.then()`） |
 
 **設計原則**:
 - **パターン1**: バリデーション不要な単純更新のみ（メソッドチェーン可能）

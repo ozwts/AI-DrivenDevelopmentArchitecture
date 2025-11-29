@@ -106,14 +106,11 @@ changeStatus(newStatus: TodoStatus, updatedAt: string): Result<Todo, DomainError
     return canTransitionResult;
   }
 
-  return {
-    success: true,
-    data: new Todo({
-      ...this,
-      status: newStatus,
-      updatedAt,
-    }),
-  };
+  return Result.ok(new Todo({
+    ...this,
+    status: newStatus,
+    updatedAt,
+  }));
 }
 ```
 
@@ -128,21 +125,15 @@ changeStatus(newStatus: TodoStatus, updatedAt: string): Result<Todo, DomainError
 markAsCompleted(completedAt: string, updatedAt: string): Result<Todo, DomainError> {
   // Entity全体を見た不変条件（複数の値の関係性）
   if (!this.dueDate) {
-    return {
-      success: false,
-      error: new DomainError('期限のないTODOは完了できません'),
-    };
+    return Result.err(new DomainError('期限のないTODOは完了できません'));
   }
 
-  return {
-    success: true,
-    data: new Todo({
-      ...this,
-      status: TodoStatus.completed(),  // 複数フィールド連動
-      completedAt,
-      updatedAt,
-    }),
-  };
+  return Result.ok(new Todo({
+    ...this,
+    status: TodoStatus.completed(),  // 複数フィールド連動
+    completedAt,
+    updatedAt,
+  }));
 }
 ```
 
@@ -159,9 +150,9 @@ const completed = completedResult.data;
 
 **設計判断**: 複数値関係性バリデーションは必要最小限にとどめ、可能な限りValue Objectに委譲してEntity層を薄く保つ。
 
-### パターン3: reconstruct静的メソッド（必ずResult型）
+### パターン3: reconstruct静的メソッド（ドメインバリデーションの有無に関わらず常にResult型）
 
-`reconstruct()`は複数値関係性チェックの有無に関わらず、一貫してResult型を返す。
+`reconstruct()`は、**インスタンスメソッドとは異なり、ドメインバリデーション（複数値関係性チェック）の有無に関わらず、一貫してResult型を返す**。
 
 ```typescript
 /**
@@ -178,19 +169,13 @@ static reconstruct(props: {
   createdAt: string;
   updatedAt: string;
 }): Result<Todo, DomainError> {
-  // 複数の値の関係性チェック（ある場合）
+  // ドメインバリデーション（複数の値の関係性チェック）がある場合
   if (props.status.isCompleted() && !props.dueDate) {
-    return {
-      success: false,
-      error: new DomainError('完了TODOには期限が必要です'),
-    };
+    return Result.err(new DomainError('完了TODOには期限が必要です'));
   }
 
-  // チェックがない場合でも一貫してResult型を返す
-  return {
-    success: true,
-    data: new Todo(props),
-  };
+  // ドメインバリデーションがない場合でも、Result型を返す
+  return Result.ok(new Todo(props));
 }
 ```
 
@@ -207,10 +192,17 @@ static reconstruct(props: {
 }): Result<Todo, DomainError>
 ```
 
-**メリット**:
-- TypeScriptレベルで省略を防ぐ（型安全性）
-- `undefined`を明示的に渡すことで意図が明確
-- マージロジックがUseCase層にあることが一目で分かる
+**reconstructの特殊性（常にResult型を返す理由）**:
+
+1. **型安全性（最重要）**: オプショナルフィールドも `| undefined` として必須化し、省略を型システムで検出（analyzability-principles.md 原則1）
+   - リポジトリ復元時・PATCH更新時のフィールド省略を防ぐ
+   - `undefined`を明示的に渡すことで、マージロジックがUseCase層にあることが一目で分かる
+2. **一貫性**: reconstructは常にResult型という明確なルール（ドメインバリデーションの有無を気にせず使える）
+3. **実装漏れ防止**: リポジトリ復元・PATCH更新の信頼性を担保
+
+**パターン1との違い**:
+- **パターン1（インスタンスメソッド）**: バリデーション不要ならEntityを返す（柔軟性・ボイラープレート削減）
+- **reconstruct**: 常にResult型を返す（型安全性・一貫性を優先）
 
 ## UseCase層での使い分け
 
@@ -219,14 +211,31 @@ static reconstruct(props: {
 | パターン | 返り値 | 使用ケース | メソッドチェーン |
 |---------|-------|-----------|----------------|
 | **パターン1** | `Entity` | バリデーション不要なフィールド更新 | ✅ 可能 |
-| **パターン2** | `Result<Entity, DomainError>` | ドメインルール/不変条件チェックが必要な更新 | ❌ 不可 |
-| **パターン3** | `Result<Entity, DomainError>` | PATCH更新、リポジトリ復元（reconstruct） | ❌ 不可 |
+| **パターン2** | `Result<Entity, DomainError>` | ドメインルール/不変条件チェックが必要な更新 | ✅ 可能（`Result.then()`） |
+| **パターン3** | `Result<Entity, DomainError>` | PATCH更新、リポジトリ復元（`reconstruct`）<br/>※ドメインバリデーションの有無に関わらず常にResult型 | ✅ 可能（`Result.then()`） |
 
 **重要**:
-- **パターン1**: バリデーション不要な単純更新のみ（メソッドチェーン可能）
+- **すべてのパターンでメソッドチェーン可能** - `Result.then()`が`Entity`を自動で`Result.ok()`に包むため
+- **パターン1**: バリデーション不要な単純更新（Entity層を薄く保つ、`Result.ok()`のボイラープレート不要）
 - **パターン2**: Value Objectの不変条件チェック（`canTransitionTo()`）はEntity内で実行する（ドメイン貧血症を回避）
 - **パターン2**: 複数値関係性バリデーションも同じパターン（Result型を返す）
-- **パターン3**: reconstructは必ずResult型（一貫性のため）
+- **パターン3**: reconstructは**ドメインバリデーションの有無に関わらず**常にResult型（型安全性・一貫性・実装漏れ防止のため）
+
+**メソッドチェーンの例**:
+
+```typescript
+// パターンA: reconstruct()から始めるチェーン（Result型を返す静的メソッド）
+const result = Todo.reconstruct(props)                // Result<Todo>
+  .then(t => t.updateDescription("新しい", now))       // Todoを返す → 自動でResult.ok()に包む
+  .then(t => t.markAsCompleted(now, now))            // Result<Todo>を返す → そのまま
+  .then(t => repository.save(t));                    // 完全にフラット
+
+// パターンB: 既存Entityから始めるチェーン（Entityを返すインスタンスメソッド）
+const result = Result.ok(existingTodo)               // EntityをResult.ok()で包む
+  .then(t => t.updateDescription("新しい", now))       // Todoを返す → 自動でResult.ok()に包む
+  .then(t => t.changeStatus(newStatus, now))         // Result<Todo>を返す → そのまま
+  .then(t => repository.save(t));                    // 完全にフラット
+```
 
 ## Value Objectとの関係
 
