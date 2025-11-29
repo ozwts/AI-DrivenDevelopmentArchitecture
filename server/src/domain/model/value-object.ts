@@ -1,11 +1,11 @@
 import type { Result } from "@/util/result";
-import type { ValidationError } from "@/util/error-util";
+import type { DomainError } from "@/util/error-util";
 
 /**
  * Value Object（値オブジェクト）のインスタンス型
  *
  * すべてのValue Objectはこの型を実装しなければならない。
- * `guardrails/policy/server/domain-model/25-value-object-design.md` を参照。
+ * `guardrails/policy/server/domain-model/25-value-object-overview.md` を参照。
  */
 export type ValueObject<T> = {
   /**
@@ -14,7 +14,9 @@ export type ValueObject<T> = {
   equals(other: T): boolean;
 
   /**
-   * 文字列表現を返す
+   * デバッグ・ログ用の文字列表現を返す
+   *
+   * 注: from()との対称性は期待しない（目的が異なる）
    */
   toString(): string;
 };
@@ -22,14 +24,19 @@ export type ValueObject<T> = {
 /**
  * Value Objectの静的メソッド要件
  *
- * すべてのValue Objectクラスは`fromString`静的メソッドを実装しなければならない。
+ * すべてのValue Objectクラスは`from`静的メソッドを実装しなければならない。
  * `staticImplements`デコレーターと組み合わせて使用する。
+ *
+ * 重要: from()は常にpropsパターンを使用する（Entityのreconstruct()と統一）
  */
 export type ValueObjectConstructor<T> = {
   /**
-   * 文字列からValue Objectを生成する
+   * propsからValue Objectを生成する
+   *
+   * 単一パラメータの場合: from(props: { value: string })
+   * 複数パラメータの場合: from(props: { firstName: string; lastName: string })
    */
-  fromString(value: string): Result<T, ValidationError>;
+  from(props: unknown): Result<T, DomainError>;
 };
 
 /**
@@ -42,7 +49,7 @@ export type ValueObjectConstructor<T> = {
  * ```typescript
  * @staticImplements<ValueObjectConstructor<TodoStatus>>()
  * export class TodoStatus implements ValueObject<TodoStatus> {
- *   static fromString(value: string): Result<TodoStatus, ValidationError> {
+ *   static from(props: { value: string }): Result<TodoStatus, DomainError> {
  *     // 実装
  *   }
  * }

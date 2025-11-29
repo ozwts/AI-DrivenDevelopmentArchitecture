@@ -6,6 +6,7 @@ export const notFoundErrorMessage = "リソースが見つかりませんでし�
 export const validationErrorMessage = "入力値が不正です";
 export const conflictErrorMessage = "データが競合しています";
 export const forbiddenErrorMessage = "アクセスが拒否されました";
+export const domainErrorMessage = "ドメインエラーが発生しました";
 
 export class UnexpectedError extends Error {
   constructor(message?: string) {
@@ -39,5 +40,12 @@ export class ForbiddenError extends Error {
   constructor(message?: string) {
     super(message ?? forbiddenErrorMessage);
     this.name = "ForbiddenError";
+  }
+}
+
+export class DomainError extends Error {
+  constructor(message?: string) {
+    super(message ?? domainErrorMessage);
+    this.name = "DomainError";
   }
 }

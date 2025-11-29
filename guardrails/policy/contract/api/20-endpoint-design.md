@@ -136,6 +136,37 @@ AttachmentResponse:
 
 **重要**: 更新操作はすべてPATCHを使用する。PUTは使用しない（詳細は「HTTPメソッド統一ポリシー」参照）。
 
+## エラーレスポンスとHTTPステータスコード
+
+**参照**: `policy/server/domain-model/26-validation-strategy.md` - エラー型とHTTPステータスコードのマッピング
+
+### エラーステータスコード一覧
+
+| HTTPステータスコード | エラー型 | 用途 | レスポンス例 |
+|--------------------|---------|------|-------------|
+| 400 Bad Request | `ValidationError` | 型レベルバリデーションエラー（OpenAPI/Zod） | `{"name": "ValidationError", "message": "入力値が不正です"}` |
+| 403 Forbidden | `ForbiddenError` | アクセス拒否 | `{"name": "ForbiddenError", "message": "アクセスが拒否されました"}` |
+| 404 Not Found | `NotFoundError` | リソース未検出 | `{"name": "NotFoundError", "message": "リソースが見つかりませんでした"}` |
+| 409 Conflict | `ConflictError` | データ競合 | `{"name": "ConflictError", "message": "データが競合しています"}` |
+| 422 Unprocessable Entity | `DomainError` | ドメインルールエラー | `{"name": "DomainError", "message": "18歳以上である必要があります"}` |
+| 500 Internal Server Error | `UnexpectedError` | 予期せぬエラー | `{"name": "UnexpectedError", "message": "予期せぬエラーが発生しました"}` |
+
+### エラーレスポンスの設計原則
+
+1. **ValidationError（400）**: OpenAPI/Zodで自動検証される型レベルの制約違反
+   - minLength、maxLength、pattern、enum、required等
+   - Handler層で自動的にキャッチされる
+
+2. **DomainError（422）**: ドメインロジックを含むビジネスルール違反
+   - 例: 18歳以上、会社ドメインのメールアドレスのみ、完了済みTODOのステータス変更不可
+   - Domain層（Value Object/Entity）で発生する
+   - OpenAPIでも表現可能な場合があるが、**実施しない**
+
+3. **その他のエラー**: UseCase層で発生するビジネスルール違反
+   - NotFoundError（404）: リソース未検出
+   - ForbiddenError（403）: アクセス拒否、権限エラー
+   - ConflictError（409）: データ競合
+
 ### POST: リソース作成
 
 ```yaml
@@ -155,12 +186,24 @@ post:
           schema:
             $ref: '#/components/schemas/TodoResponse'
     '400':
-      description: バリデーションエラー
+      description: バリデーションエラー（型レベル）
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    '422':
+      description: ドメインルールエラー
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
 ```
 
 **重要**:
 - 201 Createdを返す
 - レスポンスボディに作成されたリソースを含める
+- 400: 型レベルバリデーションエラー（OpenAPI/Zod）
+- 422: ドメインルールエラー（Domain層（Value Object/Entity））
 - `Location`ヘッダーは通常省略（RESTful純粋主義では推奨されるが実用上不要なことが多い）
 
 ### GET: リソース取得
@@ -227,14 +270,40 @@ patch:
         application/json:
           schema:
             $ref: '#/components/schemas/TodoResponse'
+    '400':
+      description: バリデーションエラー（型レベル）
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    '403':
+      description: アクセス拒否
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
     '404':
       description: TODOが見つかりません
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    '422':
+      description: ドメインルールエラー
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
 ```
 
 **重要**:
 - 更新後のリソース全体を返す
 - 204 No Contentではなく200 OKを使用（レスポンスボディあり）
 - UpdateTodoParamsのフィールドはすべてオプショナル（PATCH統一原則）
+- 400: 型レベルバリデーションエラー（OpenAPI/Zod）
+- 403: アクセス拒否（他人のリソース更新等）
+- 404: リソース未検出
+- 422: ドメインルールエラー（Domain層（Value Object/Entity））
 
 ### DELETE: リソース削除
 
@@ -433,7 +502,7 @@ export class UpdateTodoUseCaseImpl implements UpdateTodoUseCase {
     if (!priorityResult.success) return { success: false, error: priorityResult.error };
 
     // Aggregate再構築（マージロジック）
-    const updatedTodo = Todo.reconstruct({
+    const reconstructResult = Todo.reconstruct({
       id: existing.id,
       title: titleResult.data,
       description: input.description ?? existing.description,
@@ -445,13 +514,13 @@ export class UpdateTodoUseCaseImpl implements UpdateTodoUseCase {
       updatedAt: dateToIsoString(this.#props.fetchNow()),
     });
 
-    // 不変条件検証（Aggregate全体を見て判定）
-    if (updatedTodo.status === 'COMPLETED' && !updatedTodo.dueDate) {
-      return {
-        success: false,
-        error: new ValidationError('完了TODOには期限が必要です'),
-      };
+    // reconstruct()内で不変条件検証（Aggregate全体を見て判定）
+    // 完了TODOには期限が必要という複数値の関係性チェック → DomainError
+    if (!reconstructResult.success) {
+      return { success: false, error: reconstructResult.error };
     }
+
+    const updatedTodo = reconstructResult.data;
 
     // 保存
     const saveResult = await this.#todoRepository.save({ todo: updatedTodo });
@@ -681,4 +750,8 @@ paths:
 [ ] 特殊アクションは動詞を含むパス
 [ ] 認証必須エンドポイントにsecurityフィールド設定
 [ ] ネストされたレスポンスに親IDを含める
+[ ] エラーレスポンスを適切に定義（400、403、404、409、422、500）
+[ ] 400: 型レベルバリデーションエラー（OpenAPI/Zod）
+[ ] 422: ドメインルールエラー（Domain層（Value Object/Entity））
+[ ] 403/404/409: ビジネスルールエラー（UseCase層）
 ```

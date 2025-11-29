@@ -6,17 +6,24 @@ Handler層は**OpenAPI定義に基づくZodスキーマで型レベルのバリ�
 
 ## バリデーション戦略（MECE原則）
 
-### Handler層の責務
+**参照**: `policy/server/domain-model/26-validation-strategy.md` - バリデーション戦略の大原則
 
-**実施すること**: OpenAPIで定義された制約の検証
+### Handler層の責務（第1階層: 型レベルバリデーション）
+
+**実施すること**: OpenAPIで定義された型レベル制約の検証
 
 - 必須性、型、長さ、形式、enum値、数値範囲
+- **ValidationError（400 Bad Request）**を返す
 
 **実施しないこと**:
 
-- ドメインルールの検証 → Domain層（Value Object）
-- ビジネスルールの検証 → UseCase層
-- DB参照を伴う検証 → UseCase層
+- **ドメインルールの検証** → Domain層（Value Object/Entity）
+  - 例: 18歳以上、会社ドメインのメールアドレスのみ、完了済みTODOのステータス変更不可
+  - OpenAPIでも表現可能な場合があるが、**実施しない**（Domain層（Value Object/Entity）の責務）
+  - **DomainError（422 Unprocessable Entity）**を返す
+- **ビジネスルールの検証** → UseCase層
+  - 例: リソース存在チェック（NotFoundError）、権限チェック（ForbiddenError）
+- **DB参照を伴う検証** → UseCase層
 
 ## 入力バリデーション
 
@@ -93,11 +100,18 @@ return c.json(responseParseResult.data, 200);
 
 ### エラー型とHTTPステータスコードのマッピング
 
+**参照**: `policy/server/domain-model/26-validation-strategy.md` - エラー型とHTTPステータスコードのマッピング
+
 ```typescript
 export const handleError = (error: Error, c: Context, logger: Logger) => {
   if (error instanceof ValidationError) {
     logger.warn("バリデーションエラー", { error });
     return c.json({ name: error.name, message: error.message }, 400);
+  }
+
+  if (error instanceof DomainError) {
+    logger.warn("ドメインエラー", { error });
+    return c.json({ name: error.name, message: error.message }, 422);
   }
 
   if (error instanceof NotFoundError) {
@@ -127,13 +141,14 @@ export const handleError = (error: Error, c: Context, logger: Logger) => {
 
 ### エラーマッピング表
 
-| ドメインエラー | HTTPステータス | ログレベル | 使用例 |
-|---------------|---------------|----------|--------|
-| ValidationError | 400 Bad Request | warn | リクエスト不正、ビジネスルール違反 |
-| NotFoundError | 404 Not Found | warn | リソース未検出 |
-| ConflictError | 409 Conflict | warn | 重複データ、競合状態 |
-| ForbiddenError | 403 Forbidden | warn | アクセス権限なし |
-| UnexpectedError | 500 Internal Server Error | error | 予期しないエラー |
+| エラー型 | HTTPステータス | ログレベル | 発生場所 | 使用例 |
+|---------|---------------|----------|---------|--------|
+| `ValidationError` | 400 Bad Request | warn | Handler層（OpenAPI/Zod） | 型レベルバリデーションエラー（minLength、maxLength、pattern、enum等） |
+| `DomainError` | 422 Unprocessable Entity | warn | Domain層（Value Object/Entity） | ドメインルールエラー（18歳以上、会社ドメインのメールアドレスのみ、状態遷移ルール等） |
+| `ForbiddenError` | 403 Forbidden | warn | UseCase層 | アクセス権限なし |
+| `NotFoundError` | 404 Not Found | warn | UseCase層 | リソース未検出 |
+| `ConflictError` | 409 Conflict | warn | UseCase層 | 重複データ、競合状態 |
+| `UnexpectedError` | 500 Internal Server Error | error | 全層 | 予期しないエラー |
 
 ### ハンドラー内での使用
 
@@ -221,6 +236,11 @@ try {
 [ ] handleError()使用
     - Result型のエラーを渡す
     - 適切なHTTPステータスに変換
+    - ValidationError → 400（型レベルバリデーション）
+    - DomainError → 422（ドメインルール）
+    - ForbiddenError → 403（アクセス拒否）
+    - NotFoundError → 404（リソース未検出）
+    - ConflictError → 409（データ競合）
 
 [ ] try-catch実装
     - 全体をラップ
@@ -228,7 +248,8 @@ try {
     - 500エラーレスポンス
 
 [ ] ログ出力
-    - バリデーションエラー: debug
-    - ドメインエラー: warn
+    - バリデーションエラー: debug（Handler層）
+    - ドメインエラー: warn（Value Object層）
+    - ビジネスルールエラー: warn（UseCase層）
     - 予期しないエラー: error
 ```

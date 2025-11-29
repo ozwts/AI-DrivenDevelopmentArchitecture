@@ -141,21 +141,24 @@ convertTo{Entity}Response
 
 | 操作 | 成功時 | エラー時 |
 |------|--------|----------|
-| POST（作成） | 201 Created | 400 Bad Request（バリデーション）, 409 Conflict（重複） |
+| POST（作成） | 201 Created | 400 Bad Request（型レベルバリデーション）, 422 Unprocessable Entity（ドメインルール）, 409 Conflict（重複） |
 | GET（取得） | 200 OK | 404 Not Found（未存在） |
 | GET（リスト） | 200 OK | - |
-| PATCH（更新） | 200 OK | 400 Bad Request（バリデーション）, 404 Not Found（未存在） |
+| PATCH（更新） | 200 OK | 400 Bad Request（型レベルバリデーション）, 422 Unprocessable Entity（ドメインルール）, 403 Forbidden（アクセス拒否）, 404 Not Found（未存在） |
 | DELETE | 204 No Content | 404 Not Found（未存在） |
 
 ### エラーステータスコードマッピング
 
-| ドメインエラー | HTTPステータス | 使用例 |
-|---------------|---------------|--------|
-| ValidationError | 400 Bad Request | リクエスト不正、ビジネスルール違反 |
-| NotFoundError | 404 Not Found | リソース未検出 |
-| ConflictError | 409 Conflict | 重複データ、競合状態 |
-| ForbiddenError | 403 Forbidden | アクセス権限なし |
-| UnexpectedError | 500 Internal Server Error | 予期しないエラー |
+**参照**: `policy/server/domain-model/26-validation-strategy.md` - エラー型とHTTPステータスコードのマッピング
+
+| エラー型 | HTTPステータス | 発生場所 | 使用例 |
+|---------|---------------|---------|--------|
+| `ValidationError` | 400 Bad Request | Handler層（OpenAPI/Zod） | 型レベルバリデーションエラー（minLength、maxLength、pattern、enum等） |
+| `DomainError` | 422 Unprocessable Entity | Domain層（Value Object/Entity） | ドメインルールエラー（18歳以上、会社ドメインのメールアドレスのみ、状態遷移ルール等） |
+| `ForbiddenError` | 403 Forbidden | UseCase層 | アクセス権限なし |
+| `NotFoundError` | 404 Not Found | UseCase層 | リソース未検出 |
+| `ConflictError` | 409 Conflict | UseCase層 | 重複データ、競合状態 |
+| `UnexpectedError` | 500 Internal Server Error | 全層 | 予期しないエラー |
 
 ## レイヤー間の関係
 
@@ -207,18 +210,23 @@ HTTP Response
 
 ## バリデーション戦略（MECE原則）
 
+**参照**: `policy/server/domain-model/26-validation-strategy.md` - バリデーション戦略の大原則
+
 Handler層は**型レベルのバリデーション**のみを実施する。
 
-### Handler層の責務
+### Handler層の責務（第1階層）
 
-- **OpenAPIで定義された制約**: 必須性、型、長さ、形式、enum
+- **OpenAPIで定義された型レベル制約**: 必須性、型、長さ、形式、enum
 - **Zodスキーマによる自動検証**: `safeParse()` で実施
-- **バリデーションエラー**: 400 Bad Requestを返す
+- **ValidationError**: 400 Bad Requestを返す
 
 ### Handler層で実施しないバリデーション
 
-- **ドメインルール**: UseCase層またはDomain層（Value Object）で実施
+- **ドメインルール**: Domain層（Value Object/Entity）で実施 → DomainError（422）
+  - 例: 18歳以上、会社ドメインのメールアドレスのみ、完了済みTODOのステータス変更不可
+  - OpenAPIでも表現可能な場合があるが、**実施しない**（Domain層（Value Object/Entity）の責務）
 - **ビジネスルール**: UseCase層で実施（DB参照を伴う権限・状態チェック）
+  - 例: リソース存在チェック（NotFoundError）、権限チェック（ForbiddenError）
 - **構造的整合性**: Entity層でreadonly等で保護
 
 ## 共通パターン

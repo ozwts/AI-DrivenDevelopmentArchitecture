@@ -6,6 +6,7 @@ import {
   ValidationError,
   ConflictError,
   ForbiddenError,
+  DomainError,
   unexpectedErrorMessage,
 } from "@/util/error-util";
 
@@ -26,6 +27,17 @@ export const handleError = (error: Error, c: Context, logger: Logger) => {
         message: error.message,
       },
       400,
+    );
+  }
+
+  if (error instanceof DomainError) {
+    logger.warn("ドメインエラー", { error });
+    return c.json(
+      {
+        name: error.name,
+        message: error.message,
+      },
+      422,
     );
   }
 

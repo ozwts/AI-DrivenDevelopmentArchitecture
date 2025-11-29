@@ -141,7 +141,7 @@ if (existingResult.data !== undefined) {
 if (currentStatus === "COMPLETED" && newStatus === "PENDING") {
   return {
     success: false,
-    error: new ValidationError("完了済みTODOを未完了に戻すことはできません"),
+    error: new DomainError("完了済みTODOを未完了に戻すことはできません"),
   };
 }
 ```
@@ -220,7 +220,13 @@ async execute(input: Input): Promise<Result> {
     return { success: true, data: undefined };
   } catch (error) {
     // 失敗時は自動rollback済み
-    if (error instanceof ValidationError) {
+    if (error instanceof DomainError) {
+      return { success: false, error };
+    }
+    if (error instanceof NotFoundError) {
+      return { success: false, error };
+    }
+    if (error instanceof ForbiddenError) {
       return { success: false, error };
     }
     return { success: false, error: new UnexpectedError() };
@@ -357,16 +363,24 @@ async execute(input: UpdateTodoUseCaseInput): Promise<Result> {
     ? input.description
     : existing.description;
 
-  // 5. Entity.reconstruct()に全フィールドを渡す
-  const updated = Todo.reconstruct({
+  // 5. Entity.reconstruct()に全フィールドを渡す（Result型を返す）
+  const reconstructResult = Todo.reconstruct({
     id: existing.id,
     title,              // マージ済み
     description,        // マージ済み
     status,             // マージ済み
+    dueDate: input.dueDate !== undefined ? input.dueDate : existing.dueDate,
+    completedAt: existing.completedAt,
     userSub: existing.userSub,     // 変更不可
     createdAt: existing.createdAt, // 変更不可
     updatedAt: dateToIsoString(this.#props.fetchNow()),
   });
+
+  if (!reconstructResult.success) {
+    return { success: false, error: reconstructResult.error };
+  }
+
+  const updated = reconstructResult.data;
 
   // 6. 保存
   const saveResult = await this.#props.todoRepository.save({ todo: updated });
@@ -426,15 +440,23 @@ const description = input.description !== undefined
   ? input.description
   : existing.description;
 
-const updated = Todo.reconstruct({
+const reconstructResult = Todo.reconstruct({
   id: existing.id,
   title,              // マージ済み
   description,        // マージ済み
   status: existing.status,
+  dueDate: input.dueDate !== undefined ? input.dueDate : existing.dueDate,
+  completedAt: existing.completedAt,
   userSub: existing.userSub,     // 変更不可
   createdAt: existing.createdAt, // 変更不可
   updatedAt: now,
 });
+
+if (!reconstructResult.success) {
+  return { success: false, error: reconstructResult.error };
+}
+
+const updated = reconstructResult.data;
 ```
 
 ### ❌ Bad
@@ -470,7 +492,7 @@ if (input.name.length === 0) {  // ❌ Handler層（Zod）で検証済み
 
 // ドメインルール検証（MECE原則違反）
 if (!/^#[0-9A-Fa-f]{6}$/.test(input.color)) {  // ❌ Domain層（Value Object）で検証済み
-  return { success: false, error: new ValidationError() };
+  return { success: false, error: new DomainError() };
 }
 
 // reconstruct()にマージロジックを含める

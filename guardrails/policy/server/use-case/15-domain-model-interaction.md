@@ -46,14 +46,23 @@
 
 ### ステップ2: Entityメソッドのパターン選択
 
-**パターンA: reconstruct()使用**
+**パターンA: 単純なデータ変換メソッド（Entity返却、メソッドチェーン可能）**
 
 条件:
 - ビジネスロジックがない（Value Objectで検証完了）
-- 複数フィールドの連動なし
-- PATCH更新などで全フィールドを受け取る
+- 単一フィールドの更新
+- メソッドチェーンを活用したい
 
 ```typescript
+// Domain層（Todo Entity）
+changeTitle(title: TodoTitle, updatedAt: string): Todo {
+  return new Todo({ ...this, title, updatedAt });
+}
+
+changeStatus(status: TodoStatus, updatedAt: string): Todo {
+  return new Todo({ ...this, status, updatedAt });
+}
+
 // UseCase層
 const titleResult = TodoTitle.fromString(input.title);
 if (!titleResult.success) {
@@ -65,19 +74,82 @@ if (!statusResult.success) {
   return { success: false, error: statusResult.error };
 }
 
-// ビジネスロジックなし：reconstruct()使用
-const updated = Todo.reconstruct({
+const now = dateToIsoString(this.#props.fetchNow());
+
+// メソッドチェーンで複数の更新を適用
+const updated = existing
+  .changeTitle(titleResult.data, now)
+  .changeStatus(statusResult.data, now);
+```
+
+**パターンB: reconstruct()使用（Result型返却）**
+
+条件:
+- ビジネスロジックがない（Value Objectで検証完了）
+- 複数フィールドの一括更新
+- PATCH/PUT更新などで全フィールドを受け取る
+- Entity間の関係性検証が必要な場合もある
+
+```typescript
+// Domain層（Todo Entity）
+static reconstruct(props: {
+  id: string;
+  title: TodoTitle;
+  description: string | undefined;     // 必須（undefinedを明示的に渡す）
+  status: TodoStatus;
+  dueDate: string | undefined;         // 必須（undefinedを明示的に渡す）
+  completedAt: string | undefined;     // 必須（undefinedを明示的に渡す）
+  userSub: string;
+  createdAt: string;
+  updatedAt: string;
+}): Result<Todo, DomainError> {
+  // Entity全体の整合性チェック（複数値の関係性）
+  if (props.status.isCompleted() && !props.dueDate) {
+    return {
+      success: false,
+      error: new DomainError('完了TODOには期限が必要です'),
+    };
+  }
+
+  return {
+    success: true,
+    data: new Todo(props),
+  };
+}
+
+// UseCase層
+const titleResult = TodoTitle.fromString(input.title);
+if (!titleResult.success) {
+  return { success: false, error: titleResult.error };
+}
+
+const statusResult = TodoStatus.fromString(input.status);
+if (!statusResult.success) {
+  return { success: false, error: statusResult.error };
+}
+
+// reconstruct()はResult型を返す
+// オプショナルフィールドも明示的にundefinedを渡す
+const reconstructResult = Todo.reconstruct({
   id: existing.id,
-  title: titleResult.data,        // Value Objectで検証済み
-  description: input.description,  // プリミティブ
-  status: statusResult.data,       // Value Objectで検証済み
+  title: titleResult.data,             // Value Objectで検証済み
+  description: input.description,       // undefinedの可能性あり、明示的に渡す
+  status: statusResult.data,            // Value Objectで検証済み
+  dueDate: input.dueDate,               // undefinedの可能性あり、明示的に渡す
+  completedAt: existing.completedAt,    // undefinedの可能性あり、明示的に渡す
   userSub: existing.userSub,
   createdAt: existing.createdAt,
   updatedAt: now,
 });
+
+if (!reconstructResult.success) {
+  return { success: false, error: reconstructResult.error };
+}
+
+const updated = reconstructResult.data;
 ```
 
-**パターンB: 個別メソッド追加**
+**パターンC: 複雑なバリデーションメソッド（Result型返却）**
 
 条件:
 - 複数フィールドの連動あり
@@ -86,12 +158,12 @@ const updated = Todo.reconstruct({
 
 ```typescript
 // Domain層（Todo Entity）
-markAsCompleted(completedAt: string, updatedAt: string): Result<Todo, ValidationError> {
+markAsCompleted(completedAt: string, updatedAt: string): Result<Todo, DomainError> {
   // Entity全体を見た不変条件
   if (!this.dueDate) {
     return {
       success: false,
-      error: new ValidationError('期限のないTODOは完了できません'),
+      error: new DomainError('期限のないTODOは完了できません'),
     };
   }
 
@@ -192,16 +264,24 @@ async execute(input: UpdateTodoUseCaseInput): Promise<Result> {
     return { success: false, error: statusResult.error };
   }
 
-  // 4. Entity再構築（全フィールド受け取り）
-  const updated = Todo.reconstruct({
+  // 4. Entity再構築（Result型を返す）
+  const reconstructResult = Todo.reconstruct({
     id: existing.id,
     title: titleResult.data,
     description: input.description,
     status: statusResult.data,
+    dueDate: input.dueDate,
+    completedAt: existing.completedAt,
     userSub: existing.userSub,       // 変更不可
     createdAt: existing.createdAt,   // 変更不可
     updatedAt: dateToIsoString(this.#props.fetchNow()),
   });
+
+  if (!reconstructResult.success) {
+    return { success: false, error: reconstructResult.error };
+  }
+
+  const updated = reconstructResult.data;
 
   // 5. 保存
   const saveResult = await this.#props.todoRepository.save({ todo: updated });
@@ -258,16 +338,24 @@ async execute(input: UpdateTodoUseCaseInput): Promise<Result> {
     ? input.description
     : existing.description;
 
-  // 5. Entity再構築（全フィールドを渡す）
-  const updated = Todo.reconstruct({
+  // 5. Entity再構築（Result型を返す）
+  const reconstructResult = Todo.reconstruct({
     id: existing.id,
     title,              // マージ済み
     description,        // マージ済み
     status,             // マージ済み
+    dueDate: input.dueDate !== undefined ? input.dueDate : existing.dueDate,
+    completedAt: existing.completedAt,
     userSub: existing.userSub,     // 変更不可
     createdAt: existing.createdAt, // 変更不可
     updatedAt: dateToIsoString(this.#props.fetchNow()),
   });
+
+  if (!reconstructResult.success) {
+    return { success: false, error: reconstructResult.error };
+  }
+
+  const updated = reconstructResult.data;
 
   // 6. 保存
   const saveResult = await this.#props.todoRepository.save({ todo: updated });
@@ -290,11 +378,11 @@ async execute(input: UpdateTodoUseCaseInput): Promise<Result> {
 
 ```typescript
 // Domain層（Todo Entity）
-markAsCompleted(completedAt: string, updatedAt: string): Result<Todo, ValidationError> {
+markAsCompleted(completedAt: string, updatedAt: string): Result<Todo, DomainError> {
   if (!this.dueDate) {
     return {
       success: false,
-      error: new ValidationError('期限のないTODOは完了できません'),
+      error: new DomainError('期限のないTODOは完了できません'),
     };
   }
 
@@ -379,15 +467,15 @@ const color = colorResult.data;
 2. **複数フィールドの連動**
    ```typescript
    // ✅ Good: 完了時にstatusとcompletedAtを同時変更
-   markAsCompleted(completedAt: string, updatedAt: string): Result<Todo, ValidationError>
+   markAsCompleted(completedAt: string, updatedAt: string): Result<Todo, DomainError>
    ```
 
 3. **Entity全体を見た不変条件**
    ```typescript
    // ✅ Good: 期限の有無をチェック
-   markAsCompleted(completedAt: string, updatedAt: string): Result<Todo, ValidationError> {
+   markAsCompleted(completedAt: string, updatedAt: string): Result<Todo, DomainError> {
      if (!this.dueDate) {
-       return { success: false, error: new ValidationError() };
+       return { success: false, error: new DomainError() };
      }
      // ...
    }
@@ -405,9 +493,9 @@ const color = colorResult.data;
 2. **Value Objectで表現可能**
    ```typescript
    // ❌ Bad: Value Objectで検証すべき
-   changeColor(color: string): Result<Project, ValidationError> {
+   changeColor(color: string): Result<Project, DomainError> {
      if (!/^#[0-9A-Fa-f]{6}$/.test(color)) {
-       return { success: false, error: new ValidationError() };
+       return { success: false, error: new DomainError() };
      }
      // ...
    }
@@ -425,11 +513,11 @@ const color = colorResult.data;
 ```typescript
 // ビジネスロジックをドメイン層に配置
 class Todo {
-  markAsCompleted(completedAt: string, updatedAt: string): Result<Todo, ValidationError> {
+  markAsCompleted(completedAt: string, updatedAt: string): Result<Todo, DomainError> {
     if (!this.dueDate) {
       return {
         success: false,
-        error: new ValidationError('期限のないTODOは完了できません'),
+        error: new DomainError('期限のないTODOは完了できません'),
       };
     }
     return {
@@ -460,15 +548,18 @@ class Todo {
 if (!existing.dueDate) {
   return {
     success: false,
-    error: new ValidationError('期限のないTODOは完了できません'),
+    error: new DomainError('期限のないTODOは完了できません'),
   };
 }
-const updated = Todo.reconstruct({
+const reconstructResult = Todo.reconstruct({
   ...existing,
   status: TodoStatus.completed(),
   completedAt: now,
   updatedAt: now,
 });
+if (!reconstructResult.success) {
+  return { success: false, error: reconstructResult.error };
+}
 ```
 
 ## チェックリスト

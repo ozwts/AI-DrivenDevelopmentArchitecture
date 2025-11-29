@@ -15,9 +15,45 @@ OpenAPI仕様は**システム境界の契約**であり、**型レベルバリ�
 
 ### 実施しないこと
 
-1. **ドメインルール**: OpenAPIで表現できない複雑なルール → Domain層（Value Object）
+1. **ドメインルール**: OpenAPIで表現できない複雑なルール → Domain層（Value Object/Entity、DomainErrorを返す）
 2. **ビジネスルール**: DB参照を伴うルール → UseCase層
 3. **実装詳細**: 内部のクラス構造、データベーススキーマ
+4. **ドメインロジックを含むバリデーション**: OpenAPIでも表現可能な場合があるが、**実施しない**
+   - 例: 年齢が18歳以上（`minimum: 18`と定義可能だが、ドメインロジックなのでDomain層（Value Object/Entity）で実施）
+   - 例: 会社ドメインのメールアドレスのみ許可（`pattern`で定義可能だが、ドメインロジックなのでDomain層（Value Object/Entity）で実施）
+   - 理由: ドメインロジックはValue Objectに集約し、責務を明確にする
+
+### OpenAPIのenum定義
+
+**OpenAPIの責務**: enumで選択肢を定義し、**型レベルバリデーション**を実施する。
+
+**enum定義の原則**:
+1. **大文字のスネークケース**で定義（例: `LOW`, `MEDIUM`, `HIGH`, `TODO`, `IN_PROGRESS`, `COMPLETED`）
+2. ドメイン側のTypeScript型エイリアスまたはValue Objectの入力値と**完全に一致**させる
+3. OpenAPIで定義されたenum値は、Zodスキーマで自動的に型レベルバリデーションされる
+
+**例**:
+
+```yaml
+TodoPriority:
+  type: string
+  enum: [LOW, MEDIUM, HIGH]  # ドメイン層: type TodoPriority = "LOW" | "MEDIUM" | "HIGH" と一致
+  description: TODOの優先度
+
+TodoStatus:
+  type: string
+  enum: [TODO, IN_PROGRESS, COMPLETED]  # ドメイン層: TodoStatus.from({ value: "TODO" }) と一致
+  description: TODOのステータス
+```
+
+**重要**: OpenAPIのenum値は、ドメイン層の型エイリアスまたはValue Objectの入力値と**完全に一致**させる必要がある。
+- 型エイリアス例: `type TodoPriority = "LOW" | "MEDIUM" | "HIGH"`
+- Value Object例: `TodoStatus.from({ value: "TODO" })`, `TodoStatus.from({ value: "COMPLETED" })`
+
+**OpenAPIとドメイン層の責務分担**:
+- **OpenAPI（本ポリシー）**: enum値を定義し、型レベルバリデーション（ValidationError、400 Bad Request）
+- **ドメイン層**: 型エイリアスまたはValue Object化の判断、ドメインルール実装（DomainError、422 Unprocessable Entity）
+  - 詳細: `guardrails/policy/server/domain-model/11-domain-validation-strategy.md` を参照
 
 ## Single Source of Truth原則
 
@@ -28,16 +64,28 @@ OpenAPI仕様は**システム境界の契約**であり、**型レベルバリ�
 OpenAPI仕様は**第1階層：型レベルバリデーション**の唯一の定義元である。
 
 ```
-OpenAPI仕様（真実の情報源）
+第1階層: OpenAPI仕様（真実の情報源）
+    ↓ 型レベルバリデーション（minLength、maxLength、pattern、enum等）
+    ↓ ValidationError（400 Bad Request）
     ↓ 自動生成（openapi-zod-client）
 Zodスキーマ（src/generated/zod-schemas.ts）
     ↓ z.infer で型推論
 TypeScript型定義
     ↓ 使用
 Handler層（バリデーション実行）
+
+第2階層: Domain層（Value Object/Entity）
+    ↓ ドメインルール（OpenAPIで表現できても実施しない）
+    ↓ DomainError（422 Unprocessable Entity）
+
+第3階層: UseCase層
+    ↓ ビジネスルール（DB参照、権限チェック等）
+    ↓ 各種エラー（NotFoundError、ForbiddenError等）
 ```
 
-**重要**: 型レベルのバリデーションルールは、OpenAPI仕様にのみ記述する。コード内に手動で重複実装しない。
+**重要**:
+- 型レベルのバリデーションルールは、OpenAPI仕様にのみ記述する。コード内に手動で重複実装しない。
+- ドメインロジックを含むバリデーションは、OpenAPIでも表現可能な場合があるが、**実施しない**（Domain層（Value Object/Entity）の責務）。
 
 ## ファイル配置
 
@@ -167,11 +215,13 @@ properties:
 TodoStatus:
   type: string
   enum:
-    - PENDING
+    - TODO
     - IN_PROGRESS
     - COMPLETED
   description: TODOのステータス
 ```
+
+**注**: enum値は大文字スネークケースで定義し、ドメイン層の型エイリアスまたはValue Objectの入力値と一致させる。
 
 ### ネストされたオブジェクト
 
@@ -294,10 +344,10 @@ required:
   - name
   - createdAt
 
-# enumで選択肢を制限
+# enumで選択肢を制限（大文字スネークケース）
 status:
   type: string
-  enum: [PENDING, IN_PROGRESS, COMPLETED]
+  enum: [TODO, IN_PROGRESS, COMPLETED]
 
 # ネストされたリソースに親ID含める
 AttachmentResponse:
@@ -386,8 +436,9 @@ export type TodoResponse = { ... };
 [ ] すべてのエンドポイントを定義
 [ ] リクエスト・レスポンススキーマを定義
 [ ] required/optionalを明示（PATCH更新は全フィールドoptional）
-[ ] 文字列に適切な制約（minLength/maxLength）
-[ ] enumで選択肢を制限
+[ ] 文字列に適切な型レベル制約（minLength/maxLength/pattern/enum）
+[ ] ドメインロジックを含むバリデーションは実施しない（例: 18歳以上、会社ドメインのメールアドレスのみ）
+[ ] enumで選択肢を制限（大文字スネークケースで定義、ドメイン層の型エイリアス/VO入力値と一致）
 [ ] descriptionで説明を記載
 [ ] ネストされたリソースに親IDを含める
 [ ] PUTは使用しない（PATCHで統一）
@@ -395,4 +446,5 @@ export type TodoResponse = { ... };
 [ ] Zodスキーマが生成される（src/generated/zod-schemas.ts）
 [ ] Handler層で z.infer により型推論
 [ ] Handler層で生成されたZodスキーマを使用（safeParse）
+[ ] ValidationErrorは400 Bad Requestで返す（型レベルバリデーションエラー）
 ```
