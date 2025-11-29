@@ -1,7 +1,7 @@
 import type { z } from "zod";
 import { schemas } from "@/generated/zod-schemas";
 import type { Todo } from "@/domain/model/todo/todo";
-import type { Attachment } from "@/domain/model/attachment/attachment";
+import type { Attachment } from "@/domain/model/todo/attachment";
 
 type TodoResponse = z.infer<typeof schemas.TodoResponse>;
 type AttachmentResponse = z.infer<typeof schemas.AttachmentResponse>;

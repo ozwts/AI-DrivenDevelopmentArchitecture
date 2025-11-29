@@ -6,6 +6,7 @@
 2. **全テストでDummyファクトリを使用** - `new Entity()`を直接使わず、保守性を向上
 
 **関連ドキュメント**:
+
 - **Repository概要**: `10-repository-overview.md`
 - **集約の永続化**: `20-aggregate-persistence.md`
 - **DynamoDBパターン**: `30-dynamodb-patterns.md`
@@ -24,18 +25,22 @@
 各メソッドの基本的な動作を確認する。
 
 **例: findById**
+
 - 存在するエンティティをIDで取得できる
 - 存在しないエンティティを検索するとundefinedを返す
 
 **例: findAll**
+
 - 全てのエンティティを取得できる
 - エンティティが存在しない場合、空配列を返す
 
 **例: save**
+
 - エンティティを保存できる
 - 既存エンティティを上書き保存できる
 
 **例: remove**
+
 - エンティティを削除できる
 
 ### 2. 子エンティティを含む正常系
@@ -43,16 +48,20 @@
 アグリゲートの場合、子エンティティを含むケースを確認する。
 
 **例: findById（添付ファイル付きTODO）**
+
 - 添付ファイル付きTODOをIDで取得し、子エンティティ（Attachment）も正しく含まれる
 
 **例: findAll（添付ファイル付きTODO）**
+
 - 添付ファイル付きTODOを含む全件取得で、子エンティティも正しく含まれる
 
 **例: save（添付ファイル付きTODO）**
+
 - 添付ファイル付きTODOを保存し、子エンティティもトランザクションで一括保存される
 - 既存の添付ファイルが新しいものに置き換わる（Replace戦略）
 
 **例: remove（添付ファイル付きTODO）**
+
 - TODOを削除すると、関連する添付ファイルも一緒に削除される
 
 ### 3. 異常系（該当する場合）
@@ -66,6 +75,7 @@
 `{entity}-repository.medium.test.ts` - DynamoDB統合テスト
 
 **例**:
+
 - `todo-repository.medium.test.ts`
 - `project-repository.medium.test.ts`
 - `user-repository.medium.test.ts`
@@ -312,8 +322,8 @@ describe("TodoRepositoryImpl", () => {
 function createTestTodo(overrides?: Partial<TodoProps>): Todo {
   return new Todo({
     id: todoRepository.todoId(),
-    title: "テストTODO",  // 固定値
-    status: TodoStatus.PENDING,  // 固定値
+    title: "テストTODO", // 固定値
+    status: TodoStatus.PENDING, // 固定値
     // ... モデル変更時に修正が必要
   });
 }
@@ -330,6 +340,7 @@ test("テストケース", async () => {
 ```
 
 **理由**:
+
 - Dummyファクトリは既にランダム値生成機能を持つ
 - テストファイル専用ヘルパーを作ると保守コストが倍増
 - Dummyファクトリを全テストで統一して使用する方が一貫性がある

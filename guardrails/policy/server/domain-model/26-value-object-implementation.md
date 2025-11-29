@@ -5,6 +5,7 @@
 Value Objectの具体的な実装パターンをまとめたドキュメント。
 
 **関連ドキュメント**:
+
 - **設計概要**: `25-value-object-overview.md`
 - **バリデーション戦略**: `11-domain-validation-strategy.md`
 - **テストパターン**: `51-value-object-test-patterns.md`
@@ -37,6 +38,7 @@ export function staticImplements<T>() {
 ```
 
 **重要**:
+
 - `from()`は**常にProps型エイリアスパターン**を使用（Entityのコンストラクタと統一）
 - プロパティ名は具体的な意味を持つ名前にする（`value`ではなく`email`, `status`など）
 - 単一パラメータの例: `type EmailProps = { email: string }`
@@ -74,8 +76,8 @@ export class TodoStatus implements ValueObject<TodoStatus> {
 
   static from(props: TodoStatusProps): Result<TodoStatus, DomainError> {
     // バリデーション実装
-    if (!['TODO', 'IN_PROGRESS', 'COMPLETED'].includes(props.status)) {
-      return Result.err(new DomainError('無効なステータスです'));
+    if (!["TODO", "IN_PROGRESS", "COMPLETED"].includes(props.status)) {
+      return Result.err(new DomainError("無効なステータスです"));
     }
     return Result.ok(new TodoStatus(props.status));
   }
@@ -91,11 +93,13 @@ export class TodoStatus implements ValueObject<TodoStatus> {
 ```
 
 **Props型エイリアスのメリット**:
+
 - **再利用性**: 複数のメソッドで同じ型を使用可能
 - **可読性**: 型定義が一箇所にまとまる、プロパティ名が明確
 - **一貫性**: Entityのコンストラクタと同じパターン
 
 **使用例**:
+
 ```typescript
 const statusResult = TodoStatus.from({ status: "TODO" });
 if (statusResult.success) {
@@ -127,7 +131,7 @@ export class FullName implements ValueObject<FullName> {
   static from(props: FullNameProps): Result<FullName, DomainError> {
     // バリデーション
     if (props.firstName.length === 0 || props.lastName.length === 0) {
-      return Result.err(new DomainError('姓名は必須です'));
+      return Result.err(new DomainError("姓名は必須です"));
     }
     return Result.ok(new FullName(props.firstName, props.lastName));
   }
@@ -141,7 +145,9 @@ export class FullName implements ValueObject<FullName> {
   }
 
   equals(other: FullName): boolean {
-    return this._firstName === other._firstName && this._lastName === other._lastName;
+    return (
+      this._firstName === other._firstName && this._lastName === other._lastName
+    );
   }
 
   toString(): string {
@@ -183,7 +189,9 @@ export class Email implements ValueObject<Email> {
   static from(props: EmailProps): Result<Email, DomainError> {
     // バリデーション
     if (!props.email.endsWith("@company.com")) {
-      return Result.err(new DomainError("会社のメールアドレスのみ許可されています"));
+      return Result.err(
+        new DomainError("会社のメールアドレスのみ許可されています"),
+      );
     }
     return Result.ok(new Email(props.email));
   }
@@ -300,11 +308,16 @@ const newStatusResult = TodoStatus.from({ status: input.status });
 if (!newStatusResult.success) return newStatusResult;
 
 // Value Objectで不変条件チェック
-const canTransitionResult = existing.status.canTransitionTo(newStatusResult.data);
+const canTransitionResult = existing.status.canTransitionTo(
+  newStatusResult.data,
+);
 if (!canTransitionResult.success) return canTransitionResult;
 
 // Entityメソッドはシンプル
-const updated = existing.changeStatus(newStatusResult.data, dateToIsoString(now));
+const updated = existing.changeStatus(
+  newStatusResult.data,
+  dateToIsoString(now),
+);
 ```
 
 ### 原則7: default()メソッド（オプション）
@@ -337,12 +350,14 @@ export type TodoStatusProps = {
 
 // ✅ Tier 1: 不変条件を持つ → Value Object必須
 export class TodoStatus implements ValueObject<TodoStatus> {
-  private constructor(private readonly value: 'TODO' | 'IN_PROGRESS' | 'COMPLETED') {}
+  private constructor(
+    private readonly value: "TODO" | "IN_PROGRESS" | "COMPLETED",
+  ) {}
 
   static from(props: TodoStatusProps): Result<TodoStatus, DomainError> {
     const normalized = props.status.toUpperCase();
-    if (!['TODO', 'IN_PROGRESS', 'COMPLETED'].includes(normalized)) {
-      return Result.err(new DomainError('無効なステータス'));
+    if (!["TODO", "IN_PROGRESS", "COMPLETED"].includes(normalized)) {
+      return Result.err(new DomainError("無効なステータス"));
     }
     return Result.ok(new TodoStatus(normalized as any));
   }
@@ -352,7 +367,9 @@ export class TodoStatus implements ValueObject<TodoStatus> {
    */
   canTransitionTo(newStatus: TodoStatus): Result<void, DomainError> {
     if (this.isCompleted() && !newStatus.isCompleted()) {
-      return Result.err(new DomainError('完了済みTODOのステータスは変更できません'));
+      return Result.err(
+        new DomainError("完了済みTODOのステータスは変更できません"),
+      );
     }
     return Result.ok(undefined);
   }
@@ -366,14 +383,26 @@ export class TodoStatus implements ValueObject<TodoStatus> {
   }
 
   // ヘルパーメソッド
-  isCompleted(): boolean { return this.value === 'COMPLETED'; }
-  isTodo(): boolean { return this.value === 'TODO'; }
-  isInProgress(): boolean { return this.value === 'IN_PROGRESS'; }
+  isCompleted(): boolean {
+    return this.value === "COMPLETED";
+  }
+  isTodo(): boolean {
+    return this.value === "TODO";
+  }
+  isInProgress(): boolean {
+    return this.value === "IN_PROGRESS";
+  }
 
   // 静的ファクトリメソッド
-  static todo(): TodoStatus { return new TodoStatus('TODO'); }
-  static inProgress(): TodoStatus { return new TodoStatus('IN_PROGRESS'); }
-  static completed(): TodoStatus { return new TodoStatus('COMPLETED'); }
+  static todo(): TodoStatus {
+    return new TodoStatus("TODO");
+  }
+  static inProgress(): TodoStatus {
+    return new TodoStatus("IN_PROGRESS");
+  }
+  static completed(): TodoStatus {
+    return new TodoStatus("COMPLETED");
+  }
 }
 ```
 
@@ -403,7 +432,9 @@ export class Email implements ValueObject<Email> {
     // OpenAPI format: email では基本形式のみチェック（ValidationError）
     // Value Object: ドメイン固有のルール（DomainError）
     if (!props.email.endsWith("@company.com")) {
-      return Result.err(new DomainError("会社のメールアドレスのみ許可されています"));
+      return Result.err(
+        new DomainError("会社のメールアドレスのみ許可されています"),
+      );
     }
     return Result.ok(new Email(props.email));
   }
@@ -472,12 +503,12 @@ color:
 ```typescript
 // ✅ Tier 3: OpenAPIでバリデーション → Value Object不要
 export class Todo {
-  readonly id: string;              // プリミティブ（バリデーション不要）
-  readonly title: string;           // OpenAPI: minLength/maxLength
-  readonly color?: string;          // OpenAPI: pattern
-  readonly description?: string;    // プリミティブ
-  readonly createdAt: string;       // プリミティブ
-  readonly status: TodoStatus;      // Value Object（不変条件あり）
+  readonly id: string; // プリミティブ（バリデーション不要）
+  readonly title: string; // OpenAPI: minLength/maxLength
+  readonly color?: string; // OpenAPI: pattern
+  readonly description?: string; // プリミティブ
+  readonly createdAt: string; // プリミティブ
+  readonly status: TodoStatus; // Value Object（不変条件あり）
 }
 ```
 
@@ -516,7 +547,9 @@ export class Email implements ValueObject<Email> {
     // ここではドメイン固有のルール（会社ドメインのみ）をチェック
 
     if (!props.email.endsWith("@company.com")) {
-      return Result.err(new DomainError("会社のメールアドレスのみ許可されています"));
+      return Result.err(
+        new DomainError("会社のメールアドレスのみ許可されています"),
+      );
     }
 
     return Result.ok(new Email(props.email));
@@ -556,9 +589,9 @@ export type TodoStatusProps = {
  * 状態遷移ルール（不変条件）を内包する。
  */
 export class TodoStatus implements ValueObject<TodoStatus> {
-  private readonly value: 'TODO' | 'IN_PROGRESS' | 'COMPLETED';
+  private readonly value: "TODO" | "IN_PROGRESS" | "COMPLETED";
 
-  private constructor(value: 'TODO' | 'IN_PROGRESS' | 'COMPLETED') {
+  private constructor(value: "TODO" | "IN_PROGRESS" | "COMPLETED") {
     this.value = value;
   }
 
@@ -567,10 +600,12 @@ export class TodoStatus implements ValueObject<TodoStatus> {
    */
   static from(props: TodoStatusProps): Result<TodoStatus, DomainError> {
     const normalized = props.status.toUpperCase();
-    if (!['TODO', 'IN_PROGRESS', 'COMPLETED'].includes(normalized)) {
-      return Result.err(new DomainError('無効なステータスです'));
+    if (!["TODO", "IN_PROGRESS", "COMPLETED"].includes(normalized)) {
+      return Result.err(new DomainError("無効なステータスです"));
     }
-    return Result.ok(new TodoStatus(normalized as 'TODO' | 'IN_PROGRESS' | 'COMPLETED'));
+    return Result.ok(
+      new TodoStatus(normalized as "TODO" | "IN_PROGRESS" | "COMPLETED"),
+    );
   }
 
   /**
@@ -578,9 +613,9 @@ export class TodoStatus implements ValueObject<TodoStatus> {
    */
   canTransitionTo(newStatus: TodoStatus): Result<void, DomainError> {
     if (this.isCompleted() && !newStatus.isCompleted()) {
-      return Result.err(new DomainError(
-        '完了済みTODOのステータスは変更できません'
-      ));
+      return Result.err(
+        new DomainError("完了済みTODOのステータスは変更できません"),
+      );
     }
     return Result.ok(undefined);
   }
@@ -589,30 +624,30 @@ export class TodoStatus implements ValueObject<TodoStatus> {
    * ヘルパーメソッド
    */
   isCompleted(): boolean {
-    return this.value === 'COMPLETED';
+    return this.value === "COMPLETED";
   }
 
   isTodo(): boolean {
-    return this.value === 'TODO';
+    return this.value === "TODO";
   }
 
   isInProgress(): boolean {
-    return this.value === 'IN_PROGRESS';
+    return this.value === "IN_PROGRESS";
   }
 
   /**
    * 静的ファクトリメソッド
    */
   static todo(): TodoStatus {
-    return new TodoStatus('TODO');
+    return new TodoStatus("TODO");
   }
 
   static inProgress(): TodoStatus {
-    return new TodoStatus('IN_PROGRESS');
+    return new TodoStatus("IN_PROGRESS");
   }
 
   static completed(): TodoStatus {
-    return new TodoStatus('COMPLETED');
+    return new TodoStatus("COMPLETED");
   }
 
   /**
@@ -639,15 +674,15 @@ Value Objectは必ずユニットテスト（`.small.test.ts`）を作成する�
 
 ```typescript
 // todo-status.small.test.ts
-import { describe, it, expect } from 'vitest';
-import { TodoStatus } from './todo-status';
-import { DomainError } from '@/util/error-util';
+import { describe, it, expect } from "vitest";
+import { TodoStatus } from "./todo-status";
+import { DomainError } from "@/util/error-util";
 
-describe('TodoStatus', () => {
-  describe('from', () => {
-    describe('正常系', () => {
-      it('有効なステータス文字列からTodoStatusを生成できる', () => {
-        const result = TodoStatus.from({ value: 'TODO' });
+describe("TodoStatus", () => {
+  describe("from", () => {
+    describe("正常系", () => {
+      it("有効なステータス文字列からTodoStatusを生成できる", () => {
+        const result = TodoStatus.from({ value: "TODO" });
 
         expect(result.success).toBe(true);
         if (result.success) {
@@ -655,18 +690,18 @@ describe('TodoStatus', () => {
         }
       });
 
-      it('すべての有効なステータスから作成できる', () => {
-        const todoResult = TodoStatus.from({ value: 'TODO' });
-        const inProgressResult = TodoStatus.from({ value: 'IN_PROGRESS' });
-        const completedResult = TodoStatus.from({ value: 'COMPLETED' });
+      it("すべての有効なステータスから作成できる", () => {
+        const todoResult = TodoStatus.from({ value: "TODO" });
+        const inProgressResult = TodoStatus.from({ value: "IN_PROGRESS" });
+        const completedResult = TodoStatus.from({ value: "COMPLETED" });
 
         expect(todoResult.success).toBe(true);
         expect(inProgressResult.success).toBe(true);
         expect(completedResult.success).toBe(true);
       });
 
-      it('小文字でも作成できる', () => {
-        const result = TodoStatus.from({ value: 'todo' });
+      it("小文字でも作成できる", () => {
+        const result = TodoStatus.from({ value: "todo" });
 
         expect(result.success).toBe(true);
         if (result.success) {
@@ -675,19 +710,19 @@ describe('TodoStatus', () => {
       });
     });
 
-    describe('異常系', () => {
-      it('無効なステータス文字列の場合DomainErrorを返す', () => {
-        const result = TodoStatus.from({ value: 'INVALID' });
+    describe("異常系", () => {
+      it("無効なステータス文字列の場合DomainErrorを返す", () => {
+        const result = TodoStatus.from({ value: "INVALID" });
 
         expect(result.success).toBe(false);
         if (!result.success) {
           expect(result.error).toBeInstanceOf(DomainError);
-          expect(result.error.message).toContain('無効なステータス');
+          expect(result.error.message).toContain("無効なステータス");
         }
       });
 
-      it('空文字列の場合DomainErrorを返す', () => {
-        const result = TodoStatus.from({ value: '' });
+      it("空文字列の場合DomainErrorを返す", () => {
+        const result = TodoStatus.from({ value: "" });
 
         expect(result.success).toBe(false);
         if (!result.success) {
@@ -697,8 +732,8 @@ describe('TodoStatus', () => {
     });
   });
 
-  describe('canTransitionTo', () => {
-    it('未完了から完了への遷移は許可される', () => {
+  describe("canTransitionTo", () => {
+    it("未完了から完了への遷移は許可される", () => {
       const todo = TodoStatus.todo();
       const completed = TodoStatus.completed();
 
@@ -707,7 +742,7 @@ describe('TodoStatus', () => {
       expect(result.success).toBe(true);
     });
 
-    it('完了から未完了への遷移は禁止される', () => {
+    it("完了から未完了への遷移は禁止される", () => {
       const completed = TodoStatus.completed();
       const todo = TodoStatus.todo();
 
@@ -716,11 +751,13 @@ describe('TodoStatus', () => {
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error).toBeInstanceOf(DomainError);
-        expect(result.error.message).toContain('完了済みTODOのステータスは変更できません');
+        expect(result.error.message).toContain(
+          "完了済みTODOのステータスは変更できません",
+        );
       }
     });
 
-    it('同じステータスへの遷移は許可される', () => {
+    it("同じステータスへの遷移は許可される", () => {
       const completed = TodoStatus.completed();
 
       const result = completed.canTransitionTo(completed);
@@ -729,15 +766,15 @@ describe('TodoStatus', () => {
     });
   });
 
-  describe('equals', () => {
-    it('同じ値のValue Objectは等価である', () => {
+  describe("equals", () => {
+    it("同じ値のValue Objectは等価である", () => {
       const status1 = TodoStatus.todo();
       const status2 = TodoStatus.todo();
 
       expect(status1.equals(status2)).toBe(true);
     });
 
-    it('異なる値のValue Objectは等価でない', () => {
+    it("異なる値のValue Objectは等価でない", () => {
       const todo = TodoStatus.todo();
       const completed = TodoStatus.completed();
 
@@ -745,23 +782,23 @@ describe('TodoStatus', () => {
     });
   });
 
-  describe('toString', () => {
-    it('値の文字列表現を返す', () => {
+  describe("toString", () => {
+    it("値の文字列表現を返す", () => {
       const status = TodoStatus.todo();
 
-      expect(status.toString()).toBe('TODO');
+      expect(status.toString()).toBe("TODO");
     });
   });
 
-  describe('ヘルパーメソッド', () => {
-    describe('isCompleted', () => {
-      it('COMPLETEDステータスの場合trueを返す', () => {
+  describe("ヘルパーメソッド", () => {
+    describe("isCompleted", () => {
+      it("COMPLETEDステータスの場合trueを返す", () => {
         const completed = TodoStatus.completed();
 
         expect(completed.isCompleted()).toBe(true);
       });
 
-      it('TODOステータスの場合falseを返す', () => {
+      it("TODOステータスの場合falseを返す", () => {
         const todo = TodoStatus.todo();
 
         expect(todo.isCompleted()).toBe(false);
@@ -769,22 +806,22 @@ describe('TodoStatus', () => {
     });
   });
 
-  describe('静的ファクトリメソッド', () => {
-    describe('todo', () => {
-      it('TODOステータスのインスタンスを返す', () => {
+  describe("静的ファクトリメソッド", () => {
+    describe("todo", () => {
+      it("TODOステータスのインスタンスを返す", () => {
         const status = TodoStatus.todo();
 
         expect(status.isTodo()).toBe(true);
-        expect(status.toString()).toBe('TODO');
+        expect(status.toString()).toBe("TODO");
       });
     });
 
-    describe('completed', () => {
-      it('COMPLETEDステータスのインスタンスを返す', () => {
+    describe("completed", () => {
+      it("COMPLETEDステータスのインスタンスを返す", () => {
         const status = TodoStatus.completed();
 
         expect(status.isCompleted()).toBe(true);
-        expect(status.toString()).toBe('COMPLETED');
+        expect(status.toString()).toBe("COMPLETED");
       });
     });
   });

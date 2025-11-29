@@ -8,6 +8,7 @@
 - **Value Object**: 識別子を持たず、値そのもので判断されるドメインオブジェクト
 
 **関連ドキュメント**:
+
 - **フィールド分類**: `21-entity-field-classification.md`
 - **実装詳細**: `22-entity-implementation.md`
 - **バリデーション戦略**: `11-domain-validation-strategy.md`
@@ -33,11 +34,13 @@ Entityは常に正しい状態（Valid State）でなければならない。
 **基本方針**: Entity層は薄く保ち、メソッドチェーン可能な状態を維持する。
 
 **バリデーション配置の原則**:
+
 - **単一Value Objectの不変条件**: Value Object層に配置（積極的に活用）
 - **複数の値の関係性・状態遷移**: Entity層で実施可能（必要最小限）
 - **シンプルなデータ変換**: メソッドチェーン可能（基本的にこのパターンを使用）
 
 **メソッド設計の原則**:
+
 - **Entityを返す**: シンプルなデータ変換（メソッドチェーン可能）
 - **Result型を返す**: 複数値関係性バリデーションが必要な場合のみ（Result.then()でメソッドチェーン可能）
 
@@ -153,6 +156,7 @@ const completed = completedResult.data;
 **汎用メソッドの禁止**: `update()` 等の汎用的な更新メソッドは実装しない。個別のビジネスメソッド（`changeTitle()`, `changeStatus()`, `markAsCompleted()` 等）のみを実装し、メソッドチェーンで組み合わせる。
 
 **理由**:
+
 - PATCHとの相性が良い（送られたフィールドのみ更新）
 - シンプルで理解しやすい（意図が明確）
 - analyzability原則に準拠（各メソッドの引数は必須）
@@ -162,12 +166,13 @@ const completed = completedResult.data;
 
 **参照**: `guardrails/policy/server/use-case/15-domain-model-interaction.md` - 詳細な使い分け基準
 
-| パターン | 返り値 | 使用ケース | メソッドチェーン |
-|---------|-------|-----------|----------------|
-| **パターン1** | `Entity` | バリデーション不要なフィールド更新 | ✅ 可能 |
+| パターン      | 返り値                        | 使用ケース                                  | メソッドチェーン           |
+| ------------- | ----------------------------- | ------------------------------------------- | -------------------------- |
+| **パターン1** | `Entity`                      | バリデーション不要なフィールド更新          | ✅ 可能                    |
 | **パターン2** | `Result<Entity, DomainError>` | ドメインルール/不変条件チェックが必要な更新 | ✅ 可能（`Result.then()`） |
 
 **重要**:
+
 - **すべてのパターンでメソッドチェーン可能** - `Result.then()`が`Entity`を自動で`Result.ok()`に包むため
 - **パターン1**: バリデーション不要な単純更新（Entity層を薄く保つ、`Result.ok()`のボイラープレート不要）
 - **パターン2**: Value Objectの不変条件チェック（`canTransitionTo()`）はEntity内で実行する（ドメイン貧血症を回避）
@@ -177,10 +182,10 @@ const completed = completedResult.data;
 
 ```typescript
 // 既存Entityから始めるチェーン
-const result = Result.ok(existingTodo)               // EntityをResult.ok()で包む
-  .then(t => t.updateDescription("新しい", now))       // Todoを返す → 自動でResult.ok()に包む
-  .then(t => t.changeStatus(newStatus, now))         // Result<Todo>を返す → そのまま
-  .then(t => repository.save(t));                    // 完全にフラット
+const result = Result.ok(existingTodo) // EntityをResult.ok()で包む
+  .then((t) => t.updateDescription("新しい", now)) // Todoを返す → 自動でResult.ok()に包む
+  .then((t) => t.changeStatus(newStatus, now)) // Result<Todo>を返す → そのまま
+  .then((t) => repository.save(t)); // 完全にフラット
 ```
 
 ## Value Objectとの関係
@@ -191,13 +196,14 @@ Entity設計の鍵は、適切にValue Objectを活用すること。
 
 **参照**: `11-domain-validation-strategy.md` - Value Object化の判断基準
 
-| Tier | 基準 | Value Object化 | 例 |
-|------|------|--------------|-----|
-| **Tier 1: 必須** | 不変条件を持つフィールド | ✅ 必須 | `TodoStatus`（状態遷移ルール）、`OrderStatus`（注文状態遷移） |
-| **Tier 2: 推奨** | ドメインルールを持つフィールド | ✅ 推奨 | `Email`（会社ドメインのみ許可）、`Age`（18歳以上）、`Money`（通貨計算） |
+| Tier             | 基準                                       | Value Object化      | 例                                                                        |
+| ---------------- | ------------------------------------------ | ------------------- | ------------------------------------------------------------------------- |
+| **Tier 1: 必須** | 不変条件を持つフィールド                   | ✅ 必須             | `TodoStatus`（状態遷移ルール）、`OrderStatus`（注文状態遷移）             |
+| **Tier 2: 推奨** | ドメインルールを持つフィールド             | ✅ 推奨             | `Email`（会社ドメインのみ許可）、`Age`（18歳以上）、`Money`（通貨計算）   |
 | **Tier 3: 不要** | 型レベル制約のみ、またはバリデーション不要 | ❌ プリミティブでOK | `title: string`（minLength/maxLength）、`id: string`、`createdAt: string` |
 
 **重要な原則**:
+
 - **必ず成功する（バリデーション不要な）Value Objectは作らない**
 - Value Objectは**ドメインルールまたは不変条件を内包する**ために使用する
 - 単なる型エイリアスや命名のためにValue Objectを作らない
@@ -207,16 +213,16 @@ Entity設計の鍵は、適切にValue Objectを活用すること。
 ```typescript
 export class Todo {
   // Tier 1: Required
-  readonly id: string;              // プリミティブ（バリデーション不要）
-  readonly title: string;           // プリミティブ（OpenAPI: minLength/maxLength）
-  readonly status: TodoStatus;      // Value Object（不変条件あり）
+  readonly id: string; // プリミティブ（バリデーション不要）
+  readonly title: string; // プリミティブ（OpenAPI: minLength/maxLength）
+  readonly status: TodoStatus; // Value Object（不変条件あり）
 
   // Tier 2: Special Case
-  readonly dueDate: string | undefined;      // プリミティブ（undefinedは"期限なし"）
-  readonly completedAt: string | undefined;  // プリミティブ（undefinedは"未完了"）
+  readonly dueDate: string | undefined; // プリミティブ（undefinedは"期限なし"）
+  readonly completedAt: string | undefined; // プリミティブ（undefinedは"未完了"）
 
   // Tier 3: Optional
-  readonly description?: string;    // プリミティブ（純粋に任意）
+  readonly description?: string; // プリミティブ（純粋に任意）
 
   // 変更不可
   readonly createdAt: string;
@@ -243,7 +249,7 @@ export class Todo {
 
 ```typescript
 // {entity}.dummy.ts
-import { todoStatusDummyFrom } from "./todo-status.dummy";  // ✅ Value Object Dummy
+import { todoStatusDummyFrom } from "./todo-status.dummy"; // ✅ Value Object Dummy
 import {
   getDummyId,
   getDummyShortText,
@@ -255,7 +261,7 @@ export type TodoDummyProps = Partial<{
   id: string;
   title: string;
   status: TodoStatus;
-  dueDate: string | undefined;  // オプショナル
+  dueDate: string | undefined; // オプショナル
   createdAt: string;
   updatedAt: string;
 }>;
@@ -266,8 +272,8 @@ export const todoDummyFrom = (props?: TodoDummyProps): Todo => {
   return new Todo({
     id: props?.id ?? getDummyId(),
     title: props?.title ?? getDummyShortText(),
-    status: props?.status ?? todoStatusDummyFrom(),  // ✅ Value Object Dummy
-    dueDate: props?.dueDate ?? getDummyDueDate(),  // 50%でundefined
+    status: props?.status ?? todoStatusDummyFrom(), // ✅ Value Object Dummy
+    dueDate: props?.dueDate ?? getDummyDueDate(), // 50%でundefined
     createdAt: props?.createdAt ?? now,
     updatedAt: props?.updatedAt ?? now,
   });

@@ -57,6 +57,7 @@ await expect(component.getByText("test.txt")).toBeVisible();
 2. **スナップショットテスト**: `{Feature}Page.tsx` → `{Feature}Page.ss.test.ts` が必須
 
 **例外（テスト不要）:**
+
 - `index.ts`
 - `constants.ts`, `types.ts`, `*.d.ts`
 

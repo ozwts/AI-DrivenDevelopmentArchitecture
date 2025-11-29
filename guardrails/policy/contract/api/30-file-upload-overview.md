@@ -1,420 +1,207 @@
-# ファイルアップロードパターン（Two-Phase Upload）
+# ファイルアップロードAPI設計原則
 
 ## 核心原則
 
-**Pre-signed URL方式**による **Two-Phase Upload** を採用し、サーバー負荷を最小化しつつセキュアなファイルアップロードを実現する。
+ファイルアップロードは **Two-Phase Upload パターン** を採用し、APIサーバーの負荷を最小化する。
 
-## アーキテクチャ概要
+## Two-Phase Upload パターン
 
-```
-クライアント                API Server              S3
-    │                          │                    │
-    │  ① アップロード準備       │                    │
-    ├─────────────────────────>│                    │
-    │  POST /prepare            │                    │
-    │                          │  ② Pre-signed URL  │
-    │                          │     生成            │
-    │                          ├───────────────────>│
-    │  ③ Pre-signed URL返却    │                    │
-    │<─────────────────────────┤                    │
-    │  uploadUrl, attachmentId │                    │
-    │                          │                    │
-    │  ④ 直接アップロード       │                    │
-    ├──────────────────────────────────────────────>│
-    │  PUT {uploadUrl}          │                    │
-    │  (ファイルバイナリ)        │                    │
-    │                          │                    │
-    │  ⑤ ステータス更新         │                    │
-    ├─────────────────────────>│                    │
-    │  PATCH /:attachmentId     │                    │
-    │  { status: "UPLOADED" }   │                    │
-    │                          │  ⑥ DB更新          │
-    │  ⑦ 更新完了               │                    │
-    │<─────────────────────────┤                    │
-```
+### 設計意図
 
-## ステート遷移
+1. **スケーラビリティ**: APIサーバーがファイルバイナリを扱わない
+2. **帯域効率**: クライアントがストレージ（S3等）に直接アップロード
+3. **セキュリティ**: Pre-signed URLによる一時的なアクセス権限付与
+4. **トレーサビリティ**: ステート管理により進行状況を追跡可能
 
-添付ファイルは以下の2つの状態を持つ。
+### フロー概要
 
 ```
-PREPARED ──(クライアントがS3アップロード完了)──> UPLOADED
+1. クライアント → API: アップロード準備リクエスト（メタデータのみ）
+2. API → クライアント: 一時URLとリソースIDを返却
+3. クライアント → ストレージ: 直接ファイルアップロード
+4. クライアント → API: アップロード完了通知
 ```
 
-### 状態定義
+**重要**: APIサーバーはファイルバイナリをハンドリングしない。
 
-| 状態 | 説明 | 遷移条件 |
-|------|------|---------|
-| PREPARED | アップロード準備完了、S3 URLは発行済みだがファイル未アップロード | `POST /prepare` 成功時 |
-| UPLOADED | S3へのアップロード完了、ファイルダウンロード可能 | クライアントが `PUT /:attachmentId` で通知 |
+## ステート管理
 
-### OpenAPI定義
+### 基本原則
 
-```yaml
-AttachmentStatus:
-  type: string
-  enum:
-    - PREPARED
-    - UPLOADED
-  description: 添付ファイルのステータス
-```
+ファイルアップロードリソースは **明確なステート** を持ち、状態遷移を管理する。
 
-## フェーズ1: アップロード準備（PREPARED状態作成）
+### 推奨ステート
 
-### エンドポイント
+| ステート | 意味                 | 遷移条件                     |
+| -------- | -------------------- | ---------------------------- |
+| PREPARED | アップロード準備完了 | 準備API成功時                |
+| UPLOADED | アップロード完了     | クライアントからの完了通知時 |
 
-```
-POST /todos/{todoId}/attachments/prepare
-```
+**enum定義原則**: 大文字スネークケースで定義（`PREPARED`, `UPLOADED`）
 
-### リクエスト
+### ステート遷移ルール
 
-```yaml
-PrepareAttachmentParams:
-  type: object
-  required:
-    - filename
-    - filesize
-    - contentType
-  properties:
-    filename:
-      type: string
-      minLength: 1
-      maxLength: 255
-      description: ファイル名（拡張子含む）
-    filesize:
-      type: integer
-      minimum: 1
-      maximum: 10485760  # 10MB
-      description: ファイルサイズ（バイト）
-    contentType:
-      type: string
-      minLength: 1
-      description: MIMEタイプ（例: image/png）
-```
+- **一方向遷移**: `PREPARED` → `UPLOADED` のみ許可
+- **検証必須**: 不正な遷移はビジネスルールエラー（422）
+- **追跡可能性**: 各ステートに`createdAt`/`updatedAt`を記録
 
-**重要**:
-- ファイル本体は含めない（メタデータのみ）
-- ファイルサイズ上限は10MB（型レベルバリデーション）
-- contentTypeはクライアント指定（S3 Content-Type設定用）
+## エンドポイント設計
 
-### レスポンス
+### 準備エンドポイント
 
-```yaml
-PrepareAttachmentResponse:
-  type: object
-  required:
-    - uploadUrl
-    - attachment
-  properties:
-    uploadUrl:
-      type: string
-      description: S3 Pre-signed URL（有効期限付き）
-    attachment:
-      $ref: '#/components/schemas/AttachmentResponse'
-```
+**パターン**: `POST /{parent-resource}/{id}/{child-resource}/prepare`
 
-```yaml
-AttachmentResponse:
-  type: object
-  required:
-    - id
-    - todoId
-    - filename
-    - filesize
-    - contentType
-    - status
-    - createdAt
-    - updatedAt
-  properties:
-    id:
-      type: string
-      description: 添付ファイルID
-    todoId:
-      type: string
-      description: 親TODOのID
-    filename:
-      type: string
-    filesize:
-      type: integer
-    contentType:
-      type: string
-    status:
-      $ref: '#/components/schemas/AttachmentStatus'  # PREPARED
-    createdAt:
-      type: string
-      format: date-time
-    updatedAt:
-      type: string
-      format: date-time
-```
+**例**: `POST /todos/{todoId}/attachments/prepare`
 
-### サーバー側処理
+**リクエスト内容**:
 
-1. **Attachmentエンティティ作成**: `status: PREPARED`で保存
-2. **S3 Pre-signed URL生成**: PutObject用、有効期限15分
-3. **レスポンス返却**: `uploadUrl`とAttachmentメタデータ
+- ファイル名（必須）
+- ファイルサイズ（必須）
+- Content-Type（必須）
+- **ファイルバイナリは含めない**
 
-### UseCase実装パターン
+**レスポンス内容**:
 
-```typescript
-const result = await prepareAttachmentUploadUseCase.execute({
-  todoId: input.todoId,
-  filename: input.filename,
-  filesize: input.filesize,
-  contentType: input.contentType,
-  userSub,
-});
+- 一時アップロードURL
+- 作成されたリソース（ステータス: PREPARED）
 
-// result.data:
-// {
-//   uploadUrl: "https://s3.amazonaws.com/bucket/key?X-Amz-...",
-//   attachment: { id: "...", status: "PREPARED", ... }
-// }
-```
+### 完了通知エンドポイント
 
-## フェーズ2: クライアント側アップロード
+**パターン**: `PATCH /{parent-resource}/{id}/{child-resource}/{id}`
 
-クライアントは受け取った `uploadUrl` に対して **直接S3へHTTP PUTリクエスト** を送る。
+**例**: `PATCH /todos/{todoId}/attachments/{attachmentId}`
 
-### クライアント実装例（TypeScript）
+**リクエスト内容**:
 
-```typescript
-const prepareResponse = await fetch(
-  `/todos/${todoId}/attachments/prepare`,
-  {
-    method: 'POST',
-    body: JSON.stringify({ filename, filesize, contentType }),
-  }
-);
+- ステータス更新（`UPLOADED`）
 
-const { uploadUrl, attachment } = await prepareResponse.json();
+**レスポンス内容**:
 
-// S3へ直接アップロード
-await fetch(uploadUrl, {
-  method: 'PUT',
-  body: fileBlob,
-  headers: {
-    'Content-Type': contentType,
-  },
-});
+- 更新されたリソース（ステータス: UPLOADED）
 
-// ステータス更新
-await fetch(`/todos/${todoId}/attachments/${attachment.id}`, {
-  method: 'PATCH',
-  body: JSON.stringify({ status: 'UPLOADED' }),
-});
-```
+### ダウンロードURLエンドポイント
 
-**重要**:
-- API Serverを経由しない（帯域節約・スケーラビリティ向上）
-- Pre-signed URLは一時的なアクセス権限を付与
-- API Serverはファイルバイナリをハンドリングしない
+**パターン**: `GET /{parent-resource}/{id}/{child-resource}/{id}/download-url`
 
-## フェーズ3: ステータス更新（UPLOADED状態へ遷移）
+**例**: `GET /todos/{todoId}/attachments/{attachmentId}/download-url`
 
-### エンドポイント
+**レスポンス内容**:
 
-```
-PATCH /todos/{todoId}/attachments/{attachmentId}
-```
+- 一時ダウンロードURL
 
-### リクエスト
+**前提条件**: ステータスが`UPLOADED`である必要がある
 
-```yaml
-UpdateAttachmentParams:
-  type: object
-  required:
-    - status
-  properties:
-    status:
-      $ref: '#/components/schemas/AttachmentStatus'  # "UPLOADED"
-```
+## 命名規則
 
-### レスポンス
+### リクエスト/レスポンススキーマ
 
-```yaml
-AttachmentResponse:
-  # statusがUPLOADEDに更新されたレスポンス
-```
+| 用途           | パターン                    | 例                          |
+| -------------- | --------------------------- | --------------------------- |
+| 準備リクエスト | `Prepare{Resource}Params`   | `PrepareAttachmentParams`   |
+| 準備レスポンス | `Prepare{Resource}Response` | `PrepareAttachmentResponse` |
+| リソース       | `{Resource}Response`        | `AttachmentResponse`        |
+| ステータスenum | `{Resource}Status`          | `AttachmentStatus`          |
 
-### サーバー側処理
+### プロパティ名
 
-1. **Attachment取得**: 指定IDのAttachmentを取得
-2. **ステータス遷移検証**: `PREPARED → UPLOADED` のみ許可
-3. **DB更新**: `status`と`updatedAt`を更新
-4. **レスポンス返却**: 更新後のAttachment
+| 概念            | プロパティ名  | 型        | 説明            |
+| --------------- | ------------- | --------- | --------------- |
+| ファイルサイズ  | `filesize`    | `integer` | バイト単位      |
+| ファイル名      | `filename`    | `string`  | 拡張子含む      |
+| MIMEタイプ      | `contentType` | `string`  | 例: `image/png` |
+| アップロードURL | `uploadUrl`   | `string`  | Pre-signed URL  |
+| ダウンロードURL | `downloadUrl` | `string`  | Pre-signed URL  |
 
-### UseCase実装パターン
-
-```typescript
-// ビジネスルール: PREPARED → UPLOADED のみ許可
-if (attachment.status !== 'PREPARED') {
-  return Result.err(new ValidationError(
-    'ステータスはPREPAREDからUPLOADEDにのみ更新できます'
-  ));
-}
-
-// 状態遷移
-const updatedAttachment = attachment.updateStatus('UPLOADED');
-```
-
-## ダウンロード
-
-### エンドポイント
-
-```
-GET /todos/{todoId}/attachments/{attachmentId}/download-url
-```
-
-### レスポンス
-
-```yaml
-GetAttachmentDownloadUrlResponse:
-  type: object
-  required:
-    - downloadUrl
-  properties:
-    downloadUrl:
-      type: string
-      description: S3 Pre-signed URL（GetObject用、有効期限付き）
-```
-
-### サーバー側処理
-
-1. **Attachment取得**: 指定IDのAttachmentを取得
-2. **ステータス検証**: `status === 'UPLOADED'` であることを確認
-3. **Pre-signed URL生成**: GetObject用、有効期限15分
-4. **レスポンス返却**: `downloadUrl`
-
-### UseCase実装パターン
-
-```typescript
-// ビジネスルール: UPLOADEDでなければダウンロード不可
-if (attachment.status !== 'UPLOADED') {
-  return Result.err(new ValidationError(
-    'アップロード完了していないファイルはダウンロードできません'
-  ));
-}
-
-const downloadUrl = await s3Adapter.generatePresignedUrl({
-  operation: 'GetObject',
-  key: attachment.s3Key,
-  expiresIn: 900,  // 15分
-});
-```
-
-## Pre-signed URLのセキュリティ
-
-### 有効期限
-
-| 操作 | 有効期限 | 理由 |
-|------|---------|------|
-| PutObject（アップロード） | 15分 | ユーザーがファイル選択後すぐアップロード想定 |
-| GetObject（ダウンロード） | 15分 | ダウンロード開始後の時間的猶予 |
-
-### アクセス制御
-
-- **認証**: API ServerがPre-signed URL発行前に認証チェック
-- **権限**: UseCase層で親TODO所有者チェック実施
-- **一時性**: URLは期限切れ後アクセス不可
-
-### S3バケット設定
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Deny",
-      "Principal": "*",
-      "Action": "s3:*",
-      "Resource": "arn:aws:s3:::bucket/*",
-      "Condition": {
-        "Bool": {
-          "aws:SecureTransport": "false"
-        }
-      }
-    }
-  ]
-}
-```
-
-**重要**: HTTPS通信強制
+**注**: `size`ではなく`filesize`を使用（明示性）
 
 ## バリデーション階層
 
-Two-Phase Uploadパターンにおけるバリデーションの配置。
+### 第1階層: 型レベルバリデーション（OpenAPI）
 
-**参照**: `guardrails/constitution/validation-principles.md`
+- ファイルサイズ上限（`maximum`）
+- ファイル名長さ（`minLength`, `maxLength`）
+- 必須フィールド（`required`）
 
-### 第1階層：型レベルバリデーション（Handler層）
+**HTTPステータス**: 400 Bad Request
 
-```yaml
-filesize:
-  type: integer
-  minimum: 1
-  maximum: 10485760  # 10MB
-```
+### 第2階層: ドメインルール
 
-- ファイルサイズ上限
-- ファイル名長さ
-- contentType形式
+- ファイル拡張子制限（許可リスト）
+- ファイル名パターン検証
 
-### 第2階層：ドメインルール（Domain層）
+**HTTPステータス**: 422 Unprocessable Entity
 
-```typescript
-// Value Object: ファイル名拡張子チェック
-export class Filename {
-  static fromString(value: string): Result<Filename, ValidationError> {
-    const allowedExtensions = ['.jpg', '.png', '.pdf'];
-    const ext = path.extname(value).toLowerCase();
+### 第3階層: ビジネスルール
 
-    if (!allowedExtensions.includes(ext)) {
-      return Result.err(new ValidationError('許可されていない拡張子です'));
-    }
-
-    return Result.ok(new Filename(value));
-  }
-}
-```
-
-### 第3階層：ビジネスルール（UseCase層）
-
-```typescript
-// TODO当たりの添付ファイル数上限チェック
-const attachments = await attachmentRepository.findByTodoId({ todoId });
-
-if (attachments.length >= 10) {
-  return Result.err(new ValidationError('添付ファイルは最大10個までです'));
-}
-```
-
-- TODO所有者チェック
-- 添付ファイル数上限（ビジネスルール）
+- 親リソース所有者チェック
+- アップロード数上限
 - ステータス遷移検証
+
+**HTTPステータス**: 403 Forbidden / 404 Not Found / 422 Unprocessable Entity
+
+## セキュリティ原則
+
+### Pre-signed URL
+
+**有効期限**: 15分を推奨
+
+- アップロード: ファイル選択後すぐ実行を想定
+- ダウンロード: ダウンロード開始後の猶予
+
+**アクセス制御**:
+
+1. API側で認証・認可チェック
+2. Pre-signed URL発行時に権限検証
+3. URL有効期限で一時性を確保
+
+### ストレージ設定
+
+- **HTTPS強制**: HTTP通信を拒否
+- **プライベートバケット**: パブリックアクセス禁止
+- **CORS設定**: 必要なオリジンのみ許可
 
 ## エラーハンドリング
 
-### アップロード準備失敗
+### 準備フェーズ
 
-| ケース | エラー型 | HTTPステータス |
-|--------|---------|---------------|
-| TODOが存在しない | NotFoundError | 404 |
-| TODO所有者でない | ForbiddenError | 403 |
-| 添付ファイル数上限超過 | ValidationError | 400 |
-| 不正なファイル拡張子 | ValidationError | 400 |
+| ケース                 | エラー型        | HTTPステータス |
+| ---------------------- | --------------- | -------------- |
+| 親リソース未検出       | NotFoundError   | 404            |
+| 権限なし               | ForbiddenError  | 403            |
+| 型レベルバリデーション | ValidationError | 400            |
+| ドメインルール違反     | DomainError     | 422            |
 
-### S3アップロード失敗
+### アップロードフェーズ
 
-クライアント側でハンドリング（API Serverは関与しない）
+クライアント側でハンドリング（API関与なし）
 
-### ステータス更新失敗
+### 完了通知フェーズ
 
-| ケース | エラー型 | HTTPステータス |
-|--------|---------|---------------|
-| Attachmentが存在しない | NotFoundError | 404 |
-| 不正なステータス遷移 | ValidationError | 400 |
+| ケース             | エラー型      | HTTPステータス |
+| ------------------ | ------------- | -------------- |
+| リソース未検出     | NotFoundError | 404            |
+| 不正なステート遷移 | DomainError   | 422            |
+
+## レスポンス設計
+
+### 親リソースID包含
+
+ネストされたリソースのレスポンスには **親リソースID** を含める。
+
+**理由**:
+
+- レスポンスの自己完結性
+- WebSocket/SSE等でURLコンテキストがない場合に対応
+
+**例**:
+
+```yaml
+AttachmentResponse:
+  properties:
+    id: ... # 自身のID
+    todoId: ... # 親リソースID（必須）
+    filename: ...
+```
 
 ## Do / Don't
 
@@ -422,54 +209,61 @@ if (attachments.length >= 10) {
 
 ```yaml
 # Two-Phase Upload採用
-POST /prepare → S3直接アップロード → PUT /update
+POST /prepare → 直接アップロード → PATCH /update
 
-# ステータスenumで状態管理
-AttachmentStatus:
-  enum: [PREPARED, UPLOADED]
-
-# Pre-signed URLで一時アクセス権限付与
-uploadUrl: "https://s3.amazonaws.com/...?X-Amz-Expires=900"
+# ステータス管理
+enum: [PREPARED, UPLOADED]
 
 # メタデータのみ送信
-PrepareAttachmentParams:
-  properties:
-    filename: ...
-    filesize: ...
-    contentType: ...
+properties:
+  filename: string
+  filesize: integer
+  contentType: string
+
+# Pre-signed URL有効期限設定
+uploadUrl: "https://...?Expires=900"
+
+# 親リソースID包含
+properties:
+  id: ...
+  parentId: ...
 ```
 
 ### ❌ Bad
 
 ```yaml
-# APIサーバー経由でファイルアップロード
+# APIサーバー経由でアップロード
 POST /attachments
-Content-Type: multipart/form-data
-# ❌ サーバー帯域消費、スケールしない
+Content-Type: multipart/form-data  # ❌ サーバー負荷
 
 # ステータス管理なし
-# ❌ アップロード途中状態を追跡できない
+# ❌ 進行状況追跡不可
 
-# パブリックS3バケット
-# ❌ セキュリティリスク
+# size プロパティ名
+properties:
+  size: integer  # ❌ filesize を使用すべき
 
-# 有効期限なしURL
-# ❌ URL漏洩時にアクセス制御不可
+# 有効期限なし
+uploadUrl: "https://..."  # ❌ セキュリティリスク
+
+# 親IDなし
+properties:
+  id: ...
+  # ❌ parentId がない
 ```
 
 ## チェックリスト
 
 ```
-[ ] Pre-signed URL方式を採用
-[ ] AttachmentStatusのenum定義（PREPARED, UPLOADED）
-[ ] アップロード準備エンドポイント（POST /prepare）
-[ ] ステータス更新エンドポイント（PATCH /:id）
-[ ] ダウンロードURL取得エンドポイント（GET /:id/download-url）
-[ ] ファイルサイズ上限を型レベルバリデーション（OpenAPI）
-[ ] ファイル拡張子チェックをドメインルール（Value Object）
-[ ] 添付ファイル数上限をビジネスルール（UseCase）
-[ ] Pre-signed URL有効期限設定（15分）
-[ ] HTTPS通信強制（S3バケットポリシー）
-[ ] TODO所有者チェック（UseCase層）
-[ ] ステータス遷移検証（PREPARED → UPLOADED）
+[ ] Two-Phase Uploadパターン採用
+[ ] ステータスenum定義（PREPARED, UPLOADED）
+[ ] 準備エンドポイント（POST /prepare）
+[ ] 完了通知エンドポイント（PATCH）
+[ ] ダウンロードURLエンドポイント（GET /download-url）
+[ ] ファイルサイズ上限を型レベルバリデーション
+[ ] Pre-signed URL有効期限設定
+[ ] HTTPS通信強制
+[ ] 親リソースID包含
+[ ] ステート遷移検証
+[ ] プロパティ名は filesize を使用（size ではない）
 ```

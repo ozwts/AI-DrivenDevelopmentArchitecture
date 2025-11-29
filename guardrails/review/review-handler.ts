@@ -2,10 +2,13 @@
  * 汎用レビューハンドラー
  */
 
-import * as fs from "fs/promises";
 import * as path from "path";
 import { z } from "zod";
-import { ReviewScope, executeReview, ReviewResult } from "./qualitative-reviewer";
+import {
+  ReviewScope,
+  executeReview,
+  ReviewResult,
+} from "./qualitative-reviewer";
 import { formatQualitativeReviewResults } from "./formatter";
 
 /**
@@ -34,15 +37,15 @@ export type ReviewResponsibility = {
 export type ReviewHandlerInput = {
   targetFilePaths: string[];
   guardrailsRoot: string;
-  apiKey: string;
 };
 
 /**
  * 汎用レビューハンドラー
  */
-export const createReviewHandler = (responsibility: ReviewResponsibility) =>
+export const createReviewHandler =
+  (responsibility: ReviewResponsibility) =>
   async (args: ReviewHandlerInput): Promise<string> => {
-    const { targetFilePaths, guardrailsRoot, apiKey } = args;
+    const { targetFilePaths, guardrailsRoot } = args;
 
     // バリデーション
     if (
@@ -56,39 +59,14 @@ export const createReviewHandler = (responsibility: ReviewResponsibility) =>
       );
     }
 
-    if (
-      apiKey === null ||
-      apiKey === undefined ||
-      typeof apiKey !== "string" ||
-      apiKey === ""
-    ) {
-      throw new Error("ANTHROPIC_API_KEY環境変数が必要です");
-    }
-
-    // ポリシーディレクトリのバリデーション
+    // ポリシーディレクトリのパス構築
     const fullPolicyDir = path.join(guardrailsRoot, responsibility.policyDir);
-    try {
-      const stats = await fs.stat(fullPolicyDir);
-      if (!stats.isDirectory()) {
-        throw new Error(`Policy path is not a directory: ${fullPolicyDir}`);
-      }
-    } catch (error) {
-      if (
-        error instanceof Error &&
-        "code" in error &&
-        error.code === "ENOENT"
-      ) {
-        throw new Error(`Policy directory not found: ${fullPolicyDir}`);
-      }
-      throw error;
-    }
 
-    // レビュー実行
+    // レビュー実行（ファイル検証とガイダンス生成のみ）
     const reviewResult: ReviewResult = await executeReview({
       targetFilePaths,
       policyDir: fullPolicyDir,
       guardrailsRoot,
-      apiKey,
       reviewScope: responsibility.scope,
     });
 

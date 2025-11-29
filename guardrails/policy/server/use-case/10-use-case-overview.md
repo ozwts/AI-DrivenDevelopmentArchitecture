@@ -28,12 +28,12 @@
 
 ## ポリシー構成
 
-| ポリシー | 内容 |
-|---------|------|
-| **10-use-case-overview.md** | ユースケース層の全体像、責務、命名規則、バリデーション戦略、Result型パターン、エラー型定義 |
-| **15-domain-model-interaction.md** | ドメインモデル貧血症防止、Entity操作パターン（新規作成・PATCH更新・ビジネスメソッド）、Value Objectエラー変換 |
-| **20-use-case-implementation.md** | 実装テンプレート、Props型設計、ビジネスルール検証パターン、Result型伝播、トランザクション管理、PATCH更新マージロジック、時刻取得・ログ出力・DIコンテナ登録 |
-| **30-use-case-testing.md** | Small Test/Medium Test実装パターン、Dummyリポジトリパターン、テストカバレッジ戦略、テストヘルパー、テスト実行戦略 |
+| ポリシー                           | 内容                                                                                                                                                       |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **10-use-case-overview.md**        | ユースケース層の全体像、責務、命名規則、バリデーション戦略、Result型パターン、エラー型定義                                                                 |
+| **15-domain-model-interaction.md** | ドメインモデル貧血症防止、Entity操作パターン（新規作成・PATCH更新・ビジネスメソッド）、Value Objectエラー変換                                              |
+| **20-use-case-implementation.md**  | 実装テンプレート、Props型設計、ビジネスルール検証パターン、Result型伝播、トランザクション管理、PATCH更新マージロジック、時刻取得・ログ出力・DIコンテナ登録 |
+| **30-use-case-testing.md**         | Small Test/Medium Test実装パターン、Dummyリポジトリパターン、テストカバレッジ戦略、テストヘルパー、テスト実行戦略                                          |
 
 ## ファイル構成
 
@@ -47,29 +47,29 @@ use-case/
 
 ## 命名規則
 
-| 対象 | パターン | 例 |
-|------|---------|-----|
-| ファイル名 | `{action}-{entity}-use-case.ts` | `create-project-use-case.ts` |
-| テストファイル | `{action}-{entity}-use-case.small.test.ts` | `create-project-use-case.small.test.ts` |
-| 実装クラス | `{Action}{Entity}UseCaseImpl` | `CreateProjectUseCaseImpl` |
-| インターフェース | `{Action}{Entity}UseCase` | `CreateProjectUseCase` |
-| Input型 | `{Action}{Entity}UseCaseInput` | `CreateProjectUseCaseInput` |
-| Output型 | `{Action}{Entity}UseCaseOutput` | `CreateProjectUseCaseOutput` |
-| Exception型 | `{Action}{Entity}UseCaseException` | `CreateProjectUseCaseException` |
-| Result型 | `{Action}{Entity}UseCaseResult` | `CreateProjectUseCaseResult` |
-| Props型 | `{Action}{Entity}UseCaseProps` | `CreateProjectUseCaseProps` |
+| 対象             | パターン                                   | 例                                      |
+| ---------------- | ------------------------------------------ | --------------------------------------- |
+| ファイル名       | `{action}-{entity}-use-case.ts`            | `create-project-use-case.ts`            |
+| テストファイル   | `{action}-{entity}-use-case.small.test.ts` | `create-project-use-case.small.test.ts` |
+| 実装クラス       | `{Action}{Entity}UseCaseImpl`              | `CreateProjectUseCaseImpl`              |
+| インターフェース | `{Action}{Entity}UseCase`                  | `CreateProjectUseCase`                  |
+| Input型          | `{Action}{Entity}UseCaseInput`             | `CreateProjectUseCaseInput`             |
+| Output型         | `{Action}{Entity}UseCaseOutput`            | `CreateProjectUseCaseOutput`            |
+| Exception型      | `{Action}{Entity}UseCaseException`         | `CreateProjectUseCaseException`         |
+| Result型         | `{Action}{Entity}UseCaseResult`            | `CreateProjectUseCaseResult`            |
+| Props型          | `{Action}{Entity}UseCaseProps`             | `CreateProjectUseCaseProps`             |
 
 ## アクション命名規則
 
-| アクション | 用途 | 例 |
-|---------|------|-----|
-| `register` | 新規登録 | `register-todo-use-case` |
-| `create` | リソース作成 | `create-project-use-case` |
-| `get` | 単一取得 | `get-project-use-case` |
-| `list` | リスト取得 | `list-projects-use-case` |
-| `update` | 更新 | `update-project-use-case` |
-| `delete` | 削除 | `delete-project-use-case` |
-| `prepare-*` | 準備処理 | `prepare-attachment-upload-use-case` |
+| アクション  | 用途         | 例                                   |
+| ----------- | ------------ | ------------------------------------ |
+| `register`  | 新規登録     | `register-todo-use-case`             |
+| `create`    | リソース作成 | `create-project-use-case`            |
+| `get`       | 単一取得     | `get-project-use-case`               |
+| `list`      | リスト取得   | `list-projects-use-case`             |
+| `update`    | 更新         | `update-project-use-case`            |
+| `delete`    | 削除         | `delete-project-use-case`            |
+| `prepare-*` | 準備処理     | `prepare-attachment-upload-use-case` |
 
 ## レイヤー間の関係
 
@@ -96,6 +96,7 @@ Handler層
 ## バリデーション戦略（MECE原則）
 
 **参照**:
+
 - `guardrails/constitution/validation-principles.md` - バリデーション原則の詳細
 - `20-use-case-implementation.md` - ビジネスルール検証パターン
 
@@ -103,12 +104,12 @@ Handler層
 
 バリデーションは4つの階層に分類され、ユースケース層は**第3階層：ビジネスルール**を担当する。
 
-| 階層 | 責務 | 実装場所 | 例 |
-|------|------|---------|-----|
-| 1. 型レベル | 形式・長さ・型・必須性 | Handler層（Zod） | `name: string（1文字以上）` |
-| 2. ドメインルール | ドメイン固有制約 | Domain層（Value Object） | `ProjectColor.fromString()` |
-| **3. ビジネスルール** | **権限・状態・関連チェック** | **ユースケース層** | **権限チェック、重複チェック** |
-| 4. 構造的整合性 | エンティティ不変条件 | Entity層（最小限） | readonly等で保護 |
+| 階層                  | 責務                         | 実装場所                 | 例                             |
+| --------------------- | ---------------------------- | ------------------------ | ------------------------------ |
+| 1. 型レベル           | 形式・長さ・型・必須性       | Handler層（Zod）         | `name: string（1文字以上）`    |
+| 2. ドメインルール     | ドメイン固有制約             | Domain層（Value Object） | `ProjectColor.fromString()`    |
+| **3. ビジネスルール** | **権限・状態・関連チェック** | **ユースケース層**       | **権限チェック、重複チェック** |
+| 4. 構造的整合性       | エンティティ不変条件         | Entity層（最小限）       | readonly等で保護               |
 
 ### ユースケース層の責務（第3階層）
 
@@ -133,6 +134,7 @@ Handler層
 **Collectively Exhaustive（網羅的）**: ビジネスルールはすべてユースケース層で検証
 
 **利点**:
+
 - 保守性: ビジネスルール変更が一箇所で完結
 - 信頼性: 各層の責務が明確で検証漏れを防止
 - テスタビリティ: 各層を独立してテスト可能
@@ -144,6 +146,7 @@ Handler層
 ユースケースは必ず`Result<T, E>`型を返却する。
 
 **Result型の特徴**:
+
 - クラスベースの実装（`Result<T, E extends Error>`）
 - `success: boolean` で成功/失敗を判定
 - 成功時は `data: T`、失敗時は `error: E` を持つ
@@ -152,11 +155,13 @@ Handler層
 - `then()` メソッドでメソッドチェーン可能（モナディックバインド）
 
 **原則**:
+
 - 例外を投げず、Result型でエラーを表現
 - 型システムでエラーハンドリング強制
 - success/errorの判定は`result.success`で実施
 
 **基本的な使用パターン**:
+
 ```typescript
 // UseCase基底インターフェース（use-case/interfaces.ts）
 export type UseCase<TInput, TOutput, TException extends Error> = {
@@ -185,11 +190,12 @@ async execute(input: CreateProjectUseCaseInput): Promise<CreateProjectUseCaseRes
 ```
 
 **メソッドチェーンパターン**:
+
 ```typescript
 // then()を使ったメソッドチェーン
 const result = Result.ok(todo)
-  .then(t => t.updateTitle("新しいタイトル"))  // Todoを返す → 自動でResult.ok()に包む
-  .then(t => todoRepository.save({ todo: t }));  // Result<void>を返す
+  .then((t) => t.updateTitle("新しいタイトル")) // Todoを返す → 自動でResult.ok()に包む
+  .then((t) => todoRepository.save({ todo: t })); // Result<void>を返す
 ```
 
 **詳細**: `20-use-case-implementation.md` - Result型伝播パターン
@@ -200,14 +206,14 @@ const result = Result.ok(todo)
 
 ユースケース層で使用する主なエラー型：
 
-| エラー型 | 発生場所 | 用途 | HTTPステータス |
-|---------|---------|------|---------------|
-| ValidationError | Handler層 | 型レベルバリデーションエラー | 400 Bad Request |
-| DomainError | Domain層 | ドメインルール違反 | 422 Unprocessable Entity |
-| NotFoundError | UseCase層 | リソース未存在 | 404 Not Found |
-| ForbiddenError | UseCase層 | アクセス権限なし | 403 Forbidden |
-| ConflictError | UseCase層 | 重複データ、競合状態 | 409 Conflict |
-| UnexpectedError | 全層 | 予期しないエラー | 500 Internal Server Error |
+| エラー型        | 発生場所  | 用途                         | HTTPステータス            |
+| --------------- | --------- | ---------------------------- | ------------------------- |
+| ValidationError | Handler層 | 型レベルバリデーションエラー | 400 Bad Request           |
+| DomainError     | Domain層  | ドメインルール違反           | 422 Unprocessable Entity  |
+| NotFoundError   | UseCase層 | リソース未存在               | 404 Not Found             |
+| ForbiddenError  | UseCase層 | アクセス権限なし             | 403 Forbidden             |
+| ConflictError   | UseCase層 | 重複データ、競合状態         | 409 Conflict              |
+| UnexpectedError | 全層      | 予期しないエラー             | 500 Internal Server Error |
 
 **UseCase層の責務**: NotFoundError、ForbiddenError、ConflictErrorを返す（ビジネスルール検証）
 
@@ -250,7 +256,9 @@ export type CreateProjectUseCaseProps = {
 
 // executeメソッドで書き切る（プライベートメソッドを作らない）
 export class CreateProjectUseCaseImpl implements CreateProjectUseCase {
-  async execute(input: CreateProjectUseCaseInput): Promise<CreateProjectUseCaseResult> {
+  async execute(
+    input: CreateProjectUseCaseInput,
+  ): Promise<CreateProjectUseCaseResult> {
     // ビジネスロジック全体がexecuteメソッド内に記述されている
     const projectId = this.#projectRepository.projectId();
     const now = this.#fetchNow();
@@ -398,22 +406,28 @@ if (!updateResult.success) {
 // ❌ Bad: 権限チェックを各ユースケースで重複実装
 // update-project-use-case.ts
 if (project.userSub !== currentUserSub) {
-  return Result.err(new ForbiddenError("プロジェクトへのアクセス権限がありません"));
+  return Result.err(
+    new ForbiddenError("プロジェクトへのアクセス権限がありません"),
+  );
 }
 
 // delete-project-use-case.ts
 if (project.userSub !== currentUserSub) {
-  return Result.err(new ForbiddenError("プロジェクトへのアクセス権限がありません"));
+  return Result.err(
+    new ForbiddenError("プロジェクトへのアクセス権限がありません"),
+  );
 }
 
 // ✅ Good: 権限チェックを共通関数に抽出
 // project-permission.ts
 export const checkProjectOwnership = (
   project: Project,
-  currentUserSub: string
+  currentUserSub: string,
 ): Result<void, ForbiddenError> => {
   if (project.userSub !== currentUserSub) {
-    return Result.err(new ForbiddenError("プロジェクトへのアクセス権限がありません"));
+    return Result.err(
+      new ForbiddenError("プロジェクトへのアクセス権限がありません"),
+    );
   }
   return Result.ok(undefined);
 };
@@ -443,7 +457,7 @@ for (const projectId of projectIds) {
 // project-repository.ts（インターフェースに遡って追加）
 export type ProjectRepository = {
   findById(props: { id: string }): Promise<FindByIdResult>;
-  findByIds(props: { ids: string[] }): Promise<FindByIdsResult>;  // 追加
+  findByIds(props: { ids: string[] }): Promise<FindByIdsResult>; // 追加
 };
 
 // UseCase層では新しいメソッドを使用

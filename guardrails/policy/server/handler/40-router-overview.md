@@ -55,13 +55,13 @@ export const build{Entity}Router = ({
 
 ### RESTful設計
 
-| HTTPメソッド | パス | 説明 |
-|-------------|------|------|
-| POST | `/{entities}` | 作成 |
-| GET | `/{entities}` | リスト取得 |
-| GET | `/{entities}/:id` | 単一取得 |
-| PUT | `/{entities}/:id` | 更新 |
-| DELETE | `/{entities}/:id` | 削除 |
+| HTTPメソッド | パス              | 説明       |
+| ------------ | ----------------- | ---------- |
+| POST         | `/{entities}`     | 作成       |
+| GET          | `/{entities}`     | リスト取得 |
+| GET          | `/{entities}/:id` | 単一取得   |
+| PUT          | `/{entities}/:id` | 更新       |
+| DELETE       | `/{entities}/:id` | 削除       |
 
 ### パスパラメータ命名
 
@@ -72,6 +72,7 @@ export const build{Entity}Router = ({
 **例**: `:projectId`, `:todoId`, `:userId`, `:attachmentId`
 
 **ルール**:
+
 - 単数形を使用
 - キャメルケース
 
@@ -84,6 +85,7 @@ export const build{Entity}Router = ({
 ```
 
 **例**:
+
 ```
 GET    /todos/:todoId/attachments
 POST   /todos/:todoId/attachments/prepare
@@ -150,6 +152,7 @@ const {action}{Entity}Handler = build{Action}{Entity}Handler({ container });
 ```
 
 **例**:
+
 ```typescript
 const createProjectHandler = buildCreateProjectHandler({ container });
 const listTodosHandler = buildListTodosHandler({ container });
@@ -161,7 +164,11 @@ const listTodosHandler = buildListTodosHandler({ container });
 
 ```typescript
 // ビルダーパターン
-export const buildProjectRouter = ({ container }: { container: Container }): Hono => {
+export const buildProjectRouter = ({
+  container,
+}: {
+  container: Container;
+}): Hono => {
   const router = new Hono();
 
   // ハンドラー生成
@@ -177,7 +184,7 @@ export const buildProjectRouter = ({ container }: { container: Container }): Hon
 // Current Userを先に定義
 router.post("/users/me", registerCurrentUserHandler);
 router.get("/users/me", getCurrentUserHandler);
-router.get("/users/:userId", getUserHandler);  // 後
+router.get("/users/:userId", getUserHandler); // 後
 ```
 
 ### ❌ Bad
@@ -190,12 +197,12 @@ projectRouter.post("/projects", async (c) => {
 });
 
 // 非RESTful設計
-router.post("/create-project", createProjectHandler);  // ❌ 動詞を含む
-router.get("/project", listProjectsHandler);  // ❌ 単数形
+router.post("/create-project", createProjectHandler); // ❌ 動詞を含む
+router.get("/project", listProjectsHandler); // ❌ 単数形
 
 // Current Userの定義順序ミス
-router.get("/users/:userId", getUserHandler);  // 先
-router.get("/users/me", getCurrentUserHandler);  // ❌ :userId に me がマッチ
+router.get("/users/:userId", getUserHandler); // 先
+router.get("/users/me", getCurrentUserHandler); // ❌ :userId に me がマッチ
 ```
 
 ## チェックリスト

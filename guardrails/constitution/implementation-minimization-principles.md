@@ -21,6 +21,7 @@ AI駆動開発において、AIは「念のため」の実装や「将来使う�
 - 現在必要なメソッドのみを実装する
 
 **具体例**: 各ポリシー参照
+
 - Repository: `policy/server/domain-model/30-repository-overview.md`
 - UseCase: `policy/server/use-case/10-use-case-overview.md`
 - Handler: `policy/server/handler/10-handler-overview.md`
@@ -34,6 +35,7 @@ AI駆動開発において、AIは「念のため」の実装や「将来使う�
 - その場で止まらず、インターフェース定義から修正
 
 **具体例**: 各ポリシー参照
+
 - Repository: `policy/server/domain-model/30-repository-overview.md`
 - UseCase: `policy/server/use-case/10-use-case-overview.md`
 
@@ -46,11 +48,13 @@ AI駆動開発において、AIは「念のため」の実装や「将来使う�
 - 非効率なパターンを見つけたら即座に最適化
 
 **段階的インターフェース進化**:
+
 1. 初期: 基本的なメソッド（findById等）のみ
 2. 追加1: 複数取得が必要になったら一括取得メソッド（findByIds等）を追加
 3. 追加2: 特定条件での検索が必要になったら専用メソッド（findByProjectId等）を追加
 
 **具体例**: 各ポリシー参照
+
 - Repository: `policy/server/domain-model/30-repository-overview.md`
 
 ### 4. 既存メソッドで代替可能なら新規実装不要
@@ -62,6 +66,7 @@ AI駆動開発において、AIは「念のため」の実装や「将来使う�
 - 本当に必要なメソッドのみを実装
 
 **具体例**: 各ポリシー参照
+
 - Repository: `policy/server/domain-model/30-repository-overview.md`
 
 ## ベネフィット

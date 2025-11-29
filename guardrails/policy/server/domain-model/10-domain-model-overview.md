@@ -5,6 +5,7 @@
 ビジネスロジックとドメインルールを表現する純粋なTypeScriptコードを設計・実装するためのガイドライン。
 
 **関連ドキュメント**:
+
 - **Entity設計**: `20-entity-overview.md`
 - **Entityフィールド分類**: `21-entity-field-classification.md`
 - **Entity実装**: `22-entity-implementation.md`
@@ -22,6 +23,7 @@
 識別子（ID）を持つドメインオブジェクト。
 
 **特徴**:
+
 - 識別子（ID）で等価性を判断
 - ライフサイクルを持つ
 - Value Objectを保持
@@ -34,6 +36,7 @@
 識別子を持たず、値そのもので等価性が判断されるドメインオブジェクト。
 
 **特徴**:
+
 - 識別子なし
 - 完全に不変
 - ドメインルールまたは不変条件を内包
@@ -50,6 +53,7 @@
 ドメインオブジェクト（Entity、Value Object）は**常に正しい状態（Valid State）**でなければならない。
 
 **実現方法**:
+
 ```
 Handler層（型レベルバリデーション）
     ↓ validated
@@ -63,6 +67,7 @@ Entityインスタンス（常にvalid、Value Object内包）
 ```
 
 **結果**:
+
 - Value Objectが不変条件を内包（自己検証）
 - Entity内メソッドがValue Objectの不変条件チェックを実行（ドメイン貧血症を回避）
 - バリデーション不要なメソッドはチェーン可能（Entity返す）
@@ -75,13 +80,14 @@ Entityインスタンス（常にvalid、Value Object内包）
 
 Entityのフィールドは必須性とundefinedの意味で分類する。
 
-| Tier | 分類 | フィールド定義 | コンストラクタ | 例 |
-|------|------|--------------|--------------|-----|
-| **Tier 1** | Required（常に必要） | `?`なし | 通常の必須引数 | `id`, `title`, `status`, `createdAt` |
+| Tier       | 分類                                  | フィールド定義                | コンストラクタ         | 例                                             |
+| ---------- | ------------------------------------- | ----------------------------- | ---------------------- | ---------------------------------------------- |
+| **Tier 1** | Required（常に必要）                  | `?`なし                       | 通常の必須引数         | `id`, `title`, `status`, `createdAt`           |
 | **Tier 2** | Special Case（undefinedに意味がある） | `\| undefined`明示（`?`なし） | `\| undefined`で必須化 | `dueDate`（期限なし）、`completedAt`（未完了） |
-| **Tier 3** | Optional（純粋に任意） | `?`付き | `\| undefined`で必須化 | `description`, `memo` |
+| **Tier 3** | Optional（純粋に任意）                | `?`付き                       | `\| undefined`で必須化 | `description`, `memo`                          |
 
 **重要**:
+
 - **Tier 2**: フィールド定義は `| undefined` 明示（undefinedがビジネス的意味を持つことを明確化）
 - **Tier 3**: フィールド定義は `?` オプショナル（undefinedは単に未設定）
 - **両方とも**: コンストラクタは `| undefined` で必須化（省略不可、analyzability-principles.md 原則1）
@@ -104,6 +110,7 @@ const dueDate = input.dueDate ?? existing.dueDate;
 ```
 
 **理由**:
+
 - **マージロジックは統一**: Tier 2もTier 3も `!== undefined` を使用（安全性・シンプルさ）
 - **フィールド定義で区別**: Tier 2は `| undefined` 明示、Tier 3は `?` でundefinedの意味を明確化
 
@@ -113,19 +120,21 @@ const dueDate = input.dueDate ?? existing.dueDate;
 
 フィールドをValue Object化するかプリミティブのままにするかの判断基準。
 
-| 判断基準 | Value Object化 | 理由 | 例 |
-|---------|--------------|------|-----|
-| **単一VO内で完結する不変条件を持つ** | ✅ 必須 | 他のフィールドを参照せず、VO自身だけで判断できる不変条件がある | `TodoStatus`（完了済みは変更不可）、`OrderStatus` |
-| **ドメインルールを持つ** | ✅ 推奨 | OpenAPIで表現不可能なドメイン固有ルールがある | `Email`（会社ドメインのみ）、`Age`（18歳以上） |
-| **型レベル制約のみ** | ❌ 不要（プリミティブでOK） | OpenAPIで表現可能な制約のみ | `title`（minLength/maxLength）、`priority: "LOW" \| "MEDIUM" \| "HIGH"`（OpenAPI enum、状態遷移ルールなし）、`id`、`createdAt` |
+| 判断基準                             | Value Object化              | 理由                                                           | 例                                                                                                                             |
+| ------------------------------------ | --------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| **単一VO内で完結する不変条件を持つ** | ✅ 必須                     | 他のフィールドを参照せず、VO自身だけで判断できる不変条件がある | `TodoStatus`（完了済みは変更不可）、`OrderStatus`                                                                              |
+| **ドメインルールを持つ**             | ✅ 推奨                     | OpenAPIで表現不可能なドメイン固有ルールがある                  | `Email`（会社ドメインのみ）、`Age`（18歳以上）                                                                                 |
+| **型レベル制約のみ**                 | ❌ 不要（プリミティブでOK） | OpenAPIで表現可能な制約のみ                                    | `title`（minLength/maxLength）、`priority: "LOW" \| "MEDIUM" \| "HIGH"`（OpenAPI enum、状態遷移ルールなし）、`id`、`createdAt` |
 
 **重要な原則**:
+
 - **必ず成功する（バリデーション不要な）Value Objectは作らない**
 - Value Objectは**ドメインルールまたは不変条件を内包する**ために使用
 - 単なる型エイリアスや命名のためにValue Objectを作らない
 - 複数フィールドの関係性チェック（例: 完了TODOは期限必須）はEntity層の責務
 
 **判断フローチャート**:
+
 ```
 フィールドを検討
     ↓
@@ -142,11 +151,13 @@ OpenAPIで表現不可能なドメインルールがある？
 ### 4. 外部依存ゼロ
 
 **許可**:
+
 - TypeScript標準ライブラリ
 - 同じドメイン層内のEntity/Value Object
 - util層のResult型
 
 **禁止**:
+
 - AWS SDK
 - 外部ライブラリ（Hono, Zod等）
 - インフラ・ユースケース・ハンドラ層のコード
@@ -170,7 +181,10 @@ export class Todo {
   }
 
   // ✅ Good: 不変条件チェックあり → Result型を返す
-  changeStatus(newStatus: TodoStatus, updatedAt: string): Result<Todo, DomainError> {
+  changeStatus(
+    newStatus: TodoStatus,
+    updatedAt: string,
+  ): Result<Todo, DomainError> {
     // Entity内でValue Objectの不変条件チェックを実行
     const canTransitionResult = this.status.canTransitionTo(newStatus);
     if (!canTransitionResult.success) {
@@ -234,13 +248,13 @@ constructor(id: string, title: string, status: TodoStatus, ...) {
 ```typescript
 // ❌ Bad
 export class Todo {
-  readonly s3Key: string;          // 技術的詳細
-  readonly cognitoUserId: string;  // 技術的詳細
+  readonly s3Key: string; // 技術的詳細
+  readonly cognitoUserId: string; // 技術的詳細
 }
 
 // ✅ Good
 export class Todo {
-  readonly id: string;      // ドメイン概念
+  readonly id: string; // ドメイン概念
   readonly userSub: string; // ドメイン概念（技術的詳細を抽象化）
 }
 ```
@@ -249,12 +263,13 @@ export class Todo {
 
 **参照**: `20-entity-overview.md`
 
-| パターン | メソッド返り値 | 使用ケース | メソッドチェーン |
-|---------|--------------|-----------|----------------|
-| **パターン1** | `Entity` | バリデーション不要なフィールド更新 | ✅ 可能 |
+| パターン      | メソッド返り値                | 使用ケース                                  | メソッドチェーン           |
+| ------------- | ----------------------------- | ------------------------------------------- | -------------------------- |
+| **パターン1** | `Entity`                      | バリデーション不要なフィールド更新          | ✅ 可能                    |
 | **パターン2** | `Result<Entity, DomainError>` | ドメインルール/不変条件チェックが必要な更新 | ✅ 可能（`Result.then()`） |
 
 **設計原則**:
+
 - **パターン1**: バリデーション不要な単純更新のみ（メソッドチェーン可能）
 - **パターン2**: Value Objectの不変条件チェック（`canTransitionTo()`）はEntity内で実行（ドメイン貧血症を回避）
 
@@ -262,11 +277,11 @@ export class Todo {
 
 **参照**: `11-domain-validation-strategy.md`
 
-| 階層 | 実装場所 | 判断基準 | エラー型 | HTTPステータス |
-|------|---------|---------|---------|---------------|
-| **第1階層** | Handler層 | OpenAPIで表現可能な制約（minLength、maxLength、pattern、enum） | `ValidationError` | 400 Bad Request |
-| **第2階層** | Value Object | ドメインルール + 自己完結的な不変条件 | `DomainError` | 422 Unprocessable Entity |
-| **第3階層** | UseCase層 | 外部依存する不変条件（DB参照、権限チェック） | 各種エラー | 403/404/409等 |
+| 階層        | 実装場所     | 判断基準                                                       | エラー型          | HTTPステータス           |
+| ----------- | ------------ | -------------------------------------------------------------- | ----------------- | ------------------------ |
+| **第1階層** | Handler層    | OpenAPIで表現可能な制約（minLength、maxLength、pattern、enum） | `ValidationError` | 400 Bad Request          |
+| **第2階層** | Value Object | ドメインルール + 自己完結的な不変条件                          | `DomainError`     | 422 Unprocessable Entity |
+| **第3階層** | UseCase層    | 外部依存する不変条件（DB参照、権限チェック）                   | 各種エラー        | 403/404/409等            |
 
 **重要**: 同じバリデーションを複数箇所で重複実装しない。
 
@@ -295,9 +310,11 @@ domain/
 ## レビュー対象ファイル
 
 **対象**:
+
 - `server/src/domain/model/**/*.ts` - Entity、Value Object、リポジトリインターフェース
 
 **除外**:
+
 - `*.small.test.ts` - テストファイル
 - `*.dummy.ts` - ダミーファクトリ
 

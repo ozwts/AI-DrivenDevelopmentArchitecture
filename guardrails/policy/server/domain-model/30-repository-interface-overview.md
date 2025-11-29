@@ -45,20 +45,21 @@ export type TodoRepository = {
 ```
 
 **使用パターン**:
+
 ```typescript
 // リポジトリ呼び出し
 const result = await todoRepository.findById({ id: "123" });
 
 // Result型の判定
 if (!result.success) {
-  return Result.err(result.error);  // UnexpectedError
+  return Result.err(result.error); // UnexpectedError
 }
 
 if (!result.data) {
   return Result.err(new NotFoundError("TODOが見つかりません"));
 }
 
-const todo = result.data;  // Todo型が使用可能
+const todo = result.data; // Todo型が使用可能
 ```
 
 ### 3. Propsパターン
@@ -185,6 +186,7 @@ domain/model/todo/
 **目的**: UseCase/UnitOfWorkのSmall Testで使用する、リポジトリの軽量なモック実装。
 
 **関連ドキュメント**:
+
 - **UseCase テスト**: `../use-case/30-use-case-testing.md` - 詳細な実装パターン
 - **Entity Dummy**: `52-entity-test-patterns.md` - Repository Dummy内で使用
 
@@ -198,7 +200,11 @@ domain/model/todo/
 
 ```typescript
 import { todoDummyFrom } from "./todo.dummy";
-import type { TodoRepository, FindByIdResult, SaveResult } from "./todo-repository";
+import type {
+  TodoRepository,
+  FindByIdResult,
+  SaveResult,
+} from "./todo-repository";
 
 export type TodoRepositoryDummyProps = {
   todoIdReturnValue?: string;
@@ -215,7 +221,7 @@ export class TodoRepositoryDummy implements TodoRepository {
     // ✅ Entity Dummyファクトリを使用してデフォルト値を生成
     this.#findByIdReturnValue = props?.findByIdReturnValue ?? {
       success: true,
-      data: todoDummyFrom(),  // ランダムなTodoエンティティ
+      data: todoDummyFrom(), // ランダムなTodoエンティティ
     };
 
     this.#saveReturnValue = props?.saveReturnValue ?? {
@@ -325,8 +331,8 @@ export type TodoRepository = {
 // ❌ Bad: 使わないメソッドを「念のため」実装
 interface TodoRepository {
   findById(props: { id: string }): Promise<FindByIdResult>;
-  findAll(): Promise<FindAllResult>;           // どこでも使っていない
-  count(): Promise<CountResult>;               // どこでも使っていない
+  findAll(): Promise<FindAllResult>; // どこでも使っていない
+  count(): Promise<CountResult>; // どこでも使っていない
   exists(props: { id: string }): Promise<ExistsResult>; // findByIdで代替可能
 }
 
@@ -350,7 +356,7 @@ for (const id of todoIds) {
 // ✅ Good: findByIdsを実装（継続的リファクタリング）
 export type TodoRepository = {
   findById(props: { id: string }): Promise<FindByIdResult>;
-  findByIds(props: { ids: string[] }): Promise<FindByIdsResult>;  // インターフェースに遡って追加
+  findByIds(props: { ids: string[] }): Promise<FindByIdsResult>; // インターフェースに遡って追加
 };
 
 const todosResult = await todoRepository.findByIds({ ids: todoIds });
@@ -388,7 +394,7 @@ export type TodoRepository = {
 // ❌ Bad: 既存メソッドで代替可能なのに新規実装
 export type TodoRepository = {
   findById(props: { id: string }): Promise<FindByIdResult>;
-  exists(props: { id: string }): Promise<ExistsResult>;  // findByIdで代替可能
+  exists(props: { id: string }): Promise<ExistsResult>; // findByIdで代替可能
 };
 
 // ✅ Good: 既存メソッドを活用

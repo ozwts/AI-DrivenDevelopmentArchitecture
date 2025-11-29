@@ -12,10 +12,6 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import * as path from "path";
 import { fileURLToPath } from "url";
-import {
-  SecretsManagerClient,
-  GetSecretValueCommand,
-} from "@aws-sdk/client-secrets-manager";
 import { createReviewHandler } from "./review/review-handler";
 import {
   REVIEW_RESPONSIBILITIES,
@@ -31,62 +27,9 @@ const __dirname = path.dirname(__filename);
 const GUARDRAILS_ROOT = __dirname;
 
 /**
- * AWS Secrets ManagerからANTHROPIC_API_KEYを取得
- */
-const loadSecretsFromAWS = async (): Promise<void> => {
-  // 既に環境変数が設定されている場合はスキップ
-  if (
-    typeof process.env.ANTHROPIC_API_KEY === "string" &&
-    process.env.ANTHROPIC_API_KEY !== ""
-  ) {
-    console.error("ANTHROPIC_API_KEYは既に環境変数に設定されています");
-    return;
-  }
-
-  try {
-    const client = new SecretsManagerClient({ region: "ap-northeast-1" });
-    const command = new GetSecretValueCommand({
-      SecretId: "sandbox-dev/ANTHROPIC_API_KEY",
-    });
-
-    const response = await client.send(command);
-
-    if (
-      typeof response.SecretString === "string" &&
-      response.SecretString !== ""
-    ) {
-      // SecretStringがJSON形式の場合はパース
-      try {
-        const secret = JSON.parse(response.SecretString);
-        process.env.ANTHROPIC_API_KEY = secret.ANTHROPIC_API_KEY;
-        console.error(
-          "ANTHROPIC_API_KEYをAWS Secrets Managerから読み込みました",
-        );
-      } catch {
-        // JSON形式でない場合はそのまま使用
-        process.env.ANTHROPIC_API_KEY = response.SecretString;
-        console.error(
-          "ANTHROPIC_API_KEYをAWS Secrets Managerから読み込みました",
-        );
-      }
-    } else {
-      throw new Error("SecretStringが空です");
-    }
-  } catch (error) {
-    console.error("AWSからのシークレット読み込みに失敗しました:", error);
-    throw new Error(
-      "ANTHROPIC_API_KEYが必要ですが、環境変数またはAWS Secrets Managerに見つかりませんでした",
-    );
-  }
-};
-
-/**
  * MCPサーバーを起動
  */
 const main = async (): Promise<void> => {
-  // 起動時にAWS Secrets Managerからシークレットを取得
-  await loadSecretsFromAWS();
-
   const server = new McpServer({
     name: "guardrails-mcp-server",
     version: "1.0.0",
@@ -97,7 +40,7 @@ const main = async (): Promise<void> => {
   // ========================================
 
   // ----- 定性的レビュー (Qualitative Review) -----
-  // LLMを使用したポリシーベースのコードレビュー
+  // サブエージェント起動を促すガイダンスメッセージを返す
   // 責務定義（review/responsibilities.ts）から動的にツールを登録
   // 新しいレビュー責務を追加する場合は、responsibilities.ts に定義を追加するだけで自動登録されます
   //
@@ -116,7 +59,6 @@ const main = async (): Promise<void> => {
           const result = await handler({
             targetFilePaths,
             guardrailsRoot: GUARDRAILS_ROOT,
-            apiKey: process.env.ANTHROPIC_API_KEY ?? "",
           });
 
           return {

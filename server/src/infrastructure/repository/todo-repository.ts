@@ -72,7 +72,7 @@ export const todoDdbItemSchema = z.object({
   todoId: z.string(),
   title: z.string(),
   description: z.string().optional(),
-  status: z.enum(["TODO", "IN_PROGRESS", "DONE"]),
+  status: z.enum(["TODO", "IN_PROGRESS", "COMPLETED"]),
   priority: z.enum(["LOW", "MEDIUM", "HIGH"]),
   dueDate: z.string().optional(),
   projectId: z.string().optional(),

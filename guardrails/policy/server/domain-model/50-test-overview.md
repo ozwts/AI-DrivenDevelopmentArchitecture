@@ -6,6 +6,7 @@
 2. **全テストでDummyファクトリを使用**し、モデル変更時のテスト修正負荷を最小化する
 
 **関連ドキュメント**:
+
 - **Value Objectテスト**: `51-value-object-test-patterns.md`
 - **Entityテスト**: `52-entity-test-patterns.md`
 - **Entity設計**: `20-entity-overview.md`
@@ -17,12 +18,12 @@
 
 ### ドメイン層の特徴とテスト方針
 
-| 観点 | 特徴 | テスト方針 |
-|------|------|-----------|
-| 外部依存 | なし（純粋TypeScript） | Small Testのみ |
-| 実行速度 | 高速 | 全テストを毎回実行 |
-| テスト対象 | ドメインルール、不変条件、データ変換 | 網羅的にテスト |
-| モック | 不要 | 実装のみテスト |
+| 観点       | 特徴                                 | テスト方針         |
+| ---------- | ------------------------------------ | ------------------ |
+| 外部依存   | なし（純粋TypeScript）               | Small Testのみ     |
+| 実行速度   | 高速                                 | 全テストを毎回実行 |
+| テスト対象 | ドメインルール、不変条件、データ変換 | 網羅的にテスト     |
+| モック     | 不要                                 | 実装のみテスト     |
 
 ## テストファイル構成
 
@@ -38,11 +39,11 @@ domain/model/{entity}/
 
 ### ファイル命名規則
 
-| 種類 | パターン | 例 |
-|------|---------|-----|
-| Entity Small Test | `{entity}.small.test.ts` | `todo.small.test.ts`, `project.small.test.ts` |
+| 種類                    | パターン                       | 例                                                         |
+| ----------------------- | ------------------------------ | ---------------------------------------------------------- |
+| Entity Small Test       | `{entity}.small.test.ts`       | `todo.small.test.ts`, `project.small.test.ts`              |
 | Value Object Small Test | `{value-object}.small.test.ts` | `project-color.small.test.ts`, `todo-status.small.test.ts` |
-| Dummy Factory | `{entity}.dummy.ts` | `todo.dummy.ts`, `project.dummy.ts` |
+| Dummy Factory           | `{entity}.dummy.ts`            | `todo.dummy.ts`, `project.dummy.ts`                        |
 
 ## テスト実行戦略
 
@@ -61,11 +62,11 @@ npm run test:small -- domain/model/project/project.small.test.ts
 
 ### CI/CDでの実行
 
-| タイミング | 実行テスト | 理由 |
-|-----------|----------|------|
-| Pull Request作成時 | All Domain Model Tests | 高速（外部依存なし） |
-| mainブランチマージ時 | All Tests | 完全な検証 |
-| コミット前（pre-commit hook） | 変更ファイルのテストのみ | 高速フィードバック |
+| タイミング                    | 実行テスト               | 理由                 |
+| ----------------------------- | ------------------------ | -------------------- |
+| Pull Request作成時            | All Domain Model Tests   | 高速（外部依存なし） |
+| mainブランチマージ時          | All Tests                | 完全な検証           |
+| コミット前（pre-commit hook） | 変更ファイルのテストのみ | 高速フィードバック   |
 
 ## テストカバレッジ要件
 
@@ -74,6 +75,7 @@ npm run test:small -- domain/model/project/project.small.test.ts
 **参照**: `51-value-object-test-patterns.md` - 詳細なテストパターン
 
 **必須テスト**:
+
 ```
 [ ] fromString() - 正常系（代表値、境界値）
 [ ] fromString() - 異常系（不正形式、空文字列、境界値外）
@@ -84,6 +86,7 @@ npm run test:small -- domain/model/project/project.small.test.ts
 ```
 
 **条件付きテスト**:
+
 ```
 [ ] canTransitionTo() - 許可される遷移（全パターン） ※不変条件がある場合
 [ ] canTransitionTo() - 禁止される遷移（全パターン） ※不変条件がある場合
@@ -93,6 +96,7 @@ npm run test:small -- domain/model/project/project.small.test.ts
 ```
 
 **Dummyファクトリ**（Entity Dummyファクトリから使用）:
+
 ```
 [ ] {valueObject}DummyFrom()関数を{value-object}.dummy.tsに実装
 [ ] Partial<>型でProps定義
@@ -122,11 +126,11 @@ npm run test:small -- domain/model/project/project.small.test.ts
 
 ドメインモデルのテストは**第2階層：ドメインルール**のテストである。
 
-| 階層 | テスト対象 | テスト場所 | 実施内容 |
-|------|----------|-----------|---------|
-| 第1階層 | 型レベルバリデーション | Handler層テスト | OpenAPI制約（minLength/maxLength/pattern） |
-| **第2階層** | **ドメインルール** | **Domain層テスト（本ドキュメント）** | **Value Object不変条件、Entity不変性** |
-| 第3階層 | ビジネスルール | UseCase層テスト | 権限チェック、外部依存する不変条件 |
+| 階層        | テスト対象             | テスト場所                           | 実施内容                                   |
+| ----------- | ---------------------- | ------------------------------------ | ------------------------------------------ |
+| 第1階層     | 型レベルバリデーション | Handler層テスト                      | OpenAPI制約（minLength/maxLength/pattern） |
+| **第2階層** | **ドメインルール**     | **Domain層テスト（本ドキュメント）** | **Value Object不変条件、Entity不変性**     |
+| 第3階層     | ビジネスルール         | UseCase層テスト                      | 権限チェック、外部依存する不変条件         |
 
 **重要**: 型レベルバリデーション（文字列長、形式等）はHandler層でテスト済みのため、ドメイン層テストで重複しない。
 
@@ -170,8 +174,8 @@ if (!result.success) {
 // ✅ イミュータブル性を検証（Dummyファクトリ使用）
 const original = todoDummyFrom({ title: "元のタスク" });
 const updated = original.updateTitle("新しいタイトル", now);
-expect(original.title).toBe("元のタスク");  // 不変
-expect(updated.title).toBe("新しいタイトル");  // 新しいインスタンス
+expect(original.title).toBe("元のタスク"); // 不変
+expect(updated.title).toBe("新しいタイトル"); // 新しいインスタンス
 ```
 
 ### ❌ Bad
@@ -192,20 +196,24 @@ const todo = todoDummyFrom({ title: "タスク" });
 
 // ❌ Result型をチェックせずdata参照
 const result = TodoStatus.from({ status: "TODO" });
-expect(result.data.isTodo()).toBe(true);  // ❌ errorの可能性
+expect(result.data.isTodo()).toBe(true); // ❌ errorの可能性
 
 // ❌ エラー型を検証しない
-expect(result.success).toBe(false);  // ❌ どのエラーかわからない
+expect(result.success).toBe(false); // ❌ どのエラーかわからない
 
 // ❌ 外部依存を使用（ドメイン層は外部依存ゼロ）
-const useCase = new CreateTodoUseCaseImpl({ /* ... */ });  // ❌ ドメイン層のテストではない
+const useCase = new CreateTodoUseCaseImpl({
+  /* ... */
+}); // ❌ ドメイン層のテストではない
 
 // ❌ 実DBを使用
-const repository = new TodoRepositoryImpl({ /* ... */ });  // ❌ ドメイン層のテストではない
+const repository = new TodoRepositoryImpl({
+  /* ... */
+}); // ❌ ドメイン層のテストではない
 
 // ❌ 型レベルバリデーションのテスト（Handler層の責務）
 // OpenAPIでバリデーション可能な制約（Tier 3）はValue Object化不要
-const colorResult = ProjectColor.from("#FF5733000");  // OpenAPIのpatternで検証すべき
+const colorResult = ProjectColor.from("#FF5733000"); // OpenAPIのpatternで検証すべき
 
 // ❌ 不変条件チェックをEntityテストで実施
 // 不変条件はValue Objectでテスト済み（MECE原則違反）

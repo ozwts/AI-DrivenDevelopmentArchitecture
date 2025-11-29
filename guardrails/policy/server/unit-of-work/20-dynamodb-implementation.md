@@ -5,6 +5,7 @@
 DynamoDB Unit of Workは**TransactWriteItems APIを使用**し、**最大100操作・4MBの制約**を自動チェックする。
 
 **関連ドキュメント**:
+
 - **概要**: `10-unit-of-work-overview.md`
 - **使用パターン**: `30-usage-patterns.md`
 
@@ -24,9 +25,7 @@ export class DynamoDBUnitOfWork implements UnitOfWork {
   registerOperation(operation: TransactWriteItem): void {
     // 100個制限チェック
     if (this.#operations.length >= 100) {
-      throw new Error(
-        "DynamoDBトランザクションは最大100操作までです"
-      );
+      throw new Error("DynamoDBトランザクションは最大100操作までです");
     }
 
     this.#operations.push(operation);
@@ -43,6 +42,7 @@ export class DynamoDBUnitOfWork implements UnitOfWork {
 ```
 
 **特徴**:
+
 1. **操作の登録**: `TransactWriteItem`を内部配列に蓄積
 2. **100個制限チェック**: 登録時に自動的にチェック
 3. **読み取り専用アクセス**: `getOperations()`で操作を取得
@@ -52,9 +52,7 @@ export class DynamoDBUnitOfWork implements UnitOfWork {
 ### クラス構造
 
 ```typescript
-export class DynamoDBUnitOfWorkRunner<TUoW>
-  implements UnitOfWorkRunner<TUoW>
-{
+export class DynamoDBUnitOfWorkRunner<TUoW> implements UnitOfWorkRunner<TUoW> {
   readonly #ddbDoc: DynamoDBDocumentClient;
   readonly #logger: Logger;
   readonly #contextFactory: (uow: DynamoDBUnitOfWork) => TUoW;
@@ -64,7 +62,7 @@ export class DynamoDBUnitOfWorkRunner<TUoW>
       ddbDoc: DynamoDBDocumentClient;
       logger: Logger;
     },
-    contextFactory: (uow: DynamoDBUnitOfWork) => TUoW
+    contextFactory: (uow: DynamoDBUnitOfWork) => TUoW,
   ) {
     this.#ddbDoc = params.ddbDoc;
     this.#logger = params.logger;
@@ -72,7 +70,7 @@ export class DynamoDBUnitOfWorkRunner<TUoW>
   }
 
   async run<TResult>(
-    callback: (uow: TUoW) => Promise<TResult>
+    callback: (uow: TUoW) => Promise<TResult>,
   ): Promise<TResult> {
     // 1. UnitOfWorkインスタンス生成
     const uow = new DynamoDBUnitOfWork({ logger: this.#logger });
@@ -89,10 +87,10 @@ export class DynamoDBUnitOfWorkRunner<TUoW>
       await this.#ddbDoc.send(
         new TransactWriteCommand({
           TransactItems: [...operations],
-        })
+        }),
       );
       this.#logger.info(
-        `トランザクションをコミットしました（${operations.length}操作）`
+        `トランザクションをコミットしました（${operations.length}操作）`,
       );
     }
 
@@ -103,6 +101,7 @@ export class DynamoDBUnitOfWorkRunner<TUoW>
 ```
 
 **処理フロー**:
+
 1. UnitOfWorkインスタンスを生成
 2. コンテキストファクトリーでリポジトリコンテキストを作成
 3. コールバックを実行（リポジトリ操作を登録）
@@ -110,6 +109,7 @@ export class DynamoDBUnitOfWorkRunner<TUoW>
 5. コールバックの戻り値を返す
 
 **エラーハンドリング**:
+
 - コールバック内でエラーが発生した場合、トランザクションは実行されない（自動ロールバック）
 - TransactWriteCommandのエラーは呼び出し元に伝播
 
@@ -120,6 +120,7 @@ export class DynamoDBUnitOfWorkRunner<TUoW>
 DynamoDBのTransactWriteItemsは**最大100操作**まで。
 
 **対応**:
+
 - `registerOperation()`で登録時に自動チェック
 - 100操作を超えた場合は例外をthrow
 
@@ -130,6 +131,7 @@ if (this.#operations.length >= 100) {
 ```
 
 **回避策**:
+
 - トランザクションを分割する
 - アグリゲート境界を見直す
 - 子エンティティの上限を設ける
@@ -139,6 +141,7 @@ if (this.#operations.length >= 100) {
 トランザクション全体のサイズが**最大4MB**まで。
 
 **注意**:
+
 - 現在の実装では4MBチェックは行っていない
 - 大きなデータを扱う場合は注意が必要
 - TransactWriteCommandのエラーで検出される
@@ -161,6 +164,7 @@ type UoWContext = {
 ```
 
 **設計原則**:
+
 - トランザクション内で使用するリポジトリをまとめる
 - 型安全にアクセスできる
 - 必要なリポジトリのみを含める
@@ -185,20 +189,21 @@ function createUnitOfWorkRunner(params: {
         ddbDoc: params.ddbDoc,
         tableName: params.todosTableName,
         logger: params.logger,
-        uow,  // UoWを注入
+        uow, // UoWを注入
       }),
       userRepository: new UserRepositoryImpl({
         ddbDoc: params.ddbDoc,
         tableName: params.usersTableName,
         logger: params.logger,
-        uow,  // UoWを注入
+        uow, // UoWを注入
       }),
-    })
+    }),
   );
 }
 ```
 
 **重要**:
+
 - コンテキストファクトリーは`(uow: DynamoDBUnitOfWork) => TUoW`型
 - リポジトリコンストラクタに`uow`を渡す
 - 各トランザクションごとに新しいリポジトリインスタンスを生成
@@ -217,6 +222,7 @@ type TransactWriteItem = {
 ```
 
 **操作種別**:
+
 1. **Put**: アイテムの挿入・上書き
 2. **Update**: アイテムの更新
 3. **Delete**: アイテムの削除
@@ -245,7 +251,7 @@ const result = await runner.run(async (uow) => {
 try {
   await runner.run(async (uow) => {
     await uow.todoRepository.save(todo);
-    throw new Error("エラー");  // エラー発生
+    throw new Error("エラー"); // エラー発生
   });
 } catch (error) {
   // トランザクションは実行されていない（ロールバック）
@@ -305,12 +311,9 @@ if (this.#operations.length >= 100) {
 }
 
 // コンテキストファクトリーでリポジトリ生成
-new DynamoDBUnitOfWorkRunner(
-  { ddbDoc, logger },
-  (uow) => ({
-    todoRepository: new TodoRepositoryImpl({ ddbDoc, tableName, logger, uow }),
-  })
-);
+new DynamoDBUnitOfWorkRunner({ ddbDoc, logger }, (uow) => ({
+  todoRepository: new TodoRepositoryImpl({ ddbDoc, tableName, logger, uow }),
+}));
 
 // 自動コミット/ロールバック
 const result = await runner.run(async (uow) => {

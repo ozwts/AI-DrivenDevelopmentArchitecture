@@ -47,7 +47,7 @@ if (!parseResult.success) {
   );
 }
 
-const body = parseResult.data;  // 型安全なデータ
+const body = parseResult.data; // 型安全なデータ
 ```
 
 ### クエリパラメータ
@@ -141,14 +141,14 @@ export const handleError = (error: Error, c: Context, logger: Logger) => {
 
 ### エラーマッピング表
 
-| エラー型 | HTTPステータス | ログレベル | 発生場所 | 使用例 |
-|---------|---------------|----------|---------|--------|
-| `ValidationError` | 400 Bad Request | warn | Handler層（OpenAPI/Zod） | 型レベルバリデーションエラー（minLength、maxLength、pattern、enum等） |
-| `DomainError` | 422 Unprocessable Entity | warn | Domain層（Value Object/Entity） | ドメインルールエラー（18歳以上、会社ドメインのメールアドレスのみ、状態遷移ルール等） |
-| `ForbiddenError` | 403 Forbidden | warn | UseCase層 | アクセス権限なし |
-| `NotFoundError` | 404 Not Found | warn | UseCase層 | リソース未検出 |
-| `ConflictError` | 409 Conflict | warn | UseCase層 | 重複データ、競合状態 |
-| `UnexpectedError` | 500 Internal Server Error | error | 全層 | 予期しないエラー |
+| エラー型          | HTTPステータス            | ログレベル | 発生場所                        | 使用例                                                                               |
+| ----------------- | ------------------------- | ---------- | ------------------------------- | ------------------------------------------------------------------------------------ |
+| `ValidationError` | 400 Bad Request           | warn       | Handler層（OpenAPI/Zod）        | 型レベルバリデーションエラー（minLength、maxLength、pattern、enum等）                |
+| `DomainError`     | 422 Unprocessable Entity  | warn       | Domain層（Value Object/Entity） | ドメインルールエラー（18歳以上、会社ドメインのメールアドレスのみ、状態遷移ルール等） |
+| `ForbiddenError`  | 403 Forbidden             | warn       | UseCase層                       | アクセス権限なし                                                                     |
+| `NotFoundError`   | 404 Not Found             | warn       | UseCase層                       | リソース未検出                                                                       |
+| `ConflictError`   | 409 Conflict              | warn       | UseCase層                       | 重複データ、競合状態                                                                 |
+| `UnexpectedError` | 500 Internal Server Error | error      | 全層                            | 予期しないエラー                                                                     |
 
 ### ハンドラー内での使用
 
@@ -177,12 +177,12 @@ export const formatZodError = (zodError: ZodError): string =>
 
 ## ログ出力パターン
 
-| 場面 | ログレベル | 例 |
-|------|----------|-----|
-| リクエストバリデーションエラー | debug | `"リクエストバリデーションエラー"` + エラー詳細 |
-| レスポンスバリデーションエラー | error | `"レスポンスバリデーションエラー"` + エラー詳細 |
-| ドメインエラー | warn/error | `handleError()`内で自動出力 |
-| 予期しない例外 | error | `"ハンドラーで予期せぬエラーをキャッチ"` |
+| 場面                           | ログレベル | 例                                              |
+| ------------------------------ | ---------- | ----------------------------------------------- |
+| リクエストバリデーションエラー | debug      | `"リクエストバリデーションエラー"` + エラー詳細 |
+| レスポンスバリデーションエラー | error      | `"レスポンスバリデーションエラー"` + エラー詳細 |
+| ドメインエラー                 | warn/error | `handleError()`内で自動出力                     |
+| 予期しない例外                 | error      | `"ハンドラーで予期せぬエラーをキャッチ"`        |
 
 ## 特殊なエラーケース
 

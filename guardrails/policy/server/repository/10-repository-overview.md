@@ -5,6 +5,7 @@
 リポジトリ実装は**集約の永続化単位**であり、**ドメインモデルとDB形式の変換**を担当し、**トランザクションで整合性を保証**する。
 
 **関連ドキュメント**:
+
 - **Repository Interface**: `../domain-model/30-repository-interface-overview.md`
 - **集約の永続化**: `20-aggregate-persistence.md`
 - **ドメインの集約**: `../domain-model/40-aggregate-overview.md`
@@ -169,7 +170,7 @@ export const todoDdbItemToTodo = (
     id: todoDdbItem.todoId,
     title: todoDdbItem.title,
     description: todoDdbItem.description,
-    status,  // Value Object（変換済み）
+    status, // Value Object（変換済み）
     attachments,
     createdAt: todoDdbItem.createdAt,
     updatedAt: todoDdbItem.updatedAt,
@@ -178,6 +179,7 @@ export const todoDdbItemToTodo = (
 ```
 
 **重要**:
+
 - DBから取得した文字列をValue Objectに変換
 - `from(props: XxxProps)`メソッドにProps型エイリアスパターンで渡す（例: `{ status: value }`）
 - Value Object変換失敗時は`default()`を使用してフォールバック
@@ -195,12 +197,11 @@ export const todoDdbItemToTodo = (
 5. **ゼロダウンタイム**: データ修正中もサービスを継続できる
 
 **例**:
+
 ```typescript
 // ✅ Good: デフォルト値でフォールバック
 const statusResult = TodoStatus.from({ status: todoDdbItem.status });
-const status = statusResult.success
-  ? statusResult.data
-  : TodoStatus.default();  // デフォルト値（例: "TODO"）
+const status = statusResult.success ? statusResult.data : TodoStatus.default(); // デフォルト値（例: "TODO"）
 
 if (!statusResult.success) {
   logger.warn("不正なステータス値を検出", {
@@ -212,7 +213,7 @@ if (!statusResult.success) {
 // ❌ Bad: throwで処理を停止
 const statusResult = TodoStatus.from({ status: todoDdbItem.status });
 if (!statusResult.success) {
-  throw new Error("Invalid status");  // システムが停止
+  throw new Error("Invalid status"); // システムが停止
 }
 ```
 
@@ -356,18 +357,22 @@ export const PROJECT_REPOSITORY = "ProjectRepository";
 
 ```typescript
 // register-lambda-container.ts
-container.bind<TodoRepository>(TODO_REPOSITORY).toDynamicValue((context) => {
-  return new TodoRepositoryImpl({
-    ddbDoc: context.container.get(DYNAMODB_DOC),
-    todosTableName: env.TODOS_TABLE_NAME,
-    attachmentsTableName: env.ATTACHMENTS_TABLE_NAME,
-    logger: context.container.get(LOGGER),
-    // uowは注入しない（各UseCaseで必要に応じて渡す）
-  });
-}).inSingletonScope();
+container
+  .bind<TodoRepository>(TODO_REPOSITORY)
+  .toDynamicValue((context) => {
+    return new TodoRepositoryImpl({
+      ddbDoc: context.container.get(DYNAMODB_DOC),
+      todosTableName: env.TODOS_TABLE_NAME,
+      attachmentsTableName: env.ATTACHMENTS_TABLE_NAME,
+      logger: context.container.get(LOGGER),
+      // uowは注入しない（各UseCaseで必要に応じて渡す）
+    });
+  })
+  .inSingletonScope();
 ```
 
 **注入する依存:**
+
 - DynamoDBクライアント
 - テーブル名（環境変数から）
 - Logger

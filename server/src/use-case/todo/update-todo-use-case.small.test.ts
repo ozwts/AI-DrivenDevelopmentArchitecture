@@ -132,7 +132,7 @@ describe("UpdateTodoUseCaseのテスト", () => {
       const result = await updateTodoUseCase.execute({
         todoId: "todo-4",
         title: "新しいタイトル",
-        status: "DONE",
+        status: "COMPLETED",
         priority: "HIGH",
         description: "新しい説明",
       });
@@ -140,7 +140,7 @@ describe("UpdateTodoUseCaseのテスト", () => {
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.data.title).toBe("新しいタイトル");
-        expect(result.data.status).toBe("DONE");
+        expect(result.data.status).toBe("COMPLETED");
         expect(result.data.priority).toBe("HIGH");
         expect(result.data.description).toBe("新しい説明");
       }

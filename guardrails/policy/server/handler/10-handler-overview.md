@@ -105,13 +105,13 @@ build{Action}{Entity}Handler
 
 **Action動詞の選択**:
 
-| HTTPメソッド | Action | 例 |
-|-------------|--------|-----|
-| POST（作成） | Create, Register | `buildCreateProjectHandler`, `buildRegisterTodoHandler` |
-| GET（単一取得） | Get | `buildGetProjectHandler`, `buildGetTodoHandler` |
-| GET（リスト取得） | List | `buildListProjectsHandler`, `buildListTodosHandler` |
-| PATCH（更新） | Update | `buildUpdateProjectHandler`, `buildUpdateTodoHandler` |
-| DELETE | Delete | `buildDeleteProjectHandler`, `buildDeleteTodoHandler` |
+| HTTPメソッド      | Action           | 例                                                      |
+| ----------------- | ---------------- | ------------------------------------------------------- |
+| POST（作成）      | Create, Register | `buildCreateProjectHandler`, `buildRegisterTodoHandler` |
+| GET（単一取得）   | Get              | `buildGetProjectHandler`, `buildGetTodoHandler`         |
+| GET（リスト取得） | List             | `buildListProjectsHandler`, `buildListTodosHandler`     |
+| PATCH（更新）     | Update           | `buildUpdateProjectHandler`, `buildUpdateTodoHandler`   |
+| DELETE            | Delete           | `buildDeleteProjectHandler`, `buildDeleteTodoHandler`   |
 
 ### ルーター関数
 
@@ -131,34 +131,34 @@ convertTo{Entity}Response
 
 ### ファイル名
 
-| 種類 | パターン | 例 |
-|------|---------|-----|
-| ハンドラー | `{action}-{entity}-handler.ts` | `create-project-handler.ts`, `get-todo-handler.ts` |
-| ルーター | `{entity}-router.ts` | `project-router.ts`, `todo-router.ts` |
-| レスポンスマッパー | `{entity}-response-mapper.ts` | `project-response-mapper.ts`, `todo-response-mapper.ts` |
+| 種類               | パターン                       | 例                                                      |
+| ------------------ | ------------------------------ | ------------------------------------------------------- |
+| ハンドラー         | `{action}-{entity}-handler.ts` | `create-project-handler.ts`, `get-todo-handler.ts`      |
+| ルーター           | `{entity}-router.ts`           | `project-router.ts`, `todo-router.ts`                   |
+| レスポンスマッパー | `{entity}-response-mapper.ts`  | `project-response-mapper.ts`, `todo-response-mapper.ts` |
 
 ## HTTPステータスコード一覧
 
-| 操作 | 成功時 | エラー時 |
-|------|--------|----------|
-| POST（作成） | 201 Created | 400 Bad Request（型レベルバリデーション）, 422 Unprocessable Entity（ドメインルール）, 409 Conflict（重複） |
-| GET（取得） | 200 OK | 404 Not Found（未存在） |
-| GET（リスト） | 200 OK | - |
-| PATCH（更新） | 200 OK | 400 Bad Request（型レベルバリデーション）, 422 Unprocessable Entity（ドメインルール）, 403 Forbidden（アクセス拒否）, 404 Not Found（未存在） |
-| DELETE | 204 No Content | 404 Not Found（未存在） |
+| 操作          | 成功時         | エラー時                                                                                                                                      |
+| ------------- | -------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| POST（作成）  | 201 Created    | 400 Bad Request（型レベルバリデーション）, 422 Unprocessable Entity（ドメインルール）, 409 Conflict（重複）                                   |
+| GET（取得）   | 200 OK         | 404 Not Found（未存在）                                                                                                                       |
+| GET（リスト） | 200 OK         | -                                                                                                                                             |
+| PATCH（更新） | 200 OK         | 400 Bad Request（型レベルバリデーション）, 422 Unprocessable Entity（ドメインルール）, 403 Forbidden（アクセス拒否）, 404 Not Found（未存在） |
+| DELETE        | 204 No Content | 404 Not Found（未存在）                                                                                                                       |
 
 ### エラーステータスコードマッピング
 
 **参照**: `policy/server/domain-model/26-validation-strategy.md` - エラー型とHTTPステータスコードのマッピング
 
-| エラー型 | HTTPステータス | 発生場所 | 使用例 |
-|---------|---------------|---------|--------|
-| `ValidationError` | 400 Bad Request | Handler層（OpenAPI/Zod） | 型レベルバリデーションエラー（minLength、maxLength、pattern、enum等） |
-| `DomainError` | 422 Unprocessable Entity | Domain層（Value Object/Entity） | ドメインルールエラー（18歳以上、会社ドメインのメールアドレスのみ、状態遷移ルール等） |
-| `ForbiddenError` | 403 Forbidden | UseCase層 | アクセス権限なし |
-| `NotFoundError` | 404 Not Found | UseCase層 | リソース未検出 |
-| `ConflictError` | 409 Conflict | UseCase層 | 重複データ、競合状態 |
-| `UnexpectedError` | 500 Internal Server Error | 全層 | 予期しないエラー |
+| エラー型          | HTTPステータス            | 発生場所                        | 使用例                                                                               |
+| ----------------- | ------------------------- | ------------------------------- | ------------------------------------------------------------------------------------ |
+| `ValidationError` | 400 Bad Request           | Handler層（OpenAPI/Zod）        | 型レベルバリデーションエラー（minLength、maxLength、pattern、enum等）                |
+| `DomainError`     | 422 Unprocessable Entity  | Domain層（Value Object/Entity） | ドメインルールエラー（18歳以上、会社ドメインのメールアドレスのみ、状態遷移ルール等） |
+| `ForbiddenError`  | 403 Forbidden             | UseCase層                       | アクセス権限なし                                                                     |
+| `NotFoundError`   | 404 Not Found             | UseCase層                       | リソース未検出                                                                       |
+| `ConflictError`   | 409 Conflict              | UseCase層                       | 重複データ、競合状態                                                                 |
+| `UnexpectedError` | 500 Internal Server Error | 全層                            | 予期しないエラー                                                                     |
 
 ## レイヤー間の関係
 
@@ -272,17 +272,18 @@ const responseData = convertToProjectResponse(result.data);
 PATCH操作で既存フィールドをクリアする場合、JSON層では`null`を受け取り、TypeScript内部では`undefined`に変換する。
 
 **背景**:
+
 - **JSON標準**: `undefined`は送信不可、`null`を使用
 - **TypeScriptベストプラクティス**: `undefined`のみ使用（`null`を避ける）
 - **Handler層の責務**: 境界での変換を実施
 
 **3値の区別**:
 
-| クライアント | JSON | Handler層変換 | TypeScript内部 | 意味 |
-|------------|------|--------------|---------------|------|
-| フィールド省略 | `{}` | プロパティなし | `'dueDate' in updates === false` | 変更しない |
-| `null`送信 | `{"dueDate": null}` | `undefined` | `updates.dueDate === undefined` | クリアする |
-| 値送信 | `{"dueDate": "2025-01-01"}` | 値そのまま | `updates.dueDate === "2025-01-01"` | 値を設定 |
+| クライアント   | JSON                        | Handler層変換  | TypeScript内部                     | 意味       |
+| -------------- | --------------------------- | -------------- | ---------------------------------- | ---------- |
+| フィールド省略 | `{}`                        | プロパティなし | `'dueDate' in updates === false`   | 変更しない |
+| `null`送信     | `{"dueDate": null}`         | `undefined`    | `updates.dueDate === undefined`    | クリアする |
+| 値送信         | `{"dueDate": "2025-01-01"}` | 値そのまま     | `updates.dueDate === "2025-01-01"` | 値を設定   |
 
 **実装パターン**:
 
@@ -346,34 +347,39 @@ export const buildUpdateTodoHandler =
 **重要なポイント**:
 
 1. **OpenAPI定義**: `nullable: true`でnullを許可
+
    ```yaml
    UpdateTodoParams:
      properties:
        dueDate:
          type: string
-         nullable: true  # nullを許可
+         nullable: true # nullを許可
    ```
 
 2. **Zodスキーマ**: 自動生成で`nullable: true`が反映される
+
    ```typescript
    // 自動生成されたスキーマ
-   dueDate: z.string().nullable().optional()
+   dueDate: z.string().nullable().optional();
    ```
 
 3. **'in'演算子使用**: プロパティ存在を確認（省略/null/値を区別）
+
    ```typescript
-   if ('dueDate' in body) {  // プロパティが存在するか
+   if ("dueDate" in body) {
+     // プロパティが存在するか
      updates.dueDate = body.dueDate === null ? undefined : body.dueDate;
    }
    ```
 
 4. **TypeScript内部**: `undefined`のみ（`null`は使用しない）
+
    ```typescript
    // ✅ Good
-   dueDate: string | undefined
+   dueDate: string | undefined;
 
    // ❌ Bad
-   dueDate: string | null | undefined
+   dueDate: string | null | undefined;
    ```
 
 ### try-catch必須
@@ -470,24 +476,25 @@ export const buildCreateProjectHandler =
 // ビルダーパターン不使用（DI注入なし）
 export const createProjectHandler = async (c: Context) => {
   // DIコンテナが使えない
-  const logger = new ConsoleLogger();  // ❌ ハードコーディング
-  const useCase = new CreateProjectUseCaseImpl();  // ❌ ハードコーディング
+  const logger = new ConsoleLogger(); // ❌ ハードコーディング
+  const useCase = new CreateProjectUseCaseImpl(); // ❌ ハードコーディング
 };
 
 // バリデーション不実施
 const rawBody = await c.req.json();
-const result = await useCase.execute(rawBody);  // ❌ 型安全でない
+const result = await useCase.execute(rawBody); // ❌ 型安全でない
 
 // Result型チェック不実施
 const result = await useCase.execute(data);
-const responseData = convertToProjectResponse(result.data);  // ❌ errorの可能性
+const responseData = convertToProjectResponse(result.data); // ❌ errorの可能性
 
 // 出力バリデーション不実施
 const responseData = convertToProjectResponse(result.data);
-return c.json(responseData, 201);  // ❌ OpenAPI仕様との不一致を検出できない
+return c.json(responseData, 201); // ❌ OpenAPI仕様との不一致を検出できない
 
 // try-catchなし
-export const buildXxxHandler = ({ container }: { container: Container }) =>
+export const buildXxxHandler =
+  ({ container }: { container: Container }) =>
   async (c: Context) => {
     // ❌ 予期しない例外が上位に伝播
     const result = await useCase.execute(data);
@@ -495,13 +502,17 @@ export const buildXxxHandler = ({ container }: { container: Container }) =>
   };
 
 // ビジネスロジックの実装
-export const buildCreateProjectHandler = ({ container }: { container: Container }) =>
+export const buildCreateProjectHandler =
+  ({ container }: { container: Container }) =>
   async (c: Context) => {
     const rawBody = await c.req.json();
 
     // ❌ ハンドラでビジネスロジックを実装（UseCaseに委譲すべき）
     if (rawBody.color === "#000000") {
-      return c.json({ name: "ValidationError", message: "黒は使用できません" }, 400);
+      return c.json(
+        { name: "ValidationError", message: "黒は使用できません" },
+        400,
+      );
     }
 
     const result = await useCase.execute(rawBody);
@@ -509,9 +520,12 @@ export const buildCreateProjectHandler = ({ container }: { container: Container 
   };
 
 // 直接データベースアクセス
-export const buildGetProjectHandler = ({ container }: { container: Container }) =>
+export const buildGetProjectHandler =
+  ({ container }: { container: Container }) =>
   async (c: Context) => {
-    const repository = container.get<ProjectRepository>(serviceId.PROJECT_REPOSITORY);
+    const repository = container.get<ProjectRepository>(
+      serviceId.PROJECT_REPOSITORY,
+    );
 
     // ❌ ハンドラから直接リポジトリを呼び出し（UseCaseに委譲すべき）
     const project = await repository.findById({ id: projectId });
@@ -566,7 +580,9 @@ const responseData = projects.map((project) => ({
 
 // ✅ Good: 共通の変換関数を使用
 // project-response-mapper.ts
-export const convertToProjectResponse = (project: Project): ProjectResponse => ({
+export const convertToProjectResponse = (
+  project: Project,
+): ProjectResponse => ({
   projectId: project.id,
   name: project.name,
   color: project.color.toString(),
@@ -587,7 +603,10 @@ const responseData = projects.map(convertToProjectResponse);
 // create-project-handler.ts
 if (!result.success) {
   if (result.error instanceof ValidationError) {
-    return c.json({ name: "ValidationError", message: result.error.message }, 400);
+    return c.json(
+      { name: "ValidationError", message: result.error.message },
+      400,
+    );
   }
   if (result.error instanceof DomainError) {
     return c.json({ name: "DomainError", message: result.error.message }, 422);
@@ -597,7 +616,11 @@ if (!result.success) {
 
 // ✅ Good: 共通のエラーハンドラーを使用
 // error-handler.ts
-export const handleError = (error: Error, c: Context, logger: Logger): Response => {
+export const handleError = (
+  error: Error,
+  c: Context,
+  logger: Logger,
+): Response => {
   if (error instanceof ValidationError) {
     return c.json({ name: "ValidationError", message: error.message }, 400);
   }

@@ -11,6 +11,7 @@
 **定義**: ドメインモデルがデータの入れ物（getter/setterのみ）となり、ビジネスロジックがUseCase層やService層に漏れ出す状態。
 
 **問題点**:
+
 - ビジネスロジックが分散し、保守性が低下
 - ドメインの知識がコードに表現されない
 - 同じバリデーションや計算が複数箇所に重複
@@ -19,6 +20,7 @@
 ### 良いドメインモデルの特徴
 
 **Rich Domain Model**:
+
 - ビジネスロジックがEntity/Value Objectに集約
 - ユビキタス言語を反映したメソッド名
 - 不変条件がドメイン層で保護される
@@ -51,6 +53,7 @@
 **パターンA: 単純なデータ変換メソッド（Entity返却、メソッドチェーン可能）**
 
 条件:
+
 - ビジネスロジックがない（Value Objectで検証完了）
 - 単一フィールドの更新
 - メソッドチェーンを活用したい
@@ -71,9 +74,9 @@ const now = dateToIsoString(this.#props.fetchNow());
 
 // Result.ok()で包んでメソッドチェーン開始
 const result = Result.ok(existing)
-  .then(t => t.changeTitle(titleResult.data, now))
-  .then(t => t.changeStatus(statusResult.data, now))
-  .then(t => repository.save(t));
+  .then((t) => t.changeTitle(titleResult.data, now))
+  .then((t) => t.changeStatus(statusResult.data, now))
+  .then((t) => repository.save(t));
 
 if (!result.success) {
   return result;
@@ -83,6 +86,7 @@ if (!result.success) {
 **パターンB: 複雑なバリデーションメソッド（Result型返却）**
 
 条件:
+
 - 複数フィールドの連動あり
 - Entity全体を見た不変条件あり
 - ビジネスの意図を明確にすべき操作
@@ -163,10 +167,12 @@ async execute(input: RegisterTodoUseCaseInput): Promise<Result> {
 **参照**: `20-use-case-implementation.md` - PATCH更新時の個別メソッド更新
 
 **使用条件**:
+
 - PATCH更新（部分更新、送られたフィールドのみ受け取る）
 - 複雑なビジネスロジックがない場合
 
 **原則**:
+
 - 送られたフィールドのみ更新（`'in'`演算子で判定）
 - 送られなかったフィールドは既存値のまま = 自然にマージ
 - Result.then()でメソッドチェーン
@@ -252,14 +258,16 @@ const color = colorResult.data;
 ### 追加すべき場合
 
 1. **ビジネスの意図を表現**
+
    ```typescript
    // ✅ Good: 意図が明確
-   todo.markAsCompleted(now, now)
-   todo.postpone(newDueDate, now)
-   todo.assignTo(userId, now)
+   todo.markAsCompleted(now, now);
+   todo.postpone(newDueDate, now);
+   todo.assignTo(userId, now);
    ```
 
 2. **複数フィールドの連動**
+
    ```typescript
    // ✅ Good: 完了時にstatusとcompletedAtを同時変更
    markAsCompleted(completedAt: string, updatedAt: string): Result<Todo, DomainError>
@@ -279,6 +287,7 @@ const color = colorResult.data;
 ### 追加すべきでない場合
 
 1. **将来使うかもしれない**（YAGNI原則違反）
+
    ```typescript
    // ❌ Bad: 現在使われていない
    markAsPending(updatedAt: string): Todo
@@ -286,6 +295,7 @@ const color = colorResult.data;
    ```
 
 2. **Value Objectで表現可能**
+
    ```typescript
    // ❌ Bad: Value Objectで検証すべき
    changeColor(color: string): Result<Project, DomainError> {
@@ -308,11 +318,21 @@ const color = colorResult.data;
 ```typescript
 // ビジネスロジックをドメイン層に配置
 class Todo {
-  markAsCompleted(completedAt: string, updatedAt: string): Result<Todo, DomainError> {
+  markAsCompleted(
+    completedAt: string,
+    updatedAt: string,
+  ): Result<Todo, DomainError> {
     if (!this.dueDate) {
-      return Result.err(new DomainError('期限のないTODOは完了できません'));
+      return Result.err(new DomainError("期限のないTODOは完了できません"));
     }
-    return Result.ok(new Todo({ ...this, status: TodoStatus.completed(), completedAt, updatedAt }));
+    return Result.ok(
+      new Todo({
+        ...this,
+        status: TodoStatus.completed(),
+        completedAt,
+        updatedAt,
+      }),
+    );
   }
 }
 
@@ -337,7 +357,7 @@ class Todo {
 if (!existing.dueDate) {
   return {
     success: false,
-    error: new DomainError('期限のないTODOは完了できません'),
+    error: new DomainError("期限のないTODOは完了できません"),
   };
 }
 const updated = new Todo({

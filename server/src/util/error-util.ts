@@ -4,6 +4,7 @@
 export const unexpectedErrorMessage = "予期せぬエラーが発生しました";
 export const notFoundErrorMessage = "リソースが見つかりませんでした";
 export const validationErrorMessage = "入力値が不正です";
+export const unauthorizedErrorMessage = "認証が必要です";
 export const conflictErrorMessage = "データが競合しています";
 export const forbiddenErrorMessage = "アクセスが拒否されました";
 export const domainErrorMessage = "ドメインエラーが発生しました";
@@ -26,6 +27,13 @@ export class ValidationError extends Error {
   constructor(message?: string) {
     super(message ?? validationErrorMessage);
     this.name = "ValidationError";
+  }
+}
+
+export class UnauthorizedError extends Error {
+  constructor(message?: string) {
+    super(message ?? unauthorizedErrorMessage);
+    this.name = "UnauthorizedError";
   }
 }
 

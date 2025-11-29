@@ -17,30 +17,30 @@ RESTful設計原則に従い、**リソース中心のURL設計**と**適切なH
 
 ### エンドポイント例
 
-| エンドポイント | メソッド | 説明 |
-|--------------|---------|------|
-| `POST /users/me` | POST | 現在のユーザーを登録 |
-| `GET /users/me` | GET | 現在のユーザー情報を取得 |
-| `PATCH /users/me` | PATCH | 現在のユーザー情報を更新 |
-| `DELETE /users/me` | DELETE | 現在のユーザーを削除 |
+| エンドポイント     | メソッド | 説明                     |
+| ------------------ | -------- | ------------------------ |
+| `POST /users/me`   | POST     | 現在のユーザーを登録     |
+| `GET /users/me`    | GET      | 現在のユーザー情報を取得 |
+| `PATCH /users/me`  | PATCH    | 現在のユーザー情報を更新 |
+| `DELETE /users/me` | DELETE   | 現在のユーザーを削除     |
 
 ### OpenAPI定義
 
 ```yaml
 paths:
-  /users/me:
+  /{resources}/me:
     post:
-      summary: 現在のユーザーを登録
-      operationId: registerCurrentUser
+      summary: 現在のリソースを登録
+      operationId: registerCurrentResource
       security:
-        - CognitoAuthorizer: []
+        - Authorizer: []
       responses:
-        '201':
-          description: ユーザー登録成功
+        "201":
+          description: リソース登録成功
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserResponse'
+                $ref: "#/components/schemas/{Entity}Response"
 ```
 
 **重要**: `security`フィールドで認証必須を明示する。
@@ -52,7 +52,7 @@ paths:
 const userSub = c.get(USER_SUB);
 
 const result = await useCase.execute({
-  userSub,  // URLパラメータではなく認証情報から取得
+  userSub, // URLパラメータではなく認証情報から取得
   name: input.name,
   email: input.email,
 });
@@ -68,15 +68,15 @@ const result = await useCase.execute({
 /{parent-resource}/{parent-id}/{child-resource}/{child-id}
 ```
 
-### 実装例: TODOと添付ファイル
+### 実装例: 親リソースと子リソース
 
-| エンドポイント | メソッド | 説明 |
-|--------------|---------|------|
-| `GET /todos/{todoId}/attachments` | GET | TODO配下の添付ファイル一覧取得 |
-| `POST /todos/{todoId}/attachments/prepare` | POST | 添付ファイルアップロード準備 |
-| `PATCH /todos/{todoId}/attachments/{attachmentId}` | PATCH | 添付ファイル情報更新 |
-| `GET /todos/{todoId}/attachments/{attachmentId}/download-url` | GET | ダウンロードURL取得 |
-| `DELETE /todos/{todoId}/attachments/{attachmentId}` | DELETE | 添付ファイル削除 |
+| エンドポイント                                                                  | メソッド | 説明                               |
+| ------------------------------------------------------------------------------- | -------- | ---------------------------------- |
+| `GET /{parentEntities}/{parentEntityId}/{childEntities}`                        | GET      | 親リソース配下の子リソース一覧取得 |
+| `POST /{parentEntities}/{parentEntityId}/{childEntities}/prepare`               | POST     | 子リソース準備                     |
+| `PATCH /{parentEntities}/{parentEntityId}/{childEntities}/{childEntityId}`      | PATCH    | 子リソース情報更新                 |
+| `GET /{parentEntities}/{parentEntityId}/{childEntities}/{childEntityId}/action` | GET      | 子リソースに対する特殊アクション   |
+| `DELETE /{parentEntities}/{parentEntityId}/{childEntities}/{childEntityId}`     | DELETE   | 子リソース削除                     |
 
 ### URL設計の一貫性
 
@@ -84,20 +84,20 @@ const result = await useCase.execute({
 
 ```yaml
 # ✅ Good
-/todos/{todoId}/attachments/{attachmentId}
+/{parentEntities}/{parentEntityId}/{childEntities}/{childEntityId}
 
 # ❌ Bad
-/attachments/{attachmentId}  # 親子関係が不明確
+/{childEntities}/{childEntityId}  # 親子関係が不明確
 ```
 
 **ルール2**: パスパラメータ名は単数形+`Id`
 
 ```yaml
 # ✅ Good
-/todos/{todoId}/attachments/{attachmentId}
+/{parentEntities}/{parentEntityId}/{childEntities}/{childEntityId}
 
 # ❌ Bad
-/todos/{id}/attachments/{id}  # パラメータ名が重複
+/{parentEntities}/{id}/{childEntities}/{id}  # パラメータ名が重複
 /todos/{todo_id}/attachments/{attachment_id}  # snake_case
 ```
 
@@ -106,33 +106,34 @@ const result = await useCase.execute({
 **参照**: `10-api-overview.md` - ネストされたリソースの親ID
 
 ```yaml
-AttachmentResponse:
+{ChildEntity}Response:
   type: object
   required:
     - id
-    - todoId  # 親リソースID（必須）
+    - {parentEntity}Id  # 親リソースID（必須）
   properties:
     id:
       type: string
-    todoId:
+    {parentEntity}Id:
       type: string
-    filename:
+    name:
       type: string
 ```
 
 **理由**:
+
 - URLから親IDが取得できない場合（WebSocket/SSE）に対応
 - フロントエンド状態管理の簡素化
 - レスポンス自己完結性の向上
 
 ## HTTPメソッドとCRUD操作のマッピング
 
-| HTTPメソッド | CRUD操作 | ステータスコード（成功時） | 説明 |
-|-------------|---------|--------------------------|------|
-| POST | Create | 201 Created | リソース作成 |
-| GET | Read | 200 OK | リソース取得 |
-| PATCH | Update | 200 OK | リソース更新（**PATCH統一原則**） |
-| DELETE | Delete | 204 No Content | リソース削除 |
+| HTTPメソッド | CRUD操作 | ステータスコード（成功時） | 説明                              |
+| ------------ | -------- | -------------------------- | --------------------------------- |
+| POST         | Create   | 201 Created                | リソース作成                      |
+| GET          | Read     | 200 OK                     | リソース取得                      |
+| PATCH        | Update   | 200 OK                     | リソース更新（**PATCH統一原則**） |
+| DELETE       | Delete   | 204 No Content             | リソース削除                      |
 
 **重要**: 更新操作はすべてPATCHを使用する。PUTは使用しない（詳細は「HTTPメソッド統一ポリシー」参照）。
 
@@ -142,14 +143,15 @@ AttachmentResponse:
 
 ### エラーステータスコード一覧
 
-| HTTPステータスコード | エラー型 | 用途 | レスポンス例 |
-|--------------------|---------|------|-------------|
-| 400 Bad Request | `ValidationError` | 型レベルバリデーションエラー（OpenAPI/Zod） | `{"name": "ValidationError", "message": "入力値が不正です"}` |
-| 403 Forbidden | `ForbiddenError` | アクセス拒否 | `{"name": "ForbiddenError", "message": "アクセスが拒否されました"}` |
-| 404 Not Found | `NotFoundError` | リソース未検出 | `{"name": "NotFoundError", "message": "リソースが見つかりませんでした"}` |
-| 409 Conflict | `ConflictError` | データ競合 | `{"name": "ConflictError", "message": "データが競合しています"}` |
-| 422 Unprocessable Entity | `DomainError` | ドメインルールエラー | `{"name": "DomainError", "message": "18歳以上である必要があります"}` |
-| 500 Internal Server Error | `UnexpectedError` | 予期せぬエラー | `{"name": "UnexpectedError", "message": "予期せぬエラーが発生しました"}` |
+| HTTPステータスコード      | エラー型            | 用途                                        | レスポンス例                                                             |
+| ------------------------- | ------------------- | ------------------------------------------- | ------------------------------------------------------------------------ |
+| 400 Bad Request           | `ValidationError`   | 型レベルバリデーションエラー（OpenAPI/Zod） | `{"name": "ValidationError", "message": "入力値が不正です"}`             |
+| 401 Unauthorized          | `UnauthorizedError` | 認証エラー（トークン無効・未提供）          | `{"name": "UnauthorizedError", "message": "認証が必要です"}`             |
+| 403 Forbidden             | `ForbiddenError`    | 認可エラー（権限不足）                      | `{"name": "ForbiddenError", "message": "アクセスが拒否されました"}`      |
+| 404 Not Found             | `NotFoundError`     | リソース未検出                              | `{"name": "NotFoundError", "message": "リソースが見つかりませんでした"}` |
+| 409 Conflict              | `ConflictError`     | データ競合                                  | `{"name": "ConflictError", "message": "データが競合しています"}`         |
+| 422 Unprocessable Entity  | `DomainError`       | ドメインルールエラー                        | `{"name": "DomainError", "message": "18歳以上である必要があります"}`     |
+| 500 Internal Server Error | `UnexpectedError`   | 予期せぬエラー                              | `{"name": "UnexpectedError", "message": "予期せぬエラーが発生しました"}` |
 
 ### エラーレスポンスの設計原則
 
@@ -157,14 +159,23 @@ AttachmentResponse:
    - minLength、maxLength、pattern、enum、required等
    - Handler層で自動的にキャッチされる
 
-2. **DomainError（422）**: ドメインロジックを含むビジネスルール違反
+2. **UnauthorizedError（401）**: 認証エラー
+   - JWTトークンが無効、期限切れ、または未提供
+   - API Gateway/認証ミドルウェア層で発生
+   - **認証が必要な全てのエンドポイントに定義必須**
+
+3. **ForbiddenError（403）**: 認可エラー
+   - 認証は成功したが、リソースへのアクセス権限がない
+   - 例: 他人のTODOを更新、削除しようとした
+   - UseCase層で発生
+
+4. **DomainError（422）**: ドメインロジックを含むビジネスルール違反
    - 例: 18歳以上、会社ドメインのメールアドレスのみ、完了済みTODOのステータス変更不可
    - Domain層（Value Object/Entity）で発生する
    - OpenAPIでも表現可能な場合があるが、**実施しない**
 
-3. **その他のエラー**: UseCase層で発生するビジネスルール違反
+5. **その他のエラー**: UseCase層で発生するビジネスルール違反
    - NotFoundError（404）: リソース未検出
-   - ForbiddenError（403）: アクセス拒否、権限エラー
    - ConflictError（409）: データ競合
 
 ### POST: リソース作成
@@ -177,29 +188,30 @@ post:
     content:
       application/json:
         schema:
-          $ref: '#/components/schemas/RegisterTodoParams'
+          $ref: "#/components/schemas/RegisterTodoParams"
   responses:
-    '201':
+    "201":
       description: TODO登録成功
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/TodoResponse'
-    '400':
+            $ref: "#/components/schemas/TodoResponse"
+    "400":
       description: バリデーションエラー（型レベル）
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    '422':
+            $ref: "#/components/schemas/ErrorResponse"
+    "422":
       description: ドメインルールエラー
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
+            $ref: "#/components/schemas/ErrorResponse"
 ```
 
 **重要**:
+
 - 201 Createdを返す
 - レスポンスボディに作成されたリソースを含める
 - 400: 型レベルバリデーションエラー（OpenAPI/Zod）
@@ -210,39 +222,40 @@ post:
 
 ```yaml
 get:
-  summary: TODO取得
+  summary: リソース取得
   parameters:
-    - name: todoId
+    - name: {entity}Id
       in: path
       required: true
       schema:
         type: string
   responses:
     '200':
-      description: TODO取得成功
+      description: リソース取得成功
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/TodoResponse'
+            $ref: '#/components/schemas/{Entity}Response'
     '404':
-      description: TODOが見つかりません
+      description: リソースが見つかりません
 ```
 
 ### GET: リソース一覧取得
 
 ```yaml
 get:
-  summary: TODO一覧取得
+  summary: リソース一覧取得
   responses:
-    '200':
-      description: TODO一覧取得成功
+    "200":
+      description: リソース一覧取得成功
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/TodosResponse'
+            $ref: "#/components/schemas/{Entity}sResponse"
 ```
 
 **重要**:
+
 - 空配列も200 OKで返す（404ではない）
 - ページネーションパラメータは将来的に追加可能
 
@@ -250,9 +263,9 @@ get:
 
 ```yaml
 patch:
-  summary: TODO更新
+  summary: リソース更新
   parameters:
-    - name: todoId
+    - name: {entity}Id
       in: path
       required: true
       schema:
@@ -262,14 +275,14 @@ patch:
     content:
       application/json:
         schema:
-          $ref: '#/components/schemas/UpdateTodoParams'
+          $ref: '#/components/schemas/Update{Entity}Params'
   responses:
     '200':
-      description: TODO更新成功
+      description: リソース更新成功
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/TodoResponse'
+            $ref: '#/components/schemas/{Entity}Response'
     '400':
       description: バリデーションエラー（型レベル）
       content:
@@ -283,7 +296,7 @@ patch:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
     '404':
-      description: TODOが見つかりません
+      description: リソースが見つかりません
       content:
         application/json:
           schema:
@@ -297,6 +310,7 @@ patch:
 ```
 
 **重要**:
+
 - 更新後のリソース全体を返す
 - 204 No Contentではなく200 OKを使用（レスポンスボディあり）
 - UpdateTodoParamsのフィールドはすべてオプショナル（PATCH統一原則）
@@ -311,53 +325,135 @@ patch:
 
 **解決策**: JSON層では`null`を使用し、Handler層で`undefined`に変換する
 
-**OpenAPI定義**:
+##### nullable: true 設定の判断フレームワーク
+
+**Update\*Params（PATCH）の各オプショナルフィールドについて、以下を検討する**:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ Q: ユーザーが一度設定した値を「未設定」に戻したいか？ │
+├─────────────────────────────────────────────────────────┤
+│ YES → nullable: true を設定                             │
+│ NO  → nullable: true は不要                             │
+└─────────────────────────────────────────────────────────┘
+```
+
+##### フィールドタイプ別の判断基準
+
+| フィールドタイプ                                 | nullable: true | 理由・ユースケース                   |
+| ------------------------------------------------ | -------------- | ------------------------------------ |
+| **日付フィールド**（`dueDate`, `completedAt`等） | ✅ **必須**    | 「期限なし」「未完了」に戻したい     |
+| **外部ID**（`projectId`, `assigneeUserId`等）    | ✅ **必須**    | 「未割り当て」「関連なし」に戻したい |
+| **説明文**（`description`等）                    | ✅ **必須**    | 説明を削除したい                     |
+| **必須フィールド**（`title`, `name`等）          | ❌ 不要        | 削除の概念がない                     |
+| **enum型**（`status`, `priority`等）             | ❌ 不要        | 別の値に遷移する（削除ではない）     |
+| **boolean型**                                    | ❌ 不要        | true/falseで完結（削除の概念なし）   |
+
+##### 具体例: 日付フィールド
+
+**ユースケース**: 「日付を設定したが、やっぱり日付なしに戻したい」
 
 ```yaml
-UpdateTodoParams:
-  type: object
+# ✅ Good: nullable: trueを設定
+Update{Entity}Params:
   properties:
     dueDate:
       type: string
-      format: date-time
-      nullable: true  # nullを許可（クリア操作のため）
-      description: 期限（nullで\"期限なし\"に設定）
-    completedAt:
+      format: date
+      nullable: true  # クリア操作を許可
+      description: 期限日（nullで"日付なし"に設定）
+
+# ❌ Bad: nullable: trueがない
+Update{Entity}Params:
+  properties:
+    dueDate:
       type: string
-      format: date-time
-      nullable: true
-      description: 完了日時（nullで\"未完了\"に設定）
+      format: date
+      # 問題: 一度設定した日付を削除できない
+      #       フィールド省略 = 変更なし となるため
 ```
 
-**3値の区別**:
+##### 具体例: 外部ID
 
-| クライアント送信 | JSON表現 | 意味 | TypeScript内部 |
-|---------------|---------|------|---------------|
-| フィールド省略 | `{}` | 変更しない | プロパティなし（`'dueDate' in input === false`） |
-| `null`送信 | `{"dueDate": null}` | クリアする | `undefined` |
-| 値を送信 | `{"dueDate": "2025-01-01T00:00:00Z"}` | 値を設定 | `string` |
+**ユースケース**: 「親リソースに割り当てたが、未割り当てに戻したい」
 
-**クライアント例**:
+```yaml
+# ✅ Good: nullable: trueを設定
+Update{Entity}Params:
+  properties:
+    {parentEntity}Id:
+      type: string
+      minLength: 1
+      nullable: true  # クリア操作を許可
+      description: 親リソースID（省略可能、nullで"未割り当て"に設定）
+
+# ❌ Bad: nullable: trueがない
+Update{Entity}Params:
+  properties:
+    {parentEntity}Id:
+      type: string
+      minLength: 1
+      # 問題: 一度割り当てた親リソースを解除できない
+```
+
+##### 具体例: 説明文
+
+**ユースケース**: 「説明を書いたが、削除したい」
+
+```yaml
+# ✅ Good: nullable: trueとminLength: 1を両方設定
+Update{Entity}Params:
+  properties:
+    description:
+      type: string
+      minLength: 1      # 送信する場合は1文字以上（空文字列禁止）
+      maxLength: 5000
+      nullable: true    # クリア操作を許可
+      description: 説明（省略可能、nullで"説明なし"に設定）
+
+# ❌ Bad: nullable: trueがない、またはminLength: 1がない
+Update{Entity}Params:
+  properties:
+    description:
+      type: string
+      maxLength: 5000
+      # 問題1: minLength: 1がない → 空文字列が許可される
+      # 問題2: nullable: trueがない → 説明を削除できない
+```
+
+##### 3値の区別
+
+| クライアント送信 | JSON表現                              | 意味       | TypeScript内部                                   |
+| ---------------- | ------------------------------------- | ---------- | ------------------------------------------------ |
+| フィールド省略   | `{}`                                  | 変更しない | プロパティなし（`'dueDate' in input === false`） |
+| `null`送信       | `{"dueDate": null}`                   | クリアする | `undefined`                                      |
+| 値を送信         | `{"dueDate": "2025-01-01T00:00:00Z"}` | 値を設定   | `string`                                         |
+
+##### クライアント実装例
 
 ```typescript
 // ケース1: フィールドを変更しない（省略）
-PATCH /todos/123
+PATCH /{resources}/123
 {}
 
 // ケース2: フィールドをクリア（nullを送信）
-PATCH /todos/123
+PATCH /{resources}/123
 {
-  "dueDate": null  // 期限なしに設定
+  "dueDate": null,                // 日付なしに戻す
+  "{parentEntity}Id": null,       // 親リソース未割り当てに戻す
+  "description": null             // 説明を削除
 }
 
 // ケース3: フィールドを更新（値を送信）
-PATCH /todos/123
+PATCH /{resources}/123
 {
-  "dueDate": "2025-01-01T00:00:00Z"
+  "dueDate": "2025-01-01",
+  "{parentEntity}Id": "parent-456",
+  "description": "新しい説明"
 }
 ```
 
-**TypeScript内部への変換**:
+##### TypeScript内部への変換
 
 **参照**: `policy/server/handler/10-handler-overview.md` - null → undefined 変換パターン
 
@@ -366,6 +462,53 @@ PATCH /todos/123
 - **TypeScript内部**: `undefined`のみ使用（TypeScriptベストプラクティス）
 
 **重要**: TypeScript内部では`null`を使用しない。`undefined`のみ使用する。
+
+##### 完全なOpenAPI定義例
+
+```yaml
+UpdateTodoParams:
+  type: object
+  properties:
+    title:
+      type: string
+      minLength: 1
+      maxLength: 200
+      description: TODOのタイトル
+      # nullable: true 不要（必須フィールドの概念）
+
+    description:
+      type: string
+      minLength: 1 # 空文字列禁止
+      maxLength: 5000
+      nullable: true # クリア操作を許可
+      description: TODOの詳細説明（省略可能、nullで"説明なし"に設定）
+
+    status:
+      $ref: "#/components/schemas/TodoStatus"
+      # nullable: true 不要（enum、削除ではなく遷移）
+
+    priority:
+      $ref: "#/components/schemas/TodoPriority"
+      # nullable: true 不要（enum、削除ではなく変更）
+
+    dueDate:
+      type: string
+      format: date
+      nullable: true # クリア操作を許可
+      description: 期限日（nullで"期限なし"に設定）
+
+    projectId:
+      type: string
+      minLength: 1 # 空文字列禁止
+      nullable: true # クリア操作を許可
+      description: プロジェクトID（省略可能、nullで"未割り当て"に設定）
+
+    assigneeUserId:
+      type: string
+      minLength: 1 # 空文字列禁止
+      nullable: true # クリア操作を許可
+      description: 担当者のユーザーID（省略可能、nullで"未割り当て"に設定）
+```
 
 ### DELETE: リソース削除
 
@@ -379,13 +522,14 @@ delete:
       schema:
         type: string
   responses:
-    '204':
+    "204":
       description: TODO削除成功
-    '404':
+    "404":
       description: TODOが見つかりません
 ```
 
 **重要**:
+
 - 204 No Contentを返す（レスポンスボディなし）
 - 削除成功時はボディ不要（べき等性）
 
@@ -400,12 +544,14 @@ delete:
 使い分けルールは守られない。統一ルールが開発体験を向上させる。
 
 **問題**:
+
 - PUT（全フィールド必須）とPATCH（部分更新）の使い分けは複雑
 - 「どちらを使うべきか」の判断コストが発生
 - レビュー時に使い分けの妥当性検証が必要
 - 開発者間で解釈のブレが生じる
 
 **解決**:
+
 - **すべてPATCHに統一** → 判断不要
 - OpenAPIスキーマ設計パターンが統一
 - UseCase実装パターンが統一
@@ -416,6 +562,7 @@ delete:
 すべての更新操作で同じパターンを使用する。
 
 **メリット**:
+
 - OpenAPIスキーマは常にオプショナルフィールド
 - クライアントは常に同じパターン（変更したいフィールドのみ送信）
 - 認知負荷の削減
@@ -437,7 +584,7 @@ UpdateTodoParams:
       type: string
       description: 説明（オプショナル）
     status:
-      $ref: '#/components/schemas/TodoStatus'
+      $ref: "#/components/schemas/TodoStatus"
     dueDate:
       type: string
       format: date-time
@@ -450,6 +597,7 @@ UpdateTodoParams:
 ```
 
 **重要**:
+
 - `required`フィールドは空（すべてオプショナル）
 - クライアントは変更したいフィールドのみ送信
 - `description`で意図を明確に記載
@@ -462,18 +610,19 @@ UpdateTodoParams:
 // ステップ1不要（GETなし）
 // ステップ2: 変更したいフィールドのみPATCH
 await fetch(`/todos/${todoId}`, {
-  method: 'PATCH',
+  method: "PATCH",
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
     Authorization: `Bearer ${token}`,
   },
   body: JSON.stringify({
-    title: "新しいタイトル",  // 変更したいフィールドのみ
+    title: "新しいタイトル", // 変更したいフィールドのみ
   }),
 });
 ```
 
 **メリット**:
+
 - 1回のHTTPリクエストで完結
 - ネットワーク帯域節約
 - クライアントコードがシンプル
@@ -481,12 +630,12 @@ await fetch(`/todos/${todoId}`, {
 
 ### PUTを使用しない理由
 
-| 項目 | PATCH統一 | PUT/PATCH使い分け |
-|------|-----------|------------------|
-| ガードレール | ✅ 判断不要 | ❌ 使い分け判断が必要 |
-| 実装一貫性 | ✅ 常に同じパターン | ❌ 2種類のパターン混在 |
-| クライアント負荷 | ✅ PATCH（1回） | △ GET + PUT（2回） |
-| 認知負荷 | ✅ 低い | ❌ 高い（判断コスト） |
+| 項目             | PATCH統一           | PUT/PATCH使い分け      |
+| ---------------- | ------------------- | ---------------------- |
+| ガードレール     | ✅ 判断不要         | ❌ 使い分け判断が必要  |
+| 実装一貫性       | ✅ 常に同じパターン | ❌ 2種類のパターン混在 |
+| クライアント負荷 | ✅ PATCH（1回）     | △ GET + PUT（2回）     |
+| 認知負荷         | ✅ 低い             | ❌ 高い（判断コスト）  |
 
 **結論**: 使い分けの認知負荷を削減し、**ガードレールとしての機能を優先**する。
 
@@ -508,6 +657,7 @@ PUT /todos/{todoId}/complete
 ```
 
 **適用判断**:
+
 - 重要なビジネスドメイン操作
 - 複雑なビジネスルールが付随
 - ドメインエキスパートとの会話に頻出
@@ -527,10 +677,10 @@ CRUDに当てはまらない操作は、**動詞を含むパス**を使用する
 
 ### 実装例
 
-| エンドポイント | 説明 | 理由 |
-|--------------|------|------|
-| `POST /todos/{todoId}/attachments/prepare` | アップロード準備 | 単純なPOSTではない（Pre-signed URL発行） |
-| `GET /todos/{todoId}/attachments/{attachmentId}/download-url` | ダウンロードURL取得 | 単純なGETではない（Pre-signed URL発行） |
+| エンドポイント                                                | 説明                | 理由                                     |
+| ------------------------------------------------------------- | ------------------- | ---------------------------------------- |
+| `POST /todos/{todoId}/attachments/prepare`                    | アップロード準備    | 単純なPOSTではない（Pre-signed URL発行） |
+| `GET /todos/{todoId}/attachments/{attachmentId}/download-url` | ダウンロードURL取得 | 単純なGETではない（Pre-signed URL発行）  |
 
 ### OpenAPI定義
 
@@ -540,15 +690,16 @@ CRUDに当てはまらない操作は、**動詞を含むパス**を使用する
     summary: 添付ファイルアップロード準備
     operationId: prepareAttachmentUpload
     responses:
-      '200':
+      "200":
         description: アップロード準備成功
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PrepareAttachmentResponse'
+              $ref: "#/components/schemas/PrepareAttachmentResponse"
 ```
 
 **重要**:
+
 - `operationId`は動詞を含む（`prepareAttachmentUpload`）
 - レスポンススキーマも動作を表す名前（`PrepareAttachmentResponse`）
 
@@ -563,6 +714,7 @@ CRUDに当てはまらない操作は、**動詞を含むパス**を使用する
 ```
 
 **ルール**:
+
 - 必須のリソース識別子のみ
 - 単数形 + `Id`サフィックス
 - camelCase
@@ -674,25 +826,54 @@ paths:
 
 ## チェックリスト
 
+### エンドポイント（paths）
+
 ```
-[ ] Current Userパターンを認証済みユーザー操作に使用
-[ ] ネストされたリソースは階層的URL構造
-[ ] パスパラメータは単数形+Id
-[ ] HTTPメソッドとCRUD操作が正しくマッピング
-[ ] POST成功時は201、レスポンスボディあり
-[ ] PATCH成功時は200、更新後リソース全体を返す
-[ ] DELETE成功時は204、レスポンスボディなし
-[ ] PATCH更新パラメータはすべてオプショナル（PATCH統一）
-[ ] フィールドクリアが必要な場合はnullable: trueを設定（OpenAPI）
-[ ] Handler層でnull → undefined変換を実装
-[ ] TypeScript内部ではundefinedのみ使用（nullは使用しない）
-[ ] PUTは使用しない（例外: RPC風ビジネス操作エンドポイント）
-[ ] クライアントは変更フィールドのみPATCH送信
-[ ] 特殊アクションは動詞を含むパス
+[ ] Current Userパターンを使用（/users/me）
+[ ] ネストされたリソースは階層的URL（/parent/{parentId}/child/{childId}）
+[ ] パスパラメータは単数形+Id、camelCase
+[ ] 特殊アクションは動詞を含むパス（/prepare, /download-url）
+[ ] HTTPメソッドとCRUD操作が正しくマッピング（POST=Create, GET=Read, PATCH=Update, DELETE=Delete）
+[ ] PUTは使用しない
+```
+
+### リクエストスキーマ（Register\*Params）
+
+```
+[ ] 必須フィールドをrequiredに列挙
+[ ] すべての文字列フィールドにminLength: 1
+```
+
+### リクエストスキーマ（Update\*Params）
+
+```
+[ ] requiredは空（全フィールドoptional）
+[ ] すべての文字列フィールドにminLength: 1
+[ ] 値のクリアが必要なフィールドにnullable: true（日付、外部ID、説明文等）
+```
+
+### レスポンススキーマ
+
+```
+[ ] POST: 201 Created、作成されたリソースを返す
+[ ] PATCH: 200 OK、更新後リソース全体を返す
+[ ] DELETE: 204 No Content、レスポンスボディなし
+[ ] ネストされたリソースに親IDを含める
+```
+
+### エラーレスポンス
+
+```
+[ ] 400: ValidationError（型レベルバリデーション）
+[ ] 401: UnauthorizedError（認証が必要なエンドポイント）
+[ ] 403: ForbiddenError（認可チェックがあるエンドポイント）
+[ ] 404: NotFoundError（IDによる取得を行うエンドポイント）
+[ ] 422: DomainError（ドメインルール検証があるエンドポイント）
+[ ] 500: UnexpectedError（全エンドポイント）
+```
+
+### セキュリティ
+
+```
 [ ] 認証必須エンドポイントにsecurityフィールド設定
-[ ] ネストされたレスポンスに親IDを含める
-[ ] エラーレスポンスを適切に定義（400、403、404、409、422、500）
-[ ] 400: 型レベルバリデーションエラー（OpenAPI/Zod）
-[ ] 422: ドメインルールエラー（Domain層（Value Object/Entity））
-[ ] 403/404/409: ビジネスルールエラー（UseCase層）
 ```

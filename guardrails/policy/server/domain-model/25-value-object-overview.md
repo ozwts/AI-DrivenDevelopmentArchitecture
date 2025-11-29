@@ -5,6 +5,7 @@
 識別子（ID）を持たず、**値そのもので等価性が判断される**ドメインオブジェクト。
 
 **関連ドキュメント**:
+
 - **実装詳細**: `26-value-object-implementation.md`
 - **バリデーション戦略**: `11-domain-validation-strategy.md`
 - **テスト戦略**: `50-test-overview.md`
@@ -12,17 +13,20 @@
 ## Value Objectとは
 
 **作成基準**:
+
 1. **不変条件（状態遷移ルール等）を持つフィールド**（Tier 1: 必須）
 2. **ドメインルールを持つフィールド**（Tier 2: 推奨）
 
 **重要**: 必ず成功する（バリデーション不要な）Value Objectは作らない
 
 **必須要件**:
+
 - **`ValueObject<T>`型を実装**する（`server/src/domain/model/value-object.ts`）
 - `equals(other: T): boolean`メソッドを実装する
 - `toString(): string`メソッドを実装する
 
 **Value Object徹底活用のメリット**:
+
 - ✅ ドメインロジックがValue Objectに集約（リッチドメインモデル）
 - ✅ Entity メソッドがシンプル（メソッドチェーン可能）
 - ✅ Result型パターンとの整合性
@@ -43,11 +47,11 @@
 
 **参照**: `11-domain-validation-strategy.md` - 詳細な判断基準
 
-| Tier | 基準 | Value Object化 | 例 |
-|------|------|--------------|-----|
-| **Tier 1: 必須** | 単一Value Object内で完結する不変条件を持つ | ✅ 必須 | `TodoStatus`（完了済みは変更不可）、`OrderStatus`（配送済みは変更不可） |
-| **Tier 2: 推奨** | ドメインルールを持つ | ✅ 推奨 | `Email`（会社ドメインのみ許可）、`Age`（18歳以上）、`Money`（通貨計算） |
-| **Tier 3: 不要** | 型レベル制約のみ（OpenAPIで表現可能） | ❌ プリミティブでOK | `title: string`（minLength/maxLength）、`priority: "LOW" \| "MEDIUM" \| "HIGH"`（OpenAPI enum、状態遷移ルールなし）、`id: string`、`createdAt: string` |
+| Tier             | 基準                                       | Value Object化      | 例                                                                                                                                                     |
+| ---------------- | ------------------------------------------ | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Tier 1: 必須** | 単一Value Object内で完結する不変条件を持つ | ✅ 必須             | `TodoStatus`（完了済みは変更不可）、`OrderStatus`（配送済みは変更不可）                                                                                |
+| **Tier 2: 推奨** | ドメインルールを持つ                       | ✅ 推奨             | `Email`（会社ドメインのみ許可）、`Age`（18歳以上）、`Money`（通貨計算）                                                                                |
+| **Tier 3: 不要** | 型レベル制約のみ（OpenAPIで表現可能）      | ❌ プリミティブでOK | `title: string`（minLength/maxLength）、`priority: "LOW" \| "MEDIUM" \| "HIGH"`（OpenAPI enum、状態遷移ルールなし）、`id: string`、`createdAt: string` |
 
 **重要**: Tier 1の「単一Value Object内で完結する」とは、他のフィールドを参照せず、Value Object自身だけで判断できる不変条件を指す。複数フィールドの関係性はEntity層の責務。
 
@@ -69,6 +73,7 @@ OpenAPIで表現不可能なドメインルールがある？
 **補足**: 複数フィールドの関係性チェック（例: 完了TODOは期限必須）はEntity層の責務。
 
 **重要な原則**:
+
 - **必ず成功する（バリデーション不要な）Value Objectは作らない**
 - Value Objectは**ドメインルールまたは不変条件を内包する**ために使用する
 - 単なる型エイリアスや命名のためにValue Objectを作らない
@@ -100,12 +105,12 @@ OpenAPIで表現不可能なドメインルールがある？
 ```typescript
 // ✅ Tier 3: OpenAPIで表現可能 → プリミティブでOK
 export class Todo {
-  readonly id: string;              // プリミティブ
-  readonly title: string;           // OpenAPI: minLength/maxLength
-  readonly color?: string;          // OpenAPI: pattern: "^#[0-9A-Fa-f]{6}$"
-  readonly description?: string;    // プリミティブ
-  readonly createdAt: string;       // プリミティブ
-  readonly status: TodoStatus;      // Value Object（不変条件あり）
+  readonly id: string; // プリミティブ
+  readonly title: string; // OpenAPI: minLength/maxLength
+  readonly color?: string; // OpenAPI: pattern: "^#[0-9A-Fa-f]{6}$"
+  readonly description?: string; // プリミティブ
+  readonly createdAt: string; // プリミティブ
+  readonly status: TodoStatus; // Value Object（不変条件あり）
 }
 ```
 
@@ -115,18 +120,18 @@ export class Todo {
 
 Value Objectは以下のメソッドを実装する。
 
-| メソッド/要件 | 必須/オプション | 説明 | 例 |
-|---------|--------------|------|-----|
-| **ValueObject<T>型実装** | 必須 | 基底型を実装 | `implements ValueObject<TodoStatus>` |
-| **プライベートコンストラクタ** | 必須 | 外部からの直接生成を防ぐ | `private constructor(value: string)` |
-| **from()** | 必須 | Value Objectを生成、Result型を返す（**常にProps型エイリアス**） | `export type TodoStatusProps = { status: string };`<br>`static from(props: TodoStatusProps): Result<TodoStatus, DomainError>`<br>`export type FullNameProps = { firstName: string; lastName: string };`<br>`static from(props: FullNameProps): Result<FullName, DomainError>` |
-| **equals()** | 必須 | 値の等価性を判断 | `equals(other: Email): boolean` |
-| **toString()** | 必須 | デバッグ・ログ用の文字列表現を返す（`from()`との対称性は不要） | `toString(): string` |
-| **getter** | 複数パラメータの場合 | 個別の値にアクセス | `get firstName(): string`, `get lastName(): string` |
-| **不変条件チェックメソッド** | 不変条件がある場合 | 不変条件を検証 | `canTransitionTo(newStatus: TodoStatus): Result<void, DomainError>` |
-| **default()** | オプション | ビジネス的に意味のあるデフォルト値を返す | `static default(): Email` |
-| **ヘルパーメソッド** | オプション | ビジネスロジックを補助 | `isCompleted(): boolean`, `isTodo(): boolean` |
-| **静的ファクトリメソッド** | オプション | 頻繁に使う値を簡単に生成 | `static todo(): TodoStatus`, `static completed(): TodoStatus` |
+| メソッド/要件                  | 必須/オプション      | 説明                                                            | 例                                                                                                                                                                                                                                                                            |
+| ------------------------------ | -------------------- | --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **ValueObject<T>型実装**       | 必須                 | 基底型を実装                                                    | `implements ValueObject<TodoStatus>`                                                                                                                                                                                                                                          |
+| **プライベートコンストラクタ** | 必須                 | 外部からの直接生成を防ぐ                                        | `private constructor(value: string)`                                                                                                                                                                                                                                          |
+| **from()**                     | 必須                 | Value Objectを生成、Result型を返す（**常にProps型エイリアス**） | `export type TodoStatusProps = { status: string };`<br>`static from(props: TodoStatusProps): Result<TodoStatus, DomainError>`<br>`export type FullNameProps = { firstName: string; lastName: string };`<br>`static from(props: FullNameProps): Result<FullName, DomainError>` |
+| **equals()**                   | 必須                 | 値の等価性を判断                                                | `equals(other: Email): boolean`                                                                                                                                                                                                                                               |
+| **toString()**                 | 必須                 | デバッグ・ログ用の文字列表現を返す（`from()`との対称性は不要）  | `toString(): string`                                                                                                                                                                                                                                                          |
+| **getter**                     | 複数パラメータの場合 | 個別の値にアクセス                                              | `get firstName(): string`, `get lastName(): string`                                                                                                                                                                                                                           |
+| **不変条件チェックメソッド**   | 不変条件がある場合   | 不変条件を検証                                                  | `canTransitionTo(newStatus: TodoStatus): Result<void, DomainError>`                                                                                                                                                                                                           |
+| **default()**                  | オプション           | ビジネス的に意味のあるデフォルト値を返す                        | `static default(): Email`                                                                                                                                                                                                                                                     |
+| **ヘルパーメソッド**           | オプション           | ビジネスロジックを補助                                          | `isCompleted(): boolean`, `isTodo(): boolean`                                                                                                                                                                                                                                 |
+| **静的ファクトリメソッド**     | オプション           | 頻繁に使う値を簡単に生成                                        | `static todo(): TodoStatus`, `static completed(): TodoStatus`                                                                                                                                                                                                                 |
 
 **参照**: `26-value-object-implementation.md` - 詳細な実装例
 
@@ -147,6 +152,7 @@ Value Objectは以下のメソッドを実装する。
 **重要**: `from()`は**常にProps型エイリアスパターン**を使用する（Entityのコンストラクタと統一）。
 
 **単一パラメータの例**:
+
 ```typescript
 export type TodoStatusProps = {
   status: string;
@@ -156,6 +162,7 @@ static from(props: TodoStatusProps): Result<TodoStatus, DomainError>
 ```
 
 **複数パラメータの例**:
+
 ```typescript
 export type FullNameProps = {
   firstName: string;
@@ -176,6 +183,7 @@ static from(props: FullNameProps): Result<FullName, DomainError>
 **重要**: `toString()`は`from()`との対称性を期待しない。目的が異なる（入力 vs 出力）。
 
 **推奨フォーマット**:
+
 - 単一パラメータ: 値そのまま（例: `"TODO"`）
 - 複数パラメータ: `ClassName(field1=value1, field2=value2)` 形式（例: `"FullName(firstName=太郎, lastName=山田)"`）
 
@@ -259,6 +267,7 @@ Value Objectは必ずユニットテスト（`.small.test.ts`）を作成する�
 **参照**: `50-test-overview.md` - 詳細なテスト戦略とテストパターン
 
 **必須テスト**:
+
 ```
 [ ] from() - 正常系（代表値、境界値）
 [ ] from() - 異常系（不正形式、空文字列、境界値外）
@@ -269,6 +278,7 @@ Value Objectは必ずユニットテスト（`.small.test.ts`）を作成する�
 ```
 
 **条件付きテスト**:
+
 ```
 [ ] canTransitionTo() - 許可される遷移（全パターン） ※不変条件がある場合
 [ ] canTransitionTo() - 禁止される遷移（全パターン） ※不変条件がある場合

@@ -145,7 +145,10 @@ export const formatStaticAnalysisResults = (
         output += `⚠️ **警告: ${result.lint.issues.length}件（エラーなし）**\n\n`;
         output += "### 警告詳細\n\n";
         result.lint.issues.forEach((issue) => {
-          const ruleId = issue.ruleId !== null && issue.ruleId !== undefined ? issue.ruleId : "N/A";
+          const ruleId =
+            issue.ruleId !== null && issue.ruleId !== undefined
+              ? issue.ruleId
+              : "N/A";
           output += `- **${issue.file}:${issue.line}:${issue.column}**\n`;
           output += `  - ルール: \`${ruleId}\`\n`;
           output += `  - メッセージ: ${issue.message}\n\n`;
@@ -168,7 +171,10 @@ export const formatStaticAnalysisResults = (
       if (errors.length > 0) {
         output += "### エラー\n\n";
         errors.forEach((issue) => {
-          const ruleId = issue.ruleId !== null && issue.ruleId !== undefined ? issue.ruleId : "N/A";
+          const ruleId =
+            issue.ruleId !== null && issue.ruleId !== undefined
+              ? issue.ruleId
+              : "N/A";
           output += `- **${issue.file}:${issue.line}:${issue.column}**\n`;
           output += `  - ルール: \`${ruleId}\`\n`;
           output += `  - メッセージ: ${issue.message}\n\n`;
@@ -182,7 +188,10 @@ export const formatStaticAnalysisResults = (
       if (warnings.length > 0) {
         output += "### 警告\n\n";
         warnings.forEach((issue) => {
-          const ruleId = issue.ruleId !== null && issue.ruleId !== undefined ? issue.ruleId : "N/A";
+          const ruleId =
+            issue.ruleId !== null && issue.ruleId !== undefined
+              ? issue.ruleId
+              : "N/A";
           output += `- **${issue.file}:${issue.line}:${issue.column}**\n`;
           output += `  - ルール: \`${ruleId}\`\n`;
           output += `  - メッセージ: ${issue.message}\n\n`;

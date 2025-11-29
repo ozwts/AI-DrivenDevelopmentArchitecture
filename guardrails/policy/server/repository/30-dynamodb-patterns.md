@@ -5,6 +5,7 @@
 DynamoDBを使用したRepository実装の具体的なパターンを定義する。
 
 **関連ドキュメント**:
+
 - **Repository概要**: `10-repository-overview.md`
 - **集約の永続化**: `20-aggregate-persistence.md`
 
@@ -20,9 +21,9 @@ DynamoDBのTransactWriteItemsは最大100操作まで。子エンティティが
 // ❌ Bad: 100操作を超える可能性
 const operations = [
   todoOperation,
-  ...deleteAttachmentOperations,  // 50個
-  ...putAttachmentOperations,      // 60個
-];  // 合計111操作 → エラー
+  ...deleteAttachmentOperations, // 50個
+  ...putAttachmentOperations, // 60個
+]; // 合計111操作 → エラー
 
 // ✅ Good: 集約のサイズを制限するか、設計を見直す
 // - 子エンティティの上限を設ける
@@ -78,8 +79,8 @@ export const todoDdbItemFromTodo = (todo: Todo): TodoDdbItem => {
   return {
     todoId: todo.id,
     title: todo.title,
-    projectId,        // 空文字列の場合はundefined
-    assigneeUserId,   // 検証済み
+    projectId, // 空文字列の場合はundefined
+    assigneeUserId, // 検証済み
     createdAt: todo.createdAt,
     updatedAt: todo.updatedAt,
   };
@@ -349,9 +350,7 @@ export const projectDdbItemToProject = (
   const colorResult = ProjectColor.from({ color: projectDdbItem.color });
 
   // データ不整合の場合はデフォルト値を使用（ログ出力推奨）
-  const color = colorResult.success
-    ? colorResult.data
-    : ProjectColor.default();
+  const color = colorResult.success ? colorResult.data : ProjectColor.default();
 
   // Entityはコンストラクタで直接生成
   // DBデータは既に整合性があると信頼（MECE原則）
@@ -359,7 +358,7 @@ export const projectDdbItemToProject = (
     id: projectDdbItem.projectId,
     name: projectDdbItem.name,
     description: projectDdbItem.description,
-    color,  // Value Object（変換済み）
+    color, // Value Object（変換済み）
     createdAt: projectDdbItem.createdAt,
     updatedAt: projectDdbItem.updatedAt,
   });
@@ -375,7 +374,7 @@ export const projectDdbItemFromProject = (
   projectId: project.id,
   name: project.name,
   description: project.description,
-  color: project.color.toString(),  // ProjectColorをDB形式に変換
+  color: project.color.toString(), // ProjectColorをDB形式に変換
   createdAt: project.createdAt,
   updatedAt: project.updatedAt,
 });
@@ -454,6 +453,7 @@ const project = new Project({
 DDDの集約に則り、エンティティごとに正規化されたテーブルを使用。
 
 **原則:**
+
 - 各エンティティごとに専用テーブル
 - リポジトリが複数テーブルを集約
 - 正規化されたスキーマ設計
@@ -462,16 +462,19 @@ DDDの集約に則り、エンティティごとに正規化されたテーブ�
 ### キー設計
 
 **基本パターン:**
+
 - `PK` (Partition Key): エンティティの一意識別子
 - `SK` (Sort Key): 子エンティティの識別子（集約の場合）
 
 **例: Todosテーブル**
+
 ```
 PK: todoId
 SK: なし（集約ルート）
 ```
 
 **例: Attachmentsテーブル**
+
 ```
 PK: todoId（親のID）
 SK: attachmentId（子のID）
@@ -482,6 +485,7 @@ SK: attachmentId（子のID）
 検索要件に応じて定義。
 
 **例: ステータス別検索**
+
 ```
 GSI名: StatusIndex
 PK: status

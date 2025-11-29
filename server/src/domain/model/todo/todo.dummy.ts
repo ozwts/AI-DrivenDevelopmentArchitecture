@@ -1,5 +1,5 @@
 import { Todo, type TodoStatus, type TodoPriority } from "./todo";
-import type { Attachment } from "../attachment/attachment";
+import type { Attachment } from "./attachment";
 import {
   getDummyId,
   getDummyShortText,

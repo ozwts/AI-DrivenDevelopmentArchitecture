@@ -5,6 +5,7 @@
 集約は**永続化の原子性単位**であり、集約ルートと子エンティティは**1つのトランザクションで一括保存・取得**される。
 
 **関連ドキュメント**:
+
 - **ドメインの集約**: `../domain-model/40-aggregate-overview.md` - 集約の設計原則
 - **Repository Interface**: `../domain-model/30-repository-interface-overview.md`
 - **UnitOfWork**: `../unit-of-work/10-interface.md`
@@ -36,8 +37,14 @@ export type TodoRepository = {
   save(props: { todo: Todo }): Promise<SaveResult>;
 
   // 子エンティティを個別操作するメソッドは作らない
-  addAttachment(props: { todoId: string; attachment: Attachment }): Promise<SaveResult>;
-  removeAttachment(props: { todoId: string; attachmentId: string }): Promise<RemoveResult>;
+  addAttachment(props: {
+    todoId: string;
+    attachment: Attachment;
+  }): Promise<SaveResult>;
+  removeAttachment(props: {
+    todoId: string;
+    attachmentId: string;
+  }): Promise<RemoveResult>;
 };
 
 // ✅ Good: 集約全体を操作
@@ -52,6 +59,7 @@ await todoRepository.save({ todo: updatedTodo });
 ```
 
 **理由:**
+
 - 集約の整合性を保証
 - リポジトリの責務を単純化
 - ドメインモデルの操作を集約ルートに集約
@@ -76,6 +84,7 @@ export type TodoRepository = {
 ```
 
 **理由:**
+
 - 集約の整合性を保証（親と子が同じトランザクションで保存される）
 - リポジトリの数を減らし、保守性を向上
 
@@ -84,17 +93,20 @@ export type TodoRepository = {
 集約を保存する際、子エンティティは**Replace戦略**を採用する。
 
 **Replace戦略:**
+
 1. 既存の子エンティティを取得
 2. 新しい子エンティティに含まれていない既存エンティティを削除
 3. 新しい子エンティティを全て挿入（DynamoDBのPutは上書き）
 4. すべての操作を単一トランザクションで実行
 
 **利点:**
+
 - 実装がシンプル：追加・更新・削除の判別が不要
 - 整合性が保証される：常に最新の状態がDBに反映される
 - トランザクション境界が明確
 
 **注意点:**
+
 - 子エンティティが多い場合はトランザクション操作数制限に注意（DynamoDB: 最大100操作）
 - 既存データの取得が必要（1回の追加クエリ）
 - パフォーマンスより整合性を優先する設計
@@ -110,14 +122,12 @@ DynamoDBのTransactWriteItemsには以下の制約がある：
 
 ```typescript
 // 新しいattachmentsのIDセット
-const newAttachmentIds = new Set(
-  props.todo.attachments.map((att) => att.id),
-);
+const newAttachmentIds = new Set(props.todo.attachments.map((att) => att.id));
 
 // 既存のattachmentsのうち、新しいattachmentsに含まれていないものを削除
 const deleteAttachmentOperations = (existingAttachmentsResult.Items ?? [])
   .map((item) => attachmentTableItemSchema.parse(item))
-  .filter((item) => !newAttachmentIds.has(item.attachmentId))  // 新しいIDに含まれないもののみ
+  .filter((item) => !newAttachmentIds.has(item.attachmentId)) // 新しいIDに含まれないもののみ
   .map((item) => ({
     Delete: {
       TableName: this.#attachmentsTableName,
@@ -224,8 +234,8 @@ export type TodoDdbItem = z.infer<typeof todoDdbItemSchema>;
  * Attachmentsテーブル用のスキーマ（親子関係を管理）
  */
 export const attachmentTableItemSchema = z.object({
-  todoId: z.string(),           // PK（親のID）
-  attachmentId: z.string(),     // SK（子のID）
+  todoId: z.string(), // PK（親のID）
+  attachmentId: z.string(), // SK（子のID）
   fileName: z.string(),
   storageKey: z.string(),
   createdAt: z.string(),
@@ -243,7 +253,7 @@ export type AttachmentTableItem = z.infer<typeof attachmentTableItemSchema>;
  */
 export const todoDdbItemToTodo = (
   todoDdbItem: TodoDdbItem,
-  attachments: Attachment[],  // 別テーブルから取得
+  attachments: Attachment[], // 別テーブルから取得
 ): Todo => {
   // Value Object生成（from()メソッドにProps型エイリアスパターンで渡す）
   const statusResult = TodoStatus.from({ status: todoDdbItem.status });
@@ -260,8 +270,8 @@ export const todoDdbItemToTodo = (
     id: todoDdbItem.todoId,
     title: todoDdbItem.title,
     description: todoDdbItem.description,
-    status,  // Value Object（変換済み）
-    attachments,  // 子エンティティを渡す
+    status, // Value Object（変換済み）
+    attachments, // 子エンティティを渡す
     createdAt: todoDdbItem.createdAt,
     updatedAt: todoDdbItem.updatedAt,
   });
@@ -274,7 +284,7 @@ export const todoDdbItemFromTodo = (todo: Todo): TodoDdbItem => ({
   todoId: todo.id,
   title: todo.title,
   description: todo.description,
-  status: todo.status.toString(),  // Value ObjectをDB形式に変換
+  status: todo.status.toString(), // Value ObjectをDB形式に変換
   createdAt: todo.createdAt,
   updatedAt: todo.updatedAt,
   // attachmentsは別テーブルに保存
@@ -284,10 +294,10 @@ export const todoDdbItemFromTodo = (todo: Todo): TodoDdbItem => ({
  * Attachment → AttachmentTableItem 変換
  */
 export const attachmentTableItemFromAttachment = (
-  todoId: string,  // 親のID（DB用）
+  todoId: string, // 親のID（DB用）
   attachment: Attachment,
 ): AttachmentTableItem => ({
-  todoId,           // 親のID
+  todoId, // 親のID
   attachmentId: attachment.id,
   fileName: attachment.fileName,
   storageKey: attachment.storageKey,
@@ -474,7 +484,9 @@ const operations = [
   ...deleteAttachmentOperations,
   ...putAttachmentOperations,
 ];
-await this.#ddbDoc.send(new TransactWriteCommand({ TransactItems: operations }));
+await this.#ddbDoc.send(
+  new TransactWriteCommand({ TransactItems: operations }),
+);
 
 // データ変換関数でドメインモデル ⇔ DB形式を変換
 const todoDdbItem = todoDdbItemFromTodo(todo);
@@ -517,6 +529,7 @@ async findById(props: { id: string }): Promise<FindByIdResult> {
 4. **ビジネスルールで密結合**: ドメインロジックで強い依存関係がある
 
 **例: TODOとAttachment**
+
 - ライフサイクル: TODOが削除されたらAttachmentも削除
 - 整合性: Attachmentは常にTODOに紐づく
 - 同時更新: TODOとAttachmentを同時に操作することが多い
@@ -532,6 +545,7 @@ async findById(props: { id: string }): Promise<FindByIdResult> {
 4. **大規模な子エンティティ**: 子エンティティが多すぎる（100操作制限）
 
 **例: TODOとProject**
+
 - ライフサイクル: TODOが削除されてもProjectは残る
 - 参照関係: TODOはprojectIdで参照するだけ
 - ビジネスコンテキスト: ProjectはTODOとは独立したエンティティ

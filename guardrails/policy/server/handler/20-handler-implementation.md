@@ -58,13 +58,13 @@ export const build{Action}{Entity}Handler =
 
 ## HTTPメソッド別の特徴
 
-| HTTPメソッド | ステータスコード | リクエストボディ | レスポンスボディ | 特記事項 |
-|-------------|----------------|----------------|----------------|---------|
-| POST（作成） | 201 Created | 必須 | エンティティ | ConflictError対応 |
-| GET（単一） | 200 OK | なし | エンティティ | undefinedチェック→404 |
-| GET（リスト） | 200 OK | なし | 配列 | 空配列も正常系 |
-| PUT（更新） | 200 OK | 必須 | エンティティ | NotFoundError対応 |
-| DELETE | 204 No Content | なし | なし | `c.body(null, 204)` |
+| HTTPメソッド  | ステータスコード | リクエストボディ | レスポンスボディ | 特記事項              |
+| ------------- | ---------------- | ---------------- | ---------------- | --------------------- |
+| POST（作成）  | 201 Created      | 必須             | エンティティ     | ConflictError対応     |
+| GET（単一）   | 200 OK           | なし             | エンティティ     | undefinedチェック→404 |
+| GET（リスト） | 200 OK           | なし             | 配列             | 空配列も正常系        |
+| PUT（更新）   | 200 OK           | 必須             | エンティティ     | NotFoundError対応     |
+| DELETE        | 204 No Content   | なし             | なし             | `c.body(null, 204)`   |
 
 ## レスポンス変換パターン
 
@@ -97,7 +97,7 @@ export const convertToProjectResponse = (
   id: project.id,
   name: project.name,
   description: project.description,
-  color: project.color.value,  // Value Objectから値を取得
+  color: project.color.value, // Value Objectから値を取得
   createdAt: project.createdAt,
   updatedAt: project.updatedAt,
 });
@@ -131,7 +131,7 @@ export const convertToAttachmentResponse = (
   attachment: Attachment,
 ): AttachmentResponse => ({
   id: attachment.id,
-  todoId,  // 親IDを追加
+  todoId, // 親IDを追加
   filename: attachment.fileName,
   contentType: attachment.contentType,
   size: attachment.fileSize,
@@ -165,6 +165,7 @@ convertTo{Entity}Response(entity: {Entity}): {Entity}Response
 ```
 
 **例**:
+
 - `convertToProjectResponse`
 - `convertToTodoResponse`
 - `convertToUserResponse`
@@ -186,6 +187,7 @@ const result = await useCase.execute({ sub: userSub });
 ```
 
 **特徴**:
+
 - コンテキストから取得（トークンから抽出済み）
 - 型チェック必須
 - パスパラメータではなくトークンベース
@@ -232,7 +234,10 @@ const result = await updateUseCase.execute({ ... });
 ```typescript
 // ❌ Bad
 if (rawBody.color === "#000000") {
-  return c.json({ name: "ValidationError", message: "黒は使用できません" }, 400);
+  return c.json(
+    { name: "ValidationError", message: "黒は使用できません" },
+    400,
+  );
 }
 
 // ✅ Good: UseCaseまたはValue Objectで実装
@@ -244,7 +249,9 @@ const result = await useCase.execute({ color: rawBody.color });
 
 ```typescript
 // ❌ Bad
-const repository = container.get<ProjectRepository>(serviceId.PROJECT_REPOSITORY);
+const repository = container.get<ProjectRepository>(
+  serviceId.PROJECT_REPOSITORY,
+);
 const project = await repository.findById({ id: projectId });
 
 // ✅ Good: UseCaseに委譲

@@ -54,10 +54,10 @@ domain/
 
 ```typescript
 // ❌ エンティティを変更しない
-todo.status = "DONE"; // 間違い！
+todo.status = "COMPLETED"; // 間違い！
 
 // ✅ 常に新しいインスタンスを返す
-const updatedTodo = todo.changeStatus("DONE", now);
+const updatedTodo = todo.changeStatus("COMPLETED", now);
 ```
 
 ### 3. 明示的エラーハンドリング

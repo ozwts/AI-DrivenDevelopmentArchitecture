@@ -5,6 +5,7 @@
 FetchNowは**現在時刻を取得する関数型インターフェース**であり、**テスト可能性**と**時刻制御**を実現する。
 
 **関連ドキュメント**:
+
 - **実装**: `server/src/domain/support/fetch-now/index.ts`
 - **Dummy実装**: `server/src/domain/support/fetch-now/dummy.ts`
 - **憲法**: `../../constitution/policy-structure-principles.md`
@@ -71,10 +72,12 @@ export const buildFetchNowDummy =
 ```typescript
 export type CreateTodoUseCaseProps = {
   todoRepository: TodoRepository;
-  fetchNow: FetchNow;  // 依存性注入
+  fetchNow: FetchNow; // 依存性注入
 };
 
-export class CreateTodoUseCase implements UseCase<CreateTodoInput, CreateTodoOutput> {
+export class CreateTodoUseCase
+  implements UseCase<CreateTodoInput, CreateTodoOutput>
+{
   readonly #todoRepository: TodoRepository;
   readonly #fetchNow: FetchNow;
 
@@ -84,7 +87,7 @@ export class CreateTodoUseCase implements UseCase<CreateTodoInput, CreateTodoOut
   }
 
   async execute(input: CreateTodoInput): Promise<CreateTodoOutput> {
-    const now = this.#fetchNow().toISOString();  // 現在時刻取得
+    const now = this.#fetchNow().toISOString(); // 現在時刻取得
 
     const todo = new Todo({
       id: this.#todoRepository.todoId(),
@@ -128,7 +131,7 @@ describe("CreateTodoUseCase", () => {
     const result = await useCase.execute({ title: "新しいタスク" });
 
     // Assert: 固定時刻が使われている
-    expect(result.data?.createdAt).toBe("2024-06-15T03:00:00.000Z");  // UTC変換後
+    expect(result.data?.createdAt).toBe("2024-06-15T03:00:00.000Z"); // UTC変換後
   });
 });
 ```
@@ -154,15 +157,15 @@ const fetchNow = buildFetchNowDummy(new Date("2024-01-01"));
 
 ```typescript
 // 直接new Date()を使用（テスト不可能）
-const now = new Date().toISOString();  // ❌ テストで時刻制御できない
+const now = new Date().toISOString(); // ❌ テストで時刻制御できない
 
 // FetchNowをグローバル変数として使用
-export const fetchNow: FetchNow = () => new Date();  // ❌ DI原則違反
+export const fetchNow: FetchNow = () => new Date(); // ❌ DI原則違反
 
 // 複雑なロジックをFetchNowに含める
 export const fetchNow: FetchNow = () => {
   const date = new Date();
-  date.setHours(0, 0, 0, 0);  // ❌ FetchNowは単純に現在時刻を返すのみ
+  date.setHours(0, 0, 0, 0); // ❌ FetchNowは単純に現在時刻を返すのみ
   return date;
 };
 ```
@@ -172,11 +175,12 @@ export const fetchNow: FetchNow = () => {
 ### 固定日時のデフォルト値
 
 ```typescript
-buildFetchNowDummy()
+buildFetchNowDummy();
 // → 2024-01-01T00:00:00+09:00（日本標準時の年始）
 ```
 
 **理由**:
+
 1. **決定論的テスト**: 引数なしで呼び出しても一貫した結果
 2. **タイムゾーン明示**: `+09:00`で日本時間を明示
 3. **わかりやすい基準日**: 年始の00:00:00は基準として理解しやすい

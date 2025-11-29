@@ -5,6 +5,7 @@
 Unit of Workは**UseCase層でトランザクション境界を定義**し、**Repository層で操作を登録**する。トランザクション不要な操作では使用しない。
 
 **関連ドキュメント**:
+
 - **概要**: `10-unit-of-work-overview.md`
 - **DynamoDB実装**: `20-dynamodb-implementation.md`
 - **Repository統合**: `../repository/10-repository-overview.md`
@@ -47,6 +48,7 @@ class CreateTodoUseCase {
 ```
 
 **重要**:
+
 - `runner.run()`のコールバック内で複数のリポジトリ操作を実行
 - コールバック成功時は自動コミット
 - エラー発生時は自動ロールバック
@@ -72,20 +74,21 @@ function createUnitOfWorkRunner(params: {
         ddbDoc: params.ddbDoc,
         tableName: params.todosTableName,
         logger: params.logger,
-        uow,  // UoWを注入
+        uow, // UoWを注入
       }),
       userRepository: new UserRepositoryImpl({
         ddbDoc: params.ddbDoc,
         tableName: params.usersTableName,
         logger: params.logger,
-        uow,  // UoWを注入
+        uow, // UoWを注入
       }),
-    })
+    }),
   );
 }
 ```
 
 **重要**:
+
 - コンテキストファクトリーは`(uow: DynamoDBUnitOfWork) => TUoW`型
 - 各トランザクションごとに新しいリポジトリインスタンスを生成
 - リポジトリコンストラクタに`uow`を渡す
@@ -117,6 +120,7 @@ class GetTodoUseCase {
 ```
 
 **原則**:
+
 - 検索系操作（find, list）はトランザクション不要
 - 単一のリポジトリ操作はトランザクション不要
 - 複数のリポジトリ操作をアトミックに実行する場合のみ使用
@@ -136,7 +140,7 @@ export class TodoRepositoryImpl implements TodoRepository {
     ddbDoc: DynamoDBDocumentClient;
     tableName: string;
     logger: Logger;
-    uow?: DynamoDBUnitOfWork;  // オプショナル
+    uow?: DynamoDBUnitOfWork; // オプショナル
   }) {
     this.#ddbDoc = params.ddbDoc;
     this.#tableName = params.tableName;
@@ -147,6 +151,7 @@ export class TodoRepositoryImpl implements TodoRepository {
 ```
 
 **重要**:
+
 - `uow?: DynamoDBUnitOfWork`をオプショナルで受け取る
 - DIコンテナでは`uow`は渡さない（`undefined`）
 - UnitOfWorkRunnerが動的に注入
@@ -184,6 +189,7 @@ async save(todo: Todo): Promise<SaveResult> {
 ```
 
 **重要**:
+
 - `uow`の有無をチェック
 - `uow`がある場合は操作を登録（即実行しない）
 - `uow`がない場合は即座に実行
@@ -245,6 +251,7 @@ async findById(props: { id: string }): Promise<FindByIdResult> {
 ```
 
 **重要**:
+
 - 検索系メソッド（find, list）は`uow`を使用しない
 - 読み取り操作はトランザクション不要
 
@@ -254,17 +261,21 @@ async findById(props: { id: string }): Promise<FindByIdResult> {
 
 ```typescript
 // DIコンテナでの登録
-container.bind<TodoRepository>(TODO_REPOSITORY).toDynamicValue((context) => {
-  return new TodoRepositoryImpl({
-    ddbDoc: context.container.get(DYNAMODB_DOC),
-    tableName: env.TODOS_TABLE_NAME,
-    logger: context.container.get(LOGGER),
-    // uowは注入しない（各UseCaseで必要に応じて渡す）
-  });
-}).inSingletonScope();
+container
+  .bind<TodoRepository>(TODO_REPOSITORY)
+  .toDynamicValue((context) => {
+    return new TodoRepositoryImpl({
+      ddbDoc: context.container.get(DYNAMODB_DOC),
+      tableName: env.TODOS_TABLE_NAME,
+      logger: context.container.get(LOGGER),
+      // uowは注入しない（各UseCaseで必要に応じて渡す）
+    });
+  })
+  .inSingletonScope();
 ```
 
 **重要**:
+
 - `uow`パラメータは`undefined`（注入しない）
 - Singletonスコープで登録
 - UnitOfWorkRunnerがコールバック内で動的に注入
@@ -272,19 +283,23 @@ container.bind<TodoRepository>(TODO_REPOSITORY).toDynamicValue((context) => {
 ### UseCaseの登録
 
 ```typescript
-container.bind<CreateTodoUseCase>(CREATE_TODO_USE_CASE).toDynamicValue((context) => {
-  return new CreateTodoUseCase(
-    createUnitOfWorkRunner({
-      ddbDoc: context.container.get(DYNAMODB_DOC),
-      todosTableName: env.TODOS_TABLE_NAME,
-      usersTableName: env.USERS_TABLE_NAME,
-      logger: context.container.get(LOGGER),
-    })
-  );
-}).inSingletonScope();
+container
+  .bind<CreateTodoUseCase>(CREATE_TODO_USE_CASE)
+  .toDynamicValue((context) => {
+    return new CreateTodoUseCase(
+      createUnitOfWorkRunner({
+        ddbDoc: context.container.get(DYNAMODB_DOC),
+        todosTableName: env.TODOS_TABLE_NAME,
+        usersTableName: env.USERS_TABLE_NAME,
+        logger: context.container.get(LOGGER),
+      }),
+    );
+  })
+  .inSingletonScope();
 ```
 
 **重要**:
+
 - UnitOfWorkRunnerはファクトリー関数で生成
 - DIコンテナには登録しない（ステートフルなため）
 
@@ -323,7 +338,10 @@ describe("CreateTodoUseCase", () => {
     const useCase = new CreateTodoUseCase({ runner: dummyRunner, fetchNow });
 
     // Act
-    const result = await useCase.execute({ userId: "user-123", title: "New TODO" });
+    const result = await useCase.execute({
+      userId: "user-123",
+      title: "New TODO",
+    });
 
     // Assert
     expect(result.success).toBe(true);
@@ -332,6 +350,7 @@ describe("CreateTodoUseCase", () => {
 ```
 
 **設計原則**:
+
 - **Repository Dummy使用** - Entity Dummyファクトリを内部で使用
 - **Entity Dummyファクトリ使用** - `todoDummyFrom()`, `userDummyFrom()`でランダム値生成
 - **buildFetchNowDummy使用** - 時刻を制御可能にする
@@ -378,7 +397,7 @@ describe("CreateTodoUseCase (Medium Test)", () => {
 
     // Act & Assert: 意図的にエラーを発生させる
     await expect(
-      useCase.execute({ userId: "non-existent-user", title: "New TODO" })
+      useCase.execute({ userId: "non-existent-user", title: "New TODO" }),
     ).rejects.toThrow();
 
     // TODOが保存されていないことを確認（ロールバック）

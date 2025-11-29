@@ -6,16 +6,17 @@
 2. **全テストでDummyファクトリを使用**し、モデル変更時のテスト修正負荷を最小化する
 
 **関連ドキュメント**:
+
 - **Entity Dummyファクトリ**: `../domain-model/52-entity-test-patterns.md`
 - **Repository Dummy**: `domain/model/{entity}/{entity}-repository.dummy.ts`
 - **FetchNow Dummy**: `../../fetch-now/10-fetch-now-overview.md`
 
 ## テストファイル構成
 
-| テスト種別 | ファイル名パターン | 依存 | 実行速度 | 目的 |
-|-----------|------------------|------|---------|------|
-| Small Test | `{action}-{entity}-use-case.small.test.ts` | Dummy実装 | 高速 | ビジネスロジック検証 |
-| Medium Test | `{action}-{entity}-use-case.medium.test.ts` | 実DynamoDB | 低速 | トランザクション動作確認 |
+| テスト種別  | ファイル名パターン                          | 依存       | 実行速度 | 目的                     |
+| ----------- | ------------------------------------------- | ---------- | -------- | ------------------------ |
+| Small Test  | `{action}-{entity}-use-case.small.test.ts`  | Dummy実装  | 高速     | ビジネスロジック検証     |
+| Medium Test | `{action}-{entity}-use-case.medium.test.ts` | 実DynamoDB | 低速     | トランザクション動作確認 |
 
 ## Small Test実装パターン
 
@@ -66,6 +67,7 @@ describe("{Action}{Entity}UseCaseのテスト", () => {
 ```
 
 **特徴**:
+
 - テストケースごとに新しいユースケースインスタンス生成
 - Dummyリポジトリはコンストラクタで戻り値指定
 - `beforeEach`不要（各テストで直接生成）
@@ -96,11 +98,12 @@ export class ProjectRepositoryDummy implements ProjectRepository {
     this.#projectIdReturnValue = props?.projectIdReturnValue ?? uuid();
 
     // ✅ Entity Dummyファクトリを使用
-    this.#findByIdReturnValue = props?.findByIdReturnValue ??
-      Result.ok(projectDummyFrom());  // ランダム値で生成
+    this.#findByIdReturnValue =
+      props?.findByIdReturnValue ?? Result.ok(projectDummyFrom()); // ランダム値で生成
 
-    this.#findAllReturnValue = props?.findAllReturnValue ??
-      Result.ok([projectDummyFrom(), projectDummyFrom()]);  // 複数のランダムエンティティ
+    this.#findAllReturnValue =
+      props?.findAllReturnValue ??
+      Result.ok([projectDummyFrom(), projectDummyFrom()]); // 複数のランダムエンティティ
 
     this.#saveReturnValue = props?.saveReturnValue ?? Result.ok(undefined);
     this.#removeReturnValue = props?.removeReturnValue ?? Result.ok(undefined);
@@ -121,6 +124,7 @@ export class ProjectRepositoryDummy implements ProjectRepository {
 ```
 
 **設計原則**:
+
 - **Entity Dummyファクトリを使用** - `projectDummyFrom()`でランダム値生成
 - コンストラクタで戻り値を設定（セッターメソッドなし）
 - テストケースごとに新しいDummyインスタンスを生成
@@ -140,7 +144,9 @@ UseCase層のテストは**ビジネスルール検証**に焦点を当てる。
 
 ```typescript
 test("正常なデータで{アクション}が成功する", async () => {
-  const result = await useCase.execute({ /* valid input */ });
+  const result = await useCase.execute({
+    /* valid input */
+  });
 
   expect(result.success).toBe(true);
 });
@@ -240,22 +246,26 @@ test("保存に失敗した場合はUnexpectedErrorを返す", async () => {
 
 ```typescript
 test("最大添付ファイル数（ビジネスルール）でアップロード成功", async () => {
-  const attachments = Array(10).fill(null).map(() => createDummyAttachment());
+  const attachments = Array(10)
+    .fill(null)
+    .map(() => createDummyAttachment());
 
   const result = await useCase.execute({
     todoId: "todo-123",
-    attachments,  // ビジネスルール: 最大10ファイル
+    attachments, // ビジネスルール: 最大10ファイル
   });
 
   expect(result.success).toBe(true);
 });
 
 test("最大添付ファイル数を超える場合ValidationError", async () => {
-  const attachments = Array(11).fill(null).map(() => createDummyAttachment());
+  const attachments = Array(11)
+    .fill(null)
+    .map(() => createDummyAttachment());
 
   const result = await useCase.execute({
     todoId: "todo-123",
-    attachments,  // 11ファイル（制限超過）
+    attachments, // 11ファイル（制限超過）
   });
 
   expect(result.success).toBe(false);
@@ -314,7 +324,9 @@ describe("{Action}{Entity}UseCase Medium Test", () => {
 ```typescript
 test("エラー時にロールバックされる", async () => {
   // 意図的にエラーを発生させる
-  const result = await useCase.execute({ /* invalid input */ });
+  const result = await useCase.execute({
+    /* invalid input */
+  });
 
   expect(result.success).toBe(false);
 
@@ -331,7 +343,9 @@ test("DynamoDB制約違反の場合エラーを返す", async () => {
   // 実際のDB制約（ユニークキーなど）に違反する操作
   await repository.save(entity1);
 
-  const result = await useCase.execute({ /* duplicate key */ });
+  const result = await useCase.execute({
+    /* duplicate key */
+  });
 
   expect(result.success).toBe(false);
 });
@@ -358,13 +372,14 @@ export const createTestProject = (overrides?: Partial<Project>): Project => {
   return new Project({
     id: "test-project-id",
     name: "Test Project",
-    color: "#FF5733",  // 固定値
+    color: "#FF5733", // 固定値
     // ... モデル変更時に修正が必要
   });
 };
 ```
 
 **理由**:
+
 - Entity Dummyファクトリは既にランダム値生成機能を持つ
 - テスト専用ヘルパーを作ると保守コストが倍増
 - プロジェクト全体でDummyファクトリを統一使用する方が一貫性がある
@@ -383,7 +398,7 @@ const fetchNow = buildFetchNowDummy(fixedDate);
 useCase = new CreateProjectUseCaseImpl({
   projectRepository: dummyRepository,
   logger,
-  fetchNow,  // 固定時刻
+  fetchNow, // 固定時刻
 });
 
 // ❌ Bad: インラインで関数作成（標準パターン不使用）
@@ -407,11 +422,11 @@ npm test
 
 ### CI/CDでの使い分け
 
-| タイミング | 実行テスト | 理由 |
-|-----------|----------|------|
-| Pull Request作成時 | Small Test | 高速フィードバック |
-| mainブランチマージ時 | Small + Medium | 統合確認 |
-| デプロイ前 | All Tests | 完全な検証 |
+| タイミング           | 実行テスト     | 理由               |
+| -------------------- | -------------- | ------------------ |
+| Pull Request作成時   | Small Test     | 高速フィードバック |
+| mainブランチマージ時 | Small + Medium | 統合確認           |
+| デプロイ前           | All Tests      | 完全な検証         |
 
 ## Do / Don't
 
@@ -456,7 +471,9 @@ expect(result.error.message).toContain("見つかりません");
 ```typescript
 // ❌ テスト専用ヘルパー関数を作成（保守コスト増）
 const createTestProject = (overrides?: Partial<Project>) => {
-  return new Project({ /* ... 固定値 */ });
+  return new Project({
+    /* ... 固定値 */
+  });
 };
 
 // ✅ 代わりにEntity Dummyファクトリを使用
@@ -470,23 +487,27 @@ const fetchNow = buildFetchNowDummy(new Date("2024-01-01"));
 
 // ❌ 実DBを使用（Small Testで）
 const useCase = new CreateProjectUseCaseImpl({
-  projectRepository: new ProjectRepositoryImpl({ dynamoDBClient }),  // ❌ 低速
+  projectRepository: new ProjectRepositoryImpl({ dynamoDBClient }), // ❌ 低速
 });
 
 // ❌ Result型をチェックせずdata参照
-expect(result.data.name).toBe("Expected Name");  // ❌ errorの可能性
+expect(result.data.name).toBe("Expected Name"); // ❌ errorの可能性
 
 // ❌ beforeEachで共有インスタンス（独立性低下）
 let useCase: CreateProjectUseCase;
 beforeEach(() => {
-  useCase = new CreateProjectUseCaseImpl({ /* ... */ });  // ❌ テスト間で状態共有のリスク
+  useCase = new CreateProjectUseCaseImpl({
+    /* ... */
+  }); // ❌ テスト間で状態共有のリスク
 });
 
 // ❌ セッターメソッドで戻り値変更（実装に存在しない）
-dummyRepository.setFindByIdResult({ /* ... */ });  // ❌ このパターンは使われていない
+dummyRepository.setFindByIdResult({
+  /* ... */
+}); // ❌ このパターンは使われていない
 
 // ❌ エラー型を検証しない
-expect(result.success).toBe(false);  // ❌ どのエラーかわからない
+expect(result.success).toBe(false); // ❌ どのエラーかわからない
 ```
 
 ## チェックリスト

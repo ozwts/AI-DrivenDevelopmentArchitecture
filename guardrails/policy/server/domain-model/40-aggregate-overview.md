@@ -5,6 +5,7 @@
 集約は**整合性境界**であり、関連するエンティティ群を1つの単位として扱い、ドメインの不変条件を保護する。
 
 **関連ドキュメント**:
+
 - **永続化パターン**: `../repository/20-aggregate-persistence.md` - 集約の永続化実装
 - **Entity設計**: `20-entity-overview.md`
 - **Repository Interface**: `30-repository-interface-overview.md`
@@ -62,6 +63,7 @@ export class Attachment {
 ```
 
 **理由:**
+
 - ドメインモデルに永続化の技術的詳細を持ち込まない
 - 親子関係は永続化の実装詳細
 
@@ -73,7 +75,7 @@ export class Attachment {
 export type TodoProps = {
   id: string;
   title: string;
-  attachments: Attachment[];  // 子エンティティのリスト
+  attachments: Attachment[]; // 子エンティティのリスト
   createdAt: string;
   updatedAt: string;
 };
@@ -136,7 +138,7 @@ export class Todo {
 // ✅ Good: 集約ルート単位でリポジトリを作る
 export type TodoRepository = {
   todoId(): string;
-  attachmentId(): string;  // 子エンティティのID生成も集約ルートリポジトリで提供
+  attachmentId(): string; // 子エンティティのID生成も集約ルートリポジトリで提供
   findById(props: { id: string }): Promise<FindByIdResult>;
   save(props: { todo: Todo }): Promise<SaveResult>;
   remove(props: { id: string }): Promise<RemoveResult>;
@@ -149,6 +151,7 @@ export type AttachmentRepository = {
 ```
 
 **理由:**
+
 - 集約の整合性を保証（親と子が同じトランザクションで保存される）
 - リポジトリの数を減らし、保守性を向上
 - 集約境界を明確にする
@@ -158,6 +161,7 @@ export type AttachmentRepository = {
 集約の巨大化を防ぐため、**IDの参照関係は1階層まで**に留める。
 
 **階層の定義**: エンティティのID参照の深さ
+
 - 1階層: `TodoId` → `AttachmentId`（適切な集約）
 - 2階層: `ProjectId` → `TaskId` → `SubTaskId`（深すぎる）
 
@@ -191,12 +195,14 @@ Task (TaskId)             // 集約2（別の集約として扱う）
 ```
 
 **この場合、Taskは2つの役割を持つ:**
+
 - Project集約の子エンティティ（Projectから見た場合）
 - Task集約の集約ルート（SubTaskから見た場合）
 
 **重要:** この設計は複雑になるため、可能であれば**設計を見直す**（SubTaskは本当に必要か？Taskの配列で代替できないか？）
 
 **理由:**
+
 - トランザクション境界を小さく保つ
 - パフォーマンスの劣化を防ぐ
 - 集約の複雑性を抑える
@@ -240,8 +246,8 @@ Task (TaskId)             // 集約2（別の集約として扱う）
 export type TodoProps = {
   id: string;
   title: string;
-  projectId: string | undefined;  // 別の集約への参照（ID参照）
-  attachments: Attachment[];      // 子エンティティ（オブジェクト参照）
+  projectId: string | undefined; // 別の集約への参照（ID参照）
+  attachments: Attachment[]; // 子エンティティ（オブジェクト参照）
   createdAt: string;
   updatedAt: string;
 };
@@ -320,16 +326,17 @@ export class Attachment {
 ```typescript
 // ✅ Good: ID参照
 export class Todo {
-  readonly projectId: string | undefined;  // ProjectのID
+  readonly projectId: string | undefined; // ProjectのID
 }
 
 // ❌ Bad: オブジェクト参照
 export class Todo {
-  readonly project: Project | undefined;  // 別の集約を直接保持しない
+  readonly project: Project | undefined; // 別の集約を直接保持しない
 }
 ```
 
 **理由:**
+
 - 集約の境界を明確にする
 - トランザクション境界を明確にする
 - 循環参照を防ぐ
@@ -365,16 +372,16 @@ const updatedTodo = todo.removeAttachment("att-123", now);
 ```typescript
 // 子エンティティに親IDを含める
 export class Attachment {
-  readonly todoId: string;  // ドメインモデルには不要
+  readonly todoId: string; // ドメインモデルには不要
 }
 
 // 別の集約をオブジェクト参照
 export class Todo {
-  readonly project: Project;  // ID参照にすべき
+  readonly project: Project; // ID参照にすべき
 }
 
 // 子エンティティを直接操作
-attachment.update({ fileName: "新しい名前" });  // 集約ルート経由にすべき
+attachment.update({ fileName: "新しい名前" }); // 集約ルート経由にすべき
 ```
 
 ## チェックリスト

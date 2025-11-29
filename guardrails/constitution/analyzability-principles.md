@@ -9,6 +9,7 @@
 **定義**: コードやシステムの変更が、どこに影響するかを機械的・静的に追跡できる性質
 
 **AI駆動開発における重要性**:
+
 - LLMは変更を提案するが、影響範囲の完全な把握は困難
 - TypeScriptコンパイラが影響箇所をすべて検出
 - IDEが変更箇所を即座に提示
@@ -55,7 +56,7 @@ static reconstruct(props: {
 ```typescript
 // ❌ 解析不可能: 例外による暗黙的なエラー
 function process(input: string): Todo {
-  if (invalid) throw new Error();  // 呼び出し側が予測困難
+  if (invalid) throw new Error(); // 呼び出し側が予測困難
   return todo;
 }
 
@@ -71,12 +72,12 @@ function process(input: string): Result<Todo, DomainError> {
 ```typescript
 // ❌ 解析不可能: どこで変更されるか追跡困難
 export class Todo {
-  id: string;  // mutable
+  id: string; // mutable
 }
 
 // ✅ 解析可能: readonly で変更箇所を限定
 export class Todo {
-  readonly id: string;  // immutable
+  readonly id: string; // immutable
 }
 ```
 
@@ -85,7 +86,7 @@ export class Todo {
 ```typescript
 // ❌ 解析不可能: グローバル変数への暗黙的な依存
 function createTodo(title: string): Todo {
-  const now = getCurrentTime();  // グローバル関数
+  const now = getCurrentTime(); // グローバル関数
   return new Todo({ title, createdAt: now });
 }
 
@@ -99,6 +100,7 @@ function createTodo(title: string, fetchNow: () => Date): Todo {
 ## MECE原則：静的解析と定性的解析の使い分け
 
 **静的解析（機械的検証）**:
+
 - 型の一致・不一致（TypeScript型システム）
 - フィールドの実装漏れ（`| undefined` 必須化）
 - 不変性の保証（`readonly`）
@@ -107,6 +109,7 @@ function createTodo(title: string, fetchNow: () => Date): Todo {
 - 特徴: 確実性が高い、即座にフィードバック、CI/CD自動化可能
 
 **定性的解析（人間・LLM判断）**:
+
 - ビジネスロジックの妥当性
 - 命名の適切性（ユビキタス言語）
 - アーキテクチャ設計の妥当性
@@ -114,6 +117,7 @@ function createTodo(title: string, fetchNow: () => Date): Todo {
 - 特徴: 文脈依存、主観的、不確実性あり
 
 **MECE原則の適用**:
+
 - **重複なく**: 型システムで検証可能なことを、LLMレビューに頼らない
 - **漏れなく**: 静的解析でカバーできないことを、定性的解析で補完
 

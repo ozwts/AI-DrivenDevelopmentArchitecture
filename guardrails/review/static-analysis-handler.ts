@@ -28,7 +28,8 @@ export type StaticAnalysisHandlerInput = {
 /**
  * 静的解析ハンドラー
  */
-export const createStaticAnalysisHandler = () =>
+export const createStaticAnalysisHandler =
+  () =>
   async (args: StaticAnalysisHandlerInput): Promise<string> => {
     const {
       workspace,

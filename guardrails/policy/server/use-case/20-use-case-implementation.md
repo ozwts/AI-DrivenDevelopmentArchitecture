@@ -52,6 +52,7 @@ export class {Action}{Entity}UseCaseImpl
 **原則**: executeメソッド内で全体の流れを書き切り、プライベートメソッドに分割しない。
 
 **理由**:
+
 - **全体像の把握**: executeメソッドを読むだけでユースケース全体の流れが理解できる
 - **追跡容易性**: ロジックが一箇所に集約され、デバッグ・修正が容易
 - **単一責任原則**: 1ユースケース = 1ユーザーアクション = 1メソッド
@@ -61,7 +62,9 @@ export class {Action}{Entity}UseCaseImpl
 
 ```typescript
 export class CreateProjectUseCaseImpl implements CreateProjectUseCase {
-  async execute(input: CreateProjectUseCaseInput): Promise<CreateProjectUseCaseResult> {
+  async execute(
+    input: CreateProjectUseCaseInput,
+  ): Promise<CreateProjectUseCaseResult> {
     const { projectRepository, logger, fetchNow } = this.#props;
 
     // 1. ID・時刻生成
@@ -71,7 +74,9 @@ export class CreateProjectUseCaseImpl implements CreateProjectUseCase {
     // 2. Value Object生成
     const colorResult = ProjectColor.from({ value: input.color });
     if (!colorResult.success) {
-      logger.warn("プロジェクト色のバリデーションエラー", { color: input.color });
+      logger.warn("プロジェクト色のバリデーションエラー", {
+        color: input.color,
+      });
       return Result.err(colorResult.error);
     }
 
@@ -88,7 +93,10 @@ export class CreateProjectUseCaseImpl implements CreateProjectUseCase {
     // 4. 永続化
     const saveResult = await projectRepository.save({ project });
     if (!saveResult.success) {
-      logger.error("プロジェクト保存エラー", { projectId, error: saveResult.error });
+      logger.error("プロジェクト保存エラー", {
+        projectId,
+        error: saveResult.error,
+      });
       return Result.err(saveResult.error);
     }
 
@@ -102,7 +110,9 @@ export class CreateProjectUseCaseImpl implements CreateProjectUseCase {
 
 ```typescript
 export class CreateProjectUseCaseImpl implements CreateProjectUseCase {
-  async execute(input: CreateProjectUseCaseInput): Promise<CreateProjectUseCaseResult> {
+  async execute(
+    input: CreateProjectUseCaseInput,
+  ): Promise<CreateProjectUseCaseResult> {
     // ❌ executeメソッドだけ見ても全体像が分からない
     const colorResult = await this.#validateColor(input.color);
     if (!colorResult.success) {
@@ -114,15 +124,22 @@ export class CreateProjectUseCaseImpl implements CreateProjectUseCase {
   }
 
   // ❌ プライベートメソッドに分割すると、各メソッドを追いかける必要がある
-  async #validateColor(color: string): Promise<Result<ProjectColor, DomainError>> {
+  async #validateColor(
+    color: string,
+  ): Promise<Result<ProjectColor, DomainError>> {
     const colorResult = ProjectColor.from({ value: color });
     if (!colorResult.success) {
-      this.#props.logger.warn("プロジェクト色のバリデーションエラー", { color });
+      this.#props.logger.warn("プロジェクト色のバリデーションエラー", {
+        color,
+      });
     }
     return colorResult;
   }
 
-  #createProjectEntity(input: CreateProjectUseCaseInput, color: ProjectColor): Project {
+  #createProjectEntity(
+    input: CreateProjectUseCaseInput,
+    color: ProjectColor,
+  ): Project {
     const projectId = this.#props.projectRepository.projectId();
     const now = this.#props.fetchNow();
     return new Project({
@@ -138,7 +155,10 @@ export class CreateProjectUseCaseImpl implements CreateProjectUseCase {
   async #saveProject(project: Project): Promise<CreateProjectUseCaseResult> {
     const saveResult = await this.#props.projectRepository.save({ project });
     if (!saveResult.success) {
-      this.#props.logger.error("プロジェクト保存エラー", { projectId: project.id, error: saveResult.error });
+      this.#props.logger.error("プロジェクト保存エラー", {
+        projectId: project.id,
+        error: saveResult.error,
+      });
       return Result.err(saveResult.error);
     }
 
@@ -220,6 +240,7 @@ export class Todo {
 ```
 
 **ポイント**:
+
 - **UseCase層**: オーケストレーション（リポジトリ呼び出し、Entity操作の組み合わせ）
 - **Domain層**: ビジネスロジック（ステータス遷移、不変条件チェック）
 - プライベートメソッドではなく、ドメインメソッドに抽出することで、他のユースケースでも再利用可能
@@ -237,6 +258,7 @@ export type CreateProjectUseCaseProps = {
 ```
 
 **原則**:
+
 - すべてのプロパティを `readonly` にする
 - 必要な依存のみを含める（Logger、fetchNowは必須ではない）
 - 具象型ではなくインターフェース型を指定（DIコンテナで注入）
@@ -246,7 +268,7 @@ export type CreateProjectUseCaseProps = {
 ```typescript
 export type RegisterTodoUseCaseProps = {
   readonly todoRepository: TodoRepository;
-  readonly userRepository: UserRepository;  // ユーザー情報取得用
+  readonly userRepository: UserRepository; // ユーザー情報取得用
   readonly logger: Logger;
   readonly fetchNow: FetchNow;
 };
@@ -281,7 +303,9 @@ if (projectResult.data === undefined) {
 ```typescript
 // プロジェクトの所有者確認
 if (project.userSub !== input.userSub) {
-  return Result.err(new ForbiddenError("プロジェクトへのアクセス権限がありません"));
+  return Result.err(
+    new ForbiddenError("プロジェクトへのアクセス権限がありません"),
+  );
 }
 ```
 
@@ -297,7 +321,9 @@ if (!existingResult.success) {
 }
 
 if (existingResult.data !== undefined) {
-  return Result.err(new ConflictError("このメールアドレスは既に登録されています"));
+  return Result.err(
+    new ConflictError("このメールアドレスは既に登録されています"),
+  );
 }
 ```
 
@@ -306,7 +332,9 @@ if (existingResult.data !== undefined) {
 ```typescript
 // TODOのステータス遷移ルール検証
 if (currentStatus === "COMPLETED" && newStatus === "PENDING") {
-  return Result.err(new DomainError("完了済みTODOを未完了に戻すことはできません"));
+  return Result.err(
+    new DomainError("完了済みTODOを未完了に戻すことはできません"),
+  );
 }
 ```
 
@@ -327,9 +355,11 @@ UseCase実装時は、常にドメインメソッドの追加・改修を検討�
 
 ```typescript
 // リポジトリ操作の結果チェック
-const findResult = await this.#props.todoRepository.findById({ id: input.todoId });
+const findResult = await this.#props.todoRepository.findById({
+  id: input.todoId,
+});
 if (!findResult.success) {
-  return findResult;  // エラーをそのまま伝播
+  return findResult; // エラーをそのまま伝播
 }
 
 // undefinedチェック（NotFoundError）
@@ -396,6 +426,7 @@ async execute(input: Input): Promise<Result> {
 ```
 
 **重要**:
+
 - UoW内では例外をthrowし、外側のcatchでResult型に変換
 - ユースケースごとにUoWContext型を定義
 - 成功時は自動commit、失敗時は自動rollback
@@ -444,13 +475,13 @@ const project = new Project({
 
 ## ログ出力パターン
 
-| 場面 | ログレベル | 例 |
-|------|----------|-----|
-| ビジネスルール違反 | debug | `"権限チェック失敗"` + 詳細 |
-| リソース未検出 | debug | `"プロジェクトが見つかりません"` + ID |
-| Value Object生成失敗 | debug | `"カラー値が不正"` + 入力値 |
-| 予期しないエラー | error | `"予期しないエラー"` + スタックトレース |
-| リポジトリエラー | error | リポジトリ層でログ出力済み（伝播のみ） |
+| 場面                 | ログレベル | 例                                      |
+| -------------------- | ---------- | --------------------------------------- |
+| ビジネスルール違反   | debug      | `"権限チェック失敗"` + 詳細             |
+| リソース未検出       | debug      | `"プロジェクトが見つかりません"` + ID   |
+| Value Object生成失敗 | debug      | `"カラー値が不正"` + 入力値             |
+| 予期しないエラー     | error      | `"予期しないエラー"` + スタックトレース |
+| リポジトリエラー     | error      | リポジトリ層でログ出力済み（伝播のみ）  |
 
 ## DIコンテナ登録パターン
 
@@ -485,11 +516,11 @@ OpenAPIでPATCH更新を定義する場合、Handler層で`'in'`演算子を使�
 
 **参照**: `policy/server/handler/10-handler-overview.md` - null → undefined 変換パターン
 
-| クライアント送信 | JSON | Handler層 | UseCase層 | 意味 |
-|---------------|------|-----------|----------|------|
-| フィールド省略 | `{}` | プロパティなし | `'dueDate' in input === false` | 変更しない |
-| `null`送信 | `{"dueDate": null}` | `undefined` | `input.dueDate === undefined` | クリアする |
-| 値送信 | `{"dueDate": "2025-01-01"}` | 値そのまま | `input.dueDate === "2025-01-01"` | 値を設定 |
+| クライアント送信 | JSON                        | Handler層      | UseCase層                        | 意味       |
+| ---------------- | --------------------------- | -------------- | -------------------------------- | ---------- |
+| フィールド省略   | `{}`                        | プロパティなし | `'dueDate' in input === false`   | 変更しない |
+| `null`送信       | `{"dueDate": null}`         | `undefined`    | `input.dueDate === undefined`    | クリアする |
+| 値送信           | `{"dueDate": "2025-01-01"}` | 値そのまま     | `input.dueDate === "2025-01-01"` | 値を設定   |
 
 ### 実装例
 
@@ -550,12 +581,14 @@ async execute(input: UpdateTodoUseCaseInput): Promise<UpdateTodoResult> {
 **重要なポイント**:
 
 1. **Result.then()の自動変換**: Entityを返すと自動で`Result.ok()`に包まれる
+
    ```typescript
    .then(t => t.changeDueDate(input.dueDate, now))  // Todo返す → Result<Todo>に自動変換
    .then(t => t.changeStatus(status, now))          // Result<Todo>返す → そのまま
    ```
 
 2. **'in'演算子**: フィールド存在確認（Handler層で送られたか判定）
+
    ```typescript
    .then(t => 'dueDate' in input
      ? t.changeDueDate(input.dueDate, now)
@@ -564,12 +597,13 @@ async execute(input: UpdateTodoUseCaseInput): Promise<UpdateTodoResult> {
    ```
 
 3. **null不使用**: TypeScript内部は`undefined`のみ（Handler層でnull→undefined変換済み）
+
    ```typescript
    // ✅ Good
-   dueDate: string | undefined
+   dueDate: string | undefined;
 
    // ❌ Bad
-   dueDate: string | null | undefined
+   dueDate: string | null | undefined;
    ```
 
 4. **完全フラット**: saveまで含めて1つのチェーン
@@ -608,28 +642,29 @@ if (!colorResult.success) {
 
 // 時刻取得の注入
 const now = dateToIsoString(this.#props.fetchNow());
-createdAt: now
+createdAt: now;
 
 // PATCH更新時: Result.then()メソッドチェーンで完全フラット
 const now = dateToIsoString(this.#props.fetchNow());
 
 return Result.ok(existing)
-  .then(t => 'title' in input
-    ? TodoTitle.from({ title: input.title })
-        .then(title => t.changeTitle(title, now))
-    : t
+  .then((t) =>
+    "title" in input
+      ? TodoTitle.from({ title: input.title }).then((title) =>
+          t.changeTitle(title, now),
+        )
+      : t,
   )
-  .then(t => 'description' in input
-    ? t.changeDescription(input.description, now)
-    : t
+  .then((t) =>
+    "description" in input ? t.changeDescription(input.description, now) : t,
   )
-  .then(t => 'dueDate' in input
-    ? t.changeDueDate(input.dueDate, now)  // Handler層でnull→undefined変換済み
-    : t
+  .then((t) =>
+    "dueDate" in input
+      ? t.changeDueDate(input.dueDate, now) // Handler層でnull→undefined変換済み
+      : t,
   )
-  .then(updated =>
-    this.#props.todoRepository.save({ todo: updated })
-      .then(() => updated)
+  .then((updated) =>
+    this.#props.todoRepository.save({ todo: updated }).then(() => updated),
   );
 ```
 
@@ -638,51 +673,58 @@ return Result.ok(existing)
 ```typescript
 // Props型でreadonlyなし
 export type CreateProjectUseCaseProps = {
-  projectRepository: ProjectRepository;  // ❌ mutable
+  projectRepository: ProjectRepository; // ❌ mutable
 };
 
 // Result型をチェックせずdata参照
 const findResult = await this.#props.projectRepository.findById({ id });
-const project = findResult.data;  // ❌ errorの可能性
+const project = findResult.data; // ❌ errorの可能性
 
 // 例外を投げる
 if (!colorResult.success) {
-  throw colorResult.error;  // ❌ Result型で返すべき
+  throw colorResult.error; // ❌ Result型で返すべき
 }
 
 // 直接Date生成
-createdAt: new Date().toISOString()  // ❌ テスト不可能
-updatedAt: this.#props.fetchNow().toISOString()  // ❌ dateToIsoString()を使用すべき
+createdAt: new Date().toISOString(); // ❌ テスト不可能
+updatedAt: this.#props.fetchNow().toISOString(); // ❌ dateToIsoString()を使用すべき
 
 // HTTPリクエスト処理
-if (c.req.header("Authorization") === undefined) {  // ❌ Handler層の責務
+if (c.req.header("Authorization") === undefined) {
+  // ❌ Handler層の責務
   return { success: false, error: new ForbiddenError() };
 }
 
 // 型レベルバリデーション（MECE原則違反）
-if (input.name.length === 0) {  // ❌ Handler層（Zod）で検証済み
+if (input.name.length === 0) {
+  // ❌ Handler層（Zod）で検証済み
   return { success: false, error: new ValidationError() };
 }
 
 // ドメインルール検証（MECE原則違反）
-if (!/^#[0-9A-Fa-f]{6}$/.test(input.color)) {  // ❌ Domain層（Value Object）で検証済み
+if (!/^#[0-9A-Fa-f]{6}$/.test(input.color)) {
+  // ❌ Domain層（Value Object）で検証済み
   return { success: false, error: new DomainError() };
 }
 
 // nullを使用（TypeScript内部）
-if ('dueDate' in input) {
-  updated = updated.changeDueDate(input.dueDate === null ? undefined : input.dueDate, now);
+if ("dueDate" in input) {
+  updated = updated.changeDueDate(
+    input.dueDate === null ? undefined : input.dueDate,
+    now,
+  );
   // ❌ Handler層でnull→undefined変換すべき
 }
 
 // !== undefinedでフィールド存在チェック（'in'演算子を使うべき）
-if (input.title !== undefined) {  // ❌ フィールド省略とundefined送信を区別できない
+if (input.title !== undefined) {
+  // ❌ フィールド省略とundefined送信を区別できない
   updated = updated.changeTitle(input.title, now);
 }
 
 // letパターン（非推奨）
 let updated = existing;
-if ('title' in input) {
+if ("title" in input) {
   const titleResult = TodoTitle.from({ title: input.title });
   if (!titleResult.success) return titleResult;
   updated = updated.changeTitle(titleResult.data, now);
@@ -695,7 +737,7 @@ return {
   data: {
     id: project.id,
     name: project.name,
-    color: project.color.value,  // ❌ Handler層の責務
+    color: project.color.value, // ❌ Handler層の責務
   },
 };
 ```

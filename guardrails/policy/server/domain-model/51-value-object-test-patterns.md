@@ -5,6 +5,7 @@
 このドキュメントは、Value Objectの具体的なテスト実装パターンをまとめたものである。
 
 **関連ドキュメント**:
+
 - **テスト概要**: `50-test-overview.md`
 - **Entityテスト**: `52-entity-test-patterns.md`
 - **Value Object設計**: `25-value-object-overview.md`
@@ -14,19 +15,17 @@
 Value Objectは以下のメソッドを持つ（`25-value-object-overview.md`参照）:
 
 **必須メソッド**:
+
 1. **from()** (静的ファクトリメソッド) - 必須
 2. **equals()** - 必須
 3. **toString()** - 必須
 
-**条件付きメソッド**:
-4. **不変条件チェックメソッド** (`canTransitionTo()`) - 不変条件がある場合
+**条件付きメソッド**: 4. **不変条件チェックメソッド** (`canTransitionTo()`) - 不変条件がある場合
 
-**オプションメソッド**:
-5. **default()** - ビジネス的に意味のあるデフォルト値がある場合のみ
-6. **ヘルパーメソッド** (`isCompleted()`, `isTodo()`等) - 必要に応じて
-7. **静的ファクトリメソッド** (`todo()`, `completed()`等) - from()のショートカット
+**オプションメソッド**: 5. **default()** - ビジネス的に意味のあるデフォルト値がある場合のみ 6. **ヘルパーメソッド** (`isCompleted()`, `isTodo()`等) - 必要に応じて7. **静的ファクトリメソッド** (`todo()`, `completed()`等) - from()のショートカット
 
 **テスト不要**:
+
 - **プライベートコンストラクタ** - 外部からアクセス不可のため直接テストしない（from()経由で間接的にテスト）
 
 ## 1. from() テスト（静的ファクトリメソッド）
@@ -102,6 +101,7 @@ describe("from", () => {
 ```
 
 **テストカバレッジ目標**:
+
 - ✅ 正常値（代表値、境界値）
 - ✅ 異常値（不正形式、空文字列、境界値外）
 - ✅ Result型の正しいチェック（`result.success`で分岐）
@@ -137,7 +137,9 @@ describe("canTransitionTo", () => {
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.error).toBeInstanceOf(DomainError);
-      expect(result.error.message).toContain("完了済みTODOのステータスは変更できません");
+      expect(result.error.message).toContain(
+        "完了済みTODOのステータスは変更できません",
+      );
     }
   });
 
@@ -161,6 +163,7 @@ describe("canTransitionTo", () => {
 ```
 
 **テストカバレッジ目標**:
+
 - ✅ 許可される遷移パターン（全組み合わせ）
 - ✅ 禁止される遷移パターン（全組み合わせ）
 - ✅ エラーメッセージの検証
@@ -362,8 +365,11 @@ export type TodoStatusDummyProps = Partial<{
  * @param props 部分オーバーライド（省略時はランダム値）
  * @returns TodoStatusインスタンス
  */
-export const todoStatusDummyFrom = (props?: TodoStatusDummyProps): TodoStatus => {
-  const statusValue = props?.status ??
+export const todoStatusDummyFrom = (
+  props?: TodoStatusDummyProps,
+): TodoStatus => {
+  const statusValue =
+    props?.status ??
     faker.helpers.arrayElement(["TODO", "IN_PROGRESS", "COMPLETED"] as const);
 
   const result = TodoStatus.from({ status: statusValue });
@@ -388,7 +394,7 @@ export const todoDummyFrom = (overrides?: Partial<TodoProps>): Todo => {
   return new Todo({
     id: overrides?.id ?? faker.string.uuid(),
     title: overrides?.title ?? faker.lorem.sentence(),
-    status: overrides?.status ?? todoStatusDummyFrom(),  // ✅ Value Object Dummy
+    status: overrides?.status ?? todoStatusDummyFrom(), // ✅ Value Object Dummy
     createdAt: overrides?.createdAt ?? now,
     updatedAt: overrides?.updatedAt ?? now,
   });
@@ -396,6 +402,7 @@ export const todoDummyFrom = (overrides?: Partial<TodoProps>): Todo => {
 ```
 
 **理由**:
+
 - Entity Dummyファクトリでは多様なテストケースをカバーするため、Value Objectもランダムに生成
 - パターンの統一（すべて`{model}DummyFrom()`形式）
 - 部分オーバーライド可能（テストで特定値が必要な場合）
@@ -419,8 +426,11 @@ export type ProjectColorDummyProps = Partial<{
  * @param props 部分オーバーライド（省略時はランダム値）
  * @returns ProjectColorインスタンス
  */
-export const projectColorDummyFrom = (props?: ProjectColorDummyProps): ProjectColor => {
-  const colorValue = props?.color ??
+export const projectColorDummyFrom = (
+  props?: ProjectColorDummyProps,
+): ProjectColor => {
+  const colorValue =
+    props?.color ??
     faker.helpers.arrayElement(["RED", "BLUE", "GREEN", "YELLOW"] as const);
 
   const result = ProjectColor.from({ color: colorValue });

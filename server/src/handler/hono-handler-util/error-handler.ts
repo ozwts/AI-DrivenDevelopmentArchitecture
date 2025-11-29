@@ -4,6 +4,7 @@ import {
   UnexpectedError,
   NotFoundError,
   ValidationError,
+  UnauthorizedError,
   ConflictError,
   ForbiddenError,
   DomainError,
@@ -27,6 +28,17 @@ export const handleError = (error: Error, c: Context, logger: Logger) => {
         message: error.message,
       },
       400,
+    );
+  }
+
+  if (error instanceof UnauthorizedError) {
+    logger.warn("認証エラー", { error });
+    return c.json(
+      {
+        name: error.name,
+        message: error.message,
+      },
+      401,
     );
   }
 

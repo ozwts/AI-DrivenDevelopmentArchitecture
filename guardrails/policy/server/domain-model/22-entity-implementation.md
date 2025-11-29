@@ -5,6 +5,7 @@
 このドキュメントは、エンティティの具体的な実装方法とベストプラクティスをまとめたものである。
 
 **関連ドキュメント**:
+
 - **設計概要**: `20-entity-overview.md`
 - **フィールド分類**: `21-entity-field-classification.md`
 - **バリデーション戦略**: `11-domain-validation-strategy.md`
@@ -30,7 +31,7 @@ export class Todo {
 export class Todo {
   readonly id: string;
   readonly title: string;
-  readonly status: TodoStatus;      // Value Object
+  readonly status: TodoStatus; // Value Object
   readonly createdAt: string;
   readonly updatedAt: string;
 }
@@ -49,10 +50,10 @@ export class Todo {
 export type TodoProps = {
   id: string;
   title: string;
-  description: string | undefined;   // Tier 3: 必須で渡すが値はundefined可
-  status: TodoStatus;                // Value Object
-  dueDate: string | undefined;       // Tier 2: undefinedに業務的意味がある
-  completedAt: string | undefined;   // Tier 2: undefinedに業務的意味がある
+  description: string | undefined; // Tier 3: 必須で渡すが値はundefined可
+  status: TodoStatus; // Value Object
+  dueDate: string | undefined; // Tier 2: undefinedに業務的意味がある
+  completedAt: string | undefined; // Tier 2: undefinedに業務的意味がある
   createdAt: string;
   updatedAt: string;
 };
@@ -60,7 +61,7 @@ export type TodoProps = {
 export class Todo {
   readonly id: string;
   readonly title: string;
-  readonly description?: string;     // フィールドはオプショナル
+  readonly description?: string; // フィールドはオプショナル
   readonly status: TodoStatus;
   readonly dueDate: string | undefined;
   readonly completedAt: string | undefined;
@@ -81,14 +82,17 @@ export class Todo {
 ```
 
 **Tier 3フィールドの重要な区別**:
+
 - **Props型（コンストラクタ引数）**: `description: string | undefined` （`?` なし - 必須で渡す）
 - **クラスフィールド**: `description?: string` （`?` あり - オプショナル）
 
 この違いにより、analyzability原則に準拠：
+
 - コンストラクタでは全フィールドを明示的に渡すことを強制（`| undefined` で型システムが検出）
 - クラス内部ではオプショナルフィールドとして扱う（`?` で実装を簡潔に）
 
 **Props型エイリアスのメリット**:
+
 - **再利用性**: 更新メソッドでも同じ型を使用可能
 - **可読性**: 型定義が一箇所にまとまる
 - **保守性**: フィールド追加時、Props型を修正するだけで全体に反映
@@ -123,6 +127,7 @@ constructor(props: { title: string }) {
 エンティティの状態を変更する場合、必ず新しいインスタンスを生成して返す。
 
 **設計原則**:
+
 - **基本**: シンプルなデータ変換メソッドはEntityを返す（メソッドチェーン可能）
 - **例外**: 複数値関係性バリデーションが必要な場合のみResult型を返す
 
@@ -146,6 +151,7 @@ changeStatus(newStatus: TodoStatus, updatedAt: string): Todo {
 ```
 
 **Props型を使った更新メソッドのパターン**:
+
 ```typescript
 // スプレッド構文を使用した簡潔な実装
 updateDescription(description: string | undefined, updatedAt: string): Todo {
@@ -181,7 +187,7 @@ readonly createdAt: Date;
 
 すべてのクラス、プロパティ、メソッドにJSDocコメントを記述する。
 
-```typescript
+````typescript
 /**
  * TODO エンティティ
  *
@@ -209,7 +215,7 @@ export class Todo {
 
   // ...
 }
-```
+````
 
 ## 禁止事項
 
@@ -218,6 +224,7 @@ export class Todo {
 **原則**: 現在のユースケースで使われていないドメインメソッドを追加してはならない（YAGNI原則）。
 
 **理由**:
+
 - 使われないコードは技術的負債となる
 - 将来の要件は不確実であり、実際に必要になった時に追加すべき
 - ビジネスの意図を表現するメソッドは、そのビジネスアクションが実装される時に追加する
@@ -226,16 +233,24 @@ export class Todo {
 // ❌ 間違い: 現在使われていないメソッドを追加
 export class Todo {
   // 現在は「完了」機能だけ必要なのに、将来使うかもしれないと予測して追加
-  markAsInProgress(updatedAt: string): Todo {  // ❌ 未使用
+  markAsInProgress(updatedAt: string): Todo {
+    // ❌ 未使用
     return new Todo({ ...this, status: TodoStatus.inProgress(), updatedAt });
   }
 
-  markAsPending(updatedAt: string): Todo {  // ❌ 未使用
+  markAsPending(updatedAt: string): Todo {
+    // ❌ 未使用
     return new Todo({ ...this, status: TodoStatus.pending(), updatedAt });
   }
 
-  markAsCompleted(completedAt: string, updatedAt: string): Todo {  // ✅ 実際に使用
-    return new Todo({ ...this, status: TodoStatus.completed(), completedAt, updatedAt });
+  markAsCompleted(completedAt: string, updatedAt: string): Todo {
+    // ✅ 実際に使用
+    return new Todo({
+      ...this,
+      status: TodoStatus.completed(),
+      completedAt,
+      updatedAt,
+    });
   }
 }
 
@@ -243,7 +258,12 @@ export class Todo {
 export class Todo {
   // 現在のユースケースで必要なメソッドのみ実装
   markAsCompleted(completedAt: string, updatedAt: string): Todo {
-    return new Todo({ ...this, status: TodoStatus.completed(), completedAt, updatedAt });
+    return new Todo({
+      ...this,
+      status: TodoStatus.completed(),
+      completedAt,
+      updatedAt,
+    });
   }
 
   // 他のステータス変更は、必要になったユースケース実装時に追加
@@ -253,6 +273,7 @@ export class Todo {
 ### 更新メソッドの実装パターン
 
 **設計方針**:
+
 - **基本**: シンプルなデータ変換メソッド（Entityを返す）
 - **必要時のみ**: 複数値関係性チェックを含む個別メソッド（Result型を返す）
 
@@ -304,12 +325,13 @@ markAsCompleted(completedAt: string, updatedAt: string): Result<Todo, DomainErro
 
 **使い分けの判断基準**:
 
-| パターン | 返り値 | 使用ケース | メリット |
-|---------|-------|-----------|---------|
-| **パターンA** | `Entity` | バリデーション不要な基本的な更新 | Entity層が薄い、`Result.ok()`のボイラープレート不要 |
-| **パターンB** | `Result<Entity, DomainError>` | 重要なビジネス操作（複数値関係性チェックあり） | ビジネス意図が明確、型安全性 |
+| パターン      | 返り値                        | 使用ケース                                     | メリット                                            |
+| ------------- | ----------------------------- | ---------------------------------------------- | --------------------------------------------------- |
+| **パターンA** | `Entity`                      | バリデーション不要な基本的な更新               | Entity層が薄い、`Result.ok()`のボイラープレート不要 |
+| **パターンB** | `Result<Entity, DomainError>` | 重要なビジネス操作（複数値関係性チェックあり） | ビジネス意図が明確、型安全性                        |
 
 **重要**:
+
 - **すべてのパターンでメソッドチェーン可能** - `Result.then()`が`Entity`を自動で`Result.ok()`に包むため
 - **基本はパターンA**を使用（Entity層が薄く、ボイラープレート最小）
 - 複数値関係性バリデーションは必要最小限にとどめる
@@ -320,10 +342,10 @@ markAsCompleted(completedAt: string, updatedAt: string): Result<Todo, DomainErro
 
 ```typescript
 // ✅ EntityとResult型を混在させてフラットにチェーン可能
-const result = Result.ok(existing)                   // Result<Todo>
-  .then(t => t.changeDescription("新しい", now))      // Todoを返す → 自動でResult.ok()に包む
-  .then(t => t.markAsCompleted(now, now))            // Result<Todo>を返す → そのまま
-  .then(t => repository.save(t));                    // 完全にフラット
+const result = Result.ok(existing) // Result<Todo>
+  .then((t) => t.changeDescription("新しい", now)) // Todoを返す → 自動でResult.ok()に包む
+  .then((t) => t.markAsCompleted(now, now)) // Result<Todo>を返す → そのまま
+  .then((t) => repository.save(t)); // 完全にフラット
 ```
 
 ### ResultとEntityの返り値設計方針
@@ -348,12 +370,14 @@ markAsCompleted(completedAt: string, updatedAt: string): Result<Todo, DomainErro
 ```
 
 **理由**:
+
 1. **YAGNI原則**: バリデーション不要な場合、冗長な`Result.ok()`を書かない
 2. **Entity層を薄く保つ**: シンプルなデータ変換はEntityを直接返す
 3. **メソッドの意図が明確**: Result型を返す = バリデーションあり
 4. **実用上の問題なし**: `Result.then()`が`Entity`を自動で`Result.ok()`に包むため、メソッドチェーンで混在可能
 
 **設計のメリット**:
+
 - ✅ `Result.then()`により、EntityとResult型を自然にチェーン可能
 - ✅ ボイラープレートの最小化（バリデーション不要なら`Result.ok()`不要）
 - ✅ メソッドの意図が明確（Result型 = バリデーションあり）
@@ -561,7 +585,7 @@ export type TodoStatus = "TODO" | "IN_PROGRESS" | "COMPLETED";
 ## 完全な実装例
 
 ```typescript
-import type { TodoStatus } from './todo-status';
+import type { TodoStatus } from "./todo-status";
 
 /**
  * TODO エンティティ
@@ -571,10 +595,10 @@ import type { TodoStatus } from './todo-status';
 export class Todo {
   readonly id: string;
   readonly title: string;
-  readonly description?: string;             // Tier 3: Optional
+  readonly description?: string; // Tier 3: Optional
   readonly status: TodoStatus;
-  readonly dueDate: string | undefined;      // Tier 2: Special Case
-  readonly completedAt: string | undefined;  // Tier 2: Special Case
+  readonly dueDate: string | undefined; // Tier 2: Special Case
+  readonly completedAt: string | undefined; // Tier 2: Special Case
   readonly createdAt: string;
   readonly updatedAt: string;
 

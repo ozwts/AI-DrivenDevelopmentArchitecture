@@ -1,4 +1,4 @@
-import type { Attachment } from "../attachment/attachment";
+import type { Attachment } from "./attachment";
 
 /**
  * TODOステータス
@@ -6,9 +6,9 @@ import type { Attachment } from "../attachment/attachment";
  * TODOの進捗状況を表す列挙型。
  * - TODO: 未着手
  * - IN_PROGRESS: 作業中
- * - DONE: 完了
+ * - COMPLETED: 完了
  */
-export type TodoStatus = "TODO" | "IN_PROGRESS" | "DONE";
+export type TodoStatus = "TODO" | "IN_PROGRESS" | "COMPLETED";
 
 /**
  * TODO優先度

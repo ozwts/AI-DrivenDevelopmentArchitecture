@@ -5,6 +5,7 @@
 OpenAPIスキーマは**空文字列ではなくオプショナル**を使用する。
 
 **関連ドキュメント**:
+
 - **OpenAPI全体像**: `10-api-overview.md`
 - **エンドポイント設計**: `20-endpoint-design.md`
 
@@ -16,19 +17,20 @@ OpenAPIスキーマは**空文字列ではなくオプショナル**を使用す
 
 ```yaml
 # ✅ Good: オプショナルフィールド
-projectId:
+{parentEntity}Id:
   type: string
   minLength: 1  # 空文字列禁止
-  description: プロジェクトID（省略可能。値を送信する場合は1文字以上必須）
+  description: 親リソースID（省略可能。値を送信する場合は1文字以上必須）
 
 # ❌ Bad: 空文字列を許可
-projectId:
+{parentEntity}Id:
   type: string
-  description: プロジェクトID
+  description: 親リソースID
   # minLengthがないため、空文字列が許可される
 ```
 
 **理由**:
+
 1. **意図の明確化**: 「値がない」状態を空文字列ではなくundefinedで表現
 2. **バリデーション統一**: すべての文字列フィールドに一貫したルールを適用
 3. **バグ防止**: 空文字列と未設定の区別が不要になる
@@ -38,16 +40,16 @@ projectId:
 ### 必須フィールド
 
 ```yaml
-RegisterTodoParams:
+Create{Entity}Params:
   type: object
   required:
-    - title
+    - name
   properties:
-    title:
+    name:
       type: string
-      minLength: 1  # 空文字列禁止
+      minLength: 1 # 空文字列禁止
       maxLength: 200
-      description: TODOのタイトル
+      description: リソース名
 ```
 
 **重要**: 必須フィールドは`required`に含め、`minLength: 1`で空文字列を禁止する。
@@ -55,20 +57,21 @@ RegisterTodoParams:
 ### オプショナルフィールド
 
 ```yaml
-RegisterTodoParams:
+Create{Entity}Params:
   type: object
   properties:
-    projectId:
+    {parentEntity}Id:
       type: string
       minLength: 1  # 空文字列禁止
-      description: プロジェクトID（省略可能。値を送信する場合は1文字以上必須）
-    assigneeUserId:
+      description: 親リソースID（省略可能。値を送信する場合は1文字以上必須）
+    {assignee}Id:
       type: string
       minLength: 1  # 空文字列禁止
-      description: 担当者のユーザーID（省略可能。値を送信する場合は1文字以上必須）
+      description: 担当者ID（省略可能。値を送信する場合は1文字以上必須）
 ```
 
 **重要**:
+
 - `required`には含めない（オプショナル）
 - `minLength: 1`で空文字列を禁止
 - クライアントは値がない場合はフィールドを省略
@@ -76,22 +79,22 @@ RegisterTodoParams:
 ### 更新パラメータ（PATCH）
 
 ```yaml
-UpdateTodoParams:
+Update{Entity}Params:
   type: object
   properties:
-    title:
+    name:
       type: string
       minLength: 1
       maxLength: 200
-      description: TODOのタイトル
-    projectId:
+      description: リソース名
+    {parentEntity}Id:
       type: string
       minLength: 1  # 空文字列禁止
-      description: プロジェクトID（省略可能。値を送信する場合は1文字以上必須）
-    assigneeUserId:
+      description: 親リソースID（省略可能。値を送信する場合は1文字以上必須）
+    {assignee}Id:
       type: string
       minLength: 1  # 空文字列禁止
-      description: 担当者のユーザーID（省略可能。値を送信する場合は1文字以上必須）
+      description: 担当者ID（省略可能。値を送信する場合は1文字以上必須）
 ```
 
 **注**: PATCH統一原則により、すべてのフィールドはオプショナル（`required`は空）。
@@ -103,13 +106,13 @@ UpdateTodoParams:
 ```typescript
 // ✅ Good: 値がない場合はフィールドを省略
 const params = {
-  title: "新しいタスク",
-  // projectIdは未設定なので省略（undefinedまたはフィールド自体を含めない）
+  name: "新しいリソース",
+  // {parentEntity}Idは未設定なので省略（undefinedまたはフィールド自体を含めない）
 };
 
-await fetch('/todos', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
+await fetch("/{resources}", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
   body: JSON.stringify(params),
 });
 ```
@@ -117,28 +120,67 @@ await fetch('/todos', {
 ```typescript
 // ❌ Bad: 空文字列を送信
 const params = {
-  title: "新しいタスク",
-  projectId: "",  // ❌ 空文字列は送信しない
+  name: "新しいリソース",
+  {parentEntity}Id: "",  // ❌ 空文字列は送信しない
 };
 ```
 
-### 値をクリア（未設定に戻す）
+### 値をクリア（未設定に戻す）- PATCH操作のみ
+
+**重要**: PATCH操作（Update\*Params）で一度設定した値を「未設定」に戻すには、`nullable: true`が必要です。
+
+#### 3値の区別
+
+| クライアント送信 | 意味       | OpenAPI設定          |
+| ---------------- | ---------- | -------------------- |
+| フィールド省略   | 変更しない | -                    |
+| `null`送信       | クリアする | `nullable: true`必須 |
+| 値を送信         | 値を設定   | -                    |
+
+#### OpenAPI定義
+
+```yaml
+Update{Entity}Params:
+  type: object
+  properties:
+    {parentEntity}Id:
+      type: string
+      minLength: 1      # 空文字列禁止
+      nullable: true    # クリア操作を許可
+      description: 親リソースID（省略可能、nullで"未割り当て"に設定）
+```
+
+#### クライアント実装
 
 ```typescript
-// ✅ Good: フィールドを省略（既存値が維持される）
+// ケース1: フィールドを省略（既存値が維持される）
 const params = {
-  title: "更新されたタスク",
-  // projectIdを省略すると既存値が維持される
+  name: "更新されたリソース",
+  // {parentEntity}Idを省略すると既存値が維持される
 };
 
-await fetch(`/todos/${todoId}`, {
+await fetch(`/{resources}/{resourceId}`, {
+  method: "PATCH",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(params),
+});
+```
+
+```typescript
+// ケース2: nullを送信（値をクリア）
+const params = {
+  name: "更新されたリソース",
+  {parentEntity}Id: null,  // 親リソース未割り当てに戻す
+};
+
+await fetch(`/{resources}/{resourceId}`, {
   method: 'PATCH',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify(params),
 });
 ```
 
-**注**: 現在の設計では、フィールドを省略すると既存値が維持される。値をクリア（未設定に戻す）機能が必要な場合は、別途設計が必要（例: `projectId: null`を許可する）。
+**詳細**: `20-endpoint-design.md` - PATCH操作でのフィールドクリア（null使用）を参照
 
 ## Handler層での正規化
 
@@ -146,7 +188,7 @@ Handler層では、防御的対応として空文字列を`undefined`に変換�
 
 ```typescript
 // Handler層での正規化（防御的対応）
-const parseResult = schemas.RegisterTodoParams.safeParse(rawBody);
+const parseResult = schemas.Create{Entity}Params.safeParse(rawBody);
 if (!parseResult.success) {
   return c.json({ name: "ValidationError", ... }, 400);
 }
@@ -154,19 +196,20 @@ if (!parseResult.success) {
 const body = parseResult.data;
 
 // 入力の正規化: 空文字列は意味を持たないのでundefinedに変換
-const projectId =
-  body.projectId?.trim() === "" ? undefined : body.projectId;
-const assigneeUserId =
-  body.assigneeUserId?.trim() === "" ? undefined : body.assigneeUserId;
+const {parentEntity}Id =
+  body.{parentEntity}Id?.trim() === "" ? undefined : body.{parentEntity}Id;
+const {assignee}Id =
+  body.{assignee}Id?.trim() === "" ? undefined : body.{assignee}Id;
 
 const result = await useCase.execute({
-  title: body.title,
-  projectId,  // undefinedまたは有効な文字列
-  assigneeUserId,  // undefinedまたは有効な文字列
+  name: body.name,
+  {parentEntity}Id,  // undefinedまたは有効な文字列
+  {assignee}Id,  // undefinedまたは有効な文字列
 });
 ```
 
 **理由**:
+
 - OpenAPIスキーマで`minLength: 1`を設定していれば、この正規化は不要
 - しかし、防御的対応として実装することで堅牢性を向上
 
@@ -183,14 +226,14 @@ const result = await useCase.execute({
 # 必須フィールド（空文字列禁止）
 title:
   type: string
-  minLength: 1  # 空文字列禁止
+  minLength: 1 # 空文字列禁止
   maxLength: 200
   description: タイトル
 
 # オプショナルフィールド（空文字列禁止）
 description:
   type: string
-  minLength: 1  # 送信する場合は1文字以上必須
+  minLength: 1 # 送信する場合は1文字以上必須
   maxLength: 5000
   description: 説明（省略可能）
 ```
@@ -225,49 +268,49 @@ status:
 
 ```yaml
 # オプショナルフィールドにminLength: 1を設定
-projectId:
+{parentEntity}Id:
   type: string
   minLength: 1
-  description: プロジェクトID（省略可能。値を送信する場合は1文字以上必須）
+  description: 親リソースID（省略可能。値を送信する場合は1文字以上必須）
 
 # 必須フィールドにminLength: 1を設定
-title:
+name:
   type: string
   minLength: 1
   maxLength: 200
-  description: タイトル
+  description: リソース名
 
 # descriptionで制約の意図を明記
-assigneeUserId:
+{assignee}Id:
   type: string
   minLength: 1
-  description: 担当者のユーザーID（省略可能。値を送信する場合は1文字以上必須）
+  description: 担当者ID（省略可能。値を送信する場合は1文字以上必須）
 ```
 
 ```typescript
 // クライアント: 値がない場合は省略
 const params = {
-  title: "新しいタスク",
-  // projectIdは省略（undefinedまたはフィールド自体を含めない）
+  name: "新しいリソース",
+  // {parentEntity}Idは省略（undefinedまたはフィールド自体を含めない）
 };
 ```
 
 ```typescript
 // Handler層: 空文字列をundefinedに変換（防御的対応）
-const projectId =
-  body.projectId?.trim() === "" ? undefined : body.projectId;
+const {parentEntity}Id =
+  body.{parentEntity}Id?.trim() === "" ? undefined : body.{parentEntity}Id;
 ```
 
 ### ❌ Bad
 
 ```yaml
 # minLengthがない（空文字列が許可される）
-projectId:
+{parentEntity}Id:
   type: string
-  description: プロジェクトID
+  description: 親リソースID
 
 # minLengthが0（空文字列が許可される）
-title:
+name:
   type: string
   minLength: 0  # ❌ 1以上にすべき
   maxLength: 200
@@ -276,15 +319,15 @@ title:
 ```typescript
 // 空文字列を送信
 const params = {
-  title: "新しいタスク",
-  projectId: "",  // ❌ 省略すべき
+  name: "新しいリソース",
+  {parentEntity}Id: "",  // ❌ 省略すべき
 };
 ```
 
 ```typescript
 // Handler層で空文字列をチェックしない
 const result = await useCase.execute({
-  projectId: body.projectId,  // ❌ 空文字列のまま渡される可能性
+  {parentEntity}Id: body.{parentEntity}Id,  // ❌ 空文字列のまま渡される可能性
 });
 ```
 
@@ -294,7 +337,6 @@ const result = await useCase.execute({
 [ ] すべての文字列フィールドにminLength: 1を設定（空文字列禁止）
 [ ] 必須フィールドはrequiredに含め、minLength: 1を設定
 [ ] オプショナルフィールドはrequiredに含めず、minLength: 1を設定
+[ ] 値のクリアが必要なフィールドにnullable: trueを設定
 [ ] descriptionで制約の意図を明記
-[ ] クライアントは値がない場合はフィールドを省略
-[ ] Handler層で空文字列をundefinedに変換（防御的対応）
 ```

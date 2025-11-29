@@ -45,7 +45,7 @@ export const getDummyTodoTitle = () => {
 };
 
 export const getDummyTodoStatus = (): TodoStatus =>
-  faker.helpers.arrayElement<TodoStatus>(["TODO", "IN_PROGRESS", "DONE"]);
+  faker.helpers.arrayElement<TodoStatus>(["TODO", "IN_PROGRESS", "COMPLETED"]);
 
 export const getDummyTodoPriority = (): TodoPriority =>
   faker.helpers.arrayElement<TodoPriority>(["LOW", "MEDIUM", "HIGH"]);

@@ -7,6 +7,7 @@
 **核心原則**: すべてのテストコードでDummyファクトリを使用し、モデル変更時のテスト修正負荷を最小化する。
 
 **関連ドキュメント**:
+
 - **テスト概要**: `50-test-overview.md`
 - **Value Objectテスト**: `51-value-object-test-patterns.md`
 - **Entity設計**: `20-entity-overview.md`
@@ -55,10 +56,10 @@ describe("constructor", () => {
     const todo = new Todo({
       id: "todo-123",
       title: "必須項目のみのタスク",
-      description: undefined,  // 明示的にundefinedを渡す
+      description: undefined, // 明示的にundefinedを渡す
       status,
-      dueDate: undefined,      // 明示的にundefinedを渡す
-      completedAt: undefined,  // 明示的にundefinedを渡す
+      dueDate: undefined, // 明示的にundefinedを渡す
+      completedAt: undefined, // 明示的にundefinedを渡す
       createdAt: "2024-01-01T00:00:00.000Z",
       updatedAt: "2024-01-01T00:00:00.000Z",
     });
@@ -90,6 +91,7 @@ describe("constructor", () => {
 ```
 
 **テストカバレッジ目標**:
+
 - ✅ 必須プロパティのみでインスタンス作成
 - ✅ オプショナルプロパティ含めてインスタンス作成
 - ✅ Value Objectが正しく保持されること
@@ -113,7 +115,7 @@ describe("changeStatus", () => {
     // Act
     const updated = todo.changeStatus(
       TodoStatus.completed(),
-      "2024-01-02T00:00:00.000Z"
+      "2024-01-02T00:00:00.000Z",
     );
 
     // Assert
@@ -133,10 +135,7 @@ describe("changeStatus", () => {
     });
 
     // Act
-    todo.changeStatus(
-      TodoStatus.completed(),
-      "2024-01-02T00:00:00.000Z"
-    );
+    todo.changeStatus(TodoStatus.completed(), "2024-01-02T00:00:00.000Z");
 
     // Assert
     expect(todo.status.isTodo()).toBe(true);
@@ -175,7 +174,9 @@ export const getDummyRecentDate = () => faker.date.recent().toISOString();
 
 // オプショナルフィールド用（50%の確率でundefined）
 export const getDummyDueDate = () =>
-  faker.helpers.maybe(() => faker.date.future().toISOString(), { probability: 0.5 });
+  faker.helpers.maybe(() => faker.date.future().toISOString(), {
+    probability: 0.5,
+  });
 
 // ❌ Bad: Value Object用のヘルパーは作らない
 // export const getDummyTodoStatus = (): TodoStatus => ...
@@ -192,7 +193,7 @@ export const getDummyDueDate = () =>
 // todo.dummy.ts
 import { Todo } from "./todo";
 import { TodoStatus } from "./todo-status";
-import { todoStatusDummyFrom } from "./todo-status.dummy";  // ✅ Value Object Dummy
+import { todoStatusDummyFrom } from "./todo-status.dummy"; // ✅ Value Object Dummy
 import {
   getDummyId,
   getDummyShortText,
@@ -227,9 +228,9 @@ export const todoDummyFrom = (props?: TodoDummyProps): Todo => {
     id: props?.id ?? getDummyId(),
     title: props?.title ?? getDummyShortText(),
     description: props?.description ?? getDummyDescription(),
-    status: props?.status ?? todoStatusDummyFrom(),  // ✅ Value Object Dummy
-    dueDate: props?.dueDate ?? getDummyDueDate(),  // 50%でundefined
-    completedAt: props?.completedAt,  // 明示的にundefined
+    status: props?.status ?? todoStatusDummyFrom(), // ✅ Value Object Dummy
+    dueDate: props?.dueDate ?? getDummyDueDate(), // 50%でundefined
+    completedAt: props?.completedAt, // 明示的にundefined
     createdAt: props?.createdAt ?? now,
     updatedAt: props?.updatedAt ?? now,
   });
@@ -255,8 +256,8 @@ const completedTodo = todoDummyFrom({
 // ❌ Bad: 固定値を使用（ランダム性がない）
 export const todoDummyFrom = (props?: TodoDummyProps): Todo => {
   return new Todo({
-    id: props?.id ?? "test-todo-id",  // ❌ 固定値
-    title: props?.title ?? "Test Task",  // ❌ 固定値
+    id: props?.id ?? "test-todo-id", // ❌ 固定値
+    title: props?.title ?? "Test Task", // ❌ 固定値
     // ...
   });
 };
@@ -323,10 +324,10 @@ describe("Todo", () => {
       const todo = new Todo({
         id: "todo-123",
         title: "必須項目のみのタスク",
-        description: undefined,  // 明示的にundefinedを渡す
+        description: undefined, // 明示的にundefinedを渡す
         status,
-        dueDate: undefined,      // 明示的にundefinedを渡す
-        completedAt: undefined,  // 明示的にundefinedを渡す
+        dueDate: undefined, // 明示的にundefinedを渡す
+        completedAt: undefined, // 明示的にundefinedを渡す
         createdAt: "2024-01-01T00:00:00.000Z",
         updatedAt: "2024-01-01T00:00:00.000Z",
       });
@@ -362,7 +363,7 @@ describe("Todo", () => {
 
       const updated = todo.changeStatus(
         TodoStatus.completed(),
-        "2024-01-02T00:00:00.000Z"
+        "2024-01-02T00:00:00.000Z",
       );
 
       expect(updated.status.isCompleted()).toBe(true);
@@ -374,10 +375,7 @@ describe("Todo", () => {
         status: TodoStatus.todo(),
       });
 
-      todo.changeStatus(
-        TodoStatus.completed(),
-        "2024-01-02T00:00:00.000Z"
-      );
+      todo.changeStatus(TodoStatus.completed(), "2024-01-02T00:00:00.000Z");
 
       expect(todo.status.isTodo()).toBe(true);
     });

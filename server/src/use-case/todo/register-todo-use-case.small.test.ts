@@ -185,10 +185,10 @@ describe("RegisterTodoUseCaseのテスト", () => {
     });
 
     test("異なるステータスでTODOを作成できること", async () => {
-      const statuses: Array<"TODO" | "IN_PROGRESS" | "DONE"> = [
+      const statuses: Array<"TODO" | "IN_PROGRESS" | "COMPLETED"> = [
         "TODO",
         "IN_PROGRESS",
-        "DONE",
+        "COMPLETED",
       ];
 
       for (const status of statuses) {
