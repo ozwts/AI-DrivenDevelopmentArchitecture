@@ -22,8 +22,8 @@ import {
 const REVIEW_CONFIG = {
   /** 使用するClaudeモデル */
   model: "claude-haiku-4-5" as const,
-  /** 最大トークン数（複数ファイルの詳細レビューに対応するため大きめに設定） */
-  maxTokens: 32768,
+  /** 最大トークン数 */
+  maxTokens: 8192,
   /** frontmatter除外用正規表現 */
   frontmatterRegex: /^---\n[\s\S]*?\n---\n/,
 } as const;
