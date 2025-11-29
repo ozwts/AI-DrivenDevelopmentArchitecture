@@ -80,68 +80,7 @@ if (!result.success) {
 }
 ```
 
-**パターンB: reconstruct()使用（Result型返却）**
-
-条件:
-- ビジネスロジックがない（Value Objectで検証完了）
-- 複数フィールドの一括更新
-- PATCH/PUT更新などで全フィールドを受け取る
-- Entity間の関係性検証が必要な場合もある
-
-```typescript
-// Domain層（Todo Entity）
-static reconstruct(props: {
-  id: string;
-  title: TodoTitle;
-  description: string | undefined;     // 必須（undefinedを明示的に渡す）
-  status: TodoStatus;
-  dueDate: string | undefined;         // 必須（undefinedを明示的に渡す）
-  completedAt: string | undefined;     // 必須（undefinedを明示的に渡す）
-  userSub: string;
-  createdAt: string;
-  updatedAt: string;
-}): Result<Todo, DomainError> {
-  // Entity全体の整合性チェック（複数値の関係性）
-  if (props.status.isCompleted() && !props.dueDate) {
-    return Result.err(new DomainError('完了TODOには期限が必要です'));
-  }
-
-  return Result.ok(new Todo(props));
-}
-
-// UseCase層
-const titleResult = TodoTitle.from({ title: input.title });
-if (!titleResult.success) {
-  return Result.err(titleResult.error);
-}
-
-const statusResult = TodoStatus.from({ status: input.status });
-if (!statusResult.success) {
-  return Result.err(statusResult.error);
-}
-
-// reconstruct()はResult型を返す
-// オプショナルフィールドも明示的にundefinedを渡す
-const reconstructResult = Todo.reconstruct({
-  id: existing.id,
-  title: titleResult.data,             // Value Objectで検証済み
-  description: input.description,       // undefinedの可能性あり、明示的に渡す
-  status: statusResult.data,            // Value Objectで検証済み
-  dueDate: input.dueDate,               // undefinedの可能性あり、明示的に渡す
-  completedAt: existing.completedAt,    // undefinedの可能性あり、明示的に渡す
-  userSub: existing.userSub,
-  createdAt: existing.createdAt,
-  updatedAt: now,
-});
-
-if (!reconstructResult.success) {
-  return Result.err(reconstructResult.error);
-}
-
-const updated = reconstructResult.data;
-```
-
-**パターンC: 複雑なバリデーションメソッド（Result型返却）**
+**パターンB: 複雑なバリデーションメソッド（Result型返却）**
 
 条件:
 - 複数フィールドの連動あり
@@ -219,149 +158,22 @@ async execute(input: RegisterTodoUseCaseInput): Promise<Result> {
 }
 ```
 
-### パターン2: 更新（PUT/全フィールド受け取り、reconstruct使用）
+### パターン2: PATCH更新（Result.then()メソッドチェーン）
+
+**参照**: `20-use-case-implementation.md` - PATCH更新時の個別メソッド更新
 
 **使用条件**:
-- ビジネスロジックがない場合
-- PUT更新（全フィールドを受け取る）
+- PATCH更新（部分更新、送られたフィールドのみ受け取る）
+- 複雑なビジネスロジックがない場合
 
-```typescript
-// UseCase層
-async execute(input: UpdateTodoUseCaseInput): Promise<Result> {
-  // 1. 既存Entity取得
-  const existingResult = await this.#props.todoRepository.findById({
-    id: input.todoId,
-  });
-  if (!existingResult.success || !existingResult.data) {
-    return Result.err(new NotFoundError());
-  }
-  const existing = existingResult.data;
+**原則**:
+- 送られたフィールドのみ更新（`'in'`演算子で判定）
+- 送られなかったフィールドは既存値のまま = 自然にマージ
+- Result.then()でメソッドチェーン
 
-  // 2. 権限チェック
-  if (existing.userSub !== input.userSub) {
-    return Result.err(new ForbiddenError());
-  }
+**実装詳細**: `20-use-case-implementation.md` - PATCH更新時の個別メソッド更新パターン参照
 
-  // 3. Value Object生成（すべてのフィールド）
-  const titleResult = TodoTitle.fromString(input.title);
-  if (!titleResult.success) {
-    return Result.err(titleResult.error);
-  }
-
-  const statusResult = TodoStatus.fromString(input.status);
-  if (!statusResult.success) {
-    return Result.err(statusResult.error);
-  }
-
-  // 4. Entity再構築（Result型を返す）
-  const reconstructResult = Todo.reconstruct({
-    id: existing.id,
-    title: titleResult.data,
-    description: input.description,
-    status: statusResult.data,
-    dueDate: input.dueDate,
-    completedAt: existing.completedAt,
-    userSub: existing.userSub,       // 変更不可
-    createdAt: existing.createdAt,   // 変更不可
-    updatedAt: dateToIsoString(this.#props.fetchNow()),
-  });
-
-  if (!reconstructResult.success) {
-    return Result.err(reconstructResult.error);
-  }
-
-  const updated = reconstructResult.data;
-
-  // 5. 保存
-  const saveResult = await this.#props.todoRepository.save({ todo: updated });
-  if (!saveResult.success) {
-    return Result.err(saveResult.error);
-  }
-
-  return Result.ok(updated);
-}
-```
-
-### パターン2.5: 更新（PATCH/部分更新、reconstruct使用）
-
-**参照**: `20-use-case-implementation.md` - PATCH更新時のマージロジック
-
-**使用条件**:
-- ビジネスロジックがない場合
-- PATCH更新（部分更新、変更されたフィールドのみ受け取る）
-
-```typescript
-// UseCase層
-async execute(input: UpdateTodoUseCaseInput): Promise<Result> {
-  // 1. 既存Entity取得
-  const existingResult = await this.#props.todoRepository.findById({
-    id: input.todoId,
-  });
-  if (!existingResult.success || !existingResult.data) {
-    return Result.err(new NotFoundError());
-  }
-  const existing = existingResult.data;
-
-  // 2. 権限チェック
-  if (existing.userSub !== input.userSub) {
-    return Result.err(new ForbiddenError());
-  }
-
-  // 3. 変更されたフィールドのみValue Object生成
-  let title = existing.title;
-  if (input.title !== undefined) {
-    const titleResult = TodoTitle.fromString(input.title);
-    if (!titleResult.success) return titleResult;
-    title = titleResult.data;
-  }
-
-  let status = existing.status;
-  if (input.status !== undefined) {
-    const statusResult = TodoStatus.fromString(input.status);
-    if (!statusResult.success) return statusResult;
-    status = statusResult.data;
-  }
-
-  // 4. マージロジック実施（プリミティブフィールド）
-  const description = input.description !== undefined
-    ? input.description
-    : existing.description;
-
-  // 5. Entity再構築（Result型を返す）
-  const reconstructResult = Todo.reconstruct({
-    id: existing.id,
-    title,              // マージ済み
-    description,        // マージ済み
-    status,             // マージ済み
-    dueDate: input.dueDate !== undefined ? input.dueDate : existing.dueDate,
-    completedAt: existing.completedAt,
-    userSub: existing.userSub,     // 変更不可
-    createdAt: existing.createdAt, // 変更不可
-    updatedAt: dateToIsoString(this.#props.fetchNow()),
-  });
-
-  if (!reconstructResult.success) {
-    return Result.err(reconstructResult.error);
-  }
-
-  const updated = reconstructResult.data;
-
-  // 6. 保存
-  const saveResult = await this.#props.todoRepository.save({ todo: updated });
-  if (!saveResult.success) {
-    return Result.err(saveResult.error);
-  }
-
-  return Result.ok(updated);
-}
-```
-
-**重要**:
-- `??`演算子はプリミティブ型フィールドのマージに使用
-- Value Objectフィールドは個別に生成・検証してからマージ
-- reconstruct()は常に全フィールドを受け取る（マージ後）
-
-### パターン3: 更新（個別メソッド使用）
+### パターン3: 更新（ビジネスメソッド使用）
 
 **使用条件**: ビジネスロジックがある場合
 
@@ -528,15 +340,12 @@ if (!existing.dueDate) {
     error: new DomainError('期限のないTODOは完了できません'),
   };
 }
-const reconstructResult = Todo.reconstruct({
+const updated = new Todo({
   ...existing,
   status: TodoStatus.completed(),
   completedAt: now,
   updatedAt: now,
 });
-if (!reconstructResult.success) {
-  return Result.err(reconstructResult.error);
-}
 ```
 
 ## チェックリスト

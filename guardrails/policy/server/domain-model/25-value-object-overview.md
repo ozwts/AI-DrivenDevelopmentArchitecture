@@ -237,6 +237,7 @@ domain/model/user/
 ├── user.dummy.ts          # Entityダミー
 ├── email.ts               # Value Object
 ├── email.small.test.ts    # Value Objectテスト
+├── email.dummy.ts         # Value Objectダミー（Entity Dummyから使用）
 └── user-repository.ts
 
 domain/model/todo/
@@ -245,10 +246,11 @@ domain/model/todo/
 ├── todo.dummy.ts             # Entityダミー
 ├── todo-status.ts            # Value Object
 ├── todo-status.small.test.ts # Value Objectテスト
+├── todo-status.dummy.ts      # Value Objectダミー（Entity Dummyから使用）
 └── todo-repository.ts
 ```
 
-**注**: Value Objectは通常Dummyファクトリ不要（`from()`や静的ファクトリメソッドで生成）
+**注**: Value ObjectテストではDummyファクトリ不要（静的ファクトリメソッドで生成）。ただし、Entity Dummyファクトリから使用するため`{value-object}.dummy.ts`は作成する。
 
 ## テスト戦略
 

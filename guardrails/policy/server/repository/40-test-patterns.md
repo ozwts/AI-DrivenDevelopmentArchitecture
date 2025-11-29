@@ -2,12 +2,14 @@
 
 ## 核心原則
 
-リポジトリの**全メソッド**に対して、**正常系・子エンティティを含む正常系・異常系**のテストケースを必ず追記し、既存機能の意図せぬ破壊を防ぐ。
+1. リポジトリの**全メソッド**に対して、**正常系・子エンティティを含む正常系・異常系**のテストケースを必ず追記
+2. **全テストでDummyファクトリを使用** - `new Entity()`を直接使わず、保守性を向上
 
 **関連ドキュメント**:
 - **Repository概要**: `10-repository-overview.md`
 - **集約の永続化**: `20-aggregate-persistence.md`
 - **DynamoDBパターン**: `30-dynamodb-patterns.md`
+- **Entity Dummyファクトリ**: `../domain-model/52-entity-test-patterns.md`
 
 ## テストの重要性
 
@@ -72,19 +74,19 @@
 
 ### TodoRepositoryのテストケース
 
+**重要**: すべてのテストケースでDummyファクトリを使用する。
+
 ```typescript
+import { todoDummyFrom } from "@/domain/model/todo/todo.dummy";
+import { attachmentDummyFrom } from "@/domain/model/attachment/attachment.dummy";
+
 describe("TodoRepositoryImpl", () => {
   describe("findById", () => {
     test("[正常系] 存在するTodoをIDで取得する", async () => {
-      // Arrange: テストデータを準備
-      const todo = new Todo({
+      // Arrange: Dummyファクトリでテストデータを準備
+      const todo = todoDummyFrom({
         id: todoRepository.todoId(),
         title: "テストTODO",
-        status: TodoStatus.PENDING,
-        assigneeUserId: "user-123",
-        attachments: [],
-        createdAt: now,
-        updatedAt: now,
       });
       await todoRepository.save({ todo });
 
@@ -99,22 +101,14 @@ describe("TodoRepositoryImpl", () => {
     });
 
     test("[正常系] 添付ファイル付きTodoをIDで取得する", async () => {
-      // Arrange: 添付ファイル付きTODOを準備
-      const attachment = new Attachment({
+      // Arrange: Dummyファクトリで添付ファイル付きTODOを準備
+      const attachment = attachmentDummyFrom({
         id: todoRepository.attachmentId(),
         fileName: "test.pdf",
-        storageKey: "s3://bucket/test.pdf",
-        createdAt: now,
-        updatedAt: now,
       });
-      const todo = new Todo({
+      const todo = todoDummyFrom({
         id: todoRepository.todoId(),
-        title: "テストTODO",
-        status: TodoStatus.PENDING,
-        assigneeUserId: "user-123",
         attachments: [attachment],
-        createdAt: now,
-        updatedAt: now,
       });
       await todoRepository.save({ todo });
 
@@ -140,9 +134,9 @@ describe("TodoRepositoryImpl", () => {
 
   describe("findAll", () => {
     test("[正常系] 全てのTodoを取得する", async () => {
-      // Arrange: 複数のTODOを準備
-      const todo1 = new Todo({ id: todoRepository.todoId(), ... });
-      const todo2 = new Todo({ id: todoRepository.todoId(), ... });
+      // Arrange: Dummyファクトリで複数のTODOを準備
+      const todo1 = todoDummyFrom({ id: todoRepository.todoId() });
+      const todo2 = todoDummyFrom({ id: todoRepository.todoId() });
       await todoRepository.save({ todo: todo1 });
       await todoRepository.save({ todo: todo2 });
 
@@ -155,9 +149,12 @@ describe("TodoRepositoryImpl", () => {
     });
 
     test("[正常系] 添付ファイル付きTodoを含む全件取得", async () => {
-      // Arrange: 添付ファイル付きTODOを準備
-      const attachment = new Attachment({ ... });
-      const todo = new Todo({ id: todoRepository.todoId(), attachments: [attachment], ... });
+      // Arrange: Dummyファクトリで添付ファイル付きTODOを準備
+      const attachment = attachmentDummyFrom();
+      const todo = todoDummyFrom({
+        id: todoRepository.todoId(),
+        attachments: [attachment],
+      });
       await todoRepository.save({ todo });
 
       // Act: 全件取得
@@ -180,8 +177,8 @@ describe("TodoRepositoryImpl", () => {
 
   describe("save", () => {
     test("[正常系] Todoを保存する", async () => {
-      // Arrange: TODOを準備
-      const todo = new Todo({ id: todoRepository.todoId(), ... });
+      // Arrange: DummyファクトリでTODOを準備
+      const todo = todoDummyFrom({ id: todoRepository.todoId() });
 
       // Act: 保存
       const result = await todoRepository.save({ todo });
@@ -195,9 +192,12 @@ describe("TodoRepositoryImpl", () => {
     });
 
     test("[正常系] 添付ファイル付きTodoを保存する", async () => {
-      // Arrange: 添付ファイル付きTODOを準備
-      const attachment = new Attachment({ ... });
-      const todo = new Todo({ id: todoRepository.todoId(), attachments: [attachment], ... });
+      // Arrange: Dummyファクトリで添付ファイル付きTODOを準備
+      const attachment = attachmentDummyFrom();
+      const todo = todoDummyFrom({
+        id: todoRepository.todoId(),
+        attachments: [attachment],
+      });
 
       // Act: 保存
       const result = await todoRepository.save({ todo });
@@ -210,14 +210,26 @@ describe("TodoRepositoryImpl", () => {
     });
 
     test("[正常系] 添付ファイルをReplace戦略で更新する", async () => {
-      // Arrange: 既存の添付ファイルを持つTODOを保存
-      const oldAttachment = new Attachment({ id: "att-1", fileName: "old.pdf", ... });
-      const todo = new Todo({ id: todoRepository.todoId(), attachments: [oldAttachment], ... });
+      // Arrange: Dummyファクトリで既存の添付ファイルを持つTODOを保存
+      const oldAttachment = attachmentDummyFrom({
+        id: "att-1",
+        fileName: "old.pdf",
+      });
+      const todo = todoDummyFrom({
+        id: todoRepository.todoId(),
+        attachments: [oldAttachment],
+      });
       await todoRepository.save({ todo });
 
-      // Act: 新しい添付ファイルに置き換えて保存
-      const newAttachment = new Attachment({ id: "att-2", fileName: "new.pdf", ... });
-      const updatedTodo = new Todo({ ...todo, attachments: [newAttachment] });
+      // Act: Dummyファクトリで新しい添付ファイルに置き換えて保存
+      const newAttachment = attachmentDummyFrom({
+        id: "att-2",
+        fileName: "new.pdf",
+      });
+      const updatedTodo = todoDummyFrom({
+        ...todo,
+        attachments: [newAttachment],
+      });
       await todoRepository.save({ todo: updatedTodo });
 
       // Assert: 古い添付ファイルは削除され、新しいものが保存される
@@ -230,8 +242,8 @@ describe("TodoRepositoryImpl", () => {
 
   describe("remove", () => {
     test("[正常系] Todoを削除する", async () => {
-      // Arrange: TODOを準備
-      const todo = new Todo({ id: todoRepository.todoId(), ... });
+      // Arrange: DummyファクトリでTODOを準備
+      const todo = todoDummyFrom({ id: todoRepository.todoId() });
       await todoRepository.save({ todo });
 
       // Act: 削除
@@ -246,9 +258,12 @@ describe("TodoRepositoryImpl", () => {
     });
 
     test("[正常系] 添付ファイル付きTodoを削除すると関連する添付ファイルも削除される", async () => {
-      // Arrange: 添付ファイル付きTODOを準備
-      const attachment = new Attachment({ ... });
-      const todo = new Todo({ id: todoRepository.todoId(), attachments: [attachment], ... });
+      // Arrange: Dummyファクトリで添付ファイル付きTODOを準備
+      const attachment = attachmentDummyFrom();
+      const todo = todoDummyFrom({
+        id: todoRepository.todoId(),
+        attachments: [attachment],
+      });
       await todoRepository.save({ todo });
 
       // Act: 削除
@@ -290,33 +305,100 @@ describe("TodoRepositoryImpl", () => {
 
 ### テストヘルパー関数
 
-テストデータの作成を簡略化するヘルパー関数を用意する。
+**重要**: テストヘルパー関数は使わず、Dummyファクトリを直接使用する。
 
 ```typescript
-// テストヘルパー
+// ❌ Bad: テスト専用ヘルパー関数を作成（保守コスト増）
 function createTestTodo(overrides?: Partial<TodoProps>): Todo {
   return new Todo({
     id: todoRepository.todoId(),
-    title: "テストTODO",
-    status: TodoStatus.PENDING,
-    assigneeUserId: "user-123",
-    attachments: [],
-    createdAt: now(),
-    updatedAt: now(),
-    ...overrides,
+    title: "テストTODO",  // 固定値
+    status: TodoStatus.PENDING,  // 固定値
+    // ... モデル変更時に修正が必要
   });
 }
 
-function createTestAttachment(overrides?: Partial<AttachmentProps>): Attachment {
-  return new Attachment({
-    id: todoRepository.attachmentId(),
-    fileName: "test.pdf",
-    storageKey: "s3://bucket/test.pdf",
-    createdAt: now(),
-    updatedAt: now(),
-    ...overrides,
+// ✅ Good: Dummyファクトリを直接使用
+import { todoDummyFrom } from "@/domain/model/todo/todo.dummy";
+
+test("テストケース", async () => {
+  const todo = todoDummyFrom({
+    id: todoRepository.todoId(),
+    // 必要なフィールドのみオーバーライド、他はランダム値
   });
-}
+});
+```
+
+**理由**:
+- Dummyファクトリは既にランダム値生成機能を持つ
+- テストファイル専用ヘルパーを作ると保守コストが倍増
+- Dummyファクトリを全テストで統一して使用する方が一貫性がある
+
+## UnitOfWorkとの統合テスト
+
+新規リポジトリを追加した場合は、**UnitOfWorkのミディアムテスト**にも追加して、トランザクション動作を検証する。
+
+### 追加が必要な理由
+
+1. **トランザクション整合性の検証**: 複数のリポジトリ操作が1つのトランザクションで正しくコミット/ロールバックされることを確認
+2. **UoW統合の動作確認**: `registerOperation()`メソッドが正しく呼び出されることを検証
+3. **リグレッション防止**: 既存のトランザクション処理に影響を与えないことを保証
+
+### テストファイル配置
+
+```
+infrastructure/unit-of-work/
+└── dynamodb-unit-of-work.medium.test.ts  # ← ここに新規リポジトリのテストケースを追加
+```
+
+### テストケース例
+
+```typescript
+describe("DynamoDBUnitOfWork with TodoRepository", () => {
+  test("[正常系] UoWを使ってTodoを保存する", async () => {
+    // Arrange
+    const uow = new DynamoDBUnitOfWork({ ddbDoc });
+    const todoRepository = new TodoRepositoryImpl({
+      ddbDoc,
+      todosTableName,
+      attachmentsTableName,
+      logger,
+      uow,  // UoWを注入
+    });
+
+    const todo = new Todo({ id: todoRepository.todoId(), ... });
+
+    // Act
+    await todoRepository.save({ todo });
+    await uow.commit();  // トランザクションコミット
+
+    // Assert: 保存されたことを確認
+    const findResult = await todoRepository.findById({ id: todo.id });
+    expect(findResult.data).toBeDefined();
+  });
+
+  test("[正常系] UoWでロールバックするとTodoは保存されない", async () => {
+    // Arrange
+    const uow = new DynamoDBUnitOfWork({ ddbDoc });
+    const todoRepository = new TodoRepositoryImpl({
+      ddbDoc,
+      todosTableName,
+      attachmentsTableName,
+      logger,
+      uow,
+    });
+
+    const todo = new Todo({ id: todoRepository.todoId(), ... });
+
+    // Act
+    await todoRepository.save({ todo });
+    await uow.rollback();  // トランザクションロールバック
+
+    // Assert: 保存されていないことを確認
+    const findResult = await todoRepository.findById({ id: todo.id });
+    expect(findResult.data).toBeUndefined();
+  });
+});
 ```
 
 ## チェックリスト
@@ -328,5 +410,7 @@ function createTestAttachment(overrides?: Partial<AttachmentProps>): Attachment 
 [ ] 存在しないデータの検索で適切に処理されることを確認
 [ ] テストファイル命名規則に従っている（{entity}-repository.medium.test.ts）
 [ ] テストデータのクリーンアップを実装
-[ ] テストヘルパー関数を用意して可読性を向上
+[ ] 全テストケースでDummyファクトリを使用（new Entity()を直接使わない）
+[ ] テスト専用ヘルパー関数を作らない（Dummyファクトリで十分）
+[ ] UnitOfWorkのミディアムテストに新規リポジトリのテストケースを追加
 ```

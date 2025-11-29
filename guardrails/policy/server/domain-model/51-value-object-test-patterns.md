@@ -319,14 +319,16 @@ describe("inProgress", () => {
 
 ## Value Object Dummy
 
-**Value Objectは通常Dummyファクトリ不要**（`from()`や静的ファクトリメソッドで生成）
+### Value Objectテスト自体でのDummy使用
+
+**Value Objectテスト自体ではDummyファクトリ不要**（`from()`や静的ファクトリメソッドで特定の値を生成）
 
 ```typescript
-// テスト内で静的ファクトリメソッドで生成
+// ✅ Value Objectテスト内では静的ファクトリメソッドで特定値を生成
 const status = TodoStatus.todo();
 const completed = TodoStatus.completed();
 
-// または from()
+// または from()で特定値
 const statusResult = TodoStatus.from({ status: "TODO" });
 expect(statusResult.success).toBe(true);
 if (statusResult.success) {
@@ -335,6 +337,170 @@ if (statusResult.success) {
 
 // default()がある場合
 const email = Email.default();
+```
+
+**理由**: Value Objectテストは特定の値でバリデーションロジックを検証するため、ランダム値は不適切。
+
+### Entity Dummyファクトリ内でのDummy使用
+
+**Entity Dummyファクトリ内でもValue Object Dummyファクトリを使用**
+
+Value ObjectのDummyファクトリを`{value-object}.dummy.ts`に作成し、Entity Dummyファクトリから使用する。
+
+```typescript
+// domain/model/todo/todo-status.dummy.ts
+import { faker } from "@faker-js/faker";
+import { TodoStatus } from "./todo-status";
+
+export type TodoStatusDummyProps = Partial<{
+  status: "TODO" | "IN_PROGRESS" | "COMPLETED";
+}>;
+
+/**
+ * テスト用TodoStatusファクトリ
+ *
+ * @param props 部分オーバーライド（省略時はランダム値）
+ * @returns TodoStatusインスタンス
+ */
+export const todoStatusDummyFrom = (props?: TodoStatusDummyProps): TodoStatus => {
+  const statusValue = props?.status ??
+    faker.helpers.arrayElement(["TODO", "IN_PROGRESS", "COMPLETED"] as const);
+
+  const result = TodoStatus.from({ status: statusValue });
+
+  if (!result.success) {
+    throw new Error(`Failed to generate TodoStatus: ${result.error.message}`);
+  }
+
+  return result.data;
+};
+```
+
+```typescript
+// domain/model/todo/todo.dummy.ts
+import { todoStatusDummyFrom } from "./todo-status.dummy";
+import { faker } from "@faker-js/faker";
+import type { Todo, TodoProps } from "./todo";
+
+export const todoDummyFrom = (overrides?: Partial<TodoProps>): Todo => {
+  const now = new Date().toISOString();
+
+  return new Todo({
+    id: overrides?.id ?? faker.string.uuid(),
+    title: overrides?.title ?? faker.lorem.sentence(),
+    status: overrides?.status ?? todoStatusDummyFrom(),  // ✅ Value Object Dummy
+    createdAt: overrides?.createdAt ?? now,
+    updatedAt: overrides?.updatedAt ?? now,
+  });
+};
+```
+
+**理由**:
+- Entity Dummyファクトリでは多様なテストケースをカバーするため、Value Objectもランダムに生成
+- パターンの統一（すべて`{model}DummyFrom()`形式）
+- 部分オーバーライド可能（テストで特定値が必要な場合）
+
+### Dummyファクトリのパターン
+
+#### パターン1: Enum型Value Object
+
+```typescript
+// project-color.dummy.ts
+import { faker } from "@faker-js/faker";
+import { ProjectColor } from "./project-color";
+
+export type ProjectColorDummyProps = Partial<{
+  color: "RED" | "BLUE" | "GREEN" | "YELLOW";
+}>;
+
+/**
+ * テスト用ProjectColorファクトリ
+ *
+ * @param props 部分オーバーライド（省略時はランダム値）
+ * @returns ProjectColorインスタンス
+ */
+export const projectColorDummyFrom = (props?: ProjectColorDummyProps): ProjectColor => {
+  const colorValue = props?.color ??
+    faker.helpers.arrayElement(["RED", "BLUE", "GREEN", "YELLOW"] as const);
+
+  const result = ProjectColor.from({ color: colorValue });
+
+  if (!result.success) {
+    throw new Error(`Failed to generate ProjectColor: ${result.error.message}`);
+  }
+
+  return result.data;
+};
+```
+
+#### パターン2: 範囲があるValue Object
+
+```typescript
+// priority.dummy.ts
+import { faker } from "@faker-js/faker";
+import { Priority } from "./priority";
+
+export type PriorityDummyProps = Partial<{
+  priority: number;
+}>;
+
+/**
+ * テスト用Priorityファクトリ
+ *
+ * @param props 部分オーバーライド（省略時はランダム値）
+ * @returns Priorityインスタンス
+ */
+export const priorityDummyFrom = (props?: PriorityDummyProps): Priority => {
+  const value = props?.priority ?? faker.number.int({ min: 1, max: 5 });
+  const result = Priority.from({ priority: value });
+
+  if (!result.success) {
+    throw new Error(`Failed to generate Priority: ${result.error.message}`);
+  }
+
+  return result.data;
+};
+```
+
+#### パターン3: 文字列型Value Object
+
+```typescript
+// email.dummy.ts
+import { faker } from "@faker-js/faker";
+import { Email } from "./email";
+
+export type EmailDummyProps = Partial<{
+  email: string;
+}>;
+
+/**
+ * テスト用Emailファクトリ
+ *
+ * @param props 部分オーバーライド（省略時はランダム値）
+ * @returns Emailインスタンス
+ */
+export const emailDummyFrom = (props?: EmailDummyProps): Email => {
+  const emailValue = props?.email ?? faker.internet.email();
+  const result = Email.from({ email: emailValue });
+
+  if (!result.success) {
+    throw new Error(`Failed to generate Email: ${result.error.message}`);
+  }
+
+  return result.data;
+};
+```
+
+### ファイル構成
+
+```
+domain/model/todo/
+├── todo.ts                    # Entity
+├── todo.dummy.ts              # Entity Dummyファクトリ（todoStatusDummyFrom()を使用）
+├── todo.small.test.ts         # Entityテスト
+├── todo-status.ts             # Value Object
+├── todo-status.dummy.ts       # ✅ Value Object Dummyファクトリ（todoStatusDummyFrom()）
+└── todo-status.small.test.ts  # Value Objectテスト（静的ファクトリ使用）
 ```
 
 ## テストパターン例：TodoStatus
@@ -489,6 +655,8 @@ describe("TodoStatus", () => {
 
 ## チェックリスト
 
+### Value Objectテスト
+
 ```
 [ ] from()の正常系・異常系テスト（必須）
 [ ] equals()テスト（必須）
@@ -501,4 +669,18 @@ describe("TodoStatus", () => {
 [ ] エラー型とメッセージの検証（必須）
 [ ] 境界値テスト
 [ ] ファイル名: {value-object}.small.test.ts
+[ ] テスト内では静的ファクトリメソッドまたはfrom()を使用（Dummy不要）
+```
+
+### Value Object Dummyファクトリ
+
+```
+[ ] {value-object}.dummy.tsファイル作成
+[ ] {ValueObject}DummyProps型を定義（Partial<>型）
+[ ] {valueObject}DummyFrom()関数を実装
+[ ] faker.helpers.arrayElement()で有効値からランダム選択（Enum型の場合）
+[ ] from()でResult型をチェックし、失敗時はエラーをthrow
+[ ] Entity Dummyファクトリから使用
+[ ] JSDocコメント追加（@param, @returns）
+[ ] 部分オーバーライド可能（props?: Partial<>）
 ```

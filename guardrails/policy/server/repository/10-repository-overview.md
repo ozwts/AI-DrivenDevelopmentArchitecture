@@ -49,7 +49,7 @@ infrastructure/repository/
 ### 実施しないこと
 
 1. **単一Value Objectの不変条件チェック** → Value Object層で実施（自己検証）
-2. **複数値関係性チェック** → Entity層で実施（reconstruct時）
+2. **複数値関係性チェック** → Entity層で実施（保存時）
 3. **ビジネスルール** → UseCase層で実施（DB参照、権限チェック等）
 4. **型レベルバリデーション** → Handler層（OpenAPI/Zod）で実施済み
 5. **子エンティティ専用リポジトリの作成** → 集約ルートリポジトリに統合
@@ -181,10 +181,40 @@ export const todoDdbItemToTodo = (
 - DBから取得した文字列をValue Objectに変換
 - `from(props: XxxProps)`メソッドにProps型エイリアスパターンで渡す（例: `{ status: value }`）
 - Value Object変換失敗時は`default()`を使用してフォールバック
-- **Entityはコンストラクタで直接生成**（`reconstruct()`は不要）
+- **Entityはコンストラクタで直接生成**（複数値関係性チェックは不要）
 - **DBデータは既に整合性があると信頼**（MECE原則：複数値関係性チェックは保存時に完了済み）
 - データ不整合が発生した場合はLogger経由でモニタリング推奨
 - **throwは使わない**（全層でResult型パターンを徹底）
+
+**なぜデフォルト値を使うべきか**:
+
+1. **システムの可用性を優先**: throwすると処理が停止し、ユーザー体験を損なう
+2. **データ移行・スキーマ変更時の柔軟性**: 古いデータや移行中のデータが存在しても動作可能
+3. **Graceful Degradation**: 一部のデータが不正でも、システム全体は動作し続ける
+4. **監視とアラート**: Logger経由で不整合を検出し、後で修正可能（運用で対処）
+5. **ゼロダウンタイム**: データ修正中もサービスを継続できる
+
+**例**:
+```typescript
+// ✅ Good: デフォルト値でフォールバック
+const statusResult = TodoStatus.from({ status: todoDdbItem.status });
+const status = statusResult.success
+  ? statusResult.data
+  : TodoStatus.default();  // デフォルト値（例: "TODO"）
+
+if (!statusResult.success) {
+  logger.warn("不正なステータス値を検出", {
+    todoId: todoDdbItem.todoId,
+    invalidStatus: todoDdbItem.status,
+  });
+}
+
+// ❌ Bad: throwで処理を停止
+const statusResult = TodoStatus.from({ status: todoDdbItem.status });
+if (!statusResult.success) {
+  throw new Error("Invalid status");  // システムが停止
+}
+```
 
 ## UnitOfWorkパターン
 
@@ -308,13 +338,6 @@ if (status === "COMPLETED" && !canTransitionToCompleted()) {
 if (status === "COMPLETED" && completedAt === undefined) {
   throw new Error("Completed todo must have completedAt");  // ❌ Repository層では不要（DBデータは整合性あり）
 }
-
-// reconstruct()を使用（Repository層では不要）
-const todoResult = Todo.reconstruct({ ...props });
-if (!todoResult.success) {
-  // ❌ DBから復元時は複数値関係性チェック不要（保存時に完了済み）
-}
-const todo = todoResult.data;
 ```
 
 ## DI設定パターン
@@ -363,7 +386,7 @@ container.bind<TodoRepository>(TODO_REPOSITORY).toDynamicValue((context) => {
 [ ] DB → ドメインモデル変換時にValue Object.from(props)を使用
 [ ] Value Object変換時はProps型エイリアスパターンを使用（インラインprops不可）
 [ ] Value Object変換失敗時はデフォルト値を使用（throwしない）
-[ ] Entityはコンストラクタで直接生成（reconstruct()不要）
+[ ] Entityはコンストラクタで直接生成（複数値関係性チェックは不要）
 [ ] DBデータの整合性を信頼（MECE原則：複数値関係性チェックは保存時完了済み）
 [ ] すべてのメソッドがResult型を返す
 [ ] エラーをUnexpectedErrorでラップしている（throwしない）

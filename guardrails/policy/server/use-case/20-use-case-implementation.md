@@ -316,8 +316,8 @@ if (currentStatus === "COMPLETED" && newStatus === "PENDING") {
 
 UseCase実装時は、常にドメインメソッドの追加・改修を検討し、ドメインモデル貧血症を防ぐ。
 
-- エンティティ操作パターン（新規作成、更新）
-- `reconstruct()` vs 個別メソッドの使い分け
+- エンティティ操作パターン（新規作成、PATCH更新、ビジネスメソッド）
+- 個別メソッドによる更新（Result.then()メソッドチェーン）
 - Value Objectエラーの変換
 - ドメインメソッド追加のタイミング
 
@@ -468,25 +468,34 @@ container
   .inSingletonScope();
 ```
 
-## PATCH更新時のマージロジック
+## PATCH更新時の個別メソッド更新
 
 **参照**: `15-domain-model-interaction.md` - Entity操作パターン
 
-OpenAPIでPATCH更新を定義する場合、部分更新をサポートするためにUseCase層でマージロジックを実施する。
+OpenAPIでPATCH更新を定義する場合、Handler層で`'in'`演算子を使用して3値（省略/null/値）を区別し、UseCase層で個別メソッドチェーンで更新する。
 
 ### 実装フロー
 
-1. Handler層でZodバリデーション（部分的なフィールドのみ）
-2. UseCase層で既存Entityを取得
-3. UseCase層で変更されたフィールドのみValue Object生成
-4. UseCase層でマージロジック実施（`input.field ?? existing.field`）
-5. Entity.reconstruct()に全フィールドを渡す
+1. **OpenAPI層**: `nullable: true`で`null`を許可（フィールドクリア用）
+2. **Handler層**: `'in'`演算子で3値区別、`null` → `undefined`変換
+3. **UseCase層**: 送られたフィールドのみ個別メソッドで更新（メソッドチェーン）
+4. **Entity層**: `undefined`のみ扱う（`null`は使用しない）
+
+### 3値の区別（Handler層）
+
+**参照**: `policy/server/handler/10-handler-overview.md` - null → undefined 変換パターン
+
+| クライアント送信 | JSON | Handler層 | UseCase層 | 意味 |
+|---------------|------|-----------|----------|------|
+| フィールド省略 | `{}` | プロパティなし | `'dueDate' in input === false` | 変更しない |
+| `null`送信 | `{"dueDate": null}` | `undefined` | `input.dueDate === undefined` | クリアする |
+| 値送信 | `{"dueDate": "2025-01-01"}` | 値そのまま | `input.dueDate === "2025-01-01"` | 値を設定 |
 
 ### 実装例
 
 ```typescript
-// PATCH更新のユースケース実装
-async execute(input: UpdateTodoUseCaseInput): Promise<Result> {
+// PATCH更新のユースケース実装（メソッドチェーンパターン）
+async execute(input: UpdateTodoUseCaseInput): Promise<UpdateTodoResult> {
   // 1. 既存Entity取得
   const existingResult = await this.#props.todoRepository.findById({
     id: input.todoId,
@@ -494,66 +503,84 @@ async execute(input: UpdateTodoUseCaseInput): Promise<Result> {
   if (!existingResult.success || !existingResult.data) {
     return Result.err(new NotFoundError());
   }
-  const existing = existingResult.data;
 
   // 2. 権限チェック
+  const existing = existingResult.data;
   if (existing.userSub !== input.userSub) {
     return Result.err(new ForbiddenError());
   }
 
-  // 3. 変更されたフィールドのみValue Object生成
-  let title = existing.title;
-  if (input.title !== undefined) {
-    const titleResult = TodoTitle.fromString(input.title);
-    if (!titleResult.success) return titleResult;
-    title = titleResult.data;
-  }
+  // 3. Result.then()によるメソッドチェーン
+  const now = dateToIsoString(this.#props.fetchNow());
 
-  let status = existing.status;
-  if (input.status !== undefined) {
-    const statusResult = TodoStatus.fromString(input.status);
-    if (!statusResult.success) return statusResult;
-    status = statusResult.data;
-  }
-
-  // 4. マージロジック実施（プリミティブフィールド）
-  const description = input.description !== undefined
-    ? input.description
-    : existing.description;
-
-  // 5. Entity.reconstruct()に全フィールドを渡す（Result型を返す）
-  const reconstructResult = Todo.reconstruct({
-    id: existing.id,
-    title,              // マージ済み
-    description,        // マージ済み
-    status,             // マージ済み
-    dueDate: input.dueDate !== undefined ? input.dueDate : existing.dueDate,
-    completedAt: existing.completedAt,
-    userSub: existing.userSub,     // 変更不可
-    createdAt: existing.createdAt, // 変更不可
-    updatedAt: dateToIsoString(this.#props.fetchNow()),
-  });
-
-  if (!reconstructResult.success) {
-    return Result.err(reconstructResult.error);
-  }
-
-  const updated = reconstructResult.data;
-
-  // 6. 保存
-  const saveResult = await this.#props.todoRepository.save({ todo: updated });
-  if (!saveResult.success) {
-    return saveResult;
-  }
-
-  return Result.ok(updated);
+  return Result.ok(existing)
+    .then(t => 'title' in input
+      ? TodoTitle.from({ title: input.title })
+          .then(title => t.changeTitle(title, now))
+      : t  // Entity返す → Result.then()が自動でResult.ok()に包む
+    )
+    .then(t => 'status' in input
+      ? TodoStatus.from({ status: input.status })
+          .then(status => t.changeStatus(status, now))  // Result<Todo>返す → そのまま
+      : t
+    )
+    .then(t => 'dueDate' in input
+      ? t.changeDueDate(input.dueDate, now)  // Entity返す → 自動で包まれる
+      : t
+    )
+    .then(t => 'completedAt' in input
+      ? t.changeCompletedAt(input.completedAt, now)
+      : t
+    )
+    .then(t => 'description' in input
+      ? t.changeDescription(input.description, now)
+      : t
+    )
+    .then(t => 'memo' in input
+      ? t.changeMemo(input.memo, now)
+      : t
+    )
+    .then(updated =>
+      this.#props.todoRepository.save({ todo: updated })
+        .then(() => updated)  // saveが成功したらupdatedを返す
+    );
 }
 ```
 
-**重要**:
-- `??`演算子はプリミティブ型フィールドのマージに使用
-- Value Objectフィールドは個別に生成・検証してからマージ
-- reconstruct()は常に全フィールドを受け取る（部分的な引数は不可）
+**重要なポイント**:
+
+1. **Result.then()の自動変換**: Entityを返すと自動で`Result.ok()`に包まれる
+   ```typescript
+   .then(t => t.changeDueDate(input.dueDate, now))  // Todo返す → Result<Todo>に自動変換
+   .then(t => t.changeStatus(status, now))          // Result<Todo>返す → そのまま
+   ```
+
+2. **'in'演算子**: フィールド存在確認（Handler層で送られたか判定）
+   ```typescript
+   .then(t => 'dueDate' in input
+     ? t.changeDueDate(input.dueDate, now)
+     : t  // 送られていない → 既存値のまま
+   )
+   ```
+
+3. **null不使用**: TypeScript内部は`undefined`のみ（Handler層でnull→undefined変換済み）
+   ```typescript
+   // ✅ Good
+   dueDate: string | undefined
+
+   // ❌ Bad
+   dueDate: string | null | undefined
+   ```
+
+4. **完全フラット**: saveまで含めて1つのチェーン
+   ```typescript
+   return Result.ok(existing)
+     .then(...)  // 更新処理
+     .then(updated =>
+       this.#props.todoRepository.save({ todo: updated })
+         .then(() => updated)
+     );
+   ```
 
 ## Do / Don't
 
@@ -583,35 +610,27 @@ if (!colorResult.success) {
 const now = dateToIsoString(this.#props.fetchNow());
 createdAt: now
 
-// PATCH更新時: マージロジック実施後に全フィールドを渡す
-let title = existing.title;
-if (input.title !== undefined) {
-  const titleResult = TodoTitle.fromString(input.title);
-  if (!titleResult.success) return titleResult;
-  title = titleResult.data;
-}
+// PATCH更新時: Result.then()メソッドチェーンで完全フラット
+const now = dateToIsoString(this.#props.fetchNow());
 
-const description = input.description !== undefined
-  ? input.description
-  : existing.description;
-
-const reconstructResult = Todo.reconstruct({
-  id: existing.id,
-  title,              // マージ済み
-  description,        // マージ済み
-  status: existing.status,
-  dueDate: input.dueDate !== undefined ? input.dueDate : existing.dueDate,
-  completedAt: existing.completedAt,
-  userSub: existing.userSub,     // 変更不可
-  createdAt: existing.createdAt, // 変更不可
-  updatedAt: now,
-});
-
-if (!reconstructResult.success) {
-  return Result.err(reconstructResult.error);
-}
-
-const updated = reconstructResult.data;
+return Result.ok(existing)
+  .then(t => 'title' in input
+    ? TodoTitle.from({ title: input.title })
+        .then(title => t.changeTitle(title, now))
+    : t
+  )
+  .then(t => 'description' in input
+    ? t.changeDescription(input.description, now)
+    : t
+  )
+  .then(t => 'dueDate' in input
+    ? t.changeDueDate(input.dueDate, now)  // Handler層でnull→undefined変換済み
+    : t
+  )
+  .then(updated =>
+    this.#props.todoRepository.save({ todo: updated })
+      .then(() => updated)
+  );
 ```
 
 ### ❌ Bad
@@ -650,16 +669,25 @@ if (!/^#[0-9A-Fa-f]{6}$/.test(input.color)) {  // ❌ Domain層（Value Object�
   return { success: false, error: new DomainError() };
 }
 
-// reconstruct()にマージロジックを含める
-const updatedTodo = Todo.reconstruct({
-  id: existing.id,
-  title: input.title ?? existing.title,  // ❌ reconstruct()外でマージすべき
-  description: input.description ?? existing.description,
-  status: input.status ?? existing.status,
-  // ...
-});
-// 理由: reconstruct()は全フィールド受け取りが前提
-// マージロジックは呼び出し側（UseCase層）で実施する
+// nullを使用（TypeScript内部）
+if ('dueDate' in input) {
+  updated = updated.changeDueDate(input.dueDate === null ? undefined : input.dueDate, now);
+  // ❌ Handler層でnull→undefined変換すべき
+}
+
+// !== undefinedでフィールド存在チェック（'in'演算子を使うべき）
+if (input.title !== undefined) {  // ❌ フィールド省略とundefined送信を区別できない
+  updated = updated.changeTitle(input.title, now);
+}
+
+// letパターン（非推奨）
+let updated = existing;
+if ('title' in input) {
+  const titleResult = TodoTitle.from({ title: input.title });
+  if (!titleResult.success) return titleResult;
+  updated = updated.changeTitle(titleResult.data, now);
+}
+// ❌ メソッドチェーンを使うべき
 
 // レスポンス変換
 return {
@@ -681,10 +709,10 @@ return {
 [ ] Result型の早期リターン
 [ ] Value Objectエラーの適切な変換
 [ ] エンティティ操作（create/update）
-[ ] PATCH更新時はUseCase層でマージロジック実施（reconstruct()外で）
-[ ] reconstruct()には全フィールドを渡す（マージ済み）
-[ ] 不変条件検証（Aggregate全体を見て判定）
-[ ] リポジトリ操作のResult型チェック
+[ ] PATCH更新時はResult.then()でメソッドチェーン
+[ ] 'in'演算子でフィールド存在確認（送られたフィールドのみ処理）
+[ ] 送られなかったフィールドは既存値のまま（三項演算子で分岐）
+[ ] TypeScript内部ではundefinedのみ扱う（Handler層でnull→undefined変換済み）
 [ ] 適切なログ出力（debug/error）
 [ ] 例外を投げない（Result型返却）
 [ ] 時刻取得はfetchNowを使用（dateToIsoString()で変換）

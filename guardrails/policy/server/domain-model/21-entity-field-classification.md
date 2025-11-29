@@ -147,90 +147,38 @@ export class Todo {
 
 PATCH統一により、3-Tier分類を自然に表現できる。
 
-**重要**: 以下のマージロジックはUseCase層で実施する。Entity層はreconstruct()でマージ済みの値を受け取るのみ。
+**重要**: PATCHでは送られたフィールドのみ更新する。個別の更新メソッドをメソッドチェーンで組み合わせる。
+
+**3-Tier分類ごとの処理**:
+
+| Tier | フィールド例 | UseCase層での処理 |
+|------|------------|------------------|
+| **Tier 1: Required** | `title`, `status` | Value Object生成後、個別メソッドで更新 |
+| **Tier 2: Special Case** | `dueDate`, `completedAt` | そのまま個別メソッドに渡す（`undefined`=クリア） |
+| **Tier 3: Optional** | `description`, `memo` | そのまま個別メソッドに渡す（`undefined`=クリア） |
+
+**実装詳細**: `guardrails/policy/server/use-case/20-use-case-implementation.md` - PATCH更新時の個別メソッド更新パターン参照
+
+## PATCH更新での自然なマージ
+
+**メソッドチェーンによる自然なマージ**:
+
+PATCH更新では、送られたフィールドのみ個別メソッドで更新し、送られなかったフィールドは既存値のまま残る = **明示的なマージロジック不要**。
 
 ```typescript
-// UseCase層でのPATCH更新マージロジック例
-
-// 1. 変更されたフィールドのみValue Object生成・マージ
-let title = existing.title;
-if (input.title !== undefined) {
-  const titleResult = TodoTitle.fromString(input.title);
-  if (!titleResult.success) return titleResult;
-  title = titleResult.data;
-}
-
-let status = existing.status;
-if (input.status !== undefined) {
-  const statusResult = TodoStatus.fromString(input.status);
-  if (!statusResult.success) return statusResult;
-  status = statusResult.data;
-}
-
-// 2. プリミティブフィールドのマージ
-// Tier 2: Special Case - undefinedに意味がある
-const dueDate = input.dueDate !== undefined ? input.dueDate : existing.dueDate;
-const completedAt = input.completedAt !== undefined ? input.completedAt : existing.completedAt;
-
-// Tier 3: Optional - 純粋に任意（Tier 2と同じマージロジックで統一）
-const description = input.description !== undefined ? input.description : existing.description;
-const memo = input.memo !== undefined ? input.memo : existing.memo;
-
-// 3. reconstruct()にマージ済みの値を渡す（Result型を返す）
-const updatedResult = Todo.reconstruct({
-  id: existing.id,
-  title,              // Tier 1: Required (マージ済み)
-  status,             // Tier 1: Required (マージ済み)
-  dueDate,            // Tier 2: Special Case (マージ済み)
-  completedAt,        // Tier 2: Special Case (マージ済み)
-  description,        // Tier 3: Optional (マージ済み)
-  memo,               // Tier 3: Optional (マージ済み)
-  userSub: existing.userSub,     // 変更不可
-  createdAt: existing.createdAt, // 変更不可
-  updatedAt: dateToIsoString(now),
-});
-
-// 4. Result型チェック
-if (!updatedResult.success) {
-  return updatedResult;  // DomainError（例: 完了TODOは期限必須）
-}
-
-const updated = updatedResult.data;
+// 送られたフィールドのみ更新、送られなかったフィールドは既存値のまま
+return Result.ok(existing)
+  .then(t => 'title' in input
+    ? TodoTitle.from({ title: input.title }).then(v => t.changeTitle(v, now))
+    : t  // 送られていない → existingのtitleのまま
+  )
+  .then(t => 'dueDate' in input
+    ? t.changeDueDate(input.dueDate, now)  // undefined可（クリア）
+    : t  // 送られていない → existingのdueDateのまま
+  );
 ```
 
-## マージロジックの統一
-
-**重要**: Tier 2とTier 3のマージロジックは両方とも `!== undefined` で統一する（安全性・シンプルさを優先）。
-
-### 統一されたマージロジック
-
-```typescript
-// Tier 2: Special Case - undefinedに意味がある
-const dueDate = input.dueDate !== undefined ? input.dueDate : existing.dueDate;
-const completedAt = input.completedAt !== undefined ? input.completedAt : existing.completedAt;
-
-// Tier 3: Optional - 純粋に任意（Tier 2と同じロジックで統一）
-const description = input.description !== undefined ? input.description : existing.description;
-const memo = input.memo !== undefined ? input.memo : existing.memo;
-```
-
-### なぜ統一するのか
-
-**安全性**:
-```typescript
-// ❌ ?? 演算子の落とし穴
-const dueDate = input.dueDate ?? existing.dueDate;
-// inputで意図的にundefinedを送信（"期限なし"にする）しても、existing.dueDateで上書きされる
-
-// ✅ !== undefined なら安全
-const dueDate = input.dueDate !== undefined ? input.dueDate : existing.dueDate;
-// inputでundefinedを送信すれば、dueDateがundefined（"期限なし"）になる
-```
-
-**シンプルさ**:
-- すべてのオプショナルフィールドで同じロジック
-- Tier 2からTier 3への変更（またはその逆）でマージロジック変更不要
-- 将来の仕様変更に強い
+**重要**: `??`演算子は使用しない（`undefined`を意図的に送信した場合に上書きされる危険性）。`'in'`演算子でフィールド存在を判定する。
 
 ## OpenAPI定義との対応
 
@@ -302,93 +250,45 @@ TodoResponse:
 UpdateTodoParams:
   type: object
   properties:
+    # Tier 1: Required（更新時はオプショナル）
     title:
       type: string
       minLength: 1
       maxLength: 200
-      description: TODOのタイトル
-    description:
-      type: string
-      description: 説明文（オプショナル）
     status:
       $ref: '#/components/schemas/TodoStatus'
+
+    # Tier 2: Special Case（nullable: trueでクリア可能）
     dueDate:
       type: string
       format: date-time
-      description: 期限（ISO 8601形式、undefinedで"期限なし"）
-    # ... 他のフィールド
+      nullable: true
+      description: 期限（nullで\"期限なし\"に設定）
+    completedAt:
+      type: string
+      format: date-time
+      nullable: true
+      description: 完了日時（nullで\"未完了\"に設定）
+
+    # Tier 3: Optional（nullable: trueでクリア可能）
+    description:
+      type: string
+      nullable: true
+      description: 説明文（nullでクリア）
+    memo:
+      type: string
+      nullable: true
+      description: メモ（nullでクリア）
 ```
 
-**重要**: すべてのフィールドがオプショナル（requiredフィールドは空）
+**重要**:
+- すべてのフィールドがオプショナル（requiredフィールドは空）
+- Tier 2/Tier 3は`nullable: true`でフィールドクリア可能
+- Handler層で`null` → `undefined`変換
 
-### TypeScript型との対応
-
-```typescript
-// Zodから自動生成される型
-type UpdateTodoParams = {
-  title?: string;
-  description?: string;
-  status?: string;
-  dueDate?: string;
-  // ...
-};
-```
-
-### UseCase層での処理
-
-```typescript
-export class UpdateTodoUseCaseImpl {
-  async execute(input: UpdateTodoInput): Promise<UpdateTodoResult> {
-    // 既存TODO取得
-    const existingResult = await this.#todoRepository.findById({ id: input.id });
-    if (!existingResult.success) return existingResult;
-    const existing = existingResult.data;
-
-    // Tier 1: Required - Value Object生成
-    let title = existing.title;
-    if (input.title !== undefined) {
-      const titleResult = TodoTitle.fromString(input.title);
-      if (!titleResult.success) return titleResult;
-      title = titleResult.data;
-    }
-
-    let status = existing.status;
-    if (input.status !== undefined) {
-      const statusResult = TodoStatus.fromString(input.status);
-      if (!statusResult.success) return statusResult;
-      status = statusResult.data;
-    }
-
-    // Tier 2: Special Case - undefinedに意味がある
-    const dueDate = input.dueDate !== undefined ? input.dueDate : existing.dueDate;
-    const completedAt = input.completedAt !== undefined ? input.completedAt : existing.completedAt;
-
-    // Tier 3: Optional - 純粋に任意（Tier 2と同じマージロジックで統一）
-    const description = input.description !== undefined ? input.description : existing.description;
-    const memo = input.memo !== undefined ? input.memo : existing.memo;
-
-    // reconstruct()にマージ済みの値を渡す
-    const updatedResult = Todo.reconstruct({
-      id: existing.id,
-      title,
-      status,
-      dueDate,
-      completedAt,
-      description,
-      memo,
-      userSub: existing.userSub,
-      createdAt: existing.createdAt,
-      updatedAt: dateToIsoString(this.#props.fetchNow()),
-    });
-
-    if (!updatedResult.success) {
-      return updatedResult;  // DomainError
-    }
-
-    return await this.#todoRepository.save({ todo: updatedResult.data });
-  }
-}
-```
+**実装詳細**:
+- **Handler層**: `policy/server/handler/10-handler-overview.md` - null → undefined 変換パターン
+- **UseCase層**: `guardrails/policy/server/use-case/20-use-case-implementation.md` - PATCH更新時の個別メソッド更新
 
 ## チェックリスト
 
@@ -416,13 +316,14 @@ export class UpdateTodoUseCaseImpl {
     - 例: description、memo
 ```
 
-### マージロジック
+### PATCH更新
 
 ```
-[ ] Tier 2もTier 3も `!== undefined` でチェック（統一）
-[ ] マージロジックはUseCase層で実施
-[ ] Entity層（reconstruct）はマージ済みの値を受け取る
-[ ] `??` 演算子は使用しない（undefinedが上書きされる危険性がある）
+[ ] OpenAPI: Tier 2/Tier 3は`nullable: true`（フィールドクリア可能）
+[ ] Handler層: `'in'`演算子で存在確認、`null` → `undefined`変換
+[ ] UseCase層: Result.then()メソッドチェーンで更新
+[ ] Entity層: 個別メソッド（`changeXxx()`）で値を受け取る
+[ ] `??`演算子は使用しない（`'in'`演算子を使用）
 ```
 
 ### OpenAPI定義
@@ -431,5 +332,6 @@ export class UpdateTodoUseCaseImpl {
 [ ] Tier 1はrequired指定
 [ ] Tier 2/Tier 3はrequired指定しない
 [ ] PATCH更新パラメータはすべてオプショナル
+[ ] Tier 2/Tier 3にnullable: true（クリア用）
 [ ] descriptionでフィールドの意味を明記
 ```

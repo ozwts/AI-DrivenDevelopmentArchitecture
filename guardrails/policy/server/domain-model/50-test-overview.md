@@ -2,7 +2,8 @@
 
 ## 核心原則
 
-ドメインモデル（Entity、Value Object）は**外部依存ゼロ**のため、**Small Testのみで完全に検証**する。
+1. ドメインモデル（Entity、Value Object）は**外部依存ゼロ**のため、**Small Testのみで完全に検証**する
+2. **全テストでDummyファクトリを使用**し、モデル変更時のテスト修正負荷を最小化する
 
 **関連ドキュメント**:
 - **Value Objectテスト**: `51-value-object-test-patterns.md`
@@ -10,6 +11,7 @@
 - **Entity設計**: `20-entity-overview.md`
 - **Value Object設計**: `25-value-object-overview.md`
 - **バリデーション戦略**: `11-domain-validation-strategy.md`
+- **共通Dummyヘルパー**: `server/src/util/testing-util/dummy-data.ts`
 
 ## テスト戦略の全体像
 
@@ -90,6 +92,13 @@ npm run test:small -- domain/model/project/project.small.test.ts
 [ ] ヘルパーメソッド - すべての分岐 ※ヘルパーメソッドがある場合
 ```
 
+**Dummyファクトリ**（Entity Dummyファクトリから使用）:
+```
+[ ] {valueObject}DummyFrom()関数を{value-object}.dummy.tsに実装
+[ ] Partial<>型でProps定義
+[ ] Entity Dummyファクトリ内でValue Object Dummyファクトリを使用
+```
+
 ### Entity
 
 **参照**: `52-entity-test-patterns.md` - 詳細なテストパターン
@@ -126,54 +135,80 @@ npm run test:small -- domain/model/project/project.small.test.ts
 ### ✅ Good
 
 ```typescript
-// Result型を正しくチェック
+// ✅ Dummyファクトリを使用（Entityテスト）
+import { todoDummyFrom } from "@/domain/model/todo/todo.dummy";
+
+const todo = todoDummyFrom({ title: "テスト" });
+// → 他のフィールド（status含む）はランダム値で生成される
+
+// ✅ Value Objectテストでは静的ファクトリメソッドで特定値を生成
+const status = TodoStatus.todo();
+const completed = TodoStatus.completed();
+
+// ✅ Entity Dummyファクトリ内ではValue Object Dummyファクトリを使用
+import { todoStatusDummyFrom } from "./todo-status.dummy";
+
+export const todoDummyFrom = (overrides?: Partial<TodoProps>): Todo => ({
+  status: overrides?.status ?? todoStatusDummyFrom(), // ランダムなステータス
+  // ...
+});
+
+// ✅ Result型を正しくチェック
+const result = TodoStatus.from({ status: "TODO" });
 expect(result.success).toBe(true);
 if (result.success) {
-  expect(result.data.value).toBe("#FF5733");
+  expect(result.data.value).toBe("TODO");
 }
 
-// エラー型とメッセージを検証
+// ✅ エラー型とメッセージを検証
 expect(result.success).toBe(false);
 if (!result.success) {
   expect(result.error).toBeInstanceOf(DomainError);
   expect(result.error.message).toContain("Invalid");
 }
 
-// イミュータブル性を検証
-const original = new Todo({ /* ... */ });
-original.update({ title: "Updated" });
-expect(original.title).toBe("元のタスク");  // 不変であることを確認
-
-// 状態遷移パターンをテスト
-const todoResult = TodoStatus.from({ status: "TODO" });
-const completedResult = TodoStatus.from({ status: "COMPLETED" });
-
-// Dummyファクトリを活用
-const todo = todoDummyFrom({ title: "テスト" });
+// ✅ イミュータブル性を検証（Dummyファクトリ使用）
+const original = todoDummyFrom({ title: "元のタスク" });
+const updated = original.updateTitle("新しいタイトル", now);
+expect(original.title).toBe("元のタスク");  // 不変
+expect(updated.title).toBe("新しいタイトル");  // 新しいインスタンス
 ```
 
 ### ❌ Bad
 
 ```typescript
-// Result型をチェックせずdata参照
+// ❌ テストで直接new Entity()を使用（保守性が低い）
+const todo = new Todo({
+  id: "todo-1",
+  title: "タスク",
+  status: TodoStatus.todo(),
+  createdAt: now,
+  updatedAt: now,
+  // ... モデル変更時に全テストを修正する必要がある
+});
+
+// ✅ 代わりにDummyファクトリを使用
+const todo = todoDummyFrom({ title: "タスク" });
+
+// ❌ Result型をチェックせずdata参照
 const result = TodoStatus.from({ status: "TODO" });
 expect(result.data.isTodo()).toBe(true);  // ❌ errorの可能性
 
-// エラー型を検証しない
+// ❌ エラー型を検証しない
 expect(result.success).toBe(false);  // ❌ どのエラーかわからない
 
-// 外部依存を使用（ドメイン層は外部依存ゼロ）
+// ❌ 外部依存を使用（ドメイン層は外部依存ゼロ）
 const useCase = new CreateTodoUseCaseImpl({ /* ... */ });  // ❌ ドメイン層のテストではない
 
-// 実DBを使用
+// ❌ 実DBを使用
 const repository = new TodoRepositoryImpl({ /* ... */ });  // ❌ ドメイン層のテストではない
 
-// 型レベルバリデーションのテスト（Handler層の責務）
-// ❌ OpenAPIでバリデーション可能な制約（Tier 3）はValue Object化不要
+// ❌ 型レベルバリデーションのテスト（Handler層の責務）
+// OpenAPIでバリデーション可能な制約（Tier 3）はValue Object化不要
 const colorResult = ProjectColor.from("#FF5733000");  // OpenAPIのpatternで検証すべき
 
-// 不変条件チェックをEntityテストで実施
-// ❌ 不変条件はValue Objectでテスト済み（MECE原則違反）
+// ❌ 不変条件チェックをEntityテストで実施
+// 不変条件はValue Objectでテスト済み（MECE原則違反）
 ```
 
 ## チェックリスト
@@ -201,14 +236,17 @@ const colorResult = ProjectColor.from("#FF5733000");  // OpenAPIのpatternで検
 **参照**: `52-entity-test-patterns.md` - 詳細な実装例
 
 ```
+[ ] Dummyファクトリ実装（{entity}.dummy.ts）- 必須
+[ ] 共通Dummyヘルパーを使用（util/testing-util/dummy-data.ts）
+[ ] fakerを使ってランダム値を生成
+[ ] オプショナルフィールドは確率的にundefined（例: 50%）
 [ ] constructorテスト（必須、オプショナル）
-[ ] update()テスト（全フィールド、一部のみ）
+[ ] 専用更新メソッドテスト（changeStatus等）
 [ ] イミュータブル性テスト（元のインスタンス不変）
 [ ] 新しいインスタンス生成の検証
 [ ] ID、createdAtは不変であることの検証
-[ ] 専用メソッドテスト（changeStatus等）
 [ ] Value Object保持の検証
-[ ] Dummyファクトリ実装（{entity}.dummy.ts）
+[ ] 全テストケースでDummyファクトリを使用（new Entity()を直接使わない）
 [ ] ファイル名: {entity}.small.test.ts
 ```
 
@@ -220,4 +258,6 @@ const colorResult = ProjectColor.from("#FF5733000");  // OpenAPIのpatternで検
 [ ] MECE原則遵守（Handler層テストと重複しない）
 [ ] 高速実行（外部I/Oなし）
 [ ] テストが独立している（順序に依存しない）
+[ ] 全テストでDummyファクトリを使用（保守性向上）
+[ ] テスト専用ヘルパー関数を作らない（Dummyファクトリで十分）
 ```

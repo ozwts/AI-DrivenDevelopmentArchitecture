@@ -2,7 +2,13 @@
 
 ## 核心原則
 
-ユースケースは**Small Test（Dummy使用）で高速に検証**し、**Medium Test（実DB使用）でトランザクション動作を確認**する。
+1. ユースケースは**Small Test（Dummy使用）で高速に検証**し、**Medium Test（実DB使用）でトランザクション動作を確認**する
+2. **全テストでDummyファクトリを使用**し、モデル変更時のテスト修正負荷を最小化する
+
+**関連ドキュメント**:
+- **Entity Dummyファクトリ**: `../domain-model/52-entity-test-patterns.md`
+- **Repository Dummy**: `domain/model/{entity}/{entity}-repository.dummy.ts`
+- **FetchNow Dummy**: `../../fetch-now/10-fetch-now-overview.md`
 
 ## テストファイル構成
 
@@ -66,7 +72,11 @@ describe("{Action}{Entity}UseCaseのテスト", () => {
 
 ### Dummyリポジトリパターン
 
+**重要**: DummyリポジトリはEntity Dummyファクトリを使用する。
+
 ```typescript
+import { projectDummyFrom } from "./project.dummy";
+
 export type ProjectRepositoryDummyProps = {
   projectIdReturnValue?: string;
   findByIdReturnValue?: FindByIdResult;
@@ -84,8 +94,14 @@ export class ProjectRepositoryDummy implements ProjectRepository {
 
   constructor(props?: ProjectRepositoryDummyProps) {
     this.#projectIdReturnValue = props?.projectIdReturnValue ?? uuid();
-    this.#findByIdReturnValue = props?.findByIdReturnValue ?? Result.ok(projectDummyFrom());
-    this.#findAllReturnValue = props?.findAllReturnValue ?? Result.ok([projectDummyFrom()]);
+
+    // ✅ Entity Dummyファクトリを使用
+    this.#findByIdReturnValue = props?.findByIdReturnValue ??
+      Result.ok(projectDummyFrom());  // ランダム値で生成
+
+    this.#findAllReturnValue = props?.findAllReturnValue ??
+      Result.ok([projectDummyFrom(), projectDummyFrom()]);  // 複数のランダムエンティティ
+
     this.#saveReturnValue = props?.saveReturnValue ?? Result.ok(undefined);
     this.#removeReturnValue = props?.removeReturnValue ?? Result.ok(undefined);
   }
@@ -104,7 +120,8 @@ export class ProjectRepositoryDummy implements ProjectRepository {
 }
 ```
 
-**重要**:
+**設計原則**:
+- **Entity Dummyファクトリを使用** - `projectDummyFrom()`でランダム値生成
 - コンストラクタで戻り値を設定（セッターメソッドなし）
 - テストケースごとに新しいDummyインスタンスを生成
 - デフォルト値を提供（省略可能）
@@ -322,33 +339,55 @@ test("DynamoDB制約違反の場合エラーを返す", async () => {
 
 ## テストヘルパーパターン
 
-### エンティティファクトリ
+### Entity Dummyファクトリ（推奨）
+
+**重要**: テスト専用ヘルパー関数は作らず、Entity Dummyファクトリを直接使用する。
 
 ```typescript
-// test-util/factory/
+// ✅ Good: Entity Dummyファクトリを直接使用
+import { projectDummyFrom } from "@/domain/model/project/project.dummy";
+
+const project = projectDummyFrom({
+  id: "test-project-id",
+  name: "Test Project",
+  // 他のフィールドはランダム値で生成される
+});
+
+// ❌ Bad: テスト専用ヘルパー関数を作成（保守コスト増）
 export const createTestProject = (overrides?: Partial<Project>): Project => {
-  return Project.create({
-    id: ProjectId.create("test-project-id"),
+  return new Project({
+    id: "test-project-id",
     name: "Test Project",
-    color: Color.create("#FF5733"),
-    userSub: "test-user-sub",
-    createdAt: "2024-01-01T00:00:00.000Z",
-    updatedAt: "2024-01-01T00:00:00.000Z",
-    ...overrides,
+    color: "#FF5733",  // 固定値
+    // ... モデル変更時に修正が必要
   });
 };
 ```
 
-### 時刻モック
+**理由**:
+- Entity Dummyファクトリは既にランダム値生成機能を持つ
+- テスト専用ヘルパーを作ると保守コストが倍増
+- プロジェクト全体でDummyファクトリを統一使用する方が一貫性がある
+
+### 時刻モック（buildFetchNowDummy使用）
+
+**参照**: `../../fetch-now/10-fetch-now-overview.md`
 
 ```typescript
-const mockFetchNow = () => "2024-01-01T00:00:00.000Z";
+import { buildFetchNowDummy } from "@/domain/support/fetch-now/dummy";
+
+// ✅ Good: buildFetchNowDummy使用
+const fixedDate = new Date("2024-01-01T00:00:00+09:00");
+const fetchNow = buildFetchNowDummy(fixedDate);
 
 useCase = new CreateProjectUseCaseImpl({
   projectRepository: dummyRepository,
   logger,
-  fetchNow: mockFetchNow,  // 固定時刻
+  fetchNow,  // 固定時刻
 });
+
+// ❌ Bad: インラインで関数作成（標準パターン不使用）
+const fetchNow = () => new Date("2024-01-01T00:00:00.000Z");
 ```
 
 ## テスト実行戦略
@@ -379,27 +418,35 @@ npm test
 ### ✅ Good
 
 ```typescript
-// テストケースごとに新しいインスタンス生成
+// ✅ Entity Dummyファクトリを使用
+import { projectDummyFrom } from "@/domain/model/project/project.dummy";
+import { buildFetchNowDummy } from "@/domain/support/fetch-now/dummy";
+
+const fixedDate = new Date("2024-01-01T00:00:00+09:00");
+const fetchNow = buildFetchNowDummy(fixedDate);
+
+// ✅ テストケースごとに新しいインスタンス生成
 const useCase = new CreateProjectUseCaseImpl({
   projectRepository: new ProjectRepositoryDummy({
     saveReturnValue: Result.ok(undefined),
   }),
   logger: new LoggerDummy(),
-  fetchNow: buildFetchNowDummy(now),
+  fetchNow,
 });
 
-// Result型を正しくチェック
+// ✅ Result型を正しくチェック
 expect(result.success).toBe(true);
 if (result.success) {
   expect(result.data.name).toBe("Expected Name");
 }
 
-// コンストラクタで戻り値を指定
+// ✅ DummyリポジトリでEntity Dummyファクトリを使用
+const testProject = projectDummyFrom({ name: "Test Project" });
 const repository = new ProjectRepositoryDummy({
   findByIdReturnValue: Result.ok(testProject),
 });
 
-// エラー型を明示的に検証
+// ✅ エラー型を明示的に検証
 expect(result.error).toBeInstanceOf(NotFoundError);
 expect(result.error.message).toContain("見つかりません");
 ```
@@ -407,24 +454,38 @@ expect(result.error.message).toContain("見つかりません");
 ### ❌ Bad
 
 ```typescript
-// 実DBを使用（Small Testで）
+// ❌ テスト専用ヘルパー関数を作成（保守コスト増）
+const createTestProject = (overrides?: Partial<Project>) => {
+  return new Project({ /* ... 固定値 */ });
+};
+
+// ✅ 代わりにEntity Dummyファクトリを使用
+const project = projectDummyFrom({ name: "Test Project" });
+
+// ❌ インラインで時刻モック作成
+const fetchNow = () => new Date("2024-01-01");
+
+// ✅ 代わりにbuildFetchNowDummy使用
+const fetchNow = buildFetchNowDummy(new Date("2024-01-01"));
+
+// ❌ 実DBを使用（Small Testで）
 const useCase = new CreateProjectUseCaseImpl({
   projectRepository: new ProjectRepositoryImpl({ dynamoDBClient }),  // ❌ 低速
 });
 
-// Result型をチェックせずdata参照
+// ❌ Result型をチェックせずdata参照
 expect(result.data.name).toBe("Expected Name");  // ❌ errorの可能性
 
-// beforeEachで共有インスタンス（独立性低下）
+// ❌ beforeEachで共有インスタンス（独立性低下）
 let useCase: CreateProjectUseCase;
 beforeEach(() => {
   useCase = new CreateProjectUseCaseImpl({ /* ... */ });  // ❌ テスト間で状態共有のリスク
 });
 
-// セッターメソッドで戻り値変更（実装に存在しない）
+// ❌ セッターメソッドで戻り値変更（実装に存在しない）
 dummyRepository.setFindByIdResult({ /* ... */ });  // ❌ このパターンは使われていない
 
-// エラー型を検証しない
+// ❌ エラー型を検証しない
 expect(result.success).toBe(false);  // ❌ どのエラーかわからない
 ```
 
@@ -434,6 +495,9 @@ expect(result.success).toBe(false);  // ❌ どのエラーかわからない
 
 ```
 [ ] Dummyリポジトリ使用
+[ ] DummyリポジトリでEntity Dummyファクトリを使用
+[ ] buildFetchNowDummyで時刻をモック
+[ ] テスト専用ヘルパー関数を作らない（Dummyファクトリで十分）
 [ ] 正常系テスト
 [ ] ビジネスルール違反テスト（権限・状態遷移・ビジネス制約）
 [ ] リソース未検出テスト
@@ -442,7 +506,6 @@ expect(result.success).toBe(false);  // ❌ どのエラーかわからない
 [ ] リポジトリエラー伝播テスト
 [ ] ビジネス固有の境界値テスト（型レベルの境界値はHandler層でテスト済み）
 [ ] Result型の正しいチェック
-[ ] 時刻をモック（fetchNow）
 [ ] 型レベルバリデーションテストを含めない（MECE原則違反）
 ```
 

@@ -31,7 +31,7 @@
 | ポリシー | 内容 |
 |---------|------|
 | **10-use-case-overview.md** | ユースケース層の全体像、責務、命名規則、バリデーション戦略、Result型パターン、エラー型定義 |
-| **15-domain-model-interaction.md** | ドメインモデル貧血症防止、Entity操作パターン（新規作成・PUT更新・PATCH更新・個別メソッド）、reconstruct()使い分け、Value Objectエラー変換 |
+| **15-domain-model-interaction.md** | ドメインモデル貧血症防止、Entity操作パターン（新規作成・PATCH更新・ビジネスメソッド）、Value Objectエラー変換 |
 | **20-use-case-implementation.md** | 実装テンプレート、Props型設計、ビジネスルール検証パターン、Result型伝播、トランザクション管理、PATCH更新マージロジック、時刻取得・ログ出力・DIコンテナ登録 |
 | **30-use-case-testing.md** | Small Test/Medium Test実装パターン、Dummyリポジトリパターン、テストカバレッジ戦略、テストヘルパー、テスト実行戦略 |
 

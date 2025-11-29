@@ -253,12 +253,10 @@ export class Todo {
 |---------|--------------|-----------|----------------|
 | **パターン1** | `Entity` | バリデーション不要なフィールド更新 | ✅ 可能 |
 | **パターン2** | `Result<Entity, DomainError>` | ドメインルール/不変条件チェックが必要な更新 | ✅ 可能（`Result.then()`） |
-| **パターン3** | `Result<Entity, DomainError>` | reconstruct（必ずResult型） | ✅ 可能（`Result.then()`） |
 
 **設計原則**:
 - **パターン1**: バリデーション不要な単純更新のみ（メソッドチェーン可能）
 - **パターン2**: Value Objectの不変条件チェック（`canTransitionTo()`）はEntity内で実行（ドメイン貧血症を回避）
-- **パターン3**: reconstructは必ずResult型（一貫性のため）
 
 ## バリデーション階層（MECE原則）
 
@@ -284,6 +282,7 @@ domain/
 │       ├── {entity}.dummy.ts             # Entityダミー
 │       ├── {value-object}.ts             # Value Object定義
 │       ├── {value-object}.small.test.ts  # Value Objectテスト
+│       ├── {value-object}.dummy.ts       # Value Objectダミー（Entity Dummyから使用）
 │       ├── {entity}-repository.ts        # リポジトリインターフェース
 │       └── {entity}-repository.dummy.ts  # リポジトリモック
 │
@@ -291,7 +290,7 @@ domain/
     └── .../                             # logger, fetch-now, auth-client等
 ```
 
-**注**: Value Objectは通常Dummyファクトリ不要（`fromString()`や静的ファクトリメソッドで生成）
+**注**: Value ObjectテストではDummyファクトリ不要（静的ファクトリメソッドで生成）。ただし、Entity Dummyファクトリから使用するため`{value-object}.dummy.ts`は作成する。
 
 ## レビュー対象ファイル
 
@@ -312,10 +311,10 @@ domain/
 [ ] Tier 3（Optional）: フィールド定義は `?` 付き、constructorは `| undefined` で必須化
 [ ] Value Object化すべきフィールドを判断（単一VO内完結の不変条件/ドメインルール）
 [ ] すべてのプロパティをreadonlyで定義
-[ ] バリデーション不要なメソッドはEntityを返す（メソッドチェーン可能）
-[ ] Value Object不変条件チェックはEntity内メソッドで実行（ドメイン貧血症を回避）
+[ ] シンプルなデータ変換メソッドはEntityを返す（メソッドチェーン可能）
 [ ] 複数値関係性バリデーションが必要な場合のみResult型を返す
-[ ] reconstructは必ずResult型を返す
+[ ] すべてのメソッドはResult.then()でメソッドチェーン可能
+[ ] Value Object不変条件チェックはEntity内メソッドで実行（ドメイン貧血症を回避）
 [ ] 外部依存ゼロ
 [ ] 技術的詳細を含めない
 ```
@@ -348,6 +347,9 @@ domain/
 ```
 [ ] Entity Small Test（.small.test.ts）作成
 [ ] Value Object Small Test（.small.test.ts）作成
-[ ] Entityダミーファクトリ（.dummy.ts）作成
+[ ] Entity Dummyファクトリ（{entity}.dummy.ts）作成
+[ ] Value Object Dummyファクトリ（{value-object}.dummy.ts）作成
+[ ] Repository Dummy（{entity}-repository.dummy.ts）作成
+[ ] Repository DummyはEntity Dummyファクトリを内部で使用
 [ ] 外部依存なし（純粋なユニットテスト）
 ```

@@ -501,7 +501,9 @@ SK: なし
 [ ] 子エンティティを別途取得して親に渡している
 [ ] Value Object変換にfrom(props: XxxProps)パターンを使用
 [ ] Props型エイリアスパターンを使用（インラインpropsは使わない）
-[ ] Value Object変換失敗時はdefault()を使用（ビジネス意味を持つ場合）
+[ ] Value Object変換失敗時はdefault()を使用してフォールバック
+[ ] Entityはコンストラクタで直接生成（複数値関係性チェックは不要）
+[ ] DBデータの整合性を信頼（MECE原則：保存時に整合性チェック完了済み）
 [ ] Value Object → DB形式にtoString()を使用
 [ ] ExpressionAttributeNamesで予約語を回避
 [ ] Zodスキーマでパースしている

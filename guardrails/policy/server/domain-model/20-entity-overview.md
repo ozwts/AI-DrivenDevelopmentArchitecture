@@ -13,6 +13,7 @@
 - **バリデーション戦略**: `11-domain-validation-strategy.md`
 - **Value Object設計**: `25-value-object-overview.md`
 - **テスト戦略**: `50-test-overview.md`
+- **Dummyファクトリ**: `52-entity-test-patterns.md` - テストデータ生成パターン
 
 ## 核心原則
 
@@ -38,8 +39,7 @@ Entityは常に正しい状態（Valid State）でなければならない。
 
 **メソッド設計の原則**:
 - **Entityを返す**: シンプルなデータ変換（メソッドチェーン可能）
-- **Result型を返す**: 複数値関係性バリデーションが必要な場合のみ（メソッドチェーン不可）
-- **reconstructは必ずResult型**: 一貫性のため（複数値関係性チェックの有無に関わらず）
+- **Result型を返す**: 複数値関係性バリデーションが必要な場合のみ（Result.then()でメソッドチェーン可能）
 
 ## Entity層の責務
 
@@ -150,59 +150,13 @@ const completed = completedResult.data;
 
 **設計判断**: 複数値関係性バリデーションは必要最小限にとどめ、可能な限りValue Objectに委譲してEntity層を薄く保つ。
 
-### パターン3: reconstruct静的メソッド（ドメインバリデーションの有無に関わらず常にResult型）
+**汎用メソッドの禁止**: `update()` 等の汎用的な更新メソッドは実装しない。個別のビジネスメソッド（`changeTitle()`, `changeStatus()`, `markAsCompleted()` 等）のみを実装し、メソッドチェーンで組み合わせる。
 
-`reconstruct()`は、**インスタンスメソッドとは異なり、ドメインバリデーション（複数値関係性チェック）の有無に関わらず、一貫してResult型を返す**。
-
-```typescript
-/**
- * 再構成用の静的メソッド
- *
- * リポジトリからの復元、PATCH更新時に使用
- */
-static reconstruct(props: {
-  id: string;
-  title: string;
-  status: TodoStatus;              // Value Object
-  dueDate: string | undefined;     // 必須（undefinedを明示的に渡す）
-  completedAt: string | undefined; // 必須（undefinedを明示的に渡す）
-  createdAt: string;
-  updatedAt: string;
-}): Result<Todo, DomainError> {
-  // ドメインバリデーション（複数の値の関係性チェック）がある場合
-  if (props.status.isCompleted() && !props.dueDate) {
-    return Result.err(new DomainError('完了TODOには期限が必要です'));
-  }
-
-  // ドメインバリデーションがない場合でも、Result型を返す
-  return Result.ok(new Todo(props));
-}
-```
-
-**reconstructの引数設計**:
-
-オプショナルフィールドも `| undefined` として型レベルで必須化する：
-
-```typescript
-static reconstruct(props: {
-  id: string;
-  description: string | undefined;  // ✅ 省略不可、undefinedを明示的に渡す
-  dueDate: string | undefined;      // ✅ 省略不可、undefinedを明示的に渡す
-  // ...
-}): Result<Todo, DomainError>
-```
-
-**reconstructの特殊性（常にResult型を返す理由）**:
-
-1. **型安全性（最重要）**: オプショナルフィールドも `| undefined` として必須化し、省略を型システムで検出（analyzability-principles.md 原則1）
-   - リポジトリ復元時・PATCH更新時のフィールド省略を防ぐ
-   - `undefined`を明示的に渡すことで、マージロジックがUseCase層にあることが一目で分かる
-2. **一貫性**: reconstructは常にResult型という明確なルール（ドメインバリデーションの有無を気にせず使える）
-3. **実装漏れ防止**: リポジトリ復元・PATCH更新の信頼性を担保
-
-**パターン1との違い**:
-- **パターン1（インスタンスメソッド）**: バリデーション不要ならEntityを返す（柔軟性・ボイラープレート削減）
-- **reconstruct**: 常にResult型を返す（型安全性・一貫性を優先）
+**理由**:
+- PATCHとの相性が良い（送られたフィールドのみ更新）
+- シンプルで理解しやすい（意図が明確）
+- analyzability原則に準拠（各メソッドの引数は必須）
+- YAGNI原則（使われないパラメータを持つ汎用メソッドを避ける）
 
 ## UseCase層での使い分け
 
@@ -212,25 +166,17 @@ static reconstruct(props: {
 |---------|-------|-----------|----------------|
 | **パターン1** | `Entity` | バリデーション不要なフィールド更新 | ✅ 可能 |
 | **パターン2** | `Result<Entity, DomainError>` | ドメインルール/不変条件チェックが必要な更新 | ✅ 可能（`Result.then()`） |
-| **パターン3** | `Result<Entity, DomainError>` | PATCH更新、リポジトリ復元（`reconstruct`）<br/>※ドメインバリデーションの有無に関わらず常にResult型 | ✅ 可能（`Result.then()`） |
 
 **重要**:
 - **すべてのパターンでメソッドチェーン可能** - `Result.then()`が`Entity`を自動で`Result.ok()`に包むため
 - **パターン1**: バリデーション不要な単純更新（Entity層を薄く保つ、`Result.ok()`のボイラープレート不要）
 - **パターン2**: Value Objectの不変条件チェック（`canTransitionTo()`）はEntity内で実行する（ドメイン貧血症を回避）
 - **パターン2**: 複数値関係性バリデーションも同じパターン（Result型を返す）
-- **パターン3**: reconstructは**ドメインバリデーションの有無に関わらず**常にResult型（型安全性・一貫性・実装漏れ防止のため）
 
 **メソッドチェーンの例**:
 
 ```typescript
-// パターンA: reconstruct()から始めるチェーン（Result型を返す静的メソッド）
-const result = Todo.reconstruct(props)                // Result<Todo>
-  .then(t => t.updateDescription("新しい", now))       // Todoを返す → 自動でResult.ok()に包む
-  .then(t => t.markAsCompleted(now, now))            // Result<Todo>を返す → そのまま
-  .then(t => repository.save(t));                    // 完全にフラット
-
-// パターンB: 既存Entityから始めるチェーン（Entityを返すインスタンスメソッド）
+// 既存Entityから始めるチェーン
 const result = Result.ok(existingTodo)               // EntityをResult.ok()で包む
   .then(t => t.updateDescription("新しい", now))       // Todoを返す → 自動でResult.ok()に包む
   .then(t => t.changeStatus(newStatus, now))         // Result<Todo>を返す → そのまま
@@ -278,6 +224,85 @@ export class Todo {
 }
 ```
 
+## Dummyファクトリ（テスト用ファクトリ）
+
+すべてのEntityには対応する**Dummyファクトリ**を実装する。Dummyファクトリはテストコードでのエンティティ生成を簡略化し、モデル変更時のテストコード修正負荷を下げる。
+
+**参照**: `52-entity-test-patterns.md` - Dummyファクトリの詳細実装パターン
+
+### 核心原則
+
+1. **全テストでDummyファクトリを使用** - テストコードで直接`new Entity()`を使わない
+2. **ランダム値を使用** - faker等を使い、実世界的なテストデータを生成
+3. **オプショナルフィールドもランダム化** - 50%の確率で値を設定/undefined
+4. **部分オーバーライド可能** - テストごとに必要なフィールドのみ指定
+
+### 基本パターン
+
+**重要**: Value Objectのランダム生成は**Value Object Dummyファクトリ**（`{valueObject}DummyFrom()`）を使用する。
+
+```typescript
+// {entity}.dummy.ts
+import { todoStatusDummyFrom } from "./todo-status.dummy";  // ✅ Value Object Dummy
+import {
+  getDummyId,
+  getDummyShortText,
+  getDummyRecentDate,
+  getDummyDueDate,
+} from "@/util/testing-util/dummy-data";
+
+export type TodoDummyProps = Partial<{
+  id: string;
+  title: string;
+  status: TodoStatus;
+  dueDate: string | undefined;  // オプショナル
+  createdAt: string;
+  updatedAt: string;
+}>;
+
+export const todoDummyFrom = (props?: TodoDummyProps): Todo => {
+  const now = getDummyRecentDate();
+
+  return new Todo({
+    id: props?.id ?? getDummyId(),
+    title: props?.title ?? getDummyShortText(),
+    status: props?.status ?? todoStatusDummyFrom(),  // ✅ Value Object Dummy
+    dueDate: props?.dueDate ?? getDummyDueDate(),  // 50%でundefined
+    createdAt: props?.createdAt ?? now,
+    updatedAt: props?.updatedAt ?? now,
+  });
+};
+```
+
+**参照**: `51-value-object-test-patterns.md` - Value Object Dummyファクトリの実装パターン
+
+### テストでの使用
+
+```typescript
+// ✅ Good: Dummyファクトリを使用
+describe("UpdateTodoUseCase", () => {
+  it("TODOのタイトルを更新できる", async () => {
+    const todo = todoDummyFrom({ title: "古いタイトル" });
+    // テスト実装...
+  });
+});
+
+// ❌ Bad: 直接new Todo()を使用
+const todo = new Todo({
+  id: "todo-1",
+  title: "古いタイトル",
+  status: TodoStatus.todo(),
+  // ... 全フィールドを手動で指定（モデル変更時に全修正が必要）
+});
+```
+
+### 利点
+
+1. **保守性向上**: Entityにフィールド追加時、Dummyファクトリのみ修正すればよい
+2. **テストの可読性向上**: テストの意図（どのフィールドが重要か）が明確になる
+3. **ランダム値でエッジケース発見**: 様々なデータパターンで自動的にテストされる
+4. **統一されたテストデータ**: プロジェクト全体で一貫したテストデータ生成
+
 ## チェックリスト
 
 ### Entity設計
@@ -286,9 +311,22 @@ export class Todo {
 [ ] 基本方針: Entity層は薄く保つ（メソッドチェーン可能な状態を維持）
 [ ] シンプルなデータ変換メソッドはEntityを返す（メソッドチェーン可能）
 [ ] 複数値関係性バリデーションが必要な場合のみResult型を返す
-[ ] reconstructメソッドは必ずResult型を返す（一貫性のため）
+[ ] すべてのメソッドはResult.then()でメソッドチェーン可能
 [ ] 複数値関係性バリデーションは必要最小限にとどめる
 [ ] 単一Value Objectの不変条件チェックはValue Object層に委譲
+```
+
+### Dummyファクトリ
+
+```
+[ ] すべてのEntityにDummyファクトリを実装（{entity}.dummy.ts）
+[ ] Partial<>型でProps定義（全フィールドオプション）
+[ ] 基本データは共通ヘルパーを使用（getDummyId, getDummyShortText等）
+[ ] fakerを使ってランダム値を生成
+[ ] オプショナルフィールドは確率的にundefined（例: 50%）
+[ ] Value ObjectはDummyファクトリを使用
+[ ] Value Object Dummyファクトリをインポート（{valueObject}DummyFrom()）
+[ ] テストコードでは常にDummyファクトリを使用（new Entity()を直接使わない）
 ```
 
 ### Value Object活用

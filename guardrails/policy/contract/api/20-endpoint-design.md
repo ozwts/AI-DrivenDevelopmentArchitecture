@@ -305,6 +305,68 @@ patch:
 - 404: リソース未検出
 - 422: ドメインルールエラー（Domain層（Value Object/Entity））
 
+#### PATCH操作でのフィールドクリア（null使用）
+
+**課題**: PATCHで既存フィールドをクリア（`undefined`に設定）する方法
+
+**解決策**: JSON層では`null`を使用し、Handler層で`undefined`に変換する
+
+**OpenAPI定義**:
+
+```yaml
+UpdateTodoParams:
+  type: object
+  properties:
+    dueDate:
+      type: string
+      format: date-time
+      nullable: true  # nullを許可（クリア操作のため）
+      description: 期限（nullで\"期限なし\"に設定）
+    completedAt:
+      type: string
+      format: date-time
+      nullable: true
+      description: 完了日時（nullで\"未完了\"に設定）
+```
+
+**3値の区別**:
+
+| クライアント送信 | JSON表現 | 意味 | TypeScript内部 |
+|---------------|---------|------|---------------|
+| フィールド省略 | `{}` | 変更しない | プロパティなし（`'dueDate' in input === false`） |
+| `null`送信 | `{"dueDate": null}` | クリアする | `undefined` |
+| 値を送信 | `{"dueDate": "2025-01-01T00:00:00Z"}` | 値を設定 | `string` |
+
+**クライアント例**:
+
+```typescript
+// ケース1: フィールドを変更しない（省略）
+PATCH /todos/123
+{}
+
+// ケース2: フィールドをクリア（nullを送信）
+PATCH /todos/123
+{
+  "dueDate": null  // 期限なしに設定
+}
+
+// ケース3: フィールドを更新（値を送信）
+PATCH /todos/123
+{
+  "dueDate": "2025-01-01T00:00:00Z"
+}
+```
+
+**TypeScript内部への変換**:
+
+**参照**: `policy/server/handler/10-handler-overview.md` - null → undefined 変換パターン
+
+- **API層（JSON）**: `null`を許可（`nullable: true`）
+- **Handler層**: `null` → `undefined`変換を実施
+- **TypeScript内部**: `undefined`のみ使用（TypeScriptベストプラクティス）
+
+**重要**: TypeScript内部では`null`を使用しない。`undefined`のみ使用する。
+
 ### DELETE: リソース削除
 
 ```yaml
@@ -353,50 +415,10 @@ delete:
 
 すべての更新操作で同じパターンを使用する。
 
-```typescript
-// ✅ PATCH統一: すべての更新で同じパターン
-// 常にオプショナルフィールド + マージロジック
-const updated = Todo.reconstruct({
-  id: existing.id,
-  title: input.title ?? existing.title,
-  description: input.description ?? existing.description,
-  status: input.status ?? existing.status,
-  dueDate: input.dueDate ?? existing.dueDate,
-  priority: input.priority ?? existing.priority,
-  userSub: existing.userSub,
-  createdAt: existing.createdAt,
-  updatedAt: dateToIsoString(this.#props.fetchNow()),
-});
-```
-
 **メリット**:
-- UseCaseは常にマージロジック実装
 - OpenAPIスキーマは常にオプショナルフィールド
-- クライアントは常に同じパターン
+- クライアントは常に同じパターン（変更したいフィールドのみ送信）
 - 認知負荷の削減
-
-#### 3. Always Valid Domain Modelとの両立
-
-**参照**: `policy/server/domain-model/20-entity-design.md` - Always Valid原則
-
-PATCH統一により、ドメインモデルの3-Tier分類を自然に表現できる。
-
-| ドメインモデルTier | 意味 | PATCH対応 |
-|-------------------|------|----------|
-| Tier 1: Required | 常に必要 | マージロジックで既存値使用 |
-| Tier 2: Special Case | "未設定"に意味 | `undefined`で未設定を表現 |
-| Tier 3: Optional | 純粋に任意 | `undefined`で省略可能 |
-
-```typescript
-// Tier 1: title（Required） - 常に値が存在
-title: input.title ?? existing.title,
-
-// Tier 2: dueDate（Special Case） - undefinedに"期限なし"の意味
-dueDate: input.dueDate !== undefined ? input.dueDate : existing.dueDate,
-
-// Tier 3: description（Optional） - 純粋に任意
-description: input.description ?? existing.description,
-```
 
 ### OpenAPI定義パターン
 
@@ -457,87 +479,6 @@ await fetch(`/todos/${todoId}`, {
 - クライアントコードがシンプル
 - GETが不要（楽観的ロック実装時のみGET）
 
-### UseCase実装パターン
-
-UseCaseでは**既存値とマージ**してAggregateを再構築する。
-
-```typescript
-export class UpdateTodoUseCaseImpl implements UpdateTodoUseCase {
-  async execute(input: UpdateTodoInput): Promise<UpdateTodoResult> {
-    // 既存TODO取得（マージ用 + 権限チェック用）
-    const existingResult = await this.#todoRepository.findById({
-      id: input.todoId,
-    });
-
-    if (!existingResult.success || !existingResult.data) {
-      return Result.err(new NotFoundError('TODOが見つかりません'));
-    }
-
-    const existing = existingResult.data;
-
-    // 権限チェック
-    if (existing.userSub !== input.userSub) {
-      return Result.err(new ForbiddenError());
-    }
-
-    // Value Object生成（送信されたフィールドのみ）
-    const titleResult = input.title
-      ? TodoTitle.from({ title: input.title })
-      : Result.ok(existing.title);
-    if (!titleResult.success) return Result.err(titleResult.error);
-
-    const statusResult = input.status
-      ? TodoStatus.from({ status: input.status })
-      : Result.ok(existing.status);
-    if (!statusResult.success) return Result.err(statusResult.error);
-
-    const dueDateResult = input.dueDate !== undefined
-      ? (input.dueDate ? DueDate.fromIsoString(input.dueDate) : Result.ok(undefined))
-      : Result.ok(existing.dueDate);
-    if (!dueDateResult.success) return Result.err(dueDateResult.error);
-
-    const priorityResult = input.priority
-      ? TodoPriority.fromNumber(input.priority)
-      : Result.ok(existing.priority);
-    if (!priorityResult.success) return Result.err(priorityResult.error);
-
-    // Aggregate再構築（マージロジック）
-    const reconstructResult = Todo.reconstruct({
-      id: existing.id,
-      title: titleResult.data,
-      description: input.description ?? existing.description,
-      status: statusResult.data,
-      dueDate: dueDateResult.data,
-      priority: priorityResult.data,
-      userSub: existing.userSub,
-      createdAt: existing.createdAt,
-      updatedAt: dateToIsoString(this.#props.fetchNow()),
-    });
-
-    // reconstruct()内で不変条件検証（Aggregate全体を見て判定）
-    // 完了TODOには期限が必要という複数値の関係性チェック → DomainError
-    if (!reconstructResult.success) {
-      return Result.err(reconstructResult.error);
-    }
-
-    const updatedTodo = reconstructResult.data;
-
-    // 保存
-    const saveResult = await this.#todoRepository.save({ todo: updatedTodo });
-    if (!saveResult.success) {
-      return Result.err(saveResult.error);
-    }
-
-    return Result.ok(updatedTodo);
-  }
-}
-```
-
-**重要**:
-- マージロジックが必須
-- 不変条件検証は1箇所に集約（変わらず）
-- Value Object生成は条件分岐が必要
-
 ### PUTを使用しない理由
 
 | 項目 | PATCH統一 | PUT/PATCH使い分け |
@@ -545,8 +486,6 @@ export class UpdateTodoUseCaseImpl implements UpdateTodoUseCase {
 | ガードレール | ✅ 判断不要 | ❌ 使い分け判断が必要 |
 | 実装一貫性 | ✅ 常に同じパターン | ❌ 2種類のパターン混在 |
 | クライアント負荷 | ✅ PATCH（1回） | △ GET + PUT（2回） |
-| UseCase複雑度 | △ マージロジック必要 | ✅ マージ不要 |
-| Always Valid対応 | ✅ 3-Tier自然に表現 | ❌ Optional許容困難 |
 | 認知負荷 | ✅ 低い | ❌ 高い（判断コスト） |
 
 **結論**: 使い分けの認知負荷を削減し、**ガードレールとしての機能を優先**する。
@@ -718,9 +657,9 @@ PUT /todos/{id}  # ❌ PATCHに統一すべき
 UpdateTodoParams:
   required: [title, status, dueDate, priority]  # ❌ requiredは空にすべき
 
-# UseCase層でマージロジック省略
-const updated = Todo.reconstruct({
-  ...input,  # ❌ 既存値とのマージが必要
+# UseCase層で全フィールドを要求
+const updated = new Todo({
+  ...input,  # ❌ 全フィールド必須、部分更新ができない
 });
 
 # 動詞のみのパス
@@ -744,9 +683,11 @@ paths:
 [ ] PATCH成功時は200、更新後リソース全体を返す
 [ ] DELETE成功時は204、レスポンスボディなし
 [ ] PATCH更新パラメータはすべてオプショナル（PATCH統一）
+[ ] フィールドクリアが必要な場合はnullable: trueを設定（OpenAPI）
+[ ] Handler層でnull → undefined変換を実装
+[ ] TypeScript内部ではundefinedのみ使用（nullは使用しない）
 [ ] PUTは使用しない（例外: RPC風ビジネス操作エンドポイント）
 [ ] クライアントは変更フィールドのみPATCH送信
-[ ] UseCaseでマージロジックを実装する
 [ ] 特殊アクションは動詞を含むパス
 [ ] 認証必須エンドポイントにsecurityフィールド設定
 [ ] ネストされたレスポンスに親IDを含める

@@ -165,7 +165,6 @@ OpenAPIで表現不可能なドメインルールがある？
 - **シンプルなデータ変換メソッド**: Entityを返す（`Result.ok()`のボイラープレート不要）
 - **複数値関係性バリデーションが必要な場合**: Result型を返す
 - **すべてのメソッドでチェーン可能**: `Result.then()`がEntityとResult型を吸収
-- **reconstruct静的メソッド**: 必ずResult型を返す（型安全性・一貫性のため）
 - **積極的にValue Object活用**: 単一フィールドの不変条件はValue Objectに委譲してEntity層を薄く保つ
 
 ## Result型との統合
@@ -227,9 +226,9 @@ if (!statusResult.success) { ... }
 ```
 [ ] 基本方針: Entity層は薄く保つ（メソッドチェーン可能な状態を維持）
 [ ] シンプルなデータ変換メソッドはEntityを返す（メソッドチェーン可能）
-[ ] Value Object不変条件チェックはEntity内メソッドで実行（ドメイン貧血症を回避）
 [ ] 複数値関係性バリデーションが必要な場合のみResult型を返す
-[ ] reconstructメソッドは必ずResult型を返す（一貫性のため）
+[ ] すべてのメソッドはResult.then()でメソッドチェーン可能
+[ ] Value Object不変条件チェックはEntity内メソッドで実行（ドメイン貧血症を回避）
 [ ] 複数値関係性バリデーションは必要最小限にとどめる
 [ ] 単一Value Objectの不変条件チェックはValue Object層で定義し、Entity層で呼び出す
 ```

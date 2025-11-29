@@ -292,47 +292,71 @@ container.bind<CreateTodoUseCase>(CREATE_TODO_USE_CASE).toDynamicValue((context)
 
 ### Dummy実装を使用したテスト
 
+**重要**: Repository DummyとEntity Dummyファクトリを使用する。
+
 ```typescript
+import { todoDummyFrom } from "@/domain/model/todo/todo.dummy";
+import { userDummyFrom } from "@/domain/model/user/user.dummy";
+import { TodoRepositoryDummy } from "@/domain/model/todo/todo-repository.dummy";
+import { UserRepositoryDummy } from "@/domain/model/user/user-repository.dummy";
+import { buildFetchNowDummy } from "@/domain/support/fetch-now/dummy";
+
 describe("CreateTodoUseCase", () => {
   test("TODOを作成し、ユーザーのカウントを更新する", async () => {
-    // Arrange
-    const mockTodoRepository = createMockTodoRepository();
-    const mockUserRepository = createMockUserRepository();
+    // Arrange: Repository DummyでEntity Dummyファクトリを使用
+    const todoRepository = new TodoRepositoryDummy({
+      saveReturnValue: Result.ok(undefined),
+    });
+
+    const existingUser = userDummyFrom({ id: "user-123", todoCount: 0 });
+    const userRepository = new UserRepositoryDummy({
+      findByIdReturnValue: Result.ok(existingUser),
+      saveReturnValue: Result.ok(undefined),
+    });
 
     const dummyRunner = new UnitOfWorkRunnerDummy(() => ({
-      todoRepository: mockTodoRepository,
-      userRepository: mockUserRepository,
+      todoRepository,
+      userRepository,
     }));
 
-    const useCase = new CreateTodoUseCase(dummyRunner);
+    const fetchNow = buildFetchNowDummy(new Date("2024-01-01"));
+    const useCase = new CreateTodoUseCase({ runner: dummyRunner, fetchNow });
 
     // Act
-    const result = await useCase.execute({ ... });
+    const result = await useCase.execute({ userId: "user-123", title: "New TODO" });
 
     // Assert
     expect(result.success).toBe(true);
-    expect(mockTodoRepository.save).toHaveBeenCalled();
-    expect(mockUserRepository.save).toHaveBeenCalled();
   });
 });
 ```
 
-**特徴**:
-- `UnitOfWorkRunnerDummy`を使用
-- トランザクション処理を実行しない
-- コールバックをそのまま実行
+**設計原則**:
+- **Repository Dummy使用** - Entity Dummyファクトリを内部で使用
+- **Entity Dummyファクトリ使用** - `todoDummyFrom()`, `userDummyFrom()`でランダム値生成
+- **buildFetchNowDummy使用** - 時刻を制御可能にする
+- `UnitOfWorkRunnerDummy`を使用してトランザクション処理をスキップ
+- コールバックをそのまま実行（実際のDB操作なし）
 
 ### Medium Testでのトランザクション検証
 
+**重要**: Medium TestでもEntity Dummyファクトリを使用する。
+
 ```typescript
+import { todoDummyFrom } from "@/domain/model/todo/todo.dummy";
+
 describe("CreateTodoUseCase (Medium Test)", () => {
   test("トランザクションが正常にコミットされる", async () => {
-    // Arrange
-    const runner = createRealUnitOfWorkRunner();
-    const useCase = new CreateTodoUseCase(runner);
+    // Arrange: 実際のDynamoDB使用
+    const runner = new DynamoDBUnitOfWorkRunner({ ddbDoc, logger });
+    const fetchNow = buildFetchNowDummy(new Date("2024-01-01"));
+    const useCase = new CreateTodoUseCase({ runner, fetchNow });
 
-    // Act
-    const result = await useCase.execute({ ... });
+    // Act: Entity Dummyファクトリでテストデータ作成
+    const result = await useCase.execute({
+      userId: "user-123",
+      title: "New TODO",
+    });
 
     // Assert
     expect(result.success).toBe(true);
@@ -342,21 +366,25 @@ describe("CreateTodoUseCase (Medium Test)", () => {
     expect(todo).toBeDefined();
 
     // Userのカウントが更新されたことを確認
-    const user = await userRepository.findById({ id: command.userId });
-    expect(user.todoCount).toBe(1);
+    const user = await userRepository.findById({ id: "user-123" });
+    expect(user?.todoCount).toBe(1);
   });
 
   test("エラー時はロールバックされる", async () => {
-    // Arrange: 2番目の操作でエラーが発生するようにモック
-    const runner = createRealUnitOfWorkRunner();
-    const useCase = new CreateTodoUseCase(runner);
+    // Arrange
+    const runner = new DynamoDBUnitOfWorkRunner({ ddbDoc, logger });
+    const fetchNow = buildFetchNowDummy(new Date("2024-01-01"));
+    const useCase = new CreateTodoUseCase({ runner, fetchNow });
 
-    // Act & Assert
-    await expect(useCase.execute({ ... })).rejects.toThrow();
+    // Act & Assert: 意図的にエラーを発生させる
+    await expect(
+      useCase.execute({ userId: "non-existent-user", title: "New TODO" })
+    ).rejects.toThrow();
 
     // TODOが保存されていないことを確認（ロールバック）
-    const todo = await todoRepository.findById({ id: ... });
-    expect(todo).toBeUndefined();
+    // ※ 実際のIDは実行時に生成されるため、全件検索で確認
+    const allTodos = await todoRepository.findAll();
+    expect(allTodos.data).toHaveLength(0);
   });
 });
 ```
@@ -416,6 +444,10 @@ container.bind<UnitOfWorkRunner>(UOW_RUNNER).to(...);  // ❌ ステートフル
 [ ] uow がない場合は即実行
 [ ] 検索系メソッドは uow を使用しない
 [ ] トランザクション不要な操作では runner を使用しない
-[ ] テストでDummy実装を使用
+[ ] Small TestでRepository Dummy使用
+[ ] Repository DummyでEntity Dummyファクトリを使用
+[ ] buildFetchNowDummyで時刻をモック
+[ ] UnitOfWorkRunnerDummyを使用
 [ ] Medium Testでトランザクション検証
+[ ] Medium Testでも入力データ作成にDummyファクトリを活用
 ```

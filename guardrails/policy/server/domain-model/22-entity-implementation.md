@@ -93,7 +93,6 @@ export class Todo {
 - **可読性**: 型定義が一箇所にまとまる
 - **保守性**: フィールド追加時、Props型を修正するだけで全体に反映
 - **analyzability-principles.md 原則1準拠**: フィールドの省略を型システムで検出
-- **一貫性**: `reconstruct()` と型定義が一致
 
 ### 4. コンストラクタではバリデーションしない
 
@@ -251,11 +250,13 @@ export class Todo {
 }
 ```
 
-### 汎用メソッドと個別メソッドの使い分け
+### 更新メソッドの実装パターン
 
 **設計方針**:
-- **基本**: シンプルなデータ変換メソッドを使用（メソッドチェーン可能）
-- **必要時**: reconstructまたは個別ビジネスメソッドを使用（Result型を返す）
+- **基本**: シンプルなデータ変換メソッド（Entityを返す）
+- **必要時のみ**: 複数値関係性チェックを含む個別メソッド（Result型を返す）
+
+**重要**: どちらもメソッドチェーン可能（`Result.then()`が`Entity`を自動で`Result.ok()`に包む）
 
 **参照**: `guardrails/policy/server/use-case/15-domain-model-interaction.md` - 詳細な使い分け基準
 
@@ -267,70 +268,10 @@ export class Todo {
 // ✅ 基本パターン: メソッドチェーン可能
 const updated = existing
   .changeStatus(newStatusResult.data, now)
-  .update({ title: input.title, updatedAt: now });
+  .changeTitle(titleResult.data, now);
 ```
 
-#### パターンB: reconstruct()で複数値関係性をチェック
-
-`reconstruct()`は必ずResult型を返し、複数の値の関係性をチェックする。
-
-```typescript
-// ✅ 正しい: 複数の値の関係性チェック
-static reconstruct(props: {
-  id: string;
-  title: string;
-  status: TodoStatus;  // Value Objectで検証済み
-  dueDate: string | undefined;  // 必須（undefinedを明示的に渡す）
-  // ...
-}): Result<Todo, DomainError> {
-  // 複数の値の関係性チェック
-  if (props.status.isCompleted() && !props.dueDate) {
-    return {
-      success: false,
-      error: new DomainError('完了TODOには期限が必要です'),
-    };
-  }
-
-  return {
-    success: true,
-    data: new Todo(props),
-  };
-}
-
-// UseCase層で使用
-const updatedResult = Todo.reconstruct({
-  ...existing,
-  title: titleResult.data,  // Value Objectで検証済み
-  status: statusResult.data,
-  updatedAt: now,
-});
-
-if (!updatedResult.success) {
-  return updatedResult;  // DomainError
-}
-
-const updated = updatedResult.data;
-```
-
-**reconstruct()の引数設計**:
-
-オプショナルフィールドも `| undefined` として型レベルで必須化する：
-
-```typescript
-static reconstruct(props: {
-  id: string;
-  description: string | undefined;  // ✅ 省略不可、undefinedを明示的に渡す
-  dueDate: string | undefined;      // ✅ 省略不可、undefinedを明示的に渡す
-  // ...
-}): Result<Todo, DomainError>
-```
-
-**メリット**:
-- TypeScriptレベルで省略を防ぐ（型安全性）
-- `undefined`を明示的に渡すことで意図が明確
-- マージロジックがUseCase層にあることが一目で分かる
-
-#### パターンC: 個別メソッドでビジネス意図を表現
+#### パターンB: 個別メソッドでビジネス意図を表現
 
 以下のいずれかに該当する場合、ビジネスの意図を表現する個別メソッドを実装:
 
@@ -366,8 +307,7 @@ markAsCompleted(completedAt: string, updatedAt: string): Result<Todo, DomainErro
 | パターン | 返り値 | 使用ケース | メリット |
 |---------|-------|-----------|---------|
 | **パターンA** | `Entity` | バリデーション不要な基本的な更新 | Entity層が薄い、`Result.ok()`のボイラープレート不要 |
-| **パターンB** | `Result<Entity, DomainError>` | PATCH更新・リポジトリ復元（`reconstruct`）<br/>※ドメインバリデーションの有無に関わらず常にResult型 | 型安全性（フィールド省略を検出）、一貫性、実装漏れ防止 |
-| **パターンC** | `Result<Entity, DomainError>` | 重要なビジネス操作（複数値関係性チェックあり） | ビジネス意図が明確 |
+| **パターンB** | `Result<Entity, DomainError>` | 重要なビジネス操作（複数値関係性チェックあり） | ビジネス意図が明確、型安全性 |
 
 **重要**:
 - **すべてのパターンでメソッドチェーン可能** - `Result.then()`が`Entity`を自動で`Result.ok()`に包むため
@@ -380,48 +320,15 @@ markAsCompleted(completedAt: string, updatedAt: string): Result<Todo, DomainErro
 
 ```typescript
 // ✅ EntityとResult型を混在させてフラットにチェーン可能
-const result = Todo.reconstruct(props)                // Result<Todo>
-  .then(t => t.updateDescription("新しい", now))       // Todoを返す → 自動でResult.ok()に包む
+const result = Result.ok(existing)                   // Result<Todo>
+  .then(t => t.changeDescription("新しい", now))      // Todoを返す → 自動でResult.ok()に包む
   .then(t => t.markAsCompleted(now, now))            // Result<Todo>を返す → そのまま
   .then(t => repository.save(t));                    // 完全にフラット
 ```
 
 ### ResultとEntityの返り値設計方針
 
-**設計判断**: reconstructは常にResult型、インスタンスメソッドは柔軟に使い分ける。
-
-#### reconstruct静的メソッド: ドメインバリデーションの有無に関わらず常にResult型
-
-```typescript
-static reconstruct(props: {
-  id: string;
-  description: string | undefined;  // ✅ undefinedを明示的に渡す必要がある
-  dueDate: string | undefined;      // ✅ 省略するとコンパイルエラー
-  // ...
-}): Result<Todo, DomainError> {
-  // ドメインバリデーション（複数値関係性チェック）がある場合
-  if (props.status.isCompleted() && !props.dueDate) {
-    return Result.err(new DomainError('完了TODOには期限が必要です'));
-  }
-
-  // ドメインバリデーションがなくても、Result型を返す
-  return Result.ok(new Todo(props));
-}
-```
-
-**理由（reconstructの特殊性）**:
-
-reconstructは、**インスタンスメソッドとは異なり、ドメインバリデーションの有無に関わらず常にResult型を返す**。
-
-1. **型安全性（最重要）**: オプショナルフィールドも `| undefined` として必須化し、省略を型システムで検出（analyzability-principles.md 原則1）
-   - リポジトリ復元時・PATCH更新時のフィールド省略を防ぐ
-   - `undefined`を明示的に渡すことで、マージロジックがUseCase層にあることが一目で分かる
-2. **一貫性**: reconstructは常にResult型という明確なルール（ドメインバリデーションの有無を気にせず使える）
-3. **実装漏れ防止**: リポジトリ復元・PATCH更新の信頼性を担保
-
-**パターンAとの違い**:
-- **パターンA（インスタンスメソッド）**: バリデーション不要ならEntityを返す（柔軟性・ボイラープレート削減）
-- **reconstruct**: 常にResult型を返す（型安全性・一貫性を優先）
+**設計判断**: インスタンスメソッドは、バリデーションの有無で柔軟に使い分ける。
 
 #### インスタンスメソッド: バリデーションの有無で使い分け
 
@@ -447,9 +354,9 @@ markAsCompleted(completedAt: string, updatedAt: string): Result<Todo, DomainErro
 4. **実用上の問題なし**: `Result.then()`が`Entity`を自動で`Result.ok()`に包むため、メソッドチェーンで混在可能
 
 **設計のメリット**:
-- ✅ reconstructの型安全性とインスタンスメソッドの柔軟性を両立
 - ✅ `Result.then()`により、EntityとResult型を自然にチェーン可能
 - ✅ ボイラープレートの最小化（バリデーション不要なら`Result.ok()`不要）
+- ✅ メソッドの意図が明確（Result型 = バリデーションあり）
 
 ### 2. mutableなプロパティ
 
@@ -570,10 +477,11 @@ domain/model/todo/
 ├── todo.dummy.ts             # Entityテスト用ファクトリ
 ├── todo-status.ts            # Value Object
 ├── todo-status.small.test.ts # Value Objectユニットテスト
+├── todo-status.dummy.ts      # Value Objectダミー（Entity Dummyから使用）
 └── todo-repository.ts        # リポジトリインターフェース
 ```
 
-**注**: Value Objectは通常Dummyファクトリ不要（`fromString()`や静的ファクトリメソッドで生成）
+**注**: Value ObjectテストではDummyファクトリ不要（静的ファクトリメソッドで生成）。ただし、Entity Dummyファクトリから使用するため`{value-object}.dummy.ts`は作成する。
 
 ## Do / Don't
 
@@ -699,33 +607,6 @@ export class Todo {
       status: newStatus,
       updatedAt,
     });
-  }
-
-  /**
-   * 再構成用の静的メソッド（リポジトリから復元時に使用）
-   */
-  static reconstruct(props: {
-    id: string;
-    title: string;
-    description: string | undefined;
-    status: TodoStatus;
-    dueDate: string | undefined;
-    completedAt: string | undefined;
-    createdAt: string;
-    updatedAt: string;
-  }): Result<Todo, DomainError> {
-    // 複数値関係性チェック（ある場合）
-    if (props.status.isCompleted() && !props.dueDate) {
-      return {
-        success: false,
-        error: new DomainError('完了TODOには期限が必要です'),
-      };
-    }
-
-    return {
-      success: true,
-      data: new Todo(props),
-    };
   }
 }
 ```

@@ -249,6 +249,7 @@ export const todoDdbItemToTodo = (
   const statusResult = TodoStatus.from({ status: todoDdbItem.status });
 
   // データ不整合の場合はデフォルト値を使用（ログ出力推奨）
+  // **参照**: `10-repository-overview.md` - なぜデフォルト値を使うべきか
   const status = statusResult.success
     ? statusResult.data
     : TodoStatus.default();

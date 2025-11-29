@@ -265,6 +265,117 @@ if (result.success === false) {
 const responseData = convertToProjectResponse(result.data);
 ```
 
+### null → undefined 変換パターン
+
+**参照**: `policy/contract/api/20-endpoint-design.md` - PATCH操作でのフィールドクリア
+
+PATCH操作で既存フィールドをクリアする場合、JSON層では`null`を受け取り、TypeScript内部では`undefined`に変換する。
+
+**背景**:
+- **JSON標準**: `undefined`は送信不可、`null`を使用
+- **TypeScriptベストプラクティス**: `undefined`のみ使用（`null`を避ける）
+- **Handler層の責務**: 境界での変換を実施
+
+**3値の区別**:
+
+| クライアント | JSON | Handler層変換 | TypeScript内部 | 意味 |
+|------------|------|--------------|---------------|------|
+| フィールド省略 | `{}` | プロパティなし | `'dueDate' in updates === false` | 変更しない |
+| `null`送信 | `{"dueDate": null}` | `undefined` | `updates.dueDate === undefined` | クリアする |
+| 値送信 | `{"dueDate": "2025-01-01"}` | 値そのまま | `updates.dueDate === "2025-01-01"` | 値を設定 |
+
+**実装パターン**:
+
+```typescript
+export const buildUpdateTodoHandler =
+  ({ container }: { container: Container }) =>
+  async (c: Context) => {
+    const logger = container.get<Logger>(serviceId.LOGGER);
+    const useCase = container.get<UpdateTodoUseCase>(serviceId.UPDATE_TODO_USE_CASE);
+
+    try {
+      const rawBody = await c.req.json();
+
+      // Zodバリデーション（nullable: trueを許可）
+      const parseResult = schemas.UpdateTodoParams.safeParse(rawBody);
+      if (!parseResult.success) {
+        return c.json({ name: "ValidationError", ... }, 400);
+      }
+
+      const body = parseResult.data;
+
+      // null → undefined 変換（'in'演算子で3値区別）
+      const updates: Partial<UpdateTodoInput> = {};
+
+      if ('title' in body) {
+        updates.title = body.title;  // string
+      }
+
+      // Special Case/Optionalフィールド: null → undefined 変換
+      if ('dueDate' in body) {
+        updates.dueDate = body.dueDate === null ? undefined : body.dueDate;
+      }
+
+      if ('completedAt' in body) {
+        updates.completedAt = body.completedAt === null ? undefined : body.completedAt;
+      }
+
+      if ('description' in body) {
+        updates.description = body.description === null ? undefined : body.description;
+      }
+
+      // UseCaseに渡す（TypeScript内部はundefinedのみ）
+      const result = await useCase.execute({
+        todoId: c.req.param('todoId'),
+        ...updates,
+      });
+
+      if (!result.success) {
+        return handleError(result.error, c, logger);
+      }
+
+      const responseData = convertToTodoResponse(result.data);
+      return c.json(responseData, 200);
+    } catch (error) {
+      logger.error("ハンドラーで予期せぬエラーをキャッチ", error as Error);
+      return c.json({ name: new UnexpectedError().name, ... }, 500);
+    }
+  };
+```
+
+**重要なポイント**:
+
+1. **OpenAPI定義**: `nullable: true`でnullを許可
+   ```yaml
+   UpdateTodoParams:
+     properties:
+       dueDate:
+         type: string
+         nullable: true  # nullを許可
+   ```
+
+2. **Zodスキーマ**: 自動生成で`nullable: true`が反映される
+   ```typescript
+   // 自動生成されたスキーマ
+   dueDate: z.string().nullable().optional()
+   ```
+
+3. **'in'演算子使用**: プロパティ存在を確認（省略/null/値を区別）
+   ```typescript
+   if ('dueDate' in body) {  // プロパティが存在するか
+     updates.dueDate = body.dueDate === null ? undefined : body.dueDate;
+   }
+   ```
+
+4. **TypeScript内部**: `undefined`のみ（`null`は使用しない）
+   ```typescript
+   // ✅ Good
+   dueDate: string | undefined
+
+   // ❌ Bad
+   dueDate: string | null | undefined
+   ```
+
 ### try-catch必須
 
 すべてのハンドラーは全体を `try-catch` でラップし、予期しない例外をキャッチする。
