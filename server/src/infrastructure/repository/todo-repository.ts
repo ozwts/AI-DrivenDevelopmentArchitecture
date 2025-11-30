@@ -18,7 +18,7 @@ import {
   FindByStatusResult,
   FindByProjectIdResult,
   type TodoRepository,
-} from "@/domain/model/todo/todo-repository";
+} from "@/domain/model/todo/todo.repository";
 import {
   Todo,
   TodoStatus,

@@ -140,140 +140,17 @@ UseCase層のテストは**ビジネスルール検証**に焦点を当てる。
 
 ### Small Testでカバーすべきケース
 
-#### 1. 正常系
+| ケース                       | テスト内容                                           |
+| ---------------------------- | ---------------------------------------------------- |
+| 正常系                       | 正常データで成功すること                             |
+| ビジネスルール違反           | 権限なし → ForbiddenError                            |
+| リソース未検出               | 存在しないID → NotFoundError                         |
+| 重複エラー                   | 既存リソース → ConflictError                         |
+| Value Objectエラー伝播       | 不正値 → DomainError（伝播確認）                     |
+| リポジトリエラー伝播         | 保存失敗 → UnexpectedError（伝播確認）               |
+| ビジネスロジック境界値       | 最大添付ファイル数など（型レベルではない境界）       |
 
-```typescript
-test("正常なデータで{アクション}が成功する", async () => {
-  const result = await useCase.execute({
-    /* valid input */
-  });
-
-  expect(result.success).toBe(true);
-});
-```
-
-#### 2. ビジネスルール違反
-
-```typescript
-test("権限がない場合ForbiddenErrorを返す", async () => {
-  // リソースの所有者と異なるユーザーでアクセス
-  dummyRepository.setFindByIdResult(Result.ok(projectOwnedByOtherUser));
-
-  const result = await useCase.execute({ userSub: "different-user" });
-
-  expect(result.success).toBe(false);
-  if (!result.success) {
-    expect(result.error).toBeInstanceOf(ForbiddenError);
-  }
-});
-```
-
-#### 3. リソース未検出
-
-```typescript
-test("リソースが存在しない場合NotFoundErrorを返す", async () => {
-  dummyRepository.setFindByIdResult(Result.ok(undefined));
-
-  const result = await useCase.execute({ id: "non-existent-id" });
-
-  expect(result.success).toBe(false);
-  if (!result.success) {
-    expect(result.error).toBeInstanceOf(NotFoundError);
-  }
-});
-```
-
-#### 4. 重複エラー
-
-```typescript
-test("既に存在するリソースの場合ConflictErrorを返す", async () => {
-  dummyRepository.setFindByEmailResult(Result.ok(existingUser));
-
-  const result = await useCase.execute({ email: "existing@example.com" });
-
-  expect(result.success).toBe(false);
-  if (!result.success) {
-    expect(result.error).toBeInstanceOf(ConflictError);
-  }
-});
-```
-
-#### 5. Value Objectバリデーションエラー（ドメインルール検証）
-
-```typescript
-test("不正なカラー値の場合ValidationErrorを返す", async () => {
-  const result = await useCase.execute({
-    color: "invalid-color",
-  });
-
-  expect(result.success).toBe(false);
-  if (!result.success) {
-    expect(result.error).toBeInstanceOf(ValidationError);
-    expect(result.error.message).toContain("カラー");
-  }
-});
-```
-
-**注**: このテストはValue Object（Domain層）のエラーがUseCase層で適切に伝播することを確認する。ドメインルール自体のテストはDomain層で実施済み（MECE原則）。
-
-#### 6. リポジトリエラーの伝播
-
-```typescript
-test("保存に失敗した場合はUnexpectedErrorを返す", async () => {
-  const useCase = new CreateProjectUseCaseImpl({
-    projectRepository: new ProjectRepositoryDummy({
-      saveReturnValue: Result.err(new UnexpectedError()),
-    }),
-    logger: new LoggerDummy(),
-    fetchNow,
-  });
-
-  const result = await useCase.execute({
-    name: "テストプロジェクト",
-    color: "#FF5733",
-  });
-
-  expect(result.success).toBe(false);
-  if (!result.success) {
-    expect(result.error).toBeInstanceOf(UnexpectedError);
-  }
-});
-```
-
-#### 7. 境界値テスト
-
-**注意**: 型レベルの境界値テスト（文字列長など）はHandler層でテスト済み。UseCase層では**ビジネスロジック固有の境界値**のみをテストする。
-
-```typescript
-test("最大添付ファイル数（ビジネスルール）でアップロード成功", async () => {
-  const attachments = Array(10)
-    .fill(null)
-    .map(() => createDummyAttachment());
-
-  const result = await useCase.execute({
-    todoId: "todo-123",
-    attachments, // ビジネスルール: 最大10ファイル
-  });
-
-  expect(result.success).toBe(true);
-});
-
-test("最大添付ファイル数を超える場合ValidationError", async () => {
-  const attachments = Array(11)
-    .fill(null)
-    .map(() => createDummyAttachment());
-
-  const result = await useCase.execute({
-    todoId: "todo-123",
-    attachments, // 11ファイル（制限超過）
-  });
-
-  expect(result.success).toBe(false);
-  if (!result.success) {
-    expect(result.error).toBeInstanceOf(ValidationError);
-  }
-});
-```
+**注**: 型レベルの境界値テスト（文字列長など）はHandler層でテスト済み。UseCase層では**ビジネスロジック固有の境界値**のみをテストする。
 
 ## Medium Test実装パターン
 
@@ -319,37 +196,10 @@ describe("{Action}{Entity}UseCase Medium Test", () => {
 
 ### Medium Testでカバーすべきケース
 
-#### 1. トランザクションの原子性
-
-```typescript
-test("エラー時にロールバックされる", async () => {
-  // 意図的にエラーを発生させる
-  const result = await useCase.execute({
-    /* invalid input */
-  });
-
-  expect(result.success).toBe(false);
-
-  // データベースに変更が反映されていないことを確認
-  const checkResult = await repository.findById({ id: "some-id" });
-  expect(checkResult.data).toBeUndefined();
-});
-```
-
-#### 2. 実際のDB制約
-
-```typescript
-test("DynamoDB制約違反の場合エラーを返す", async () => {
-  // 実際のDB制約（ユニークキーなど）に違反する操作
-  await repository.save(entity1);
-
-  const result = await useCase.execute({
-    /* duplicate key */
-  });
-
-  expect(result.success).toBe(false);
-});
-```
+| ケース               | テスト内容                               |
+| -------------------- | ---------------------------------------- |
+| トランザクションの原子性 | エラー時にロールバックされること         |
+| 実際のDB制約         | DynamoDB制約違反時のエラーハンドリング   |
 
 ## テストヘルパーパターン
 
@@ -433,14 +283,14 @@ npm test
 ### ✅ Good
 
 ```typescript
-// ✅ Entity Dummyファクトリを使用
+// Entity Dummyファクトリを使用
 import { projectDummyFrom } from "@/domain/model/project/project.entity.dummy";
 import { buildFetchNowDummy } from "@/domain/support/fetch-now/dummy";
 
 const fixedDate = new Date("2024-01-01T00:00:00+09:00");
 const fetchNow = buildFetchNowDummy(fixedDate);
 
-// ✅ テストケースごとに新しいインスタンス生成
+// テストケースごとに新しいインスタンス生成
 const useCase = new CreateProjectUseCaseImpl({
   projectRepository: new ProjectRepositoryDummy({
     saveReturnValue: Result.ok(undefined),
@@ -449,19 +299,19 @@ const useCase = new CreateProjectUseCaseImpl({
   fetchNow,
 });
 
-// ✅ Result型を正しくチェック
+// Result型を正しくチェック
 expect(result.success).toBe(true);
 if (result.success) {
   expect(result.data.name).toBe("Expected Name");
 }
 
-// ✅ DummyリポジトリでEntity Dummyファクトリを使用
+// DummyリポジトリでEntity Dummyファクトリを使用
 const testProject = projectDummyFrom({ name: "Test Project" });
 const repository = new ProjectRepositoryDummy({
   findByIdReturnValue: Result.ok(testProject),
 });
 
-// ✅ エラー型を明示的に検証
+// エラー型を明示的に検証
 expect(result.error).toBeInstanceOf(NotFoundError);
 expect(result.error.message).toContain("見つかりません");
 ```
@@ -469,44 +319,28 @@ expect(result.error.message).toContain("見つかりません");
 ### ❌ Bad
 
 ```typescript
-// ❌ テスト専用ヘルパー関数を作成（保守コスト増）
+// テスト専用ヘルパー関数を作成（保守コスト増）
 const createTestProject = (overrides?: Partial<Project>) => {
-  return new Project({
-    /* ... 固定値 */
-  });
+  return new Project({ /* ... 固定値 */ });
 };
 
-// ✅ 代わりにEntity Dummyファクトリを使用
-const project = projectDummyFrom({ name: "Test Project" });
-
-// ❌ インラインで時刻モック作成
+// インラインで時刻モック作成
 const fetchNow = () => new Date("2024-01-01");
 
-// ✅ 代わりにbuildFetchNowDummy使用
-const fetchNow = buildFetchNowDummy(new Date("2024-01-01"));
-
-// ❌ 実DBを使用（Small Testで）
+// 実DBを使用（Small Testで）
 const useCase = new CreateProjectUseCaseImpl({
   projectRepository: new ProjectRepositoryImpl({ dynamoDBClient }), // ❌ 低速
 });
 
-// ❌ Result型をチェックせずdata参照
+// Result型をチェックせずdata参照
 expect(result.data.name).toBe("Expected Name"); // ❌ errorの可能性
 
-// ❌ beforeEachで共有インスタンス（独立性低下）
+// beforeEachで共有インスタンス（独立性低下）
 let useCase: CreateProjectUseCase;
 beforeEach(() => {
-  useCase = new CreateProjectUseCaseImpl({
-    /* ... */
-  }); // ❌ テスト間で状態共有のリスク
+  useCase = new CreateProjectUseCaseImpl({ /* ... */ }); // ❌ テスト間で状態共有のリスク
 });
 
-// ❌ セッターメソッドで戻り値変更（実装に存在しない）
-dummyRepository.setFindByIdResult({
-  /* ... */
-}); // ❌ このパターンは使われていない
-
-// ❌ エラー型を検証しない
+// エラー型を検証しない
 expect(result.success).toBe(false); // ❌ どのエラーかわからない
 ```
-

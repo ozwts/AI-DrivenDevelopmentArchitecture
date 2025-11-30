@@ -1,6 +1,6 @@
 import type { Result } from "@/util/result";
 import type { UnexpectedError } from "@/util/error-util";
-import type { Project } from "./project";
+import type { Project } from "./project.entity";
 
 export type SaveResult = Result<void, UnexpectedError>;
 export type FindByIdResult = Result<Project | undefined, UnexpectedError>;

@@ -1,7 +1,7 @@
 import { test, expect, describe } from "vitest";
 import { RegisterTodoUseCaseImpl } from "./register-todo-use-case";
-import { TodoRepositoryDummy } from "@/domain/model/todo/todo-repository.dummy";
-import { UserRepositoryDummy } from "@/domain/model/user/user-repository.dummy";
+import { TodoRepositoryDummy } from "@/domain/model/todo/todo.repository.dummy";
+import { UserRepositoryDummy } from "@/domain/model/user/user.repository.dummy";
 import { userDummyFrom } from "@/domain/model/user/user.dummy";
 import { LoggerDummy } from "@/domain/support/logger/dummy";
 import { buildFetchNowDummy } from "@/domain/support/fetch-now/dummy";

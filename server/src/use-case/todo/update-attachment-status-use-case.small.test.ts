@@ -1,6 +1,6 @@
 import { test, expect, describe } from "vitest";
 import { UpdateAttachmentStatusUseCaseImpl } from "./update-attachment-status-use-case";
-import { TodoRepositoryDummy } from "@/domain/model/todo/todo-repository.dummy";
+import { TodoRepositoryDummy } from "@/domain/model/todo/todo.repository.dummy";
 import { todoDummyFrom } from "@/domain/model/todo/todo.dummy";
 import { attachmentDummyFrom } from "@/domain/model/attachment/attachment.dummy";
 import { LoggerDummy } from "@/domain/support/logger/dummy";

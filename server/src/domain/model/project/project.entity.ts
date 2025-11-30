@@ -82,12 +82,7 @@ export class Project {
    */
   readonly updatedAt: string;
 
-  /**
-   * コンストラクタ
-   *
-   * @param props - プロジェクトのプロパティ
-   */
-  constructor(props: ProjectProps) {
+  private constructor(props: ProjectProps) {
     this.id = props.id;
     this.name = props.name;
     this.description = props.description;
@@ -97,13 +92,23 @@ export class Project {
   }
 
   /**
-   * プロジェクト名を変更して新しいProjectインスタンスを返す
+   * Projectインスタンスを生成する
+   *
+   * @param props - プロジェクトのプロパティ
+   * @returns Projectインスタンス
+   */
+  static from(props: ProjectProps): Project {
+    return new Project(props);
+  }
+
+  /**
+   * プロジェクト名を変更する
    *
    * @param name - 新しいプロジェクト名
    * @param updatedAt - 更新日時
    * @returns 更新された新しいProjectインスタンス
    */
-  changeName(name: string, updatedAt: string): Project {
+  rename(name: string, updatedAt: string): Project {
     return new Project({
       ...this,
       name,
@@ -112,13 +117,13 @@ export class Project {
   }
 
   /**
-   * プロジェクト説明を変更して新しいProjectインスタンスを返す
+   * プロジェクトの説明を明確化する
    *
    * @param description - 新しいプロジェクト説明
    * @param updatedAt - 更新日時
    * @returns 更新された新しいProjectインスタンス
    */
-  changeDescription(description: string | undefined, updatedAt: string): Project {
+  clarify(description: string | undefined, updatedAt: string): Project {
     return new Project({
       ...this,
       description,
@@ -127,13 +132,13 @@ export class Project {
   }
 
   /**
-   * プロジェクトカラーを変更して新しいProjectインスタンスを返す
+   * プロジェクトのカラーを再設定する
    *
    * @param color - 新しいプロジェクトカラー（16進数カラーコード #RRGGBB形式）
    * @param updatedAt - 更新日時
    * @returns 更新された新しいProjectインスタンス
    */
-  changeColor(color: string, updatedAt: string): Project {
+  recolor(color: string, updatedAt: string): Project {
     return new Project({
       ...this,
       color,

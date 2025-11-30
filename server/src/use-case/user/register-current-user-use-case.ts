@@ -2,7 +2,7 @@ import type { Logger } from "@/domain/support/logger";
 import type { Result } from "@/util/result";
 import type { UseCase } from "../interfaces";
 import { UnexpectedError, ConflictError } from "@/util/error-util";
-import type { UserRepository } from "@/domain/model/user/user-repository";
+import type { UserRepository } from "@/domain/model/user/user.repository";
 import { User } from "@/domain/model/user/user";
 import type { FetchNow } from "@/domain/support/fetch-now";
 import { dateToIsoString } from "@/util/date-util";

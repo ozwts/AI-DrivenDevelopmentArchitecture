@@ -1,7 +1,7 @@
 import type { Logger } from "@/domain/support/logger";
 import type { Result } from "@/util/result";
 import { UnexpectedError, ValidationError } from "@/util/error-util";
-import type { ProjectRepository } from "@/domain/model/project/project-repository";
+import type { ProjectRepository } from "@/domain/model/project/project.repository";
 import type { Project } from "@/domain/model/project/project";
 import type { FetchNow } from "@/domain/support/fetch-now";
 import { dateToIsoString } from "@/util/date-util";

@@ -1,5 +1,5 @@
 import { faker } from "@faker-js/faker";
-import { User } from "./user";
+import { User } from "./user.entity";
 import {
   getDummyId,
   getDummyShortText,
@@ -37,7 +37,7 @@ export type UserDummyProps = Partial<{
  */
 export const userDummyFrom = (props?: UserDummyProps): User => {
   const now = getDummyRecentDate();
-  return new User({
+  return User.from({
     id: props?.id ?? getDummyId(),
     sub: props?.sub ?? getDummyId(),
     name: props?.name ?? getDummyShortText(),

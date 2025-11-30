@@ -1,4 +1,4 @@
-import type { Attachment } from "./attachment";
+import type { Attachment } from "./attachment.entity";
 import { TodoStatus } from "./todo-status.vo";
 
 // TodoStatusを再エクスポート
@@ -146,12 +146,7 @@ export class Todo {
    */
   readonly attachments: Attachment[];
 
-  /**
-   * コンストラクタ
-   *
-   * @param props - TODOのプロパティ
-   */
-  constructor(props: TodoProps) {
+  private constructor(props: TodoProps) {
     this.id = props.id;
     this.title = props.title;
     this.description = props.description;
@@ -166,13 +161,23 @@ export class Todo {
   }
 
   /**
-   * タイトルを変更して新しいTodoインスタンスを返す
+   * Todoインスタンスを生成する
+   *
+   * @param props - TODOのプロパティ
+   * @returns Todoインスタンス
+   */
+  static from(props: TodoProps): Todo {
+    return new Todo(props);
+  }
+
+  /**
+   * TODOのタイトルを変更する
    *
    * @param title - 新しいタイトル
    * @param updatedAt - 更新日時（ISO 8601形式）
    * @returns 新しいTodoインスタンス
    */
-  changeTitle(title: string, updatedAt: string): Todo {
+  retitle(title: string, updatedAt: string): Todo {
     return new Todo({
       ...this,
       title,
@@ -181,13 +186,13 @@ export class Todo {
   }
 
   /**
-   * 説明を変更して新しいTodoインスタンスを返す
+   * TODOの説明を明確化する
    *
    * @param description - 新しい説明
    * @param updatedAt - 更新日時（ISO 8601形式）
    * @returns 新しいTodoインスタンス
    */
-  changeDescription(description: string | undefined, updatedAt: string): Todo {
+  clarify(description: string | undefined, updatedAt: string): Todo {
     return new Todo({
       ...this,
       description,
@@ -196,28 +201,55 @@ export class Todo {
   }
 
   /**
-   * ステータスを変更して新しいTodoインスタンスを返す
+   * TODOを開始する
    *
-   * @param status - 新しいステータス
    * @param updatedAt - 更新日時（ISO 8601形式）
    * @returns 新しいTodoインスタンス
    */
-  changeStatus(status: TodoStatus, updatedAt: string): Todo {
+  start(updatedAt: string): Todo {
     return new Todo({
       ...this,
-      status,
+      status: TodoStatus.inProgress(),
       updatedAt,
     });
   }
 
   /**
-   * 優先度を変更して新しいTodoインスタンスを返す
+   * TODOを完了する
+   *
+   * @param updatedAt - 更新日時（ISO 8601形式）
+   * @returns 新しいTodoインスタンス
+   */
+  complete(updatedAt: string): Todo {
+    return new Todo({
+      ...this,
+      status: TodoStatus.completed(),
+      updatedAt,
+    });
+  }
+
+  /**
+   * TODOを再開する（未着手状態に戻す）
+   *
+   * @param updatedAt - 更新日時（ISO 8601形式）
+   * @returns 新しいTodoインスタンス
+   */
+  reopen(updatedAt: string): Todo {
+    return new Todo({
+      ...this,
+      status: TodoStatus.todo(),
+      updatedAt,
+    });
+  }
+
+  /**
+   * TODOの優先度を上げる
    *
    * @param priority - 新しい優先度
    * @param updatedAt - 更新日時（ISO 8601形式）
    * @returns 新しいTodoインスタンス
    */
-  changePriority(priority: TodoPriority, updatedAt: string): Todo {
+  prioritize(priority: TodoPriority, updatedAt: string): Todo {
     return new Todo({
       ...this,
       priority,
@@ -226,13 +258,13 @@ export class Todo {
   }
 
   /**
-   * 期限日を変更して新しいTodoインスタンスを返す
+   * TODOの期限を再設定する
    *
    * @param dueDate - 新しい期限日
    * @param updatedAt - 更新日時（ISO 8601形式）
    * @returns 新しいTodoインスタンス
    */
-  changeDueDate(dueDate: string | undefined, updatedAt: string): Todo {
+  reschedule(dueDate: string | undefined, updatedAt: string): Todo {
     return new Todo({
       ...this,
       dueDate,
@@ -241,13 +273,13 @@ export class Todo {
   }
 
   /**
-   * プロジェクトIDを変更して新しいTodoインスタンスを返す
+   * TODOをプロジェクトに移動する
    *
    * @param projectId - 新しいプロジェクトID
    * @param updatedAt - 更新日時（ISO 8601形式）
    * @returns 新しいTodoインスタンス
    */
-  changeProjectId(projectId: string | undefined, updatedAt: string): Todo {
+  moveToProject(projectId: string | undefined, updatedAt: string): Todo {
     return new Todo({
       ...this,
       projectId,
@@ -256,13 +288,13 @@ export class Todo {
   }
 
   /**
-   * 担当者を変更して新しいTodoインスタンスを返す
+   * TODOに担当者をアサインする
    *
    * @param assigneeUserId - 新しい担当者ユーザーID
    * @param updatedAt - 更新日時（ISO 8601形式）
    * @returns 新しいTodoインスタンス
    */
-  changeAssignee(assigneeUserId: string, updatedAt: string): Todo {
+  assign(assigneeUserId: string, updatedAt: string): Todo {
     return new Todo({
       ...this,
       assigneeUserId,
@@ -271,13 +303,13 @@ export class Todo {
   }
 
   /**
-   * 添付ファイルを追加して新しいTodoインスタンスを返す
+   * 添付ファイルを追加する
    *
    * @param attachment - 追加する添付ファイル
    * @param updatedAt - 更新日時（ISO 8601形式）
    * @returns 新しいTodoインスタンス
    */
-  addAttachment(attachment: Attachment, updatedAt: string): Todo {
+  attach(attachment: Attachment, updatedAt: string): Todo {
     return new Todo({
       ...this,
       attachments: [...this.attachments, attachment],
@@ -286,13 +318,13 @@ export class Todo {
   }
 
   /**
-   * 添付ファイルを削除して新しいTodoインスタンスを返す
+   * 添付ファイルを削除する
    *
    * @param attachmentId - 削除する添付ファイルのID
    * @param updatedAt - 更新日時（ISO 8601形式）
    * @returns 新しいTodoインスタンス
    */
-  removeAttachment(attachmentId: string, updatedAt: string): Todo {
+  detach(attachmentId: string, updatedAt: string): Todo {
     return new Todo({
       ...this,
       attachments: this.attachments.filter((a) => a.id !== attachmentId),
@@ -301,13 +333,13 @@ export class Todo {
   }
 
   /**
-   * 添付ファイルを更新して新しいTodoインスタンスを返す
+   * 添付ファイルを更新する
    *
    * @param updatedAttachment - 更新する添付ファイル
    * @param updatedAt - 更新日時（ISO 8601形式）
    * @returns 新しいTodoインスタンス
    */
-  updateAttachment(updatedAttachment: Attachment, updatedAt: string): Todo {
+  replaceAttachment(updatedAttachment: Attachment, updatedAt: string): Todo {
     return new Todo({
       ...this,
       attachments: this.attachments.map((a) =>

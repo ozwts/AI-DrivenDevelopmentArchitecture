@@ -14,7 +14,7 @@ import {
   FindByIdResult,
   FindAllResult,
   type ProjectRepository,
-} from "@/domain/model/project/project-repository";
+} from "@/domain/model/project/project.repository";
 import { Project } from "@/domain/model/project/project";
 import { ProjectColor } from "@/domain/model/project/project-color";
 import { UnexpectedError } from "@/util/error-util";

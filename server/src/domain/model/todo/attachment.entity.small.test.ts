@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { AttachmentStatus } from "./attachment-status.vo";
-import { attachmentDummyFrom } from "./attachment.dummy";
+import { attachmentDummyFrom } from "./attachment.entity.dummy";
 import { attachmentStatusDummyFrom } from "./attachment-status.vo.dummy";
 
 describe("Attachment", () => {
@@ -44,8 +44,8 @@ describe("Attachment", () => {
     });
   });
 
-  describe("changeStatus", () => {
-    it("ステータスを変更した新しいAttachmentインスタンスを返す", () => {
+  describe("markAsUploaded", () => {
+    it("ステータスをUPLOADEDに変更した新しいAttachmentインスタンスを返す", () => {
       // Arrange
       const originalAttachment = attachmentDummyFrom({
         status: AttachmentStatus.prepared(),
@@ -53,8 +53,7 @@ describe("Attachment", () => {
       });
 
       // Act
-      const updatedAttachment = originalAttachment.changeStatus(
-        AttachmentStatus.uploaded(),
+      const updatedAttachment = originalAttachment.markAsUploaded(
         "2024-01-01T00:01:00.000Z",
       );
 
@@ -78,10 +77,7 @@ describe("Attachment", () => {
       });
 
       // Act
-      originalAttachment.changeStatus(
-        AttachmentStatus.uploaded(),
-        "2024-01-01T00:01:00.000Z",
-      );
+      originalAttachment.markAsUploaded("2024-01-01T00:01:00.000Z");
 
       // Assert
       expect(originalAttachment.status.status).toBe("PREPARED");
@@ -93,8 +89,7 @@ describe("Attachment", () => {
       const originalAttachment = attachmentDummyFrom();
 
       // Act
-      const updatedAttachment = originalAttachment.changeStatus(
-        AttachmentStatus.uploaded(),
+      const updatedAttachment = originalAttachment.markAsUploaded(
         "2024-01-01T00:01:00.000Z",
       );
 

@@ -1,6 +1,6 @@
 import { test, expect, describe } from "vitest";
 import { UpdateCurrentUserUseCaseImpl } from "./update-current-user-use-case";
-import { UserRepositoryDummy } from "@/domain/model/user/user-repository.dummy";
+import { UserRepositoryDummy } from "@/domain/model/user/user.repository.dummy";
 import { LoggerDummy } from "@/domain/support/logger/dummy";
 import { buildFetchNowDummy } from "@/domain/support/fetch-now/dummy";
 import { UnexpectedError, NotFoundError } from "@/util/error-util";

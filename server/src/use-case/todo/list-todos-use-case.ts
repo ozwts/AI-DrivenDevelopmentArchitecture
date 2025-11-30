@@ -1,6 +1,6 @@
 import type { Result } from "@/util/result";
 import type { UnexpectedError } from "@/util/error-util";
-import type { TodoRepository } from "@/domain/model/todo/todo-repository";
+import type { TodoRepository } from "@/domain/model/todo/todo.repository";
 import type { Todo, TodoStatus } from "@/domain/model/todo/todo";
 
 export type ListTodosUseCaseInput = {

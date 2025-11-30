@@ -15,7 +15,7 @@ import {
   FindByIdResult,
   FindAllResult,
   type UserRepository,
-} from "@/domain/model/user/user-repository";
+} from "@/domain/model/user/user.repository";
 import { User } from "@/domain/model/user/user";
 import { UnexpectedError } from "@/util/error-util";
 

@@ -1,4 +1,4 @@
-import { Project } from "./project";
+import { Project } from "./project.entity";
 import {
   getDummyId,
   getDummyShortText,
@@ -26,7 +26,7 @@ export type ProjectDummyProps = Partial<{
 export const projectDummyFrom = (props?: ProjectDummyProps): Project => {
   const now = getDummyRecentDate();
 
-  return new Project({
+  return Project.from({
     id: props?.id ?? getDummyId(),
     name: props?.name ?? getDummyShortText(),
     description: props?.description !== undefined ? props.description : getDummyDescription(),

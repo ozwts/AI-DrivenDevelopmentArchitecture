@@ -4,7 +4,7 @@ import type {
   NotFoundError,
   ValidationError,
 } from "@/util/error-util";
-import type { TodoRepository } from "@/domain/model/todo/todo-repository";
+import type { TodoRepository } from "@/domain/model/todo/todo.repository";
 import type { StorageClient } from "@/domain/support/storage-client";
 import type { FetchNow } from "@/domain/support/fetch-now";
 import type { Logger } from "@/domain/support/logger";

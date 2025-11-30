@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { GetCurrentUserUseCase } from "./get-current-user-use-case";
-import type { UserRepository } from "@/domain/model/user/user-repository";
-import { UserRepositoryDummy } from "@/domain/model/user/user-repository.dummy";
+import type { UserRepository } from "@/domain/model/user/user.repository";
+import { UserRepositoryDummy } from "@/domain/model/user/user.repository.dummy";
 import { userDummyFrom } from "@/domain/model/user/user.dummy";
 import { NotFoundError } from "@/util/error-util";
 

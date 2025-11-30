@@ -73,7 +73,7 @@ export class User {
    */
   readonly updatedAt: string;
 
-  constructor(props: UserProps) {
+  private constructor(props: UserProps) {
     this.id = props.id;
     this.sub = props.sub;
     this.name = props.name;
@@ -84,13 +84,23 @@ export class User {
   }
 
   /**
-   * 名前を更新する
+   * Userインスタンスを生成する
+   *
+   * @param props - Userのプロパティ
+   * @returns Userインスタンス
+   */
+  static from(props: UserProps): User {
+    return new User(props);
+  }
+
+  /**
+   * ユーザー名を変更する
    *
    * @param name - 新しい名前
    * @param updatedAt - 更新日時
    * @returns 更新された新しいUserインスタンス
    */
-  updateName(name: string, updatedAt: string): User {
+  rename(name: string, updatedAt: string): User {
     return new User({
       ...this,
       name,
@@ -99,14 +109,14 @@ export class User {
   }
 
   /**
-   * メールアドレスと検証状態を更新する
+   * メールアドレスと検証状態を変更する
    *
    * @param email - 新しいメールアドレス
    * @param emailVerified - メールアドレスの検証状態
    * @param updatedAt - 更新日時
    * @returns 更新された新しいUserインスタンス
    */
-  updateEmail(email: string, emailVerified: boolean, updatedAt: string): User {
+  verifyEmail(email: string, emailVerified: boolean, updatedAt: string): User {
     return new User({
       ...this,
       email,

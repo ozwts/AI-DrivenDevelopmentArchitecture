@@ -1,6 +1,6 @@
 import { inject, injectable } from "inversify";
 import { serviceId } from "@/di-container/service-id";
-import type { UserRepository } from "@/domain/model/user/user-repository";
+import type { UserRepository } from "@/domain/model/user/user.repository";
 import type { User } from "@/domain/model/user/user";
 import type { Result } from "@/util/result";
 import { UnexpectedError } from "@/util/error-util";

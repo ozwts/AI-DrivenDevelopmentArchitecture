@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { ListUsersUseCase } from "./list-users-use-case";
-import type { UserRepository } from "@/domain/model/user/user-repository";
-import { UserRepositoryDummy } from "@/domain/model/user/user-repository.dummy";
+import type { UserRepository } from "@/domain/model/user/user.repository";
+import { UserRepositoryDummy } from "@/domain/model/user/user.repository.dummy";
 import { userDummyFrom } from "@/domain/model/user/user.dummy";
 import { UnexpectedError } from "@/util/error-util";
 

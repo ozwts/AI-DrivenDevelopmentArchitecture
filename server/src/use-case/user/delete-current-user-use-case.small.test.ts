@@ -1,6 +1,6 @@
 import { test, expect, describe } from "vitest";
 import { DeleteCurrentUserUseCaseImpl } from "./delete-current-user-use-case";
-import { UserRepositoryDummy } from "@/domain/model/user/user-repository.dummy";
+import { UserRepositoryDummy } from "@/domain/model/user/user.repository.dummy";
 import { LoggerDummy } from "@/domain/support/logger/dummy";
 import { UnexpectedError, NotFoundError } from "@/util/error-util";
 import { userDummyFrom } from "@/domain/model/user/user.dummy";

@@ -1,6 +1,6 @@
 import { test, expect, describe } from "vitest";
 import { CreateProjectUseCaseImpl } from "./create-project-use-case";
-import { ProjectRepositoryDummy } from "@/domain/model/project/project-repository.dummy";
+import { ProjectRepositoryDummy } from "@/domain/model/project/project.repository.dummy";
 import { LoggerDummy } from "@/domain/support/logger/dummy";
 import { buildFetchNowDummy } from "@/domain/support/fetch-now/dummy";
 import { UnexpectedError, ValidationError } from "@/util/error-util";

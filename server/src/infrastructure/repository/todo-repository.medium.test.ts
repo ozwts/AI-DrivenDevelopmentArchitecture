@@ -9,7 +9,7 @@ import {
 } from "@/util/testing-util/dynamodb";
 import { LoggerDummy } from "@/domain/support/logger/dummy";
 import { TodoRepositoryImpl } from "./todo-repository";
-import type { TodoRepository } from "@/domain/model/todo/todo-repository";
+import type { TodoRepository } from "@/domain/model/todo/todo.repository";
 import { Todo } from "@/domain/model/todo/todo";
 import { todoDummyFrom } from "@/domain/model/todo/todo.dummy";
 import { attachmentDummyFrom } from "@/domain/model/attachment/attachment.dummy";

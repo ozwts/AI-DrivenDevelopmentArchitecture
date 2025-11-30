@@ -1,6 +1,6 @@
 import { test, expect, describe } from "vitest";
 import { UpdateProjectUseCaseImpl } from "./update-project-use-case";
-import { ProjectRepositoryDummy } from "@/domain/model/project/project-repository.dummy";
+import { ProjectRepositoryDummy } from "@/domain/model/project/project.repository.dummy";
 import { projectDummyFrom } from "@/domain/model/project/project.dummy";
 import { ProjectColor } from "@/domain/model/project/project-color";
 import { LoggerDummy } from "@/domain/support/logger/dummy";

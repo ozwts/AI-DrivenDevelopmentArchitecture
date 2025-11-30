@@ -1,6 +1,6 @@
 import { test, expect, describe } from "vitest";
 import { ListTodosUseCaseImpl } from "./list-todos-use-case";
-import { TodoRepositoryDummy } from "@/domain/model/todo/todo-repository.dummy";
+import { TodoRepositoryDummy } from "@/domain/model/todo/todo.repository.dummy";
 import { todoDummyFrom } from "@/domain/model/todo/todo.dummy";
 import { UnexpectedError } from "@/util/error-util";
 

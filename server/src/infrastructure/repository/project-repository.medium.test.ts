@@ -8,7 +8,7 @@ import {
 } from "@/util/testing-util/dynamodb";
 import { LoggerDummy } from "@/domain/support/logger/dummy";
 import { ProjectRepositoryImpl } from "./project-repository";
-import type { ProjectRepository } from "@/domain/model/project/project-repository";
+import type { ProjectRepository } from "@/domain/model/project/project.repository";
 import { ProjectColor } from "@/domain/model/project/project-color";
 import { projectDummyFrom } from "@/domain/model/project/project.dummy";
 import { UnexpectedError } from "@/util/error-util";

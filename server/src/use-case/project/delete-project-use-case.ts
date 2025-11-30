@@ -3,8 +3,8 @@
 import type { Logger } from "@/domain/support/logger";
 import type { Result } from "@/util/result";
 import { UnexpectedError, ValidationError } from "@/util/error-util";
-import type { ProjectRepository } from "@/domain/model/project/project-repository";
-import type { TodoRepository } from "@/domain/model/todo/todo-repository";
+import type { ProjectRepository } from "@/domain/model/project/project.repository";
+import type { TodoRepository } from "@/domain/model/todo/todo.repository";
 import type { UnitOfWorkRunner } from "@/domain/support/unit-of-work";
 
 export type DeleteProjectUseCaseInput = {

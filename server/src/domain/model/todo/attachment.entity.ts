@@ -122,12 +122,7 @@ export class Attachment {
    */
   readonly updatedAt: string;
 
-  /**
-   * コンストラクタ
-   *
-   * @param props - Attachmentのプロパティ
-   */
-  constructor(props: AttachmentProps) {
+  private constructor(props: AttachmentProps) {
     this.id = props.id;
     this.fileName = props.fileName;
     this.storageKey = props.storageKey;
@@ -140,16 +135,25 @@ export class Attachment {
   }
 
   /**
-   * ステータスを変更して新しいAttachmentインスタンスを返す
+   * Attachmentインスタンスを生成する
    *
-   * @param status - 新しいステータス
+   * @param props - Attachmentのプロパティ
+   * @returns Attachmentインスタンス
+   */
+  static from(props: AttachmentProps): Attachment {
+    return new Attachment(props);
+  }
+
+  /**
+   * アップロード完了をマークする
+   *
    * @param updatedAt - 更新日時（ISO 8601形式）
    * @returns 新しいAttachmentインスタンス
    */
-  changeStatus(status: AttachmentStatus, updatedAt: string): Attachment {
+  markAsUploaded(updatedAt: string): Attachment {
     return new Attachment({
       ...this,
-      status,
+      status: AttachmentStatus.uploaded(),
       updatedAt,
     });
   }

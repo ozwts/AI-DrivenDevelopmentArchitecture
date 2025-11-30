@@ -1,5 +1,5 @@
 import { faker } from "@faker-js/faker";
-import { Attachment } from "./attachment";
+import { Attachment } from "./attachment.entity";
 import { AttachmentStatus } from "./attachment-status.vo";
 import { attachmentStatusDummyFrom } from "./attachment-status.vo.dummy";
 import {
@@ -47,7 +47,7 @@ export const attachmentDummyFrom = (
   const fileName = props?.fileName ?? `${getDummyShortText()}.pdf`;
   const todoId = getDummyId(); // 親TODOのID（ストレージキー生成用）
 
-  return new Attachment({
+  return Attachment.from({
     id,
     fileName,
     storageKey: props?.storageKey ?? `attachments/${todoId}/${id}/${fileName}`,

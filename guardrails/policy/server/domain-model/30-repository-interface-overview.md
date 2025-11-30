@@ -9,7 +9,7 @@
 | トピック           | ファイル                           |
 | ------------------ | ---------------------------------- |
 | リポジトリ実装     | `../repository/10-repository-overview.md` |
-| UseCaseテスト      | `../use-case/30-use-case-testing.md`      |
+| UseCaseテスト      | `../use-case/30-testing-overview.md`      |
 | Entity Dummy       | `52-entity-test-patterns.md`              |
 
 ## 実装要件

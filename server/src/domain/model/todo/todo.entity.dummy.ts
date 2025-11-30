@@ -1,5 +1,5 @@
-import { Todo, TodoStatus, type TodoPriority } from "./todo";
-import type { Attachment } from "./attachment";
+import { Todo, TodoStatus, type TodoPriority } from "./todo.entity";
+import type { Attachment } from "./attachment.entity";
 import { todoStatusDummyFrom } from "./todo-status.vo.dummy";
 import {
   getDummyId,
@@ -34,7 +34,7 @@ export type TodoDummyProps = Partial<{
 export const todoDummyFrom = (props?: TodoDummyProps): Todo => {
   const now = getDummyRecentDate();
 
-  return new Todo({
+  return Todo.from({
     id: props?.id ?? getDummyId(),
     title: props?.title ?? getDummyShortText(),
     description: props?.description !== undefined ? props.description : getDummyDescription(),

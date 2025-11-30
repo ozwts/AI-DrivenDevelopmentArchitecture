@@ -11,8 +11,8 @@ import {
 import { LoggerDummy } from "@/domain/support/logger/dummy";
 import { TodoRepositoryImpl } from "@/infrastructure/repository/todo-repository";
 import { ProjectRepositoryImpl } from "@/infrastructure/repository/project-repository";
-import type { TodoRepository } from "@/domain/model/todo/todo-repository";
-import type { ProjectRepository } from "@/domain/model/project/project-repository";
+import type { TodoRepository } from "@/domain/model/todo/todo.repository";
+import type { ProjectRepository } from "@/domain/model/project/project.repository";
 import { todoDummyFrom } from "@/domain/model/todo/todo.dummy";
 import { projectDummyFrom } from "@/domain/model/project/project.dummy";
 import { ProjectColor } from "@/domain/model/project/project-color";

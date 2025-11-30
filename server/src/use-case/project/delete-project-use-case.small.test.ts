@@ -3,8 +3,8 @@ import {
   DeleteProjectUseCaseImpl,
   type DeleteProjectUoWContext,
 } from "./delete-project-use-case";
-import { ProjectRepositoryDummy } from "@/domain/model/project/project-repository.dummy";
-import { TodoRepositoryDummy } from "@/domain/model/todo/todo-repository.dummy";
+import { ProjectRepositoryDummy } from "@/domain/model/project/project.repository.dummy";
+import { TodoRepositoryDummy } from "@/domain/model/todo/todo.repository.dummy";
 import { projectDummyFrom } from "@/domain/model/project/project.dummy";
 import { todoDummyFrom } from "@/domain/model/todo/todo.dummy";
 import { LoggerDummy } from "@/domain/support/logger/dummy";

@@ -1,13 +1,13 @@
 import { v7 as uuid } from "uuid";
 import { Result } from "@/util/result";
-import { projectDummyFrom } from "./project.dummy";
+import { projectDummyFrom } from "./project.entity.dummy";
 import type {
   ProjectRepository,
   SaveResult,
   FindByIdResult,
   FindAllResult,
   RemoveResult,
-} from "./project-repository";
+} from "./project.repository";
 
 export type ProjectRepositoryDummyProps = {
   projectIdReturnValue?: string | undefined;

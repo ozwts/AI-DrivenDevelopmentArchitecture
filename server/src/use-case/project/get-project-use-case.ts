@@ -1,6 +1,6 @@
 import type { Result } from "@/util/result";
 import type { UnexpectedError } from "@/util/error-util";
-import type { ProjectRepository } from "@/domain/model/project/project-repository";
+import type { ProjectRepository } from "@/domain/model/project/project.repository";
 import type { Project } from "@/domain/model/project/project";
 
 export type GetProjectUseCaseInput = {

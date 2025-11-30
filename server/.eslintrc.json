@@ -72,6 +72,7 @@
     ],
     "local-rules/domain-model/entity-structure": "error",
     "local-rules/domain-model/value-object-structure": "error",
+    "local-rules/domain-model/aggregate-structure": "error",
     "local-rules/domain-model/file-requirements": "error",
     "local-rules/domain-model/no-throw": "error",
     "local-rules/domain-model/no-null": "error",

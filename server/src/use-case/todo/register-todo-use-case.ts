@@ -6,8 +6,8 @@ import {
   ValidationError,
   NotFoundError,
 } from "@/util/error-util";
-import type { TodoRepository } from "@/domain/model/todo/todo-repository";
-import type { UserRepository } from "@/domain/model/user/user-repository";
+import type { TodoRepository } from "@/domain/model/todo/todo.repository";
+import type { UserRepository } from "@/domain/model/user/user.repository";
 import {
   Todo,
   type TodoStatus,

@@ -11,7 +11,7 @@ Entityフィールドは**必須性とundefinedの意味**で3段階に分類し
 | Entity設計概要     | `20-entity-overview.md`        |
 | Entity実装詳細     | `22-entity-implementation.md`  |
 | バリデーション戦略 | `11-domain-validation-strategy.md` |
-| PATCH更新パターン  | `../use-case/20-use-case-implementation.md` |
+| PATCH更新パターン  | `../use-case/11-use-case-implementation.md` |
 
 ## 3-Tier分類
 
@@ -87,7 +87,7 @@ constructor(props: {
 
 ## PATCH更新との対応
 
-**参照**: `../use-case/20-use-case-implementation.md`
+**参照**: `../use-case/11-use-case-implementation.md`
 
 | Tier   | UseCase層での処理                                    |
 | ------ | ---------------------------------------------------- |

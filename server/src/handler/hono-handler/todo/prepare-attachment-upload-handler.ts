@@ -4,7 +4,7 @@ import { schemas } from "@/generated/zod-schemas";
 import { serviceId } from "@/di-container/service-id";
 import type { Logger } from "@/domain/support/logger";
 import type { PrepareAttachmentUploadUseCase } from "@/use-case/todo/prepare-attachment-upload-use-case";
-import type { UserRepository } from "@/domain/model/user/user-repository";
+import type { UserRepository } from "@/domain/model/user/user.repository";
 import { UnexpectedError, unexpectedErrorMessage } from "@/util/error-util";
 import { handleError } from "../../hono-handler-util/error-handler";
 import { formatZodError } from "../../hono-handler-util/validation-formatter";

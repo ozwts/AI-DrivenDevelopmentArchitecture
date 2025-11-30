@@ -1,6 +1,6 @@
 import { test, expect, describe } from "vitest";
 import { UpdateTodoUseCaseImpl } from "./update-todo-use-case";
-import { TodoRepositoryDummy } from "@/domain/model/todo/todo-repository.dummy";
+import { TodoRepositoryDummy } from "@/domain/model/todo/todo.repository.dummy";
 import { todoDummyFrom } from "@/domain/model/todo/todo.dummy";
 import { buildFetchNowDummy } from "@/domain/support/fetch-now/dummy";
 import { UnexpectedError } from "@/util/error-util";

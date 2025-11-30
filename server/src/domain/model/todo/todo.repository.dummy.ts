@@ -1,6 +1,6 @@
 import { v7 as uuid } from "uuid";
 import { Result } from "@/util/result";
-import { todoDummyFrom } from "./todo.dummy";
+import { todoDummyFrom } from "./todo.entity.dummy";
 import type {
   TodoRepository,
   SaveResult,
@@ -9,8 +9,8 @@ import type {
   FindByStatusResult,
   FindByProjectIdResult,
   RemoveResult,
-} from "./todo-repository";
-import type { TodoStatus } from "./todo";
+} from "./todo.repository";
+import type { TodoStatus } from "./todo.entity";
 
 export type TodoRepositoryDummyProps = {
   todoIdReturnValue?: string | undefined;

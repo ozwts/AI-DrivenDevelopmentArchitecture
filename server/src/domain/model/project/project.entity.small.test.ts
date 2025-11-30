@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { projectDummyFrom } from "./project.dummy";
+import { projectDummyFrom } from "./project.entity.dummy";
 
 describe("Project", () => {
   describe("constructor", () => {
@@ -34,7 +34,7 @@ describe("Project", () => {
     });
   });
 
-  describe("changeName", () => {
+  describe("rename", () => {
     it("プロジェクト名を変更した新しいProjectインスタンスを返す", () => {
       // Arrange
       const originalProject = projectDummyFrom({
@@ -43,7 +43,7 @@ describe("Project", () => {
       });
 
       // Act
-      const updatedProject = originalProject.changeName(
+      const updatedProject = originalProject.rename(
         "更新されたプロジェクト",
         "2024-01-02T00:00:00.000Z",
       );
@@ -65,7 +65,7 @@ describe("Project", () => {
       });
 
       // Act
-      originalProject.changeName(
+      originalProject.rename(
         "更新されたプロジェクト",
         "2024-01-02T00:00:00.000Z",
       );
@@ -80,7 +80,7 @@ describe("Project", () => {
       const originalProject = projectDummyFrom();
 
       // Act
-      const updatedProject = originalProject.changeName(
+      const updatedProject = originalProject.rename(
         "更新されたプロジェクト",
         "2024-01-02T00:00:00.000Z",
       );
@@ -90,7 +90,7 @@ describe("Project", () => {
     });
   });
 
-  describe("changeDescription", () => {
+  describe("clarify", () => {
     it("プロジェクト説明を変更した新しいProjectインスタンスを返す", () => {
       // Arrange
       const originalProject = projectDummyFrom({
@@ -99,7 +99,7 @@ describe("Project", () => {
       });
 
       // Act
-      const updatedProject = originalProject.changeDescription(
+      const updatedProject = originalProject.clarify(
         "更新された説明",
         "2024-01-02T00:00:00.000Z",
       );
@@ -118,7 +118,7 @@ describe("Project", () => {
       });
 
       // Act
-      const updatedProject = originalProject.changeDescription(
+      const updatedProject = originalProject.clarify(
         undefined,
         "2024-01-02T00:00:00.000Z",
       );
@@ -128,7 +128,7 @@ describe("Project", () => {
     });
   });
 
-  describe("changeColor", () => {
+  describe("recolor", () => {
     it("プロジェクトカラーを変更した新しいProjectインスタンスを返す", () => {
       // Arrange
       const originalProject = projectDummyFrom({
@@ -137,7 +137,7 @@ describe("Project", () => {
       });
 
       // Act
-      const updatedProject = originalProject.changeColor(
+      const updatedProject = originalProject.recolor(
         "#00FF00",
         "2024-01-02T00:00:00.000Z",
       );
@@ -162,9 +162,9 @@ describe("Project", () => {
 
       // Act
       const updatedProject = originalProject
-        .changeName("更新されたプロジェクト", "2024-01-02T00:00:00.000Z")
-        .changeDescription("更新された説明", "2024-01-02T00:00:00.000Z")
-        .changeColor("#00FF00", "2024-01-02T00:00:00.000Z");
+        .rename("更新されたプロジェクト", "2024-01-02T00:00:00.000Z")
+        .clarify("更新された説明", "2024-01-02T00:00:00.000Z")
+        .recolor("#00FF00", "2024-01-02T00:00:00.000Z");
 
       // Assert
       expect(updatedProject.name).toBe("更新されたプロジェクト");
@@ -186,9 +186,9 @@ describe("Project", () => {
 
       // Act
       originalProject
-        .changeName("更新されたプロジェクト", "2024-01-02T00:00:00.000Z")
-        .changeDescription("更新された説明", "2024-01-02T00:00:00.000Z")
-        .changeColor("#00FF00", "2024-01-02T00:00:00.000Z");
+        .rename("更新されたプロジェクト", "2024-01-02T00:00:00.000Z")
+        .clarify("更新された説明", "2024-01-02T00:00:00.000Z")
+        .recolor("#00FF00", "2024-01-02T00:00:00.000Z");
 
       // Assert
       expect(originalProject.name).toBe("元のプロジェクト");

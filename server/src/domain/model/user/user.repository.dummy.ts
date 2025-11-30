@@ -5,8 +5,8 @@ import type {
   FindByIdResult,
   FindAllResult,
   RemoveResult,
-} from "./user-repository";
-import { userDummyFrom } from "./user.dummy";
+} from "./user.repository";
+import { userDummyFrom } from "./user.entity.dummy";
 
 export type UserRepositoryDummyProps = {
   userIdReturnValue?: string;
@@ -74,7 +74,7 @@ export class UserRepositoryDummy implements UserRepository {
     return this.#findAllReturnValue;
   }
 
-  async save(_props: { user: import("./user").User }): Promise<SaveResult> {
+  async save(_props: { user: import("./user.entity").User }): Promise<SaveResult> {
     return this.#saveReturnValue;
   }
 

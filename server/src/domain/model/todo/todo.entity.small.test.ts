@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { TodoStatus } from "./todo-status.vo";
-import { todoDummyFrom } from "./todo.dummy";
+import { todoDummyFrom } from "./todo.entity.dummy";
 import { todoStatusDummyFrom } from "./todo-status.vo.dummy";
-import { attachmentDummyFrom } from "./attachment.dummy";
+import { attachmentDummyFrom } from "./attachment.entity.dummy";
 
 describe("Todo", () => {
   describe("constructor", () => {
@@ -51,8 +51,8 @@ describe("Todo", () => {
     });
   });
 
-  describe("changeStatus", () => {
-    it("ステータスを変更した新しいTodoインスタンスを返す", () => {
+  describe("start", () => {
+    it("ステータスを進行中に変更した新しいTodoインスタンスを返す", () => {
       // Arrange
       const originalTodo = todoDummyFrom({
         status: TodoStatus.todo(),
@@ -60,10 +60,7 @@ describe("Todo", () => {
       });
 
       // Act
-      const updatedTodo = originalTodo.changeStatus(
-        TodoStatus.inProgress(),
-        "2024-01-02T00:00:00.000Z",
-      );
+      const updatedTodo = originalTodo.start("2024-01-02T00:00:00.000Z");
 
       // Assert
       expect(updatedTodo.status.status).toBe("IN_PROGRESS");
@@ -81,7 +78,7 @@ describe("Todo", () => {
       });
 
       // Act
-      originalTodo.changeStatus(TodoStatus.inProgress(), "2024-01-02T00:00:00.000Z");
+      originalTodo.start("2024-01-02T00:00:00.000Z");
 
       // Assert
       expect(originalTodo.status.status).toBe("TODO");
@@ -93,17 +90,48 @@ describe("Todo", () => {
       const originalTodo = todoDummyFrom();
 
       // Act
-      const updatedTodo = originalTodo.changeStatus(
-        TodoStatus.completed(),
-        "2024-01-02T00:00:00.000Z",
-      );
+      const updatedTodo = originalTodo.start("2024-01-02T00:00:00.000Z");
 
       // Assert
       expect(updatedTodo).not.toBe(originalTodo);
     });
   });
 
-  describe("changePriority", () => {
+  describe("complete", () => {
+    it("ステータスを完了に変更した新しいTodoインスタンスを返す", () => {
+      // Arrange
+      const originalTodo = todoDummyFrom({
+        status: TodoStatus.inProgress(),
+        updatedAt: "2024-01-01T00:00:00.000Z",
+      });
+
+      // Act
+      const updatedTodo = originalTodo.complete("2024-01-02T00:00:00.000Z");
+
+      // Assert
+      expect(updatedTodo.status.status).toBe("COMPLETED");
+      expect(updatedTodo.updatedAt).toBe("2024-01-02T00:00:00.000Z");
+    });
+  });
+
+  describe("reopen", () => {
+    it("ステータスを未着手に戻した新しいTodoインスタンスを返す", () => {
+      // Arrange
+      const originalTodo = todoDummyFrom({
+        status: TodoStatus.completed(),
+        updatedAt: "2024-01-01T00:00:00.000Z",
+      });
+
+      // Act
+      const updatedTodo = originalTodo.reopen("2024-01-02T00:00:00.000Z");
+
+      // Assert
+      expect(updatedTodo.status.status).toBe("TODO");
+      expect(updatedTodo.updatedAt).toBe("2024-01-02T00:00:00.000Z");
+    });
+  });
+
+  describe("prioritize", () => {
     it("優先度を変更した新しいTodoインスタンスを返す", () => {
       // Arrange
       const originalTodo = todoDummyFrom({
@@ -112,7 +140,7 @@ describe("Todo", () => {
       });
 
       // Act
-      const updatedTodo = originalTodo.changePriority(
+      const updatedTodo = originalTodo.prioritize(
         "HIGH",
         "2024-01-02T00:00:00.000Z",
       );
@@ -133,7 +161,7 @@ describe("Todo", () => {
       });
 
       // Act
-      originalTodo.changePriority("HIGH", "2024-01-02T00:00:00.000Z");
+      originalTodo.prioritize("HIGH", "2024-01-02T00:00:00.000Z");
 
       // Assert
       expect(originalTodo.priority).toBe("MEDIUM");
@@ -145,7 +173,7 @@ describe("Todo", () => {
       const originalTodo = todoDummyFrom();
 
       // Act
-      const updatedTodo = originalTodo.changePriority(
+      const updatedTodo = originalTodo.prioritize(
         "HIGH",
         "2024-01-02T00:00:00.000Z",
       );
@@ -155,7 +183,7 @@ describe("Todo", () => {
     });
   });
 
-  describe("changeTitle", () => {
+  describe("retitle", () => {
     it("タイトルを変更した新しいTodoインスタンスを返す", () => {
       // Arrange
       const originalTodo = todoDummyFrom({
@@ -164,7 +192,7 @@ describe("Todo", () => {
       });
 
       // Act
-      const updatedTodo = originalTodo.changeTitle(
+      const updatedTodo = originalTodo.retitle(
         "新しいタイトル",
         "2024-01-02T00:00:00.000Z",
       );
@@ -176,7 +204,7 @@ describe("Todo", () => {
     });
   });
 
-  describe("changeDescription", () => {
+  describe("clarify", () => {
     it("説明を変更した新しいTodoインスタンスを返す", () => {
       // Arrange
       const originalTodo = todoDummyFrom({
@@ -185,7 +213,7 @@ describe("Todo", () => {
       });
 
       // Act
-      const updatedTodo = originalTodo.changeDescription(
+      const updatedTodo = originalTodo.clarify(
         "新しい説明",
         "2024-01-02T00:00:00.000Z",
       );
@@ -202,7 +230,7 @@ describe("Todo", () => {
       });
 
       // Act
-      const updatedTodo = originalTodo.changeDescription(
+      const updatedTodo = originalTodo.clarify(
         undefined,
         "2024-01-02T00:00:00.000Z",
       );
@@ -212,7 +240,7 @@ describe("Todo", () => {
     });
   });
 
-  describe("changeDueDate", () => {
+  describe("reschedule", () => {
     it("期限日を変更した新しいTodoインスタンスを返す", () => {
       // Arrange
       const originalTodo = todoDummyFrom({
@@ -221,7 +249,7 @@ describe("Todo", () => {
       });
 
       // Act
-      const updatedTodo = originalTodo.changeDueDate(
+      const updatedTodo = originalTodo.reschedule(
         "2024-06-30T23:59:59.000Z",
         "2024-01-02T00:00:00.000Z",
       );
@@ -238,7 +266,7 @@ describe("Todo", () => {
       });
 
       // Act
-      const updatedTodo = originalTodo.changeDueDate(
+      const updatedTodo = originalTodo.reschedule(
         undefined,
         "2024-01-02T00:00:00.000Z",
       );
@@ -248,7 +276,7 @@ describe("Todo", () => {
     });
   });
 
-  describe("changeProjectId", () => {
+  describe("moveToProject", () => {
     it("プロジェクトIDを変更した新しいTodoインスタンスを返す", () => {
       // Arrange
       const originalTodo = todoDummyFrom({
@@ -257,7 +285,7 @@ describe("Todo", () => {
       });
 
       // Act
-      const updatedTodo = originalTodo.changeProjectId(
+      const updatedTodo = originalTodo.moveToProject(
         "project-2",
         "2024-01-02T00:00:00.000Z",
       );
@@ -274,7 +302,7 @@ describe("Todo", () => {
       });
 
       // Act
-      const updatedTodo = originalTodo.changeProjectId(
+      const updatedTodo = originalTodo.moveToProject(
         undefined,
         "2024-01-02T00:00:00.000Z",
       );
@@ -284,7 +312,7 @@ describe("Todo", () => {
     });
   });
 
-  describe("changeAssignee", () => {
+  describe("assign", () => {
     it("担当者を変更した新しいTodoインスタンスを返す", () => {
       // Arrange
       const originalTodo = todoDummyFrom({
@@ -293,7 +321,7 @@ describe("Todo", () => {
       });
 
       // Act
-      const updatedTodo = originalTodo.changeAssignee(
+      const updatedTodo = originalTodo.assign(
         "user-2",
         "2024-01-02T00:00:00.000Z",
       );
@@ -304,7 +332,7 @@ describe("Todo", () => {
     });
   });
 
-  describe("addAttachment", () => {
+  describe("attach", () => {
     it("添付ファイルを追加した新しいTodoインスタンスを返す", () => {
       // Arrange
       const originalTodo = todoDummyFrom({
@@ -313,7 +341,7 @@ describe("Todo", () => {
       const attachment = attachmentDummyFrom({ id: "attachment-1" });
 
       // Act
-      const updatedTodo = originalTodo.addAttachment(
+      const updatedTodo = originalTodo.attach(
         attachment,
         "2024-01-02T00:00:00.000Z",
       );
@@ -333,7 +361,7 @@ describe("Todo", () => {
       const newAttachment = attachmentDummyFrom({ id: "attachment-2" });
 
       // Act
-      const updatedTodo = originalTodo.addAttachment(
+      const updatedTodo = originalTodo.attach(
         newAttachment,
         "2024-01-02T00:00:00.000Z",
       );
@@ -345,7 +373,7 @@ describe("Todo", () => {
     });
   });
 
-  describe("removeAttachment", () => {
+  describe("detach", () => {
     it("添付ファイルを削除した新しいTodoインスタンスを返す", () => {
       // Arrange
       const attachment = attachmentDummyFrom({ id: "attachment-1" });
@@ -354,7 +382,7 @@ describe("Todo", () => {
       });
 
       // Act
-      const updatedTodo = originalTodo.removeAttachment(
+      const updatedTodo = originalTodo.detach(
         "attachment-1",
         "2024-01-02T00:00:00.000Z",
       );
@@ -372,7 +400,7 @@ describe("Todo", () => {
       });
 
       // Act
-      const updatedTodo = originalTodo.removeAttachment(
+      const updatedTodo = originalTodo.detach(
         "non-existent",
         "2024-01-02T00:00:00.000Z",
       );
@@ -382,7 +410,7 @@ describe("Todo", () => {
     });
   });
 
-  describe("updateAttachment", () => {
+  describe("replaceAttachment", () => {
     it("添付ファイルを更新した新しいTodoインスタンスを返す", () => {
       // Arrange
       const attachment = attachmentDummyFrom({
@@ -398,7 +426,7 @@ describe("Todo", () => {
       });
 
       // Act
-      const updatedTodo = originalTodo.updateAttachment(
+      const updatedTodo = originalTodo.replaceAttachment(
         updatedAttachment,
         "2024-01-02T00:00:00.000Z",
       );

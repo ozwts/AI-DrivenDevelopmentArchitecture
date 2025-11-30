@@ -17,6 +17,7 @@ module.exports = {
   // ドメインモデル用ルール（プレフィックス: domain-model/）
   "domain-model/entity-structure": domainModelRules["entity-structure"],
   "domain-model/value-object-structure": domainModelRules["value-object-structure"],
+  "domain-model/aggregate-structure": domainModelRules["aggregate-structure"],
   "domain-model/file-requirements": domainModelRules["file-requirements"],
   "domain-model/no-throw": domainModelRules["no-throw"],
   "domain-model/no-null": domainModelRules["no-null"],

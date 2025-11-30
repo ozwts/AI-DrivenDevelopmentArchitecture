@@ -1,6 +1,6 @@
 import type { Result } from "@/util/result";
 import type { UnexpectedError, NotFoundError } from "@/util/error-util";
-import type { TodoRepository } from "@/domain/model/todo/todo-repository";
+import type { TodoRepository } from "@/domain/model/todo/todo.repository";
 import type { Todo, TodoStatus, TodoPriority } from "@/domain/model/todo/todo";
 import type { FetchNow } from "@/domain/support/fetch-now";
 

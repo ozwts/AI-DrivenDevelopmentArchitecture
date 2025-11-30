@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { User } from "./user";
-import { userDummyFrom } from "./user.dummy";
+import { User } from "./user.entity";
+import { userDummyFrom } from "./user.entity.dummy";
 
 describe("User", () => {
   describe("constructor", () => {
@@ -37,7 +37,7 @@ describe("User", () => {
     });
   });
 
-  describe("updateEmail", () => {
+  describe("verifyEmail", () => {
     it("メールアドレスと検証状態を更新した新しいUserインスタンスを返す", () => {
       // Arrange
       const originalUser = userDummyFrom({
@@ -47,7 +47,7 @@ describe("User", () => {
       });
 
       // Act
-      const updatedUser = originalUser.updateEmail(
+      const updatedUser = originalUser.verifyEmail(
         "new@example.com",
         true,
         "2024-01-02T00:00:00.000Z",
@@ -72,7 +72,7 @@ describe("User", () => {
       });
 
       // Act
-      originalUser.updateEmail(
+      originalUser.verifyEmail(
         "new@example.com",
         true,
         "2024-01-02T00:00:00.000Z",
@@ -89,7 +89,7 @@ describe("User", () => {
       const originalUser = userDummyFrom();
 
       // Act
-      const updatedUser = originalUser.updateEmail(
+      const updatedUser = originalUser.verifyEmail(
         "new@example.com",
         true,
         "2024-01-02T00:00:00.000Z",
@@ -100,7 +100,7 @@ describe("User", () => {
     });
   });
 
-  describe("updateName", () => {
+  describe("rename", () => {
     it("名前を更新した新しいUserインスタンスを返す", () => {
       // Arrange
       const originalUser = userDummyFrom({
@@ -109,7 +109,7 @@ describe("User", () => {
       });
 
       // Act
-      const updatedUser = originalUser.updateName(
+      const updatedUser = originalUser.rename(
         "Jane Smith",
         "2024-01-02T00:00:00.000Z",
       );
@@ -132,7 +132,7 @@ describe("User", () => {
       });
 
       // Act
-      originalUser.updateName("Jane Smith", "2024-01-02T00:00:00.000Z");
+      originalUser.rename("Jane Smith", "2024-01-02T00:00:00.000Z");
 
       // Assert
       expect(originalUser.name).toBe("John Doe");
@@ -144,7 +144,7 @@ describe("User", () => {
       const originalUser = userDummyFrom();
 
       // Act
-      const updatedUser = originalUser.updateName(
+      const updatedUser = originalUser.rename(
         "Jane Smith",
         "2024-01-02T00:00:00.000Z",
       );
