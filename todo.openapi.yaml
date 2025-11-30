@@ -1193,6 +1193,7 @@ components:
         color:
           type: string
           description: プロジェクトのカラーコード（例：#001964）
+          pattern: "^#[0-9A-Fa-f]{6}$"
         createdAt:
           type: string
           format: date-time

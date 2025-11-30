@@ -8,6 +8,21 @@
 export type AttachmentStatus = "PREPARED" | "UPLOADED";
 
 /**
+ * Attachment コンストラクタのProps型
+ */
+export type AttachmentProps = {
+  id: string;
+  fileName: string;
+  storageKey: string;
+  contentType: string;
+  fileSize: number;
+  status: AttachmentStatus;
+  uploadedBy: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+/**
  * Attachment エンティティ
  *
  * TODOに添付されるファイルを表すドメインエンティティ。
@@ -115,33 +130,14 @@ export class Attachment {
    * コンストラクタ
    *
    * @param props - Attachmentのプロパティ
-   * @param props.id - Attachment ID
-   * @param props.fileName - ファイル名
-   * @param props.storageKey - ストレージキー
-   * @param props.contentType - コンテンツタイプ（MIMEタイプ）
-   * @param props.fileSize - ファイルサイズ（バイト）
-   * @param props.status - ステータス（省略時は "PREPARED"）
-   * @param props.uploadedBy - アップロード者ユーザーID
-   * @param props.createdAt - 作成日時（ISO 8601形式）
-   * @param props.updatedAt - 更新日時（ISO 8601形式）
    */
-  constructor(props: {
-    id: string;
-    fileName: string;
-    storageKey: string;
-    contentType: string;
-    fileSize: number;
-    status?: AttachmentStatus;
-    uploadedBy: string;
-    createdAt: string;
-    updatedAt: string;
-  }) {
+  constructor(props: AttachmentProps) {
     this.id = props.id;
     this.fileName = props.fileName;
     this.storageKey = props.storageKey;
     this.contentType = props.contentType;
     this.fileSize = props.fileSize;
-    this.status = props.status ?? "PREPARED";
+    this.status = props.status;
     this.uploadedBy = props.uploadedBy;
     this.createdAt = props.createdAt;
     this.updatedAt = props.updatedAt;
@@ -150,29 +146,14 @@ export class Attachment {
   /**
    * ステータスを変更して新しいAttachmentインスタンスを返す
    *
-   * エンティティの不変性を保つため、元のインスタンスは変更せず、
-   * 新しいインスタンスを生成して返す。
-   *
    * @param status - 新しいステータス
    * @param updatedAt - 更新日時（ISO 8601形式）
    * @returns 新しいAttachmentインスタンス
-   *
-   * @example
-   * ```typescript
-   * const attachment = new Attachment({ ... });
-   * const uploaded = attachment.changeStatus("UPLOADED", "2024-01-01T00:01:00.000Z");
-   * ```
    */
   changeStatus(status: AttachmentStatus, updatedAt: string): Attachment {
     return new Attachment({
-      id: this.id,
-      fileName: this.fileName,
-      storageKey: this.storageKey,
-      contentType: this.contentType,
-      fileSize: this.fileSize,
+      ...this,
       status,
-      uploadedBy: this.uploadedBy,
-      createdAt: this.createdAt,
       updatedAt,
     });
   }

@@ -10,79 +10,50 @@
 import * as fs from "fs/promises";
 
 /**
- * レビュー対象の責務（Review Scope）定義
- */
-export type ReviewScope = {
-  /** レビュー責務（例: "ドメインモデル (Domain Model)"） */
-  responsibility: string;
-  /** 対象（例: "Entity, Value Object, Aggregate"） */
-  targets: string;
-};
-
-/**
  * レビュー入力パラメータ
  */
 export type ReviewInput = {
-  /** レビュー対象ファイルのパス一覧 */
-  targetFilePaths: string[];
+  /** レビュー対象ディレクトリのパス一覧 */
+  targetDirectories: string[];
   /** ポリシーディレクトリの絶対パス */
   policyDir: string;
-  /** guardrailsディレクトリのルートパス（現在未使用だが将来の拡張のため保持） */
-  guardrailsRoot: string;
-  /** レビュー責務定義 */
-  reviewScope: ReviewScope;
-};
-
-/**
- * ファイルごとのレビュー結果
- */
-export type FileReviewResult = {
-  filePath: string;
-  review: string;
-  success: boolean;
-  error?: string;
+  /** レビュー責務（例: "ドメインモデル (Domain Model)"） */
+  responsibility: string;
 };
 
 /**
  * レビュー結果
  */
 export type ReviewResult = {
-  /** 全体レビューテキスト（複数ファイルの場合はファイルごとに区切られたテキスト） */
+  /** 全体レビューテキスト（ガイダンスメッセージ） */
   overallReview: string;
-  /** レビュー対象ファイル一覧 */
-  targetFiles: string[];
+  /** レビュー対象ディレクトリ一覧 */
+  targetDirectories: string[];
   /** レビュー成功フラグ */
   success: boolean;
   /** エラーメッセージ（失敗時） */
   error?: string;
-  summary: {
-    total: number;
-    successful: number;
-    failed: number;
-  };
 };
 
 /**
  * サブエージェント起動を促すガイダンスメッセージを生成
  */
 const buildGuidanceMessage = (
-  targetFilePaths: string[],
+  targetDirectories: string[],
   policyDir: string,
-  reviewScope: ReviewScope,
+  responsibility: string,
 ): string => {
   let guidance =
     "以下の情報を使って `guardrails-reviewer` サブエージェントを起動し、ポリシーレビューを実行してください。\n\n";
 
-  guidance += "**対象ファイル:**\n";
-  for (const filePath of targetFilePaths) {
-    guidance += `- ${filePath}\n`;
+  guidance += "**対象ディレクトリ:**\n";
+  for (const directory of targetDirectories) {
+    guidance += `- ${directory}\n`;
   }
   guidance += "\n";
 
   guidance += `**ポリシーディレクトリ:** ${policyDir}\n\n`;
-
-  guidance += `**レビュー責務:** ${reviewScope.responsibility}\n`;
-  guidance += `**対象:** ${reviewScope.targets}\n`;
+  guidance += `**レビュー責務:** ${responsibility}\n`;
 
   return guidance;
 };
@@ -90,28 +61,28 @@ const buildGuidanceMessage = (
 /**
  * レビュー準備を実行し、サブエージェント起動を促すガイダンスを返す
  *
- * 外部AIは呼び出さず、ファイル検証とポリシーマッピングのみ実行します。
+ * 外部AIは呼び出さず、ディレクトリ検証とポリシーマッピングのみ実行します。
  * 実際のレビューは guardrails-reviewer サブエージェントが実行します。
  */
 export const executeReview = async (
   input: ReviewInput,
 ): Promise<ReviewResult> => {
-  const { targetFilePaths, policyDir, reviewScope } = input;
+  const { targetDirectories, policyDir, responsibility } = input;
 
   try {
-    // 1. 対象ファイルの存在確認
-    const fileValidationResults = await Promise.all(
-      targetFilePaths.map(async (filePath) => {
+    // 1. 対象ディレクトリの存在確認
+    const directoryValidationResults = await Promise.all(
+      targetDirectories.map(async (directory) => {
         try {
-          const stats = await fs.stat(filePath);
+          const stats = await fs.stat(directory);
           return {
-            filePath,
-            exists: stats.isFile(),
+            directory,
+            exists: stats.isDirectory(),
             error: null,
           };
         } catch (error) {
           return {
-            filePath,
+            directory,
             exists: false,
             error: error instanceof Error ? error.message : String(error),
           };
@@ -119,15 +90,17 @@ export const executeReview = async (
       }),
     );
 
-    // 存在しないファイルがあればエラー
-    const missingFiles = fileValidationResults.filter(
+    // 存在しないディレクトリがあればエラー
+    const missingDirectories = directoryValidationResults.filter(
       (result) => !result.exists,
     );
-    if (missingFiles.length > 0) {
-      const errorMessage = missingFiles
-        .map((file) => `- ${file.filePath}: ${file.error ?? "File not found"}`)
+    if (missingDirectories.length > 0) {
+      const errorMessage = missingDirectories
+        .map(
+          (dir) => `- ${dir.directory}: ${dir.error ?? "Directory not found"}`,
+        )
         .join("\n");
-      throw new Error(`以下のファイルが見つかりません:\n${errorMessage}`);
+      throw new Error(`以下のディレクトリが見つかりません:\n${errorMessage}`);
     }
 
     // 2. ポリシーディレクトリの存在確認
@@ -149,35 +122,25 @@ export const executeReview = async (
 
     // 3. サブエージェント起動を促すガイダンスメッセージを生成
     const guidance = buildGuidanceMessage(
-      targetFilePaths,
+      targetDirectories,
       policyDir,
-      reviewScope,
+      responsibility,
     );
 
     // 4. 結果を構造化
     return {
       overallReview: guidance,
-      targetFiles: targetFilePaths,
+      targetDirectories,
       success: true,
-      summary: {
-        total: targetFilePaths.length,
-        successful: targetFilePaths.length,
-        failed: 0,
-      },
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
 
     return {
       overallReview: "",
-      targetFiles: targetFilePaths,
+      targetDirectories,
       success: false,
       error: errorMessage,
-      summary: {
-        total: targetFilePaths.length,
-        successful: 0,
-        failed: targetFilePaths.length,
-      },
     };
   }
 };

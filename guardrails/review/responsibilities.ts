@@ -30,17 +30,14 @@ export const REVIEW_RESPONSIBILITIES: ReviewResponsibility[] = [
     id: "review_server_domain_models",
     title: "ドメインモデルレビュー",
     policyDir: "policy/server/domain-model",
-    scope: {
-      responsibility: "ドメインモデル (Domain Model)",
-      targets: "Entity, Value Object, Aggregate, Repository Interface",
-    },
+    responsibility: "ドメインモデル (Domain Model)",
     toolDescription:
-      "作成・修正したサーバー側のドメインモデルファイルがドメインモデルポリシーに準拠しているかを審査します。対象：エンティティ（*.ts）、リポジトリインターフェース（*-repository.ts）",
+      "指定したディレクトリ配下のサーバー側ドメインモデルファイルがドメインモデルポリシーに準拠しているかを審査します。",
     inputSchema: {
-      targetFilePaths: z
+      targetDirectories: z
         .array(z.string())
         .describe(
-          "作成・修正したドメインモデルファイルの絶対パスの配列（例: ['/path/to/server/src/domain/model/todo/todo.ts', '/path/to/server/src/domain/model/todo/todo-repository.ts']）",
+          "レビュー対象ディレクトリの絶対パスの配列（例: ['/path/to/server/src/domain/model']）",
         ),
     },
   },
@@ -48,17 +45,14 @@ export const REVIEW_RESPONSIBILITIES: ReviewResponsibility[] = [
     id: "review_web_tests",
     title: "テストファイルレビュー",
     policyDir: "policy/web/test-strategy",
-    scope: {
-      responsibility: "Webテスト戦略 (Web Test Strategy)",
-      targets: "Component Test (*.ct.test.tsx), Snapshot Test (*.ss.test.ts)",
-    },
+    responsibility: "Webテスト戦略 (Web Test Strategy)",
     toolDescription:
-      "作成・修正したフロントエンドのテストファイルがテスト戦略ポリシーに準拠しているかを審査します。対象：コンポーネントテスト（*.ct.test.tsx）、スナップショットテスト（*.ss.test.ts）",
+      "指定したディレクトリ配下のフロントエンドテストファイルがテスト戦略ポリシーに準拠しているかを審査します。",
     inputSchema: {
-      targetFilePaths: z
+      targetDirectories: z
         .array(z.string())
         .describe(
-          "作成・修正したテストファイルの絶対パスの配列（例: ['/path/to/TodoForm.ct.test.tsx', '/path/to/TodoCard.ct.test.tsx']）",
+          "レビュー対象ディレクトリの絶対パスの配列（例: ['/path/to/web/src/components']）",
         ),
     },
   },
@@ -66,18 +60,14 @@ export const REVIEW_RESPONSIBILITIES: ReviewResponsibility[] = [
     id: "review_server_use_cases",
     title: "ユースケース層レビュー",
     policyDir: "policy/server/use-case",
-    scope: {
-      responsibility: "ユースケース層 (Use Case Layer)",
-      targets:
-        "UseCase Implementation (*-use-case.ts), UseCase Test (*-use-case.small.test.ts)",
-    },
+    responsibility: "ユースケース層 (Use Case Layer)",
     toolDescription:
-      "作成・修正したサーバー側のユースケースファイルがユースケース層ポリシーに準拠しているかを審査します。対象：ユースケース実装（*-use-case.ts）、ユースケーステスト（*-use-case.small.test.ts）。ファイルパスに 'use-case' が含まれる場合に使用してください。",
+      "指定したディレクトリ配下のサーバー側ユースケースファイルがユースケース層ポリシーに準拠しているかを審査します。",
     inputSchema: {
-      targetFilePaths: z
+      targetDirectories: z
         .array(z.string())
         .describe(
-          "作成・修正したユースケースファイルの絶対パスの配列（例: ['/path/to/server/src/use-case/todo/register-todo-use-case.ts', '/path/to/server/src/use-case/todo/register-todo-use-case.small.test.ts']）",
+          "レビュー対象ディレクトリの絶対パスの配列（例: ['/path/to/server/src/use-case']）",
         ),
     },
   },
@@ -85,18 +75,14 @@ export const REVIEW_RESPONSIBILITIES: ReviewResponsibility[] = [
     id: "review_server_handlers",
     title: "ハンドラー層レビュー",
     policyDir: "policy/server/handler",
-    scope: {
-      responsibility: "ハンドラー層 (Handler Layer)",
-      targets:
-        "Handler Implementation (*-handler.ts), Router (*-router.ts), Response Mapper (*-response-mapper.ts)",
-    },
+    responsibility: "ハンドラー層 (Handler Layer)",
     toolDescription:
-      "作成・修正したサーバー側のハンドラーファイルがハンドラー層ポリシーに準拠しているかを審査します。対象：ハンドラー実装（*-handler.ts）、ルーター（*-router.ts）、レスポンスマッパー（*-response-mapper.ts）。ファイルパスに 'handler' が含まれる場合に使用してください。",
+      "指定したディレクトリ配下のサーバー側ハンドラーファイルがハンドラー層ポリシーに準拠しているかを審査します。",
     inputSchema: {
-      targetFilePaths: z
+      targetDirectories: z
         .array(z.string())
         .describe(
-          "作成・修正したハンドラーファイルの絶対パスの配列（例: ['/path/to/server/src/handler/hono-handler/todo/register-todo-handler.ts', '/path/to/server/src/handler/hono-handler/todo/todo-router.ts']）",
+          "レビュー対象ディレクトリの絶対パスの配列（例: ['/path/to/server/src/handler']）",
         ),
     },
   },
@@ -104,18 +90,14 @@ export const REVIEW_RESPONSIBILITIES: ReviewResponsibility[] = [
     id: "review_server_repositories",
     title: "リポジトリ実装レビュー",
     policyDir: "policy/server/repository",
-    scope: {
-      responsibility: "リポジトリ実装 (Repository Implementation)",
-      targets:
-        "Repository Implementation (*-repository.ts in infrastructure/), Repository Test (*-repository.medium.test.ts)",
-    },
+    responsibility: "リポジトリ実装 (Repository Implementation)",
     toolDescription:
-      "作成・修正したサーバー側のリポジトリ実装ファイルがリポジトリポリシーに準拠しているかを審査します。対象：リポジトリ実装（infrastructure/repository/*-repository.ts）、リポジトリテスト（*-repository.medium.test.ts）。ファイルパスに 'infrastructure/repository' が含まれる場合に使用してください。",
+      "指定したディレクトリ配下のサーバー側リポジトリ実装ファイルがリポジトリポリシーに準拠しているかを審査します。",
     inputSchema: {
-      targetFilePaths: z
+      targetDirectories: z
         .array(z.string())
         .describe(
-          "作成・修正したリポジトリ実装ファイルの絶対パスの配列（例: ['/path/to/server/src/infrastructure/repository/todo-repository.ts', '/path/to/server/src/infrastructure/repository/todo-repository.medium.test.ts']）",
+          "レビュー対象ディレクトリの絶対パスの配列（例: ['/path/to/server/src/infrastructure/repository']）",
         ),
     },
   },
@@ -123,17 +105,14 @@ export const REVIEW_RESPONSIBILITIES: ReviewResponsibility[] = [
     id: "review_contract_openapi",
     title: "OpenAPI仕様レビュー",
     policyDir: "policy/contract/api",
-    scope: {
-      responsibility: "API契約仕様 (OpenAPI Specification)",
-      targets: "OpenAPI YAML (*.openapi.yaml)",
-    },
+    responsibility: "API契約仕様 (OpenAPI Specification)",
     toolDescription:
-      "作成・修正したOpenAPI仕様ファイルがAPI契約ポリシーに準拠しているかを審査します。対象：OpenAPI YAMLファイル（*.openapi.yaml）。ファイル名に '.openapi.yaml' が含まれる場合に使用してください。",
+      "指定したディレクトリ配下のOpenAPI仕様ファイルがAPI契約ポリシーに準拠しているかを審査します。",
     inputSchema: {
-      targetFilePaths: z
+      targetDirectories: z
         .array(z.string())
         .describe(
-          "作成・修正したOpenAPI仕様ファイルの絶対パスの配列（例: ['/path/to/todo.openapi.yaml', '/path/to/project.openapi.yaml']）",
+          "レビュー対象ディレクトリの絶対パスの配列（例: ['/path/to/contract']）",
         ),
     },
   },

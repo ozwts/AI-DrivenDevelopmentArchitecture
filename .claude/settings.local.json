@@ -29,7 +29,8 @@
       "Bash(npx eslint:*)",
       "Bash(git add:*)",
       "Bash(git rm:*)",
-      "mcp__guardrails__review_contract_openapi"
+      "mcp__guardrails__review_contract_openapi",
+      "mcp__guardrails__review_server_domain_models"
     ],
     "deny": [],
     "ask": []

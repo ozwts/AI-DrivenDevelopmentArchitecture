@@ -54,10 +54,10 @@ const main = async (): Promise<void> => {
         description: responsibility.toolDescription,
         inputSchema: responsibility.inputSchema,
       },
-      async ({ targetFilePaths }) => {
+      async ({ targetDirectories }) => {
         try {
           const result = await handler({
-            targetFilePaths,
+            targetDirectories,
             guardrailsRoot: GUARDRAILS_ROOT,
           });
 

@@ -1,5 +1,4 @@
 import { Project } from "./project";
-import { ProjectColor } from "./project-color";
 import {
   getDummyId,
   getDummyShortText,
@@ -12,7 +11,7 @@ export type ProjectDummyProps = Partial<{
   id: string;
   name: string;
   description?: string;
-  color: ProjectColor;
+  color: string;
   createdAt: string;
   updatedAt: string;
 }>;
@@ -27,20 +26,11 @@ export type ProjectDummyProps = Partial<{
 export const projectDummyFrom = (props?: ProjectDummyProps): Project => {
   const now = getDummyRecentDate();
 
-  // デフォルトのランダムカラーを生成
-  const getDefaultColor = (): ProjectColor => {
-    const colorResult = ProjectColor.fromString(getDummyProjectColor());
-    if (!colorResult.success) {
-      throw colorResult.error;
-    }
-    return colorResult.data;
-  };
-
   return new Project({
     id: props?.id ?? getDummyId(),
     name: props?.name ?? getDummyShortText(),
     description: props?.description ?? getDummyDescription(),
-    color: props?.color ?? getDefaultColor(),
+    color: props?.color ?? getDummyProjectColor(),
     createdAt: props?.createdAt ?? now,
     updatedAt: props?.updatedAt ?? now,
   });

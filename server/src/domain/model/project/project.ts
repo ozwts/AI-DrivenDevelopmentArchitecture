@@ -1,4 +1,14 @@
-import type { ProjectColor } from "./project-color";
+/**
+ * Project コンストラクタのProps型
+ */
+export type ProjectProps = {
+  id: string;
+  name: string;
+  description: string | undefined;
+  color: string;
+  createdAt: string;
+  updatedAt: string;
+};
 
 /**
  * プロジェクトエンティティ
@@ -51,17 +61,18 @@ export class Project {
    * プロジェクト説明
    *
    * プロジェクトの詳細説明。
-   * オプション項目。
+   * Tier 3（Optional）項目。
    */
-  readonly description: string | undefined;
+  readonly description?: string;
 
   /**
    * プロジェクトカラー
    *
    * プロジェクトを視覚的に識別するためのカラーコード。
-   * ProjectColor値オブジェクトとして管理され、16進数カラーコード（#RRGGBB形式）であることが保証される。
+   * 16進数カラーコード（#RRGGBB形式）。
+   * OpenAPIで pattern: "^#[0-9A-Fa-f]{6}$" により形式が保証される。
    */
-  readonly color: ProjectColor;
+  readonly color: string;
 
   /**
    * 作成日時
@@ -83,21 +94,8 @@ export class Project {
    * コンストラクタ
    *
    * @param props - プロジェクトのプロパティ
-   * @param props.id - プロジェクトID
-   * @param props.name - プロジェクト名
-   * @param props.description - プロジェクト説明（オプション）
-   * @param props.color - プロジェクトカラー（ProjectColor値オブジェクト）
-   * @param props.createdAt - 作成日時（ISO 8601形式）
-   * @param props.updatedAt - 更新日時（ISO 8601形式）
    */
-  constructor(props: {
-    id: string;
-    name: string;
-    description?: string;
-    color: ProjectColor;
-    createdAt: string;
-    updatedAt: string;
-  }) {
+  constructor(props: ProjectProps) {
     this.id = props.id;
     this.name = props.name;
     this.description = props.description;
@@ -107,39 +105,47 @@ export class Project {
   }
 
   /**
-   * プロジェクト情報を更新して新しいProjectインスタンスを返す
+   * プロジェクト名を変更して新しいProjectインスタンスを返す
    *
-   * エンティティの不変性を保つため、元のインスタンスは変更せず、
-   * 新しいインスタンスを生成して返す。
-   *
-   * @param props - 更新するプロパティ
-   * @param props.name - 新しいプロジェクト名（オプション）
-   * @param props.description - 新しいプロジェクト説明（オプション）
-   * @param props.color - 新しいプロジェクトカラー（オプション）
-   * @param props.updatedAt - 更新日時（必須）
+   * @param name - 新しいプロジェクト名
+   * @param updatedAt - 更新日時
    * @returns 更新された新しいProjectインスタンス
-   *
-   * @example
-   * ```typescript
-   * const updated = project.update({
-   *   name: "新しい名前",
-   *   updatedAt: "2024-01-02T00:00:00.000Z"
-   * });
-   * ```
    */
-  update(props: {
-    name?: string;
-    description?: string;
-    color?: ProjectColor;
-    updatedAt: string;
-  }): Project {
+  changeName(name: string, updatedAt: string): Project {
     return new Project({
-      id: this.id,
-      name: props.name ?? this.name,
-      description: props.description ?? this.description,
-      color: props.color ?? this.color,
-      createdAt: this.createdAt,
-      updatedAt: props.updatedAt,
+      ...this,
+      name,
+      updatedAt,
+    });
+  }
+
+  /**
+   * プロジェクト説明を変更して新しいProjectインスタンスを返す
+   *
+   * @param description - 新しいプロジェクト説明
+   * @param updatedAt - 更新日時
+   * @returns 更新された新しいProjectインスタンス
+   */
+  changeDescription(description: string | undefined, updatedAt: string): Project {
+    return new Project({
+      ...this,
+      description,
+      updatedAt,
+    });
+  }
+
+  /**
+   * プロジェクトカラーを変更して新しいProjectインスタンスを返す
+   *
+   * @param color - 新しいプロジェクトカラー（16進数カラーコード #RRGGBB形式）
+   * @param updatedAt - 更新日時
+   * @returns 更新された新しいProjectインスタンス
+   */
+  changeColor(color: string, updatedAt: string): Project {
+    return new Project({
+      ...this,
+      color,
+      updatedAt,
     });
   }
 }

@@ -4,11 +4,7 @@
 
 import * as path from "path";
 import { z } from "zod";
-import {
-  ReviewScope,
-  executeReview,
-  ReviewResult,
-} from "./qualitative-reviewer";
+import { executeReview, ReviewResult } from "./qualitative-reviewer";
 import { formatQualitativeReviewResults } from "./formatter";
 
 /**
@@ -21,13 +17,13 @@ export type ReviewResponsibility = {
   title: string;
   /** ポリシーディレクトリ（guardrailsRoot からの相対パス） */
   policyDir: string;
-  /** レビュースコープ */
-  scope: ReviewScope;
+  /** レビュー責務（例: "ドメインモデル (Domain Model)"） */
+  responsibility: string;
   /** ツール説明 */
   toolDescription: string;
   /** 入力スキーマ */
   inputSchema: {
-    targetFilePaths: z.ZodArray<z.ZodString>;
+    targetDirectories: z.ZodArray<z.ZodString>;
   };
 };
 
@@ -35,7 +31,7 @@ export type ReviewResponsibility = {
  * レビューハンドラー入力
  */
 export type ReviewHandlerInput = {
-  targetFilePaths: string[];
+  targetDirectories: string[];
   guardrailsRoot: string;
 };
 
@@ -45,29 +41,27 @@ export type ReviewHandlerInput = {
 export const createReviewHandler =
   (responsibility: ReviewResponsibility) =>
   async (args: ReviewHandlerInput): Promise<string> => {
-    const { targetFilePaths, guardrailsRoot } = args;
+    const { targetDirectories, guardrailsRoot } = args;
 
     // バリデーション
     if (
-      targetFilePaths === null ||
-      targetFilePaths === undefined ||
-      !Array.isArray(targetFilePaths) ||
-      targetFilePaths.length === 0
+      !targetDirectories ||
+      !Array.isArray(targetDirectories) ||
+      targetDirectories.length === 0
     ) {
       throw new Error(
-        "targetFilePathsは必須で、空でない配列である必要があります",
+        "targetDirectoriesは必須で、空でない配列である必要があります",
       );
     }
 
     // ポリシーディレクトリのパス構築
     const fullPolicyDir = path.join(guardrailsRoot, responsibility.policyDir);
 
-    // レビュー実行（ファイル検証とガイダンス生成のみ）
+    // レビュー実行（ガイダンス生成のみ）
     const reviewResult: ReviewResult = await executeReview({
-      targetFilePaths,
+      targetDirectories,
       policyDir: fullPolicyDir,
-      guardrailsRoot,
-      reviewScope: responsibility.scope,
+      responsibility: responsibility.responsibility,
     });
 
     // 結果整形

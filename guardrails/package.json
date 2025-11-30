@@ -18,7 +18,8 @@
     "validate:tsc:watch": "tsc --watch"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.4"
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "fast-glob": "^3.3.3"
   },
   "devDependencies": {
     "@types/glob": "^8.1.0",
