@@ -451,22 +451,3 @@ async save(todo: Todo): Promise<SaveResult> {
 container.bind<UnitOfWorkRunner>(UOW_RUNNER).to(...);  // ❌ ステートフルなため不適切
 ```
 
-## チェックリスト
-
-```
-[ ] UseCase層でUnitOfWorkRunnerを注入
-[ ] run()メソッドでトランザクション境界を管理
-[ ] コールバック内で複数のリポジトリ操作を実行
-[ ] Repositoryコンストラクタに uow?: UnitOfWork を追加
-[ ] 保存・削除メソッドで uow の有無をチェック
-[ ] uow がある場合は操作を登録
-[ ] uow がない場合は即実行
-[ ] 検索系メソッドは uow を使用しない
-[ ] トランザクション不要な操作では runner を使用しない
-[ ] Small TestでRepository Dummy使用
-[ ] Repository DummyでEntity Dummyファクトリを使用
-[ ] buildFetchNowDummyで時刻をモック
-[ ] UnitOfWorkRunnerDummyを使用
-[ ] Medium Testでトランザクション検証
-[ ] Medium Testでも入力データ作成にDummyファクトリを活用
-```

@@ -763,21 +763,3 @@ return {
 };
 ```
 
-## チェックリスト
-
-```
-[ ] Props型定義（readonly指定）
-[ ] 依存性の注入（リポジトリ、Logger、FetchNow）
-[ ] ビジネスルール検証実装
-[ ] Result型の早期リターン
-[ ] Value Objectエラーの適切な変換
-[ ] エンティティ操作（create/update）
-[ ] PATCH更新時はResult.then()でメソッドチェーン
-[ ] Entity組成とsaveは分離（メソッドチェーン内でsaveしない）
-[ ] 'in'演算子でフィールド存在確認（送られたフィールドのみ処理）
-[ ] 送られなかったフィールドは既存値のまま（三項演算子で分岐）
-[ ] TypeScript内部ではundefinedのみ扱う（Handler層でnull→undefined変換済み）
-[ ] 適切なログ出力（debug/error）
-[ ] 例外を投げない（Result型返却）
-[ ] 時刻取得はfetchNowを使用（dateToIsoString()で変換）
-```

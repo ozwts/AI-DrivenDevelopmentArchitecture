@@ -389,30 +389,3 @@ container
 
 **スコープ:** Singleton
 
-## チェックリスト
-
-```
-[ ] インターフェースはドメイン層、実装はインフラ層
-[ ] Repository Interfaceを実装している
-[ ] Propsパターンでコンストラクタ引数を受け取る
-[ ] Zodスキーマでパースしている
-[ ] データ変換関数を使用している
-[ ] DB → ドメインモデル変換時にValue Object.from(props)を使用
-[ ] Value Object変換時はProps型エイリアスパターンを使用（インラインprops不可）
-[ ] Value Object変換失敗時はデフォルト値を使用（throwしない）
-[ ] Entityはコンストラクタで直接生成（複数値関係性チェックは不要）
-[ ] DBデータの整合性を信頼（MECE原則：複数値関係性チェックは保存時完了済み）
-[ ] すべてのメソッドがResult型を返す
-[ ] エラーをUnexpectedErrorでラップしている（throwしない）
-[ ] UnitOfWorkをサポートしている（uow?: DynamoDBUnitOfWork）
-[ ] Loggerで操作をログ出力している
-[ ] プライベートフィールドは#プレフィックスを使用
-[ ] ID生成メソッドを提供している
-[ ] 集約単位で保存・取得している（子エンティティも含む）
-[ ] 単一Value Objectの不変条件チェックを実装していない（Value Object層の責務）
-[ ] 複数値関係性チェックを実装していない（Entity層の責務：保存時に実施済み）
-[ ] ビジネスルールを実装していない（UseCase層の責務）
-[ ] 子エンティティを個別操作するメソッドを作っていない
-[ ] DI設定でSingletonスコープで登録
-[ ] サービスID命名規則に従っている（{ENTITY}_REPOSITORY）
-```

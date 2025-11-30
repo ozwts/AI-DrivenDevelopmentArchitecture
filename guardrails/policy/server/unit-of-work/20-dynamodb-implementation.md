@@ -338,16 +338,3 @@ new DynamoDBUnitOfWorkRunner({ ddbDoc, logger }, () => ({
 await uow.commit();  // 自動コミットを使うべき
 ```
 
-## チェックリスト
-
-```
-[ ] DynamoDBUnitOfWorkクラスを実装
-[ ] registerOperation()で100個制限チェック
-[ ] getOperationCount()で操作数を取得可能
-[ ] DynamoDBUnitOfWorkRunnerクラスを実装
-[ ] run()メソッドで自動コミット/ロールバック
-[ ] コンテキストファクトリーでリポジトリ生成
-[ ] TransactWriteCommandでトランザクション実行
-[ ] エラー時はトランザクション未実行（自動ロールバック）
-[ ] 型安全なUoWコンテキストを定義
-```

@@ -510,32 +510,3 @@ dummyRepository.setFindByIdResult({
 expect(result.success).toBe(false); // ❌ どのエラーかわからない
 ```
 
-## チェックリスト
-
-### Small Test
-
-```
-[ ] Dummyリポジトリ使用
-[ ] DummyリポジトリでEntity Dummyファクトリを使用
-[ ] buildFetchNowDummyで時刻をモック
-[ ] テスト専用ヘルパー関数を作らない（Dummyファクトリで十分）
-[ ] 正常系テスト
-[ ] ビジネスルール違反テスト（権限・状態遷移・ビジネス制約）
-[ ] リソース未検出テスト
-[ ] 重複エラーテスト
-[ ] Value Object エラー伝播テスト（ドメインルール自体はDomain層でテスト済み）
-[ ] リポジトリエラー伝播テスト
-[ ] ビジネス固有の境界値テスト（型レベルの境界値はHandler層でテスト済み）
-[ ] Result型の正しいチェック
-[ ] 型レベルバリデーションテストを含めない（MECE原則違反）
-```
-
-### Medium Test
-
-```
-[ ] 実DynamoDB使用
-[ ] テーブルクリーンアップ（beforeEach）
-[ ] トランザクション原子性テスト
-[ ] DB制約違反テスト
-[ ] 接続解放（afterAll）
-```

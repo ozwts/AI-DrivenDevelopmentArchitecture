@@ -230,17 +230,3 @@ async save(todo: Todo): Promise<SaveResult> {
 }
 ```
 
-## チェックリスト
-
-```
-[ ] UnitOfWorkインターフェースを定義（registerOperation, getOperationCount）
-[ ] UnitOfWorkRunnerインターフェースを定義（run）
-[ ] run()メソッドで自動コミット/ロールバックを実装
-[ ] Repositoryコンストラクタに uow?: UnitOfWork を追加
-[ ] 保存・削除メソッドで uow の有無をチェック
-[ ] uow がある場合は操作を登録（即実行しない）
-[ ] uow がない場合は即実行
-[ ] トランザクション制約（最大件数）を確認
-[ ] ドメイン層で定義し、インフラ層で実装
-[ ] テスト用Dummy実装を提供
-```

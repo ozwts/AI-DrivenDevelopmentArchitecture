@@ -192,13 +192,3 @@ buildFetchNowDummy();
 const fetchNow = buildFetchNowDummy(new Date("2024-06-15T14:30:00+09:00"));
 ```
 
-## チェックリスト
-
-```
-[ ] FetchNow型を使用（() => Date）
-[ ] UseCase/ドメインサービスにDI経由で注入
-[ ] 本番環境では fetchNowImpl を使用
-[ ] テストでは buildFetchNowDummy を使用
-[ ] FetchNow内で複雑なロジックを実装していない
-[ ] 直接 new Date() を使っていない（テスト可能性のため）
-```

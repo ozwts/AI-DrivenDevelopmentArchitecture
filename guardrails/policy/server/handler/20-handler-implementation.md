@@ -258,16 +258,3 @@ const project = await repository.findById({ id: projectId });
 const result = await useCase.execute({ projectId });
 ```
 
-## チェックリスト
-
-```
-[ ] ビルダーパターンでDI注入
-[ ] try-catchで全体をラップ
-[ ] 入力バリデーション（Zod）
-[ ] 単一ユースケース実行
-[ ] Result型チェック
-[ ] レスポンス変換（convertTo{Entity}Response）
-[ ] 出力バリデーション（Zod）
-[ ] 適切なHTTPステータスコード
-[ ] ログ出力（debug/info/error）
-```

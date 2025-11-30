@@ -205,16 +205,3 @@ router.get("/users/:userId", getUserHandler); // 先
 router.get("/users/me", getCurrentUserHandler); // ❌ :userId に me がマッチ
 ```
 
-## チェックリスト
-
-```
-[ ] ビルダーパターン（build{Entity}Router）
-[ ] DIコンテナ注入
-[ ] ハンドラー生成（ビルダー関数から）
-[ ] RESTful設計に準拠
-[ ] 複数形エンティティ名（/{entities}）
-[ ] パスパラメータ: :{entity}Id形式
-[ ] 子リソースは親パスパラメータを含む
-[ ] Current Userパターンは優先定義
-[ ] Honoインスタンス返却
-```
