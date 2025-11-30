@@ -17,20 +17,15 @@ export const formatQualitativeReviewResults = (
   reviewResult: ReviewResult,
   title: string,
 ): string => {
-  const { overallReview, targetFiles, success, error, summary } = reviewResult;
+  const { overallReview, targetDirectories, success, error } = reviewResult;
 
   let output = "";
 
   output += `# 📝 ${title}\n\n`;
-  output += "## サマリー\n\n";
-  output += `- 総ファイル数: ${summary.total}\n`;
-  output += `- 成功: ${summary.successful}\n`;
-  output += `- 失敗: ${summary.failed}\n\n`;
 
-  output += "## 対象ファイル\n\n";
-  targetFiles.forEach((filePath) => {
-    const fileName = path.basename(filePath);
-    output += `- ${fileName} (${filePath})\n`;
+  output += "## 対象ディレクトリ\n\n";
+  targetDirectories.forEach((dirPath) => {
+    output += `- ${dirPath}\n`;
   });
   output += "\n";
 
