@@ -11,24 +11,23 @@ import { v4 as uuid } from "uuid";
 import type { Logger } from "@/domain/support/logger";
 import type { DynamoDBUnitOfWork } from "@/infrastructure/unit-of-work/dynamodb-unit-of-work";
 import {
-  SaveResult,
-  RemoveResult,
-  FindByIdResult,
-  FindAllResult,
-  FindByStatusResult,
-  FindByProjectIdResult,
+  type SaveResult,
+  type RemoveResult,
+  type FindByIdResult,
+  type FindAllResult,
+  type FindByStatusResult,
+  type FindByProjectIdResult,
   type TodoRepository,
 } from "@/domain/model/todo/todo.repository";
 import {
   Todo,
   TodoStatus,
   type TodoPriority,
-} from "@/domain/model/todo/todo";
-import {
-  Attachment,
-} from "@/domain/model/attachment/attachment";
+} from "@/domain/model/todo/todo.entity";
+import { Attachment } from "@/domain/model/todo/attachment.entity";
 import { AttachmentStatus } from "@/domain/model/todo/attachment-status.vo";
 import { UnexpectedError } from "@/util/error-util";
+import { Result } from "@/util/result";
 
 /**
  * DynamoDB格納用のAttachmentスキーマ（Todosテーブル内の埋め込み用）
@@ -89,12 +88,14 @@ export type TodoDdbItem = z.infer<typeof todoDdbItemSchema>;
 export const attachmentDdbItemToAttachment = (
   attachmentDdbItem: AttachmentDdbItem,
 ): Attachment => {
-  const statusResult = AttachmentStatus.from({ status: attachmentDdbItem.status });
-  if (statusResult.isErr()) {
+  const statusResult = AttachmentStatus.from({
+    status: attachmentDdbItem.status,
+  });
+  if (!statusResult.isOk()) {
     throw statusResult.error;
   }
 
-  return new Attachment({
+  return Attachment.from({
     id: attachmentDdbItem.id,
     fileName: attachmentDdbItem.fileName,
     storageKey: attachmentDdbItem.storageKey,
@@ -118,7 +119,7 @@ export const attachmentDdbItemFromAttachment = (
   storageKey: attachment.storageKey,
   contentType: attachment.contentType,
   fileSize: attachment.fileSize,
-  status: attachment.status.value,
+  status: attachment.status.status,
   uploadedBy: attachment.uploadedBy,
   createdAt: attachment.createdAt,
   updatedAt: attachment.updatedAt,
@@ -137,7 +138,7 @@ export const attachmentTableItemFromAttachment = (
   storageKey: attachment.storageKey,
   contentType: attachment.contentType,
   fileSize: attachment.fileSize,
-  status: attachment.status.value,
+  status: attachment.status.status,
   uploadedBy: attachment.uploadedBy,
   createdAt: attachment.createdAt,
   updatedAt: attachment.updatedAt,
@@ -153,11 +154,11 @@ export const todoDdbItemToTodo = (
   attachments: Attachment[] = [],
 ): Todo => {
   const statusResult = TodoStatus.from({ status: todoDdbItem.status });
-  if (statusResult.isErr()) {
+  if (!statusResult.isOk()) {
     throw statusResult.error;
   }
 
-  return new Todo({
+  return Todo.from({
     id: todoDdbItem.todoId,
     title: todoDdbItem.title,
     description: todoDdbItem.description,
@@ -205,7 +206,7 @@ export const todoDdbItemFromTodo = (todo: Todo): TodoDdbItem => {
     todoId: todo.id,
     title: todo.title,
     description: todo.description,
-    status: todo.status.value,
+    status: todo.status.status,
     priority: todo.priority,
     dueDate: todo.dueDate,
     projectId, // 空文字列の場合はundefined
@@ -272,10 +273,7 @@ export class TodoRepositoryImpl implements TodoRepository {
       );
 
       if (todoResult.Item === undefined) {
-        return {
-          success: true,
-          data: undefined,
-        };
+        return Result.ok(undefined);
       }
 
       // Attachmentsテーブルから取得
@@ -311,30 +309,12 @@ export class TodoRepositoryImpl implements TodoRepository {
       const todoDdbItem = todoDdbItemSchema.parse(todoResult.Item);
 
       // Todoエンティティを作成（Attachmentsテーブルから取得したattachmentsを使用）
-      const todo = new Todo({
-        id: todoDdbItem.todoId,
-        title: todoDdbItem.title,
-        description: todoDdbItem.description,
-        status: todoDdbItem.status as TodoStatus,
-        priority: todoDdbItem.priority as TodoPriority,
-        dueDate: todoDdbItem.dueDate,
-        projectId: todoDdbItem.projectId,
-        assigneeUserId: todoDdbItem.assigneeUserId,
-        attachments,
-        createdAt: todoDdbItem.createdAt,
-        updatedAt: todoDdbItem.updatedAt,
-      });
+      const todo = todoDdbItemToTodo(todoDdbItem, attachments);
 
-      return {
-        success: true,
-        data: todo,
-      };
+      return Result.ok(todo);
     } catch (error) {
       this.#logger.error("TODOの取得に失敗しました", error as Error);
-      return {
-        success: false,
-        error: new UnexpectedError(),
-      };
+      return Result.err(new UnexpectedError());
     }
   }
 
@@ -391,16 +371,10 @@ export class TodoRepositoryImpl implements TodoRepository {
         }),
       );
 
-      return {
-        success: true,
-        data: todosWithAttachments,
-      };
+      return Result.ok(todosWithAttachments);
     } catch (error) {
       this.#logger.error("TODO一覧の取得に失敗しました", error as Error);
-      return {
-        success: false,
-        error: new UnexpectedError(),
-      };
+      return Result.err(new UnexpectedError());
     }
   }
 
@@ -469,19 +443,13 @@ export class TodoRepositoryImpl implements TodoRepository {
         }),
       );
 
-      return {
-        success: true,
-        data: todosWithAttachments,
-      };
+      return Result.ok(todosWithAttachments);
     } catch (error) {
       this.#logger.error(
         "ステータスによるTODO一覧の取得に失敗しました",
         error as Error,
       );
-      return {
-        success: false,
-        error: new UnexpectedError(),
-      };
+      return Result.err(new UnexpectedError());
     }
   }
 
@@ -550,19 +518,13 @@ export class TodoRepositoryImpl implements TodoRepository {
         }),
       );
 
-      return {
-        success: true,
-        data: todosWithAttachments,
-      };
+      return Result.ok(todosWithAttachments);
     } catch (error) {
       this.#logger.error(
         "プロジェクトIDによるTODO一覧の取得に失敗しました",
         error as Error,
       );
-      return {
-        success: false,
-        error: new UnexpectedError(),
-      };
+      return Result.err(new UnexpectedError());
     }
   }
 
@@ -639,16 +601,10 @@ export class TodoRepositoryImpl implements TodoRepository {
         );
       }
 
-      return {
-        success: true,
-        data: undefined,
-      };
+      return Result.ok(undefined);
     } catch (error) {
       this.#logger.error("TODOの保存に失敗しました", error as Error);
-      return {
-        success: false,
-        error: new UnexpectedError(),
-      };
+      return Result.err(new UnexpectedError());
     }
   }
 
@@ -673,16 +629,10 @@ export class TodoRepositoryImpl implements TodoRepository {
         );
       }
 
-      return {
-        success: true,
-        data: undefined,
-      };
+      return Result.ok(undefined);
     } catch (error) {
       this.#logger.error("TODOの削除に失敗しました", error as Error);
-      return {
-        success: false,
-        error: new UnexpectedError(),
-      };
+      return Result.err(new UnexpectedError());
     }
   }
 }

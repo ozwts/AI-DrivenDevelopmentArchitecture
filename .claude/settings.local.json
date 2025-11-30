@@ -31,7 +31,16 @@
       "Bash(git rm:*)",
       "mcp__guardrails__review_contract_openapi",
       "mcp__guardrails__review_server_domain_models",
-      "mcp__guardrails__review_static_analysis"
+      "mcp__guardrails__review_static_analysis",
+      "mcp__guardrails__review_server_use_cases",
+      "Bash(for file in project/*.ts todo/*.ts user/*.ts)",
+      "Bash(do if [[ ! \"$file\" =~ .test.ts$ ]])",
+      "Bash([[ \"$file\" != \"interfaces.ts\" ]])",
+      "Bash(then test_file=\"$file%.ts.small.test.ts\")",
+      "Bash(if [[ ! -f \"$test_file\" ]])",
+      "Bash(then echo \"MISSING: $test_file for $file\")",
+      "Bash(fi)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ],
     "deny": [],
     "ask": []

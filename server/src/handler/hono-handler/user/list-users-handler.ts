@@ -19,7 +19,7 @@ export const buildListUsersHandler =
     try {
       const result = await useCase.execute();
 
-      if (result.success === false) {
+      if (result.isErr()) {
         return handleError(result.error, c, logger);
       }
 

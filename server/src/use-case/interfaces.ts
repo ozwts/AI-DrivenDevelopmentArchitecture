@@ -1,4 +1,4 @@
-import type { Result } from "@/util/result";
+import { Result } from "@/util/result";
 
 /**
  * ユースケースの基底インターフェース

@@ -1,4 +1,5 @@
 /* eslint-disable class-methods-use-this */
+import { Result } from "@/util/result";
 import type { AuthClient, AuthPayload, AuthUser, DeleteUserResult } from ".";
 
 export type AuthClientDummyProps = {
@@ -30,10 +31,8 @@ export class AuthClientDummy implements AuthClient {
 
   readonly #defaultVerifyTokenReturnValue = true;
 
-  readonly #defaultDeleteUserReturnValue: DeleteUserResult = {
-    success: true,
-    data: undefined,
-  };
+  readonly #defaultDeleteUserReturnValue: DeleteUserResult =
+    Result.ok(undefined);
 
   readonly #decodeTokenReturnValue: AuthPayload;
 

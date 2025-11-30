@@ -1,44 +1,70 @@
-import type { Result } from "@/util/result";
-import type { UnexpectedError } from "@/util/error-util";
+import { UnexpectedError } from "@/util/error-util";
 import type { TodoRepository } from "@/domain/model/todo/todo.repository";
-import type { Todo, TodoStatus } from "@/domain/model/todo/todo";
+import type { Todo, TodoStatus } from "@/domain/model/todo/todo.entity";
+import { Result } from "@/util/result";
+import type { UseCase } from "../interfaces";
 
 export type ListTodosUseCaseInput = {
   status?: TodoStatus;
   projectId?: string;
 };
 
-export type ListTodosUseCaseOutput = Result<Todo[], UnexpectedError>;
+export type ListTodosUseCaseOutput = ReadonlyArray<Todo>;
 
-export type ListTodosUseCase = {
-  execute(input: ListTodosUseCaseInput): Promise<ListTodosUseCaseOutput>;
-};
+export type ListTodosUseCaseException = UnexpectedError;
+
+export type ListTodosUseCaseResult = Result<
+  ListTodosUseCaseOutput,
+  ListTodosUseCaseException
+>;
 
 export type ListTodosUseCaseProps = {
-  todoRepository: TodoRepository;
+  readonly todoRepository: TodoRepository;
 };
 
-export class ListTodosUseCaseImpl implements ListTodosUseCase {
-  readonly #todoRepository: TodoRepository;
+export type ListTodosUseCase = UseCase<
+  ListTodosUseCaseInput,
+  ListTodosUseCaseOutput,
+  ListTodosUseCaseException
+>;
 
-  constructor({ todoRepository }: ListTodosUseCaseProps) {
-    this.#todoRepository = todoRepository;
+export class ListTodosUseCaseImpl implements ListTodosUseCase {
+  readonly #props: ListTodosUseCaseProps;
+
+  constructor(props: ListTodosUseCaseProps) {
+    this.#props = props;
   }
 
-  async execute(input: ListTodosUseCaseInput): Promise<ListTodosUseCaseOutput> {
+  async execute(input: ListTodosUseCaseInput): Promise<ListTodosUseCaseResult> {
+    const { todoRepository } = this.#props;
+
     // projectIdが指定されている場合はfindByProjectId
     if (input.projectId !== undefined) {
-      return this.#todoRepository.findByProjectId({
+      const result = await todoRepository.findByProjectId({
         projectId: input.projectId,
       });
+      if (result.isErr()) {
+        return Result.err(result.error);
+      }
+      return Result.ok(result.data);
     }
 
     // statusが指定されている場合はfindByStatus
     if (input.status !== undefined) {
-      return this.#todoRepository.findByStatus({ status: input.status });
+      const result = await todoRepository.findByStatus({
+        status: input.status,
+      });
+      if (result.isErr()) {
+        return Result.err(result.error);
+      }
+      return Result.ok(result.data);
     }
 
     // どちらも指定されていない場合はfindAll
-    return this.#todoRepository.findAll();
+    const result = await todoRepository.findAll();
+    if (result.isErr()) {
+      return Result.err(result.error);
+    }
+    return Result.ok(result.data);
   }
 }

@@ -1,10 +1,11 @@
 import type { Logger } from "@/domain/support/logger";
-import type { Result } from "@/util/result";
-import { UnexpectedError, ValidationError } from "@/util/error-util";
+import { UnexpectedError, NotFoundError } from "@/util/error-util";
 import type { ProjectRepository } from "@/domain/model/project/project.repository";
-import type { Project } from "@/domain/model/project/project";
+import type { Project } from "@/domain/model/project/project.entity";
 import type { FetchNow } from "@/domain/support/fetch-now";
+import { Result } from "@/util/result";
 import { dateToIsoString } from "@/util/date-util";
+import type { UseCase } from "../interfaces";
 
 export type UpdateProjectUseCaseInput = {
   projectId: string;
@@ -15,7 +16,7 @@ export type UpdateProjectUseCaseInput = {
 
 export type UpdateProjectUseCaseOutput = Project;
 
-export type UpdateProjectUseCaseException = UnexpectedError | ValidationError;
+export type UpdateProjectUseCaseException = UnexpectedError | NotFoundError;
 
 export type UpdateProjectUseCaseResult = Result<
   UpdateProjectUseCaseOutput,
@@ -23,100 +24,80 @@ export type UpdateProjectUseCaseResult = Result<
 >;
 
 export type UpdateProjectUseCaseProps = {
-  projectRepository: ProjectRepository;
-  logger: Logger;
-  fetchNow: FetchNow;
+  readonly projectRepository: ProjectRepository;
+  readonly logger: Logger;
+  readonly fetchNow: FetchNow;
 };
 
-export type UpdateProjectUseCase = {
-  execute(
-    input: UpdateProjectUseCaseInput,
-  ): Promise<UpdateProjectUseCaseResult>;
-};
+export type UpdateProjectUseCase = UseCase<
+  UpdateProjectUseCaseInput,
+  UpdateProjectUseCaseOutput,
+  UpdateProjectUseCaseException
+>;
 
 export class UpdateProjectUseCaseImpl implements UpdateProjectUseCase {
-  readonly #projectRepository: ProjectRepository;
+  readonly #props: UpdateProjectUseCaseProps;
 
-  readonly #logger: Logger;
-
-  readonly #fetchNow: FetchNow;
-
-  constructor({
-    projectRepository,
-    logger,
-    fetchNow,
-  }: UpdateProjectUseCaseProps) {
-    this.#projectRepository = projectRepository;
-    this.#logger = logger;
-    this.#fetchNow = fetchNow;
+  constructor(props: UpdateProjectUseCaseProps) {
+    this.#props = props;
   }
 
   async execute(
     input: UpdateProjectUseCaseInput,
   ): Promise<UpdateProjectUseCaseResult> {
-    this.#logger.debug("use-case: update-project-use-case", {
+    const { projectRepository, logger, fetchNow } = this.#props;
+
+    logger.debug("use-case: update-project-use-case", {
       projectId: input.projectId,
     });
 
     // 既存のプロジェクトを取得
-    const findResult = await this.#projectRepository.findById({
+    const findResult = await projectRepository.findById({
       id: input.projectId,
     });
 
-    if (!findResult.success) {
-      this.#logger.error("プロジェクトの取得に失敗", findResult.error);
-      return {
-        success: false,
-        error: findResult.error,
-      };
+    if (findResult.isErr()) {
+      logger.error("プロジェクトの取得に失敗", findResult.error);
+      return Result.err(findResult.error);
     }
 
     if (findResult.data === undefined) {
-      const notFoundError = new ValidationError(
+      const notFoundError = new NotFoundError(
         "プロジェクトが見つかりませんでした",
       );
-      this.#logger.error("プロジェクトが存在しません", {
+      logger.error("プロジェクトが存在しません", {
         projectId: input.projectId,
       });
-      return {
-        success: false,
-        error: notFoundError,
-      };
+      return Result.err(notFoundError);
     }
 
-    const now = dateToIsoString(this.#fetchNow());
+    const now = dateToIsoString(fetchNow());
 
     // プロジェクトを更新（個別メソッドをメソッドチェーンで組み合わせる）
     let updatedProject = findResult.data;
     if (input.name !== undefined) {
-      updatedProject = updatedProject.changeName(input.name, now);
+      updatedProject = updatedProject.rename(input.name, now);
     }
     if (input.description !== undefined) {
-      updatedProject = updatedProject.changeDescription(input.description, now);
+      updatedProject = updatedProject.clarify(input.description, now);
     }
     if (input.color !== undefined) {
-      updatedProject = updatedProject.changeColor(input.color, now);
+      updatedProject = updatedProject.recolor(input.color, now);
     }
 
-    const saveResult = await this.#projectRepository.save({
+    const saveResult = await projectRepository.save({
       project: updatedProject,
     });
 
-    if (!saveResult.success) {
-      this.#logger.error("プロジェクトの保存に失敗", saveResult.error);
-      return {
-        success: false,
-        error: saveResult.error,
-      };
+    if (saveResult.isErr()) {
+      logger.error("プロジェクトの保存に失敗", saveResult.error);
+      return Result.err(saveResult.error);
     }
 
-    this.#logger.info("プロジェクト更新成功", {
+    logger.info("プロジェクト更新成功", {
       projectId: updatedProject.id,
     });
 
-    return {
-      success: true,
-      data: updatedProject,
-    };
+    return Result.ok(updatedProject);
   }
 }

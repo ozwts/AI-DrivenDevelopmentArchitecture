@@ -38,7 +38,7 @@ export const buildPrepareAttachmentUploadHandler =
 
       // userSubからユーザーIDを取得
       const userResult = await userRepository.findBySub({ sub: userSub });
-      if (!userResult.success) {
+      if (!userResult.isOk()) {
         logger.error("ユーザー情報の取得に失敗しました", userResult.error);
         return handleError(userResult.error, c, logger);
       }
@@ -81,11 +81,11 @@ export const buildPrepareAttachmentUploadHandler =
         todoId,
         fileName: body.filename,
         contentType: body.contentType,
-        fileSize: body.size,
+        fileSize: body.size as number,
         uploadedBy,
       });
 
-      if (result.success === false) {
+      if (!result.isOk()) {
         return handleError(result.error, c, logger);
       }
 

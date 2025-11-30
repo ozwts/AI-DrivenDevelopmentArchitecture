@@ -1,10 +1,11 @@
-import type { Result } from "@/util/result";
-import type { UnexpectedError, NotFoundError } from "@/util/error-util";
+import { UnexpectedError, NotFoundError } from "@/util/error-util";
 import type { TodoRepository } from "@/domain/model/todo/todo.repository";
 import type { FetchNow } from "@/domain/support/fetch-now";
 import type { Logger } from "@/domain/support/logger";
-import type { AttachmentStatus } from "@/domain/model/attachment/attachment";
+import type { AttachmentStatus } from "@/domain/model/todo/attachment.entity";
+import { Result } from "@/util/result";
 import { dateToIsoString } from "@/util/date-util";
+import type { UseCase } from "../interfaces";
 
 export type UpdateAttachmentStatusUseCaseInput = {
   todoId: string;
@@ -24,65 +25,51 @@ export type UpdateAttachmentStatusUseCaseResult = Result<
 >;
 
 export type UpdateAttachmentStatusUseCaseProps = {
-  todoRepository: TodoRepository;
-  fetchNow: FetchNow;
-  logger: Logger;
+  readonly todoRepository: TodoRepository;
+  readonly fetchNow: FetchNow;
+  readonly logger: Logger;
 };
 
-export type UpdateAttachmentStatusUseCase = {
-  execute(
-    input: UpdateAttachmentStatusUseCaseInput,
-  ): Promise<UpdateAttachmentStatusUseCaseResult>;
-};
+export type UpdateAttachmentStatusUseCase = UseCase<
+  UpdateAttachmentStatusUseCaseInput,
+  UpdateAttachmentStatusUseCaseOutput,
+  UpdateAttachmentStatusUseCaseException
+>;
 
 export class UpdateAttachmentStatusUseCaseImpl
   implements UpdateAttachmentStatusUseCase
 {
-  readonly #todoRepository: TodoRepository;
+  readonly #props: UpdateAttachmentStatusUseCaseProps;
 
-  readonly #fetchNow: FetchNow;
-
-  readonly #logger: Logger;
-
-  constructor({
-    todoRepository,
-    fetchNow,
-    logger,
-  }: UpdateAttachmentStatusUseCaseProps) {
-    this.#todoRepository = todoRepository;
-    this.#fetchNow = fetchNow;
-    this.#logger = logger;
+  constructor(props: UpdateAttachmentStatusUseCaseProps) {
+    this.#props = props;
   }
 
   async execute(
     input: UpdateAttachmentStatusUseCaseInput,
   ): Promise<UpdateAttachmentStatusUseCaseResult> {
-    this.#logger.debug("use-case: update-attachment-status-use-case", {
+    const { todoRepository, fetchNow, logger } = this.#props;
+
+    logger.debug("use-case: update-attachment-status-use-case", {
       todoId: input.todoId,
       attachmentId: input.attachmentId,
       status: input.status,
     });
 
     // TODOを取得
-    const todoResult = await this.#todoRepository.findById({
+    const todoResult = await todoRepository.findById({
       id: input.todoId,
     });
 
-    if (!todoResult.success) {
-      this.#logger.error("TODO取得に失敗", todoResult.error);
-      return todoResult;
+    if (todoResult.isErr()) {
+      logger.error("TODO取得に失敗", todoResult.error);
+      return Result.err(todoResult.error);
     }
 
     if (todoResult.data === undefined) {
-      const notFoundError: NotFoundError = {
-        name: "NotFoundError",
-        message: "TODOが見つかりません",
-      };
-      this.#logger.error("TODOが見つかりません", { todoId: input.todoId });
-      return {
-        success: false,
-        error: notFoundError,
-      };
+      const notFoundError = new NotFoundError("TODOが見つかりません");
+      logger.error("TODOが見つかりません", { todoId: input.todoId });
+      return Result.err(notFoundError);
     }
 
     const todo = todoResult.data;
@@ -93,53 +80,37 @@ export class UpdateAttachmentStatusUseCaseImpl
     );
 
     if (attachmentIndex === -1) {
-      const notFoundError: NotFoundError = {
-        name: "NotFoundError",
-        message: "添付ファイルが見つかりません",
-      };
-      this.#logger.error("添付ファイルが見つかりません", {
+      const notFoundError = new NotFoundError("添付ファイルが見つかりません");
+      logger.error("添付ファイルが見つかりません", {
         todoId: input.todoId,
         attachmentId: input.attachmentId,
       });
-      return {
-        success: false,
-        error: notFoundError,
-      };
+      return Result.err(notFoundError);
     }
 
-    const now = dateToIsoString(this.#fetchNow());
+    const now = dateToIsoString(fetchNow());
 
-    // Attachmentのステータスを更新
+    // Attachmentのステータスを更新（UPLOADEDへの遷移のみサポート）
     const attachment = todo.attachments[attachmentIndex];
-    const updatedAttachment = attachment.changeStatus(input.status, now);
+    const updatedAttachment = attachment.markAsUploaded(now);
 
-    // Attachmentsリストを更新
-    const updatedAttachments = [...todo.attachments];
-    updatedAttachments[attachmentIndex] = updatedAttachment;
-
-    // Todoを更新
-    const updatedTodo = todo.update({
-      attachments: updatedAttachments,
-      updatedAt: now,
-    });
+    // Todoを更新（replaceAttachmentで該当の添付ファイルを置換）
+    const updatedTodo = todo.replaceAttachment(updatedAttachment, now);
 
     // 保存
-    const saveResult = await this.#todoRepository.save({ todo: updatedTodo });
+    const saveResult = await todoRepository.save({ todo: updatedTodo });
 
-    if (!saveResult.success) {
-      this.#logger.error("TODO保存に失敗", saveResult.error);
-      return saveResult;
+    if (saveResult.isErr()) {
+      logger.error("TODO保存に失敗", saveResult.error);
+      return Result.err(saveResult.error);
     }
 
-    this.#logger.info("添付ファイルステータス更新完了", {
+    logger.info("添付ファイルステータス更新完了", {
       todoId: input.todoId,
       attachmentId: input.attachmentId,
       status: input.status,
     });
 
-    return {
-      success: true,
-      data: undefined,
-    };
+    return Result.ok(undefined);
   }
 }

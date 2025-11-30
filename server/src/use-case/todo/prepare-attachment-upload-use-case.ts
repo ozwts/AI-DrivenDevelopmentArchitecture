@@ -1,5 +1,4 @@
-import type { Result } from "@/util/result";
-import type {
+import {
   UnexpectedError,
   NotFoundError,
   ValidationError,
@@ -8,8 +7,13 @@ import type { TodoRepository } from "@/domain/model/todo/todo.repository";
 import type { StorageClient } from "@/domain/support/storage-client";
 import type { FetchNow } from "@/domain/support/fetch-now";
 import type { Logger } from "@/domain/support/logger";
-import { Attachment } from "@/domain/model/attachment/attachment";
+import { Result } from "@/util/result";
+import {
+  Attachment,
+  AttachmentStatus,
+} from "@/domain/model/todo/attachment.entity";
 import { dateToIsoString } from "@/util/date-util";
+import type { UseCase } from "../interfaces";
 
 export type PrepareAttachmentUploadUseCaseInput = {
   todoId: string;
@@ -35,45 +39,33 @@ export type PrepareAttachmentUploadUseCaseResult = Result<
 >;
 
 export type PrepareAttachmentUploadUseCaseProps = {
-  todoRepository: TodoRepository;
-  storageClient: StorageClient;
-  fetchNow: FetchNow;
-  logger: Logger;
+  readonly todoRepository: TodoRepository;
+  readonly storageClient: StorageClient;
+  readonly fetchNow: FetchNow;
+  readonly logger: Logger;
 };
 
-export type PrepareAttachmentUploadUseCase = {
-  execute(
-    input: PrepareAttachmentUploadUseCaseInput,
-  ): Promise<PrepareAttachmentUploadUseCaseResult>;
-};
+export type PrepareAttachmentUploadUseCase = UseCase<
+  PrepareAttachmentUploadUseCaseInput,
+  PrepareAttachmentUploadUseCaseOutput,
+  PrepareAttachmentUploadUseCaseException
+>;
 
 export class PrepareAttachmentUploadUseCaseImpl
   implements PrepareAttachmentUploadUseCase
 {
-  readonly #todoRepository: TodoRepository;
+  readonly #props: PrepareAttachmentUploadUseCaseProps;
 
-  readonly #storageClient: StorageClient;
-
-  readonly #fetchNow: FetchNow;
-
-  readonly #logger: Logger;
-
-  constructor({
-    todoRepository,
-    storageClient,
-    fetchNow,
-    logger,
-  }: PrepareAttachmentUploadUseCaseProps) {
-    this.#todoRepository = todoRepository;
-    this.#storageClient = storageClient;
-    this.#fetchNow = fetchNow;
-    this.#logger = logger;
+  constructor(props: PrepareAttachmentUploadUseCaseProps) {
+    this.#props = props;
   }
 
   async execute(
     input: PrepareAttachmentUploadUseCaseInput,
   ): Promise<PrepareAttachmentUploadUseCaseResult> {
-    this.#logger.debug("use-case: prepare-attachment-upload-use-case", {
+    const { todoRepository, storageClient, fetchNow, logger } = this.#props;
+
+    logger.debug("use-case: prepare-attachment-upload-use-case", {
       todoId: input.todoId,
       fileName: input.fileName,
     });
@@ -84,107 +76,85 @@ export class PrepareAttachmentUploadUseCaseImpl
       input.fileName === "" ||
       input.fileName.trim().length === 0
     ) {
-      const validationError: ValidationError = {
-        name: "ValidationError",
-        message: "ファイル名を入力してください",
-      };
-      this.#logger.error("バリデーションエラー", validationError);
-      return {
-        success: false,
-        error: validationError,
-      };
+      const validationError = new ValidationError(
+        "ファイル名を入力してください",
+      );
+      logger.error("バリデーションエラー", validationError);
+      return Result.err(validationError);
     }
 
     if (input.fileSize <= 0) {
-      const validationError: ValidationError = {
-        name: "ValidationError",
-        message: "ファイルサイズが不正です",
-      };
-      this.#logger.error("バリデーションエラー", validationError);
-      return {
-        success: false,
-        error: validationError,
-      };
+      const validationError = new ValidationError("ファイルサイズが不正です");
+      logger.error("バリデーションエラー", validationError);
+      return Result.err(validationError);
     }
 
     // TODOを取得
-    const todoResult = await this.#todoRepository.findById({
+    const todoResult = await todoRepository.findById({
       id: input.todoId,
     });
 
-    if (!todoResult.success) {
-      this.#logger.error("TODO取得に失敗", todoResult.error);
-      return todoResult;
+    if (todoResult.isErr()) {
+      logger.error("TODO取得に失敗", todoResult.error);
+      return Result.err(todoResult.error);
     }
 
     if (todoResult.data === undefined) {
-      const notFoundError: NotFoundError = {
-        name: "NotFoundError",
-        message: "TODOが見つかりません",
-      };
-      this.#logger.error("TODOが見つかりません", { todoId: input.todoId });
-      return {
-        success: false,
-        error: notFoundError,
-      };
+      const notFoundError = new NotFoundError("TODOが見つかりません");
+      logger.error("TODOが見つかりません", { todoId: input.todoId });
+      return Result.err(notFoundError);
     }
 
     const todo = todoResult.data;
-    const now = dateToIsoString(this.#fetchNow());
+    const now = dateToIsoString(fetchNow());
 
     // 新しいAttachmentを作成
-    const attachmentId = this.#todoRepository.attachmentId();
+    const attachmentId = todoRepository.attachmentId();
     const storageKey = `attachments/${input.todoId}/${attachmentId}/${input.fileName}`;
 
-    const attachment = new Attachment({
+    const attachment = Attachment.from({
       id: attachmentId,
       fileName: input.fileName,
       storageKey,
       contentType: input.contentType,
       fileSize: input.fileSize,
-      status: "PREPARED",
+      status: AttachmentStatus.prepared(),
       uploadedBy: input.uploadedBy,
       createdAt: now,
       updatedAt: now,
     });
 
     // Presigned URLを生成
-    const urlResult = await this.#storageClient.generatePresignedUploadUrl({
+    const urlResult = await storageClient.generatePresignedUploadUrl({
       key: storageKey,
       contentType: input.contentType,
       expiresIn: 1800, // 30分
     });
 
-    if (!urlResult.success) {
-      this.#logger.error("Presigned URL生成に失敗", urlResult.error);
-      return urlResult;
+    if (urlResult.isErr()) {
+      logger.error("Presigned URL生成に失敗", urlResult.error);
+      return Result.err(urlResult.error);
     }
 
     // TodoにAttachmentを追加
-    const updatedTodo = todo.update({
-      attachments: [...todo.attachments, attachment],
-      updatedAt: now,
-    });
+    const updatedTodo = todo.attach(attachment, now);
 
     // 保存
-    const saveResult = await this.#todoRepository.save({ todo: updatedTodo });
+    const saveResult = await todoRepository.save({ todo: updatedTodo });
 
-    if (!saveResult.success) {
-      this.#logger.error("TODO保存に失敗", saveResult.error);
-      return saveResult;
+    if (saveResult.isErr()) {
+      logger.error("TODO保存に失敗", saveResult.error);
+      return Result.err(saveResult.error);
     }
 
-    this.#logger.info("アップロード準備完了", {
+    logger.info("アップロード準備完了", {
       todoId: input.todoId,
       attachmentId,
     });
 
-    return {
-      success: true,
-      data: {
-        attachmentId,
-        uploadUrl: urlResult.data,
-      },
-    };
+    return Result.ok({
+      attachmentId,
+      uploadUrl: urlResult.data,
+    });
   }
 }

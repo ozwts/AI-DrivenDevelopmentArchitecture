@@ -2,12 +2,13 @@
  * UseCase構造要件チェック
  *
  * use-case/ 内のUseCaseImplファイル:
+ * - Input/Output/Exception/Result/Props型を定義する
  * - インターフェースを実装する（implements {Action}{Entity}UseCase）
  * - インターフェースはUseCase<TInput, TOutput, TException>を使用
+ * - Result型を定義する（{Action}{Entity}UseCaseResult = Result<Output, Exception>）
  * - executeメソッドを持つ
  * - プライベートメソッドを持たない（executeメソッドで書き切る）
  * - Props型がすべてreadonly
- * - コンストラクタでpropsを受け取る
  *
  * 参照: guardrails/policy/server/use-case/10-use-case-overview.md
  *       guardrails/policy/server/use-case/11-use-case-implementation.md
@@ -30,6 +31,16 @@ module.exports = {
         "UseCaseImpl '{{className}}' must implement '{{interfaceName}}'. See: 11-use-case-implementation.md",
       interfaceMustUseUseCaseType:
         "UseCase interface '{{typeName}}' must use 'UseCase<TInput, TOutput, TException>' from interfaces.ts. See: 10-use-case-overview.md",
+      missingInputType:
+        "UseCaseImpl '{{className}}' must have corresponding '{{inputTypeName}}' type alias. See: 11-use-case-implementation.md",
+      missingOutputType:
+        "UseCaseImpl '{{className}}' must have corresponding '{{outputTypeName}}' type alias. See: 11-use-case-implementation.md",
+      missingExceptionType:
+        "UseCaseImpl '{{className}}' must have corresponding '{{exceptionTypeName}}' type alias. See: 11-use-case-implementation.md",
+      missingResultType:
+        "UseCaseImpl '{{className}}' must have corresponding '{{resultTypeName}}' type alias using Result<Output, Exception>. See: 11-use-case-implementation.md",
+      resultTypeMustUseResult:
+        "UseCaseResult type '{{typeName}}' must use 'Result<Output, Exception>' from @/util/result. See: 11-use-case-implementation.md",
       missingExecuteMethod:
         "UseCaseImpl must have an 'execute' method. See: 10-use-case-overview.md",
       privateMethodForbidden:
@@ -64,18 +75,27 @@ module.exports = {
       return {};
     }
 
+    const definedTypes = new Set(); // 定義された型名を収集
     const definedPropsTypes = new Map(); // PropsType名 -> node
+    const definedResultTypes = new Map(); // ResultType名 -> node
     const useCaseImplClasses = []; // UseCaseImplクラス情報
 
     return {
-      // Props型を収集
+      // 型エイリアスを収集
       TSTypeAliasDeclaration(node) {
         const typeName = node.id?.name;
+        if (typeName) {
+          definedTypes.add(typeName);
+        }
 
-        // {Action}{Entity}UseCase型のチェック（末尾がUseCaseで、UseCasePropsでない）
+        // {Action}{Entity}UseCase型のチェック（末尾がUseCaseで、UseCaseInput/Output/Exception/Props/Resultでない）
         if (
           typeName?.endsWith("UseCase") &&
-          !typeName.endsWith("UseCaseProps")
+          !typeName.endsWith("UseCaseInput") &&
+          !typeName.endsWith("UseCaseOutput") &&
+          !typeName.endsWith("UseCaseException") &&
+          !typeName.endsWith("UseCaseProps") &&
+          !typeName.endsWith("UseCaseResult")
         ) {
           // UseCase<...>を使用しているかチェック
           const typeAnnotation = node.typeAnnotation;
@@ -90,6 +110,23 @@ module.exports = {
               data: { typeName },
             });
           }
+        }
+
+        // {Action}{Entity}UseCaseResult型のチェック
+        if (typeName?.endsWith("UseCaseResult")) {
+          const typeAnnotation = node.typeAnnotation;
+          const isResultType =
+            typeAnnotation?.type === "TSTypeReference" &&
+            typeAnnotation.typeName?.name === "Result";
+
+          if (!isResultType) {
+            context.report({
+              node,
+              messageId: "resultTypeMustUseResult",
+              data: { typeName },
+            });
+          }
+          definedResultTypes.set(typeName, node);
         }
 
         if (typeName?.endsWith("UseCaseProps")) {
@@ -192,8 +229,37 @@ module.exports = {
       },
 
       "Program:exit"() {
-        // UseCaseImplクラスに対応するProps型が定義されているかチェック
         for (const { node, className } of useCaseImplClasses) {
+          // CreateProjectUseCaseImpl -> CreateProjectUseCaseInput
+          const inputTypeName = className.replace(/Impl$/, "Input");
+          if (!definedTypes.has(inputTypeName)) {
+            context.report({
+              node,
+              messageId: "missingInputType",
+              data: { className, inputTypeName },
+            });
+          }
+
+          // CreateProjectUseCaseImpl -> CreateProjectUseCaseOutput
+          const outputTypeName = className.replace(/Impl$/, "Output");
+          if (!definedTypes.has(outputTypeName)) {
+            context.report({
+              node,
+              messageId: "missingOutputType",
+              data: { className, outputTypeName },
+            });
+          }
+
+          // CreateProjectUseCaseImpl -> CreateProjectUseCaseException
+          const exceptionTypeName = className.replace(/Impl$/, "Exception");
+          if (!definedTypes.has(exceptionTypeName)) {
+            context.report({
+              node,
+              messageId: "missingExceptionType",
+              data: { className, exceptionTypeName },
+            });
+          }
+
           // CreateProjectUseCaseImpl -> CreateProjectUseCaseProps
           const propsTypeName = className.replace(/Impl$/, "Props");
           if (!definedPropsTypes.has(propsTypeName)) {
@@ -201,6 +267,16 @@ module.exports = {
               node,
               messageId: "missingPropsType",
               data: { className, propsTypeName },
+            });
+          }
+
+          // CreateProjectUseCaseImpl -> CreateProjectUseCaseResult
+          const resultTypeName = className.replace(/Impl$/, "Result");
+          if (!definedResultTypes.has(resultTypeName)) {
+            context.report({
+              node,
+              messageId: "missingResultType",
+              data: { className, resultTypeName },
             });
           }
         }

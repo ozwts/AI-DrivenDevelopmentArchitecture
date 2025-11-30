@@ -9,15 +9,15 @@ import { v4 as uuid } from "uuid";
 import type { Logger } from "@/domain/support/logger";
 import type { DynamoDBUnitOfWork } from "@/infrastructure/unit-of-work/dynamodb-unit-of-work";
 import {
-  SaveResult,
-  RemoveResult,
-  FindByIdResult,
-  FindAllResult,
+  type SaveResult,
+  type RemoveResult,
+  type FindByIdResult,
+  type FindAllResult,
   type ProjectRepository,
 } from "@/domain/model/project/project.repository";
-import { Project } from "@/domain/model/project/project";
-import { ProjectColor } from "@/domain/model/project/project-color";
+import { Project } from "@/domain/model/project/project.entity";
 import { UnexpectedError } from "@/util/error-util";
+import { Result } from "@/util/result";
 
 /**
  * DynamoDBへ格納時のスキーマと型
@@ -35,30 +35,16 @@ export type ProjectDdbItem = z.infer<typeof projectDdbItemSchema>;
 
 export const projectDdbItemToProject = (
   projectDdbItem: ProjectDdbItem,
-): Project => {
-  // DynamoDBから取得したcolor文字列をProjectColorに変換
-  const colorResult = ProjectColor.fromString(projectDdbItem.color);
-  if (!colorResult.success) {
-    // データ不整合の場合はデフォルト値を使用
-    return new Project({
-      id: projectDdbItem.projectId,
-      name: projectDdbItem.name,
-      description: projectDdbItem.description,
-      color: ProjectColor.default(),
-      createdAt: projectDdbItem.createdAt,
-      updatedAt: projectDdbItem.updatedAt,
-    });
-  }
-
-  return new Project({
+): Project =>
+  // DynamoDB色文字列をそのまま使用（ProjectはcolorをProject.fromで処理する）
+  Project.from({
     id: projectDdbItem.projectId,
     name: projectDdbItem.name,
     description: projectDdbItem.description,
-    color: colorResult.data,
+    color: projectDdbItem.color,
     createdAt: projectDdbItem.createdAt,
     updatedAt: projectDdbItem.updatedAt,
   });
-};
 
 export const projectDdbItemFromProject = (
   project: Project,
@@ -66,7 +52,7 @@ export const projectDdbItemFromProject = (
   projectId: project.id,
   name: project.name,
   description: project.description,
-  color: project.color.value, // ProjectColorから文字列を取得
+  color: project.color,
   createdAt: project.createdAt,
   updatedAt: project.updatedAt,
 });
@@ -117,25 +103,16 @@ export class ProjectRepositoryImpl implements ProjectRepository {
       );
 
       if (result.Item === undefined) {
-        return {
-          success: true,
-          data: undefined,
-        };
+        return Result.ok(undefined);
       }
 
       const projectDdbItem = projectDdbItemSchema.parse(result.Item);
       const project = projectDdbItemToProject(projectDdbItem);
 
-      return {
-        success: true,
-        data: project,
-      };
+      return Result.ok(project);
     } catch (error) {
       this.#logger.error("プロジェクトの取得に失敗しました", error as Error);
-      return {
-        success: false,
-        error: new UnexpectedError(),
-      };
+      return Result.err(new UnexpectedError());
     }
   }
 
@@ -160,19 +137,13 @@ export class ProjectRepositoryImpl implements ProjectRepository {
         }
       }
 
-      return {
-        success: true,
-        data: projects,
-      };
+      return Result.ok(projects);
     } catch (error) {
       this.#logger.error(
         "プロジェクト一覧の取得に失敗しました",
         error as Error,
       );
-      return {
-        success: false,
-        error: new UnexpectedError(),
-      };
+      return Result.err(new UnexpectedError());
     }
   }
 
@@ -198,16 +169,10 @@ export class ProjectRepositoryImpl implements ProjectRepository {
         );
       }
 
-      return {
-        success: true,
-        data: undefined,
-      };
+      return Result.ok(undefined);
     } catch (error) {
       this.#logger.error("プロジェクトの保存に失敗しました", error as Error);
-      return {
-        success: false,
-        error: new UnexpectedError(),
-      };
+      return Result.err(new UnexpectedError());
     }
   }
 
@@ -232,16 +197,10 @@ export class ProjectRepositoryImpl implements ProjectRepository {
         );
       }
 
-      return {
-        success: true,
-        data: undefined,
-      };
+      return Result.ok(undefined);
     } catch (error) {
       this.#logger.error("プロジェクトの削除に失敗しました", error as Error);
-      return {
-        success: false,
-        error: new UnexpectedError(),
-      };
+      return Result.err(new UnexpectedError());
     }
   }
 }

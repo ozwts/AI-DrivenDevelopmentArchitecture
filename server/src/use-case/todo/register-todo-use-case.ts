@@ -1,18 +1,14 @@
 import type { Logger } from "@/domain/support/logger";
-import type { Result } from "@/util/result";
+import { Result } from "@/util/result";
 import type { UseCase } from "../interfaces";
-import {
-  UnexpectedError,
-  ValidationError,
-  NotFoundError,
-} from "@/util/error-util";
+import { UnexpectedError, NotFoundError } from "@/util/error-util";
 import type { TodoRepository } from "@/domain/model/todo/todo.repository";
 import type { UserRepository } from "@/domain/model/user/user.repository";
 import {
   Todo,
-  type TodoStatus,
+  TodoStatus,
   type TodoPriority,
-} from "@/domain/model/todo/todo";
+} from "@/domain/model/todo/todo.entity";
 import type { FetchNow } from "@/domain/support/fetch-now";
 import { dateToIsoString } from "@/util/date-util";
 
@@ -29,10 +25,7 @@ export type RegisterTodoUseCaseInput = {
 
 export type RegisterTodoUseCaseOutput = Todo;
 
-export type RegisterTodoUseCaseException =
-  | UnexpectedError
-  | ValidationError
-  | NotFoundError;
+export type RegisterTodoUseCaseException = UnexpectedError | NotFoundError;
 
 export type RegisterTodoUseCaseResult = Result<
   RegisterTodoUseCaseOutput,
@@ -53,30 +46,18 @@ export type RegisterTodoUseCase = UseCase<
 >;
 
 export class RegisterTodoUseCaseImpl implements RegisterTodoUseCase {
-  readonly #todoRepository: TodoRepository;
+  readonly #props: RegisterTodoUseCaseProps;
 
-  readonly #userRepository: UserRepository;
-
-  readonly #logger: Logger;
-
-  readonly #fetchNow: FetchNow;
-
-  constructor({
-    todoRepository,
-    userRepository,
-    logger,
-    fetchNow,
-  }: RegisterTodoUseCaseProps) {
-    this.#todoRepository = todoRepository;
-    this.#userRepository = userRepository;
-    this.#logger = logger;
-    this.#fetchNow = fetchNow;
+  constructor(props: RegisterTodoUseCaseProps) {
+    this.#props = props;
   }
 
   async execute(
     input: RegisterTodoUseCaseInput,
   ): Promise<RegisterTodoUseCaseResult> {
-    this.#logger.debug("use-case: register-todo-use-case");
+    const { todoRepository, userRepository, logger, fetchNow } = this.#props;
+
+    logger.debug("use-case: register-todo-use-case");
 
     const {
       userSub,
@@ -89,51 +70,33 @@ export class RegisterTodoUseCaseImpl implements RegisterTodoUseCase {
       assigneeUserId,
     } = input;
 
-    // バリデーション
-    if (title.length === 0 || title.trim().length === 0) {
-      const validationError = new ValidationError(
-        "TODOタイトルを入力してください",
-      );
-      this.#logger.error("バリデーションエラー", validationError);
-      return {
-        success: false,
-        error: validationError,
-      };
-    }
-
     // userSubからユーザーIDを取得
-    const userResult = await this.#userRepository.findBySub({ sub: userSub });
-    if (!userResult.success) {
-      this.#logger.error("ユーザー情報の取得に失敗しました", userResult.error);
-      return {
-        success: false,
-        error: userResult.error,
-      };
+    const userResult = await userRepository.findBySub({ sub: userSub });
+    if (userResult.isErr()) {
+      logger.error("ユーザー情報の取得に失敗しました", userResult.error);
+      return Result.err(userResult.error);
     }
 
     if (userResult.data === undefined) {
       const notFoundError = new NotFoundError("ユーザーが見つかりません");
-      this.#logger.error("ユーザーが見つかりません", { userSub });
-      return {
-        success: false,
-        error: notFoundError,
-      };
+      logger.error("ユーザーが見つかりません", { userSub });
+      return Result.err(notFoundError);
     }
 
     const creatorUserId = userResult.data.id;
 
-    const now = dateToIsoString(this.#fetchNow());
+    const now = dateToIsoString(fetchNow());
 
     // 担当者の決定: assigneeUserIdが指定されていない場合は作成者を担当者とする
     const finalAssigneeUserId = assigneeUserId ?? creatorUserId;
 
-    // TODOの登録
-    const newTodo = new Todo({
-      id: this.#todoRepository.todoId(),
+    // TODOの登録（デフォルト値を適用）
+    const newTodo = Todo.from({
+      id: todoRepository.todoId(),
       title,
       description,
-      status,
-      priority,
+      status: status ?? TodoStatus.todo(),
+      priority: priority ?? "MEDIUM",
       dueDate,
       projectId,
       assigneeUserId: finalAssigneeUserId,
@@ -142,24 +105,18 @@ export class RegisterTodoUseCaseImpl implements RegisterTodoUseCase {
       updatedAt: now,
     });
 
-    const saveResult = await this.#todoRepository.save({ todo: newTodo });
+    const saveResult = await todoRepository.save({ todo: newTodo });
 
-    if (!saveResult.success) {
-      this.#logger.error("TODOの保存に失敗", saveResult.error);
-      return {
-        success: false,
-        error: saveResult.error,
-      };
+    if (saveResult.isErr()) {
+      logger.error("TODOの保存に失敗", saveResult.error);
+      return Result.err(saveResult.error);
     }
 
-    this.#logger.info("TODO登録成功", {
+    logger.info("TODO登録成功", {
       todoId: newTodo.id,
       title: newTodo.title,
     });
 
-    return {
-      success: true,
-      data: newTodo,
-    };
+    return Result.ok(newTodo);
   }
 }

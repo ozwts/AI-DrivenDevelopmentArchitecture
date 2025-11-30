@@ -1,8 +1,14 @@
-import type { Result } from "@/util/result";
-import type { UnexpectedError, NotFoundError } from "@/util/error-util";
+import { UnexpectedError, NotFoundError } from "@/util/error-util";
 import type { TodoRepository } from "@/domain/model/todo/todo.repository";
-import type { Todo, TodoStatus, TodoPriority } from "@/domain/model/todo/todo";
+import type {
+  Todo,
+  TodoStatus,
+  TodoPriority,
+} from "@/domain/model/todo/todo.entity";
 import type { FetchNow } from "@/domain/support/fetch-now";
+import { Result } from "@/util/result";
+import { dateToIsoString } from "@/util/date-util";
+import type { UseCase } from "../interfaces";
 
 export type UpdateTodoUseCaseInput = {
   todoId: string;
@@ -15,74 +21,90 @@ export type UpdateTodoUseCaseInput = {
   assigneeUserId?: string;
 };
 
-export type UpdateTodoUseCaseOutput = Result<
-  Todo,
-  UnexpectedError | NotFoundError
+export type UpdateTodoUseCaseOutput = Todo;
+
+export type UpdateTodoUseCaseException = UnexpectedError | NotFoundError;
+
+export type UpdateTodoUseCaseResult = Result<
+  UpdateTodoUseCaseOutput,
+  UpdateTodoUseCaseException
 >;
 
-export type UpdateTodoUseCase = {
-  execute(input: UpdateTodoUseCaseInput): Promise<UpdateTodoUseCaseOutput>;
+export type UpdateTodoUseCaseProps = {
+  readonly todoRepository: TodoRepository;
+  readonly fetchNow: FetchNow;
 };
 
-export type UpdateTodoUseCaseProps = {
-  todoRepository: TodoRepository;
-  fetchNow: FetchNow;
-};
+export type UpdateTodoUseCase = UseCase<
+  UpdateTodoUseCaseInput,
+  UpdateTodoUseCaseOutput,
+  UpdateTodoUseCaseException
+>;
 
 export class UpdateTodoUseCaseImpl implements UpdateTodoUseCase {
-  readonly #todoRepository: TodoRepository;
+  readonly #props: UpdateTodoUseCaseProps;
 
-  readonly #fetchNow: FetchNow;
-
-  constructor({ todoRepository, fetchNow }: UpdateTodoUseCaseProps) {
-    this.#todoRepository = todoRepository;
-    this.#fetchNow = fetchNow;
+  constructor(props: UpdateTodoUseCaseProps) {
+    this.#props = props;
   }
 
   async execute(
     input: UpdateTodoUseCaseInput,
-  ): Promise<UpdateTodoUseCaseOutput> {
+  ): Promise<UpdateTodoUseCaseResult> {
+    const { todoRepository, fetchNow } = this.#props;
+
     // 既存のTODOを取得
-    const todoResult = await this.#todoRepository.findById({
+    const todoResult = await todoRepository.findById({
       id: input.todoId,
     });
 
-    if (!todoResult.success) {
-      return todoResult;
+    if (todoResult.isErr()) {
+      return Result.err(todoResult.error);
     }
 
     if (todoResult.data === undefined) {
-      return {
-        success: false,
-        error: {
-          name: "NotFoundError",
-          message: "TODOが見つかりません",
-        } as NotFoundError,
-      };
+      return Result.err(new NotFoundError("TODOが見つかりません"));
     }
 
-    // TODOを更新
-    const updatedTodo = todoResult.data.update({
-      title: input.title,
-      description: input.description,
-      status: input.status,
-      priority: input.priority,
-      dueDate: input.dueDate,
-      projectId: input.projectId,
-      assigneeUserId: input.assigneeUserId,
-      updatedAt: this.#fetchNow().toISOString(),
-    });
+    // TODOを更新（個別メソッドを組み合わせる）
+    const now = dateToIsoString(fetchNow());
+    let updatedTodo = todoResult.data;
+    if (input.title !== undefined) {
+      updatedTodo = updatedTodo.retitle(input.title, now);
+    }
+    if (input.description !== undefined) {
+      updatedTodo = updatedTodo.clarify(input.description, now);
+    }
+    if (input.status !== undefined) {
+      // ステータスに応じたメソッドを呼び出す
+      if (input.status.isTodo()) {
+        updatedTodo = updatedTodo.reopen(now);
+      } else if (input.status.isInProgress()) {
+        updatedTodo = updatedTodo.start(now);
+      } else if (input.status.isCompleted()) {
+        updatedTodo = updatedTodo.complete(now);
+      }
+    }
+    if (input.priority !== undefined) {
+      updatedTodo = updatedTodo.prioritize(input.priority, now);
+    }
+    if (input.dueDate !== undefined) {
+      updatedTodo = updatedTodo.reschedule(input.dueDate, now);
+    }
+    if (input.projectId !== undefined) {
+      updatedTodo = updatedTodo.moveToProject(input.projectId, now);
+    }
+    if (input.assigneeUserId !== undefined) {
+      updatedTodo = updatedTodo.assign(input.assigneeUserId, now);
+    }
 
     // 保存
-    const saveResult = await this.#todoRepository.save({ todo: updatedTodo });
+    const saveResult = await todoRepository.save({ todo: updatedTodo });
 
-    if (!saveResult.success) {
-      return saveResult;
+    if (saveResult.isErr()) {
+      return Result.err(saveResult.error);
     }
 
-    return {
-      success: true,
-      data: updatedTodo,
-    };
+    return Result.ok(updatedTodo);
   }
 }

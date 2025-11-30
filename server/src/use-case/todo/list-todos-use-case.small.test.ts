@@ -127,8 +127,16 @@ describe("ListTodosUseCaseのテスト", () => {
 
     test("TODOステータスでのフィルタリングが正しく動作すること", async () => {
       const doneTodos = [
-        todoDummyFrom({ id: "todo-1", status: "COMPLETED", title: "完了タスク1" }),
-        todoDummyFrom({ id: "todo-2", status: "COMPLETED", title: "完了タスク2" }),
+        todoDummyFrom({
+          id: "todo-1",
+          status: "COMPLETED",
+          title: "完了タスク1",
+        }),
+        todoDummyFrom({
+          id: "todo-2",
+          status: "COMPLETED",
+          title: "完了タスク2",
+        }),
       ];
 
       const listTodosUseCase = new ListTodosUseCaseImpl({
@@ -147,7 +155,9 @@ describe("ListTodosUseCaseのテスト", () => {
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.data).toHaveLength(2);
-        expect(result.data.every((todo) => todo.status === "COMPLETED")).toBe(true);
+        expect(result.data.every((todo) => todo.status === "COMPLETED")).toBe(
+          true,
+        );
       }
     });
   });

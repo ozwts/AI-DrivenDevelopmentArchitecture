@@ -1,5 +1,5 @@
 import type { Logger } from "@/domain/support/logger";
-import type { Result } from "@/util/result";
+import { Result } from "@/util/result";
 import type { UseCase } from "../interfaces";
 import { UnexpectedError, NotFoundError } from "@/util/error-util";
 import type { UserRepository } from "@/domain/model/user/user.repository";
@@ -39,95 +39,72 @@ export type DeleteCurrentUserUseCase = UseCase<
  * Cognitoからユーザーを削除した後、DBからユーザーを削除する。
  */
 export class DeleteCurrentUserUseCaseImpl implements DeleteCurrentUserUseCase {
-  readonly #userRepository: UserRepository;
+  readonly #props: DeleteCurrentUserUseCaseProps;
 
-  readonly #authClient: AuthClient;
-
-  readonly #logger: Logger;
-
-  constructor({
-    userRepository,
-    authClient,
-    logger,
-  }: DeleteCurrentUserUseCaseProps) {
-    this.#userRepository = userRepository;
-    this.#authClient = authClient;
-    this.#logger = logger;
+  constructor(props: DeleteCurrentUserUseCaseProps) {
+    this.#props = props;
   }
 
   async execute(
     input: DeleteCurrentUserUseCaseInput,
   ): Promise<DeleteCurrentUserUseCaseResult> {
-    this.#logger.debug("ユースケース: 現在のユーザーの削除を開始", { input });
+    const { userRepository, authClient, logger } = this.#props;
+
+    logger.debug("ユースケース: 現在のユーザーの削除を開始", { input });
 
     const { sub } = input;
 
     // subでユーザーを検索
-    const findResult = await this.#userRepository.findBySub({ sub });
+    const findResult = await userRepository.findBySub({ sub });
 
-    if (!findResult.success) {
-      this.#logger.error("ユーザーの取得に失敗", findResult.error);
-      return {
-        success: false,
-        error: findResult.error,
-      };
+    if (findResult.isErr()) {
+      logger.error("ユーザーの取得に失敗", findResult.error);
+      return Result.err(findResult.error);
     }
 
     if (findResult.data === undefined) {
       const notFoundError = new NotFoundError("ユーザーが見つかりません");
-      this.#logger.info("ユーザーが見つかりませんでした", { sub });
-      return {
-        success: false,
-        error: notFoundError,
-      };
+      logger.info("ユーザーが見つかりませんでした", { sub });
+      return Result.err(notFoundError);
     }
 
     const user = findResult.data;
 
     // Cognitoからユーザーを削除
-    this.#logger.debug("Cognitoからユーザーを削除します", {
+    logger.debug("Cognitoからユーザーを削除します", {
       userId: user.id,
       sub: user.sub,
     });
 
-    const deleteAuthResult = await this.#authClient.deleteUser(user.sub);
+    const deleteAuthResult = await authClient.deleteUser(user.sub);
 
-    if (!deleteAuthResult.success) {
-      this.#logger.error("Cognitoからのユーザー削除に失敗", {
+    if (deleteAuthResult.isErr()) {
+      logger.error("Cognitoからのユーザー削除に失敗", {
         error: deleteAuthResult.error,
         userId: user.id,
         sub: user.sub,
       });
-      return {
-        success: false,
-        error: deleteAuthResult.error,
-      };
+      return Result.err(deleteAuthResult.error);
     }
 
-    this.#logger.debug("Cognitoからのユーザー削除に成功", {
+    logger.debug("Cognitoからのユーザー削除に成功", {
       userId: user.id,
       sub: user.sub,
     });
 
     // DBからユーザーを削除
-    const removeResult = await this.#userRepository.remove({ id: user.id });
+    const removeResult = await userRepository.remove({ id: user.id });
 
-    if (!removeResult.success) {
-      this.#logger.error("DBからのユーザー削除に失敗", removeResult.error);
-      return {
-        success: false,
-        error: removeResult.error,
-      };
+    if (removeResult.isErr()) {
+      logger.error("DBからのユーザー削除に失敗", removeResult.error);
+      return Result.err(removeResult.error);
     }
 
-    this.#logger.info("現在のユーザーを削除しました", {
+    logger.info("現在のユーザーを削除しました", {
       userId: user.id,
       sub: user.sub,
     });
 
-    return {
-      success: true,
-      data: undefined,
-    };
+    return Result.ok(undefined);
   }
 }

@@ -160,8 +160,8 @@ describe("DynamoDBUnitOfWorkRunner", () => {
 
       // トランザクション外のリポジトリで確認
       const findResult = await todoRepository.findById({ id: todoId });
-      expect(findResult.success).toBe(true);
-      if (findResult.success) {
+      expect(findResult.isOk()).toBe(true);
+      if (findResult.isOk()) {
         expect(findResult.data?.id).toBe(todoId);
         expect(findResult.data?.title).toBe("ランナーテスト");
       }
@@ -198,12 +198,12 @@ describe("DynamoDBUnitOfWorkRunner", () => {
       const findResult1 = await todoRepository.findById({ id: todoId1 });
       const findResult2 = await todoRepository.findById({ id: todoId2 });
 
-      expect(findResult1.success).toBe(true);
-      expect(findResult2.success).toBe(true);
-      if (findResult1.success) {
+      expect(findResult1.isOk()).toBe(true);
+      expect(findResult2.isOk()).toBe(true);
+      if (findResult1.isOk()) {
         expect(findResult1.data?.title).toBe("トランザクションTODO1");
       }
-      if (findResult2.success) {
+      if (findResult2.isOk()) {
         expect(findResult2.data?.title).toBe("トランザクションTODO2");
       }
     });
@@ -251,12 +251,12 @@ describe("DynamoDBUnitOfWorkRunner", () => {
       const findResult1 = await todoRepository.findById({ id: todoId1 });
       const findResult2 = await todoRepository.findById({ id: todoId2 });
 
-      expect(findResult1.success).toBe(true);
-      expect(findResult2.success).toBe(true);
-      if (findResult1.success) {
+      expect(findResult1.isOk()).toBe(true);
+      expect(findResult2.isOk()).toBe(true);
+      if (findResult1.isOk()) {
         expect(findResult1.data?.title).toBe("新規TODO");
       }
-      if (findResult2.success) {
+      if (findResult2.isOk()) {
         expect(findResult2.data?.status).toBe("IN_PROGRESS");
         expect(findResult2.data?.updatedAt).toBe(
           "2024-01-07T12:00:00.000+09:00",
@@ -287,7 +287,7 @@ describe("DynamoDBUnitOfWorkRunner", () => {
 
       // ロールバックされているため、todo1は保存されていないはず
       const findResult1 = await todoRepository.findById({ id: todoId1 });
-      expect(findResult1.success).toBe(true);
+      expect(findResult1.isOk()).toBe(true);
       expect(findResult1.data).toBeUndefined();
     });
 
@@ -312,7 +312,7 @@ describe("DynamoDBUnitOfWorkRunner", () => {
 
       // 削除されていることを確認
       const findResult = await todoRepository.findById({ id: todoId });
-      expect(findResult.success).toBe(true);
+      expect(findResult.isOk()).toBe(true);
       expect(findResult.data).toBeUndefined();
     });
 
@@ -322,7 +322,7 @@ describe("DynamoDBUnitOfWorkRunner", () => {
       const projectId = "runner-project-test-id-1";
 
       const colorResult = ProjectColor.fromString("#E91E63");
-      if (!colorResult.success) throw colorResult.error;
+      if (!colorResult.isOk()) throw colorResult.error;
 
       const result = await runner.run(async (uow) => {
         const project = projectDummyFrom({
@@ -341,8 +341,8 @@ describe("DynamoDBUnitOfWorkRunner", () => {
 
       // トランザクション外のリポジトリで確認
       const findResult = await projectRepository.findById({ id: projectId });
-      expect(findResult.success).toBe(true);
-      if (findResult.success) {
+      expect(findResult.isOk()).toBe(true);
+      if (findResult.isOk()) {
         expect(findResult.data?.id).toBe(projectId);
         expect(findResult.data?.name).toBe("UoWテストプロジェクト");
       }
@@ -355,7 +355,7 @@ describe("DynamoDBUnitOfWorkRunner", () => {
       const todoId = "runner-todo-test-id-8";
 
       const colorResult = ProjectColor.fromString("#673AB7");
-      if (!colorResult.success) throw colorResult.error;
+      if (!colorResult.isOk()) throw colorResult.error;
 
       await runner.run(async (uow) => {
         // プロジェクトを作成
@@ -389,14 +389,14 @@ describe("DynamoDBUnitOfWorkRunner", () => {
       });
       const todoFindResult = await todoRepository.findById({ id: todoId });
 
-      expect(projectFindResult.success).toBe(true);
-      expect(todoFindResult.success).toBe(true);
-      if (projectFindResult.success) {
+      expect(projectFindResult.isOk()).toBe(true);
+      expect(todoFindResult.isOk()).toBe(true);
+      if (projectFindResult.isOk()) {
         expect(projectFindResult.data?.name).toBe(
           "複合トランザクションプロジェクト",
         );
       }
-      if (todoFindResult.success) {
+      if (todoFindResult.isOk()) {
         expect(todoFindResult.data?.title).toBe("プロジェクトに紐づくTODO");
         expect(todoFindResult.data?.projectId).toBe(projectId);
       }
@@ -411,7 +411,7 @@ describe("DynamoDBUnitOfWorkRunner", () => {
 
       // 事前にプロジェクトとTODOを作成
       const colorResult = ProjectColor.fromString("#00BCD4");
-      if (!colorResult.success) throw colorResult.error;
+      if (!colorResult.isOk()) throw colorResult.error;
 
       const project = projectDummyFrom({
         id: projectId,
@@ -453,11 +453,11 @@ describe("DynamoDBUnitOfWorkRunner", () => {
       const todo1FindResult = await todoRepository.findById({ id: todoId1 });
       const todo2FindResult = await todoRepository.findById({ id: todoId2 });
 
-      expect(projectFindResult.success).toBe(true);
+      expect(projectFindResult.isOk()).toBe(true);
       expect(projectFindResult.data).toBeUndefined();
-      expect(todo1FindResult.success).toBe(true);
+      expect(todo1FindResult.isOk()).toBe(true);
       expect(todo1FindResult.data).toBeUndefined();
-      expect(todo2FindResult.success).toBe(true);
+      expect(todo2FindResult.isOk()).toBe(true);
       expect(todo2FindResult.data).toBeUndefined();
     });
 
@@ -468,7 +468,7 @@ describe("DynamoDBUnitOfWorkRunner", () => {
       const todoId = "runner-todo-test-id-11";
 
       const colorResult = ProjectColor.fromString("#4CAF50");
-      if (!colorResult.success) throw colorResult.error;
+      if (!colorResult.isOk()) throw colorResult.error;
 
       await expect(
         runner.run(async (uow) => {
@@ -503,9 +503,9 @@ describe("DynamoDBUnitOfWorkRunner", () => {
       });
       const todoFindResult = await todoRepository.findById({ id: todoId });
 
-      expect(projectFindResult.success).toBe(true);
+      expect(projectFindResult.isOk()).toBe(true);
       expect(projectFindResult.data).toBeUndefined();
-      expect(todoFindResult.success).toBe(true);
+      expect(todoFindResult.isOk()).toBe(true);
       expect(todoFindResult.data).toBeUndefined();
     });
 
@@ -533,8 +533,8 @@ describe("DynamoDBUnitOfWorkRunner", () => {
 
       // トランザクション外のリポジトリで確認
       const findResult = await userRepository.findById({ id: userId });
-      expect(findResult.success).toBe(true);
-      if (findResult.success) {
+      expect(findResult.isOk()).toBe(true);
+      if (findResult.isOk()) {
         expect(findResult.data?.id).toBe(userId);
         expect(findResult.data?.name).toBe("UoWテストユーザー");
         expect(findResult.data?.email).toBe("test@example.com");
@@ -578,12 +578,12 @@ describe("DynamoDBUnitOfWorkRunner", () => {
       });
       const todoFindResult = await todoRepository.findById({ id: todoId });
 
-      expect(userFindResult.success).toBe(true);
-      expect(todoFindResult.success).toBe(true);
-      if (userFindResult.success) {
+      expect(userFindResult.isOk()).toBe(true);
+      expect(todoFindResult.isOk()).toBe(true);
+      if (userFindResult.isOk()) {
         expect(userFindResult.data?.name).toBe("複合トランザクションユーザー");
       }
-      if (todoFindResult.success) {
+      if (todoFindResult.isOk()) {
         expect(todoFindResult.data?.title).toBe("ユーザーに紐づくTODO");
       }
     });

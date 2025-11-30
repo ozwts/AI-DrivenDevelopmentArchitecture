@@ -1,8 +1,8 @@
 import { inject, injectable } from "inversify";
 import { serviceId } from "@/di-container/service-id";
 import type { UserRepository } from "@/domain/model/user/user.repository";
-import type { User } from "@/domain/model/user/user";
-import type { Result } from "@/util/result";
+import type { User } from "@/domain/model/user/user.entity";
+import { Result } from "@/util/result";
 import { UnexpectedError } from "@/util/error-util";
 
 export type ListUsersUseCaseResult = Result<User[], UnexpectedError>;
@@ -27,13 +27,10 @@ export class ListUsersUseCase {
     // リポジトリから全ユーザーを取得
     const findAllResult = await this.#userRepository.findAll();
 
-    if (!findAllResult.success) {
-      return findAllResult;
+    if (findAllResult.isErr()) {
+      return Result.err(findAllResult.error);
     }
 
-    return {
-      success: true,
-      data: findAllResult.data,
-    };
+    return Result.ok(findAllResult.data);
   }
 }

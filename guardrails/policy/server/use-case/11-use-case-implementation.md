@@ -7,13 +7,27 @@
 ## 基本実装テンプレート
 
 ```typescript
+import { Result } from "@/util/result";
 import type { UseCase } from "@/use-case/interfaces";
 
-// インターフェース定義（必ずUseCase型を使用）
-export type {Action}{Entity}UseCase = UseCase<
-  {Action}{Entity}UseCaseInput,
+// Input型
+export type {Action}{Entity}UseCaseInput = {
+  // 入力パラメータ
+};
+
+// Output型（純粋なデータ型）
+export type {Action}{Entity}UseCaseOutput = {Entity};
+
+// Exception型
+export type {Action}{Entity}UseCaseException =
+  | DomainError
+  | NotFoundError
+  | UnexpectedError;
+
+// Result型（Output と Exception を Result でラップ）
+export type {Action}{Entity}UseCaseResult = Result<
   {Action}{Entity}UseCaseOutput,
-  DomainError | NotFoundError | UnexpectedError
+  {Action}{Entity}UseCaseException
 >;
 
 // Props型（すべてreadonly）
@@ -22,6 +36,13 @@ export type {Action}{Entity}UseCaseProps = {
   readonly logger: Logger;
   readonly fetchNow: FetchNow;
 };
+
+// インターフェース定義（必ずUseCase型を使用）
+export type {Action}{Entity}UseCase = UseCase<
+  {Action}{Entity}UseCaseInput,
+  {Action}{Entity}UseCaseOutput,
+  {Action}{Entity}UseCaseException
+>;
 
 // 実装クラス（必ずインターフェースをimplements）
 export class {Action}{Entity}UseCaseImpl implements {Action}{Entity}UseCase {
@@ -56,9 +77,11 @@ export class {Action}{Entity}UseCaseImpl implements {Action}{Entity}UseCase {
 
 **必須要件**:
 
-1. インターフェースは `UseCase<TInput, TOutput, TException>` を使用して定義
-2. 実装クラスは必ずインターフェースを `implements` する
-3. Props型のすべてのプロパティは `readonly` にする
+1. `Result` 型を `@/util/result` からインポート
+2. `xxxUseCaseResult` 型を `Result<Output, Exception>` で定義
+3. インターフェースは `UseCase<TInput, TOutput, TException>` を使用して定義
+4. 実装クラスは必ずインターフェースを `implements` する
+5. Props型のすべてのプロパティは `readonly` にする
 
 ## executeメソッドの実装原則
 
@@ -158,14 +181,37 @@ if (existingResult.data !== undefined) {
 
 ## Result型の伝播パターン
 
+### 型ガードによるエラーチェック
+
+Result型は `isOk()` / `isErr()` 型ガードメソッドを提供する。これにより、エラーチェック後に `data` / `error` プロパティへの安全なアクセスが可能になる。
+
+```typescript
+const findResult = await todoRepository.findById({ id: input.todoId });
+
+// 型ガードでエラーチェック
+if (findResult.isErr()) {
+  // findResult.error は E 型として推論される（非nullアサーション不要）
+  return Result.err(findResult.error);
+}
+
+// findResult.data は T 型として推論される
+const todo = findResult.data;
+```
+
+**型ガードの利点**:
+
+- **型安全性**: `isErr()` 後は `error` が必ず存在、`isOk()` 後は `data` が必ず存在
+- **非nullアサーション不要**: `result.error!` のような `!` が不要
+- **コード可読性**: 意図が明確になる
+
 ### 早期リターンパターン
 
 ```typescript
 const findResult = await this.#props.todoRepository.findById({
   id: input.todoId,
 });
-if (!findResult.success) {
-  return findResult; // エラーをそのまま伝播
+if (findResult.isErr()) {
+  return Result.err(findResult.error); // エラーをそのまま伝播
 }
 
 if (findResult.data === undefined) {

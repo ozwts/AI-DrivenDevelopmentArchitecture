@@ -1,10 +1,11 @@
-import type { Result } from "@/util/result";
-import type { UnexpectedError, NotFoundError } from "@/util/error-util";
+import { UnexpectedError, NotFoundError } from "@/util/error-util";
 import type { TodoRepository } from "@/domain/model/todo/todo.repository";
 import type { StorageClient } from "@/domain/support/storage-client";
 import type { FetchNow } from "@/domain/support/fetch-now";
 import type { Logger } from "@/domain/support/logger";
+import { Result } from "@/util/result";
 import { dateToIsoString } from "@/util/date-util";
+import type { UseCase } from "../interfaces";
 
 export type DeleteAttachmentUseCaseInput = {
   todoId: string;
@@ -21,67 +22,48 @@ export type DeleteAttachmentUseCaseResult = Result<
 >;
 
 export type DeleteAttachmentUseCaseProps = {
-  todoRepository: TodoRepository;
-  storageClient: StorageClient;
-  fetchNow: FetchNow;
-  logger: Logger;
+  readonly todoRepository: TodoRepository;
+  readonly storageClient: StorageClient;
+  readonly fetchNow: FetchNow;
+  readonly logger: Logger;
 };
 
-export type DeleteAttachmentUseCase = {
-  execute(
-    input: DeleteAttachmentUseCaseInput,
-  ): Promise<DeleteAttachmentUseCaseResult>;
-};
+export type DeleteAttachmentUseCase = UseCase<
+  DeleteAttachmentUseCaseInput,
+  DeleteAttachmentUseCaseOutput,
+  DeleteAttachmentUseCaseException
+>;
 
 export class DeleteAttachmentUseCaseImpl implements DeleteAttachmentUseCase {
-  readonly #todoRepository: TodoRepository;
+  readonly #props: DeleteAttachmentUseCaseProps;
 
-  readonly #storageClient: StorageClient;
-
-  readonly #fetchNow: FetchNow;
-
-  readonly #logger: Logger;
-
-  constructor({
-    todoRepository,
-    storageClient,
-    fetchNow,
-    logger,
-  }: DeleteAttachmentUseCaseProps) {
-    this.#todoRepository = todoRepository;
-    this.#storageClient = storageClient;
-    this.#fetchNow = fetchNow;
-    this.#logger = logger;
+  constructor(props: DeleteAttachmentUseCaseProps) {
+    this.#props = props;
   }
 
   async execute(
     input: DeleteAttachmentUseCaseInput,
   ): Promise<DeleteAttachmentUseCaseResult> {
-    this.#logger.debug("use-case: delete-attachment-use-case", {
+    const { todoRepository, storageClient, fetchNow, logger } = this.#props;
+
+    logger.debug("use-case: delete-attachment-use-case", {
       todoId: input.todoId,
       attachmentId: input.attachmentId,
     });
 
     // TODOを取得
-    const todoResult = await this.#todoRepository.findById({
+    const todoResult = await todoRepository.findById({
       id: input.todoId,
     });
 
-    if (!todoResult.success) {
-      this.#logger.error("TODO取得に失敗", todoResult.error);
-      return todoResult;
+    if (todoResult.isErr()) {
+      logger.error("TODO取得に失敗", todoResult.error);
+      return Result.err(todoResult.error);
     }
 
     if (todoResult.data === undefined) {
-      const notFoundError: NotFoundError = {
-        name: "NotFoundError",
-        message: "TODOが見つかりません",
-      };
-      this.#logger.error("TODOが見つかりません", { todoId: input.todoId });
-      return {
-        success: false,
-        error: notFoundError,
-      };
+      logger.error("TODOが見つかりません", { todoId: input.todoId });
+      return Result.err(new NotFoundError("TODOが見つかりません"));
     }
 
     const todo = todoResult.data;
@@ -92,51 +74,41 @@ export class DeleteAttachmentUseCaseImpl implements DeleteAttachmentUseCase {
     );
 
     if (attachment === undefined) {
-      const notFoundError: NotFoundError = {
-        name: "NotFoundError",
-        message: "添付ファイルが見つかりません",
-      };
-      this.#logger.error("添付ファイルが見つかりません", {
+      logger.error("添付ファイルが見つかりません", {
         todoId: input.todoId,
         attachmentId: input.attachmentId,
       });
-      return {
-        success: false,
-        error: notFoundError,
-      };
+      return Result.err(new NotFoundError("添付ファイルが見つかりません"));
     }
 
     // S3からファイルを削除
-    const deleteResult = await this.#storageClient.deleteObject({
+    const deleteResult = await storageClient.deleteObject({
       key: attachment.storageKey,
     });
 
-    if (!deleteResult.success) {
-      this.#logger.error("S3オブジェクト削除に失敗", deleteResult.error);
-      return deleteResult;
+    if (deleteResult.isErr()) {
+      logger.error("S3オブジェクト削除に失敗", deleteResult.error);
+      return Result.err(deleteResult.error);
     }
 
-    const now = dateToIsoString(this.#fetchNow());
+    const now = dateToIsoString(fetchNow());
 
     // Todoから添付ファイルを削除
-    const updatedTodo = todo.removeAttachment(input.attachmentId, now);
+    const updatedTodo = todo.detach(input.attachmentId, now);
 
     // 保存
-    const saveResult = await this.#todoRepository.save({ todo: updatedTodo });
+    const saveResult = await todoRepository.save({ todo: updatedTodo });
 
-    if (!saveResult.success) {
-      this.#logger.error("TODO保存に失敗", saveResult.error);
-      return saveResult;
+    if (saveResult.isErr()) {
+      logger.error("TODO保存に失敗", saveResult.error);
+      return Result.err(saveResult.error);
     }
 
-    this.#logger.info("添付ファイル削除完了", {
+    logger.info("添付ファイル削除完了", {
       todoId: input.todoId,
       attachmentId: input.attachmentId,
     });
 
-    return {
-      success: true,
-      data: undefined,
-    };
+    return Result.ok(undefined);
   }
 }

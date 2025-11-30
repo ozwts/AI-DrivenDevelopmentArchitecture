@@ -1,8 +1,9 @@
-import type { Result } from "@/util/result";
-import type { UnexpectedError, NotFoundError } from "@/util/error-util";
+import { UnexpectedError, NotFoundError } from "@/util/error-util";
 import type { TodoRepository } from "@/domain/model/todo/todo.repository";
 import type { StorageClient } from "@/domain/support/storage-client";
 import type { Logger } from "@/domain/support/logger";
+import { Result } from "@/util/result";
+import type { UseCase } from "../interfaces";
 
 export type GetAttachmentDownloadUrlUseCaseInput = {
   todoId: string;
@@ -26,64 +27,50 @@ export type GetAttachmentDownloadUrlUseCaseResult = Result<
 >;
 
 export type GetAttachmentDownloadUrlUseCaseProps = {
-  todoRepository: TodoRepository;
-  storageClient: StorageClient;
-  logger: Logger;
+  readonly todoRepository: TodoRepository;
+  readonly storageClient: StorageClient;
+  readonly logger: Logger;
 };
 
-export type GetAttachmentDownloadUrlUseCase = {
-  execute(
-    input: GetAttachmentDownloadUrlUseCaseInput,
-  ): Promise<GetAttachmentDownloadUrlUseCaseResult>;
-};
+export type GetAttachmentDownloadUrlUseCase = UseCase<
+  GetAttachmentDownloadUrlUseCaseInput,
+  GetAttachmentDownloadUrlUseCaseOutput,
+  GetAttachmentDownloadUrlUseCaseException
+>;
 
 export class GetAttachmentDownloadUrlUseCaseImpl
   implements GetAttachmentDownloadUrlUseCase
 {
-  readonly #todoRepository: TodoRepository;
+  readonly #props: GetAttachmentDownloadUrlUseCaseProps;
 
-  readonly #storageClient: StorageClient;
-
-  readonly #logger: Logger;
-
-  constructor({
-    todoRepository,
-    storageClient,
-    logger,
-  }: GetAttachmentDownloadUrlUseCaseProps) {
-    this.#todoRepository = todoRepository;
-    this.#storageClient = storageClient;
-    this.#logger = logger;
+  constructor(props: GetAttachmentDownloadUrlUseCaseProps) {
+    this.#props = props;
   }
 
   async execute(
     input: GetAttachmentDownloadUrlUseCaseInput,
   ): Promise<GetAttachmentDownloadUrlUseCaseResult> {
-    this.#logger.debug("use-case: get-attachment-download-url-use-case", {
+    const { todoRepository, storageClient, logger } = this.#props;
+
+    logger.debug("use-case: get-attachment-download-url-use-case", {
       todoId: input.todoId,
       attachmentId: input.attachmentId,
     });
 
     // TODOを取得
-    const todoResult = await this.#todoRepository.findById({
+    const todoResult = await todoRepository.findById({
       id: input.todoId,
     });
 
-    if (!todoResult.success) {
-      this.#logger.error("TODO取得に失敗", todoResult.error);
-      return todoResult;
+    if (todoResult.isErr()) {
+      logger.error("TODO取得に失敗", todoResult.error);
+      return Result.err(todoResult.error);
     }
 
     if (todoResult.data === undefined) {
-      const notFoundError: NotFoundError = {
-        name: "NotFoundError",
-        message: "TODOが見つかりません",
-      };
-      this.#logger.error("TODOが見つかりません", { todoId: input.todoId });
-      return {
-        success: false,
-        error: notFoundError,
-      };
+      const notFoundError = new NotFoundError("TODOが見つかりません");
+      logger.error("TODOが見つかりません", { todoId: input.todoId });
+      return Result.err(notFoundError);
     }
 
     const todo = todoResult.data;
@@ -94,44 +81,35 @@ export class GetAttachmentDownloadUrlUseCaseImpl
     );
 
     if (attachment === undefined) {
-      const notFoundError: NotFoundError = {
-        name: "NotFoundError",
-        message: "添付ファイルが見つかりません",
-      };
-      this.#logger.error("添付ファイルが見つかりません", {
+      const notFoundError = new NotFoundError("添付ファイルが見つかりません");
+      logger.error("添付ファイルが見つかりません", {
         todoId: input.todoId,
         attachmentId: input.attachmentId,
       });
-      return {
-        success: false,
-        error: notFoundError,
-      };
+      return Result.err(notFoundError);
     }
 
     // Presigned URLを生成
-    const urlResult = await this.#storageClient.generatePresignedDownloadUrl({
+    const urlResult = await storageClient.generatePresignedDownloadUrl({
       key: attachment.storageKey,
       expiresIn: 1800, // 30分
     });
 
-    if (!urlResult.success) {
-      this.#logger.error("Presigned URL生成に失敗", urlResult.error);
-      return urlResult;
+    if (urlResult.isErr()) {
+      logger.error("Presigned URL生成に失敗", urlResult.error);
+      return Result.err(urlResult.error);
     }
 
-    this.#logger.info("ダウンロードURL生成完了", {
+    logger.info("ダウンロードURL生成完了", {
       todoId: input.todoId,
       attachmentId: input.attachmentId,
     });
 
-    return {
-      success: true,
-      data: {
-        downloadUrl: urlResult.data,
-        fileName: attachment.fileName,
-        contentType: attachment.contentType,
-        fileSize: attachment.fileSize,
-      },
-    };
+    return Result.ok({
+      downloadUrl: urlResult.data,
+      fileName: attachment.fileName,
+      contentType: attachment.contentType,
+      fileSize: attachment.fileSize,
+    });
   }
 }

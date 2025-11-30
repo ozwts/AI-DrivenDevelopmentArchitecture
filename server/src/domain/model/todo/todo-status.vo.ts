@@ -8,6 +8,8 @@ export type TodoStatusProps = {
   status: string;
 };
 
+type TodoStatusValue = "TODO" | "IN_PROGRESS" | "COMPLETED";
+
 /**
  * TodoStatus Value Object
  *
@@ -22,7 +24,11 @@ export type TodoStatusProps = {
  * すべての状態遷移を許可するため、状態遷移の制約は存在しない。
  */
 export class TodoStatus {
-  private constructor(private readonly _value: "TODO" | "IN_PROGRESS" | "COMPLETED") {}
+  readonly #status: TodoStatusValue;
+
+  private constructor(status: TodoStatusValue) {
+    this.#status = status;
+  }
 
   /**
    * 未着手状態を返す
@@ -53,7 +59,9 @@ export class TodoStatus {
    */
   static from(props: TodoStatusProps): Result<TodoStatus, DomainError> {
     const validStatuses = ["TODO", "IN_PROGRESS", "COMPLETED"] as const;
-    if (!validStatuses.includes(props.status as typeof validStatuses[number])) {
+    if (
+      !validStatuses.includes(props.status as (typeof validStatuses)[number])
+    ) {
       return Result.err(
         new DomainError(
           `Invalid TodoStatus: ${props.status}. Must be one of: ${validStatuses.join(", ")}`,
@@ -61,61 +69,50 @@ export class TodoStatus {
       );
     }
 
-    return Result.ok(new TodoStatus(props.status as typeof validStatuses[number]));
+    return Result.ok(
+      new TodoStatus(props.status as (typeof validStatuses)[number]),
+    );
   }
 
   /**
    * ステータスの値を取得
    */
-  get status(): "TODO" | "IN_PROGRESS" | "COMPLETED" {
-    return this._value;
+  get status(): TodoStatusValue {
+    return this.#status;
   }
 
   /**
    * 未着手状態かどうか
    */
   isTodo(): boolean {
-    return this._value === "TODO";
+    return this.#status === "TODO";
   }
 
   /**
    * 作業中状態かどうか
    */
   isInProgress(): boolean {
-    return this._value === "IN_PROGRESS";
+    return this.#status === "IN_PROGRESS";
   }
 
   /**
    * 完了状態かどうか
    */
   isCompleted(): boolean {
-    return this._value === "COMPLETED";
-  }
-
-  /**
-   * 指定されたステータスへの遷移が可能かどうかを判定する
-   *
-   * このプロジェクトではすべての状態遷移を許可するため、常に成功を返す。
-   *
-   * @param _to - 遷移先のステータス（未使用）
-   * @returns 常に成功
-   */
-  canTransitionTo(_to: TodoStatus): Result<void, DomainError> {
-    // すべての遷移を許可
-    return Result.ok(undefined);
+    return this.#status === "COMPLETED";
   }
 
   /**
    * 値の等価性を判定する
    */
   equals(other: TodoStatus): boolean {
-    return this._value === other._value;
+    return this.#status === other.#status;
   }
 
   /**
    * デバッグ・ログ用の文字列表現を返す
    */
   toString(): string {
-    return this._value;
+    return this.#status;
   }
 }

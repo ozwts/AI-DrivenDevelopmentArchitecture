@@ -42,11 +42,11 @@ export const buildUpdateProjectHandler =
       const result = await useCase.execute({
         projectId,
         name: body.name,
-        description: body.description,
+        description: body.description ?? undefined,
         color: body.color,
       });
 
-      if (result.success === false) {
+      if (!result.isOk()) {
         return handleError(result.error, c, logger);
       }
 

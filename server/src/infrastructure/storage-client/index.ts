@@ -7,6 +7,7 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { UnexpectedError } from "@/util/error-util";
+import { Result } from "@/util/result";
 import type {
   StorageClient,
   GeneratePresignedUrlResult,
@@ -57,17 +58,13 @@ export class S3StorageClient implements StorageClient {
         expiresIn: props.expiresIn ?? 300, // デフォルト5分
       });
 
-      return {
-        success: true,
-        data: url,
-      };
+      return Result.ok(url);
     } catch (error) {
-      return {
-        success: false,
-        error: new UnexpectedError(
+      return Result.err(
+        new UnexpectedError(
           `プレサインドアップロードURL生成に失敗しました: ${error instanceof Error ? error.message : String(error)}`,
         ),
-      };
+      );
     }
   }
 
@@ -88,17 +85,13 @@ export class S3StorageClient implements StorageClient {
         expiresIn: props.expiresIn ?? 300, // デフォルト5分
       });
 
-      return {
-        success: true,
-        data: url,
-      };
+      return Result.ok(url);
     } catch (error) {
-      return {
-        success: false,
-        error: new UnexpectedError(
+      return Result.err(
+        new UnexpectedError(
           `プレサインドダウンロードURL生成に失敗しました: ${error instanceof Error ? error.message : String(error)}`,
         ),
-      };
+      );
     }
   }
 
@@ -114,17 +107,13 @@ export class S3StorageClient implements StorageClient {
 
       await this.#s3Client.send(command);
 
-      return {
-        success: true,
-        data: undefined,
-      };
+      return Result.ok(undefined);
     } catch (error) {
-      return {
-        success: false,
-        error: new UnexpectedError(
+      return Result.err(
+        new UnexpectedError(
           `オブジェクト削除に失敗しました: ${error instanceof Error ? error.message : String(error)}`,
         ),
-      };
+      );
     }
   }
 }

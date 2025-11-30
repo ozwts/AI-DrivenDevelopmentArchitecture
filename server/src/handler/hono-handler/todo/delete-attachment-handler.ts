@@ -19,7 +19,7 @@ export const buildDeleteAttachmentHandler =
 
       const result = await useCase.execute({ todoId, attachmentId });
 
-      if (result.success === false) {
+      if (!result.isOk()) {
         return handleError(result.error, c, logger);
       }
 

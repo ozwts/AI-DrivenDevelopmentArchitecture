@@ -7,7 +7,10 @@ import type { RegisterTodoUseCase } from "@/use-case/todo/register-todo-use-case
 import { UnexpectedError, unexpectedErrorMessage } from "@/util/error-util";
 import { handleError } from "../../hono-handler-util/error-handler";
 import { formatZodError } from "../../hono-handler-util/validation-formatter";
-import { convertToTodoResponse } from "./todo-handler-util";
+import {
+  convertToTodoResponse,
+  convertToTodoStatus,
+} from "./todo-handler-util";
 import { USER_SUB } from "../constants";
 
 export const buildRegisterTodoHandler =
@@ -63,14 +66,14 @@ export const buildRegisterTodoHandler =
         userSub,
         title: body.title,
         description: body.description,
-        status: body.status,
+        status: convertToTodoStatus(body.status),
         priority: body.priority,
         dueDate: body.dueDate,
         projectId,
         assigneeUserId,
       });
 
-      if (result.success === false) {
+      if (!result.isOk()) {
         return handleError(result.error, c, logger);
       }
 

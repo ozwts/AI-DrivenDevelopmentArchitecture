@@ -1,7 +1,7 @@
 import type { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import type { UnitOfWorkRunner } from "@/domain/support/unit-of-work";
 import type { Logger } from "@/domain/support/logger";
-import type { Result } from "@/util/result";
+import { Result } from "@/util/result";
 import { DynamoDBUnitOfWork } from "./dynamodb-unit-of-work";
 
 export type DynamoDBUnitOfWorkRunnerProps = {
@@ -24,7 +24,7 @@ export type DynamoDBUnitOfWorkRunnerProps = {
  *
  * const result = await runner.run(async (uow) => {
  *   const saveResult = await todoRepository.save(todo, uow);
- *   if (!saveResult.success) {
+ *   if (saveResult.isErr()) {
  *     return saveResult;  // エラー時はロールバック
  *   }
  *   return Result.ok({ todo });  // 成功時はコミット
@@ -58,12 +58,10 @@ export class DynamoDBUnitOfWorkRunner<TUoW> implements UnitOfWorkRunner<TUoW> {
     // コールバックを実行
     const result = await callback(context);
 
-    if (!result.success) {
+    if (result.isErr()) {
       // エラー時はロールバック（操作をクリア）
       uow.rollback();
-      this.#logger.debug(
-        "トランザクションが失敗しました。ロールバックします",
-      );
+      this.#logger.debug("トランザクションが失敗しました。ロールバックします");
       return result;
     }
 

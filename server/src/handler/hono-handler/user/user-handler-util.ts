@@ -1,6 +1,6 @@
 import type { z } from "zod";
 import { schemas } from "@/generated/zod-schemas";
-import type { User } from "@/domain/model/user/user";
+import type { User } from "@/domain/model/user/user.entity";
 
 type UserResponse = z.infer<typeof schemas.UserResponse>;
 

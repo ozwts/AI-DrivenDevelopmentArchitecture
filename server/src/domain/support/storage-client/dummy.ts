@@ -1,4 +1,5 @@
 /* eslint-disable class-methods-use-this */
+import { Result } from "@/util/result";
 import type {
   StorageClient,
   GeneratePresignedUrlResult,
@@ -28,34 +29,25 @@ export type StorageClientDummyProps = {
  *   key: "attachments/test/file.pdf",
  *   contentType: "application/pdf"
  * });
- * // result.success === true
+ * // result.isOk() === true
  *
  * // エラー系テスト
  * const failingClient = new StorageClientDummy({
- *   generatePresignedUploadUrlReturnValue: {
- *     success: false,
- *     error: new UnexpectedError("Failed to generate URL")
- *   }
+ *   generatePresignedUploadUrlReturnValue: Result.err(
+ *     new UnexpectedError("Failed to generate URL")
+ *   )
  * });
  * ```
  */
 export class StorageClientDummy implements StorageClient {
   readonly #defaultGeneratePresignedUploadUrlReturnValue: GeneratePresignedUrlResult =
-    {
-      success: true,
-      data: "https://example.com/upload-url?signature=dummy",
-    };
+    Result.ok("https://example.com/upload-url?signature=dummy");
 
   readonly #defaultGeneratePresignedDownloadUrlReturnValue: GeneratePresignedUrlResult =
-    {
-      success: true,
-      data: "https://example.com/download-url?signature=dummy",
-    };
+    Result.ok("https://example.com/download-url?signature=dummy");
 
-  readonly #defaultDeleteObjectReturnValue: DeleteObjectResult = {
-    success: true,
-    data: undefined,
-  };
+  readonly #defaultDeleteObjectReturnValue: DeleteObjectResult =
+    Result.ok(undefined);
 
   readonly #generatePresignedUploadUrlReturnValue: GeneratePresignedUrlResult;
 

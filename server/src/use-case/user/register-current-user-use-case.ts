@@ -1,9 +1,9 @@
 import type { Logger } from "@/domain/support/logger";
-import type { Result } from "@/util/result";
+import { Result } from "@/util/result";
 import type { UseCase } from "../interfaces";
 import { UnexpectedError, ConflictError } from "@/util/error-util";
 import type { UserRepository } from "@/domain/model/user/user.repository";
-import { User } from "@/domain/model/user/user";
+import { User } from "@/domain/model/user/user.entity";
 import type { FetchNow } from "@/domain/support/fetch-now";
 import { dateToIsoString } from "@/util/date-util";
 
@@ -50,40 +50,29 @@ export type RegisterCurrentUserUseCase = UseCase<
 export class RegisterCurrentUserUseCaseImpl
   implements RegisterCurrentUserUseCase
 {
-  readonly #userRepository: UserRepository;
+  readonly #props: RegisterCurrentUserUseCaseProps;
 
-  readonly #logger: Logger;
-
-  readonly #fetchNow: FetchNow;
-
-  constructor({
-    userRepository,
-    logger,
-    fetchNow,
-  }: RegisterCurrentUserUseCaseProps) {
-    this.#userRepository = userRepository;
-    this.#logger = logger;
-    this.#fetchNow = fetchNow;
+  constructor(props: RegisterCurrentUserUseCaseProps) {
+    this.#props = props;
   }
 
   async execute(
     input: RegisterCurrentUserUseCaseInput,
   ): Promise<RegisterCurrentUserUseCaseResult> {
-    this.#logger.debug("ユースケース: 現在のユーザーの登録を開始", {
+    const { userRepository, logger, fetchNow } = this.#props;
+
+    logger.debug("ユースケース: 現在のユーザーの登録を開始", {
       input,
     });
 
     const { sub, email, emailVerified } = input;
 
     // subで既存ユーザーを検索
-    const findResult = await this.#userRepository.findBySub({ sub });
+    const findResult = await userRepository.findBySub({ sub });
 
-    if (!findResult.success) {
-      this.#logger.error("ユーザーの検索に失敗", findResult.error);
-      return {
-        success: false,
-        error: findResult.error,
-      };
+    if (findResult.isErr()) {
+      logger.error("ユーザーの検索に失敗", findResult.error);
+      return Result.err(findResult.error);
     }
 
     // すでに同じsubのユーザーが存在する場合はConflictError
@@ -91,21 +80,18 @@ export class RegisterCurrentUserUseCaseImpl
       const conflictError = new ConflictError(
         "このユーザーはすでに登録されています",
       );
-      this.#logger.info("ユーザーがすでに存在します", { sub });
-      return {
-        success: false,
-        error: conflictError,
-      };
+      logger.info("ユーザーがすでに存在します", { sub });
+      return Result.err(conflictError);
     }
 
-    const now = dateToIsoString(this.#fetchNow());
-    const userId = this.#userRepository.userId();
+    const now = dateToIsoString(fetchNow());
+    const userId = userRepository.userId();
 
     // メールアドレスからユーザー名を生成
     const name = User.generateNameFromEmail(email);
 
     // 新しいUserエンティティを作成
-    const newUser = new User({
+    const newUser = User.from({
       id: userId,
       sub,
       name,
@@ -116,17 +102,14 @@ export class RegisterCurrentUserUseCaseImpl
     });
 
     // リポジトリに保存
-    const saveResult = await this.#userRepository.save({ user: newUser });
+    const saveResult = await userRepository.save({ user: newUser });
 
-    if (!saveResult.success) {
-      this.#logger.error("ユーザーの保存に失敗", saveResult.error);
-      return {
-        success: false,
-        error: saveResult.error,
-      };
+    if (saveResult.isErr()) {
+      logger.error("ユーザーの保存に失敗", saveResult.error);
+      return Result.err(saveResult.error);
     }
 
-    this.#logger.info("現在のユーザーを登録しました", {
+    logger.info("現在のユーザーを登録しました", {
       userId: newUser.id,
       sub: newUser.sub,
       name: newUser.name,
@@ -134,9 +117,6 @@ export class RegisterCurrentUserUseCaseImpl
       emailVerified: newUser.emailVerified,
     });
 
-    return {
-      success: true,
-      data: newUser,
-    };
+    return Result.ok(newUser);
   }
 }

@@ -34,7 +34,7 @@ export const buildGetCurrentUserHandler =
 
       const result = await useCase.execute({ sub: userSub });
 
-      if (result.success === false) {
+      if (result.isErr()) {
         return handleError(result.error, c, logger);
       }
 

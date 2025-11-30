@@ -1,7 +1,8 @@
 import type { z } from "zod";
 import { schemas } from "@/generated/zod-schemas";
-import type { Todo } from "@/domain/model/todo/todo";
-import type { Attachment } from "@/domain/model/todo/attachment";
+import type { Todo } from "@/domain/model/todo/todo.entity";
+import { TodoStatus } from "@/domain/model/todo/todo.entity";
+import type { Attachment } from "@/domain/model/todo/attachment.entity";
 
 type TodoResponse = z.infer<typeof schemas.TodoResponse>;
 type AttachmentResponse = z.infer<typeof schemas.AttachmentResponse>;
@@ -21,8 +22,8 @@ export const convertToAttachmentResponse = (
   todoId,
   filename: attachment.fileName,
   contentType: attachment.contentType,
-  size: attachment.fileSize,
-  status: attachment.status.value,
+  filesize: attachment.fileSize,
+  status: attachment.status.status,
   createdAt: attachment.createdAt,
   updatedAt: attachment.updatedAt,
 });
@@ -40,7 +41,7 @@ export const convertToTodoResponse = (todo: Todo): TodoResponse => ({
   id: todo.id,
   title: todo.title,
   description: todo.description,
-  status: todo.status.value,
+  status: todo.status.status,
   priority: todo.priority,
   dueDate: todo.dueDate,
   projectId: todo.projectId,
@@ -51,3 +52,27 @@ export const convertToTodoResponse = (todo: Todo): TodoResponse => ({
   createdAt: todo.createdAt,
   updatedAt: todo.updatedAt,
 });
+
+/**
+ * 文字列をTodoStatusに変換する
+ *
+ * @param status ステータス文字列（undefined許容）
+ * @returns TodoStatus または undefined
+ */
+export const convertToTodoStatus = (
+  status: "TODO" | "IN_PROGRESS" | "COMPLETED" | undefined,
+): TodoStatus | undefined => {
+  if (status === undefined) {
+    return undefined;
+  }
+  switch (status) {
+    case "TODO":
+      return TodoStatus.todo();
+    case "IN_PROGRESS":
+      return TodoStatus.inProgress();
+    case "COMPLETED":
+      return TodoStatus.completed();
+    default:
+      return undefined;
+  }
+};

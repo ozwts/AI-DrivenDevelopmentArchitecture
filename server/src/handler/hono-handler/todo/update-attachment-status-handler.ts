@@ -5,6 +5,7 @@ import { serviceId } from "@/di-container/service-id";
 import type { Logger } from "@/domain/support/logger";
 import type { UpdateAttachmentStatusUseCase } from "@/use-case/todo/update-attachment-status-use-case";
 import type { GetTodoUseCase } from "@/use-case/todo/get-todo-use-case";
+import { AttachmentStatus } from "@/domain/model/todo/attachment.entity";
 import { UnexpectedError, unexpectedErrorMessage } from "@/util/error-util";
 import { handleError } from "../../hono-handler-util/error-handler";
 import { formatZodError } from "../../hono-handler-util/validation-formatter";
@@ -46,27 +47,20 @@ export const buildUpdateAttachmentStatusHandler =
       const result = await useCase.execute({
         todoId,
         attachmentId,
-        status: body.status === "UPLOADED" ? "UPLOADED" : "PREPARED",
+        status:
+          body.status === "UPLOADED"
+            ? AttachmentStatus.uploaded()
+            : AttachmentStatus.prepared(),
       });
 
-      if (result.success === false) {
+      if (!result.isOk()) {
         return handleError(result.error, c, logger);
       }
 
       // 更新後のTODOを取得して添付ファイル情報を返す
       const todoResult = await getTodoUseCase.execute({ todoId });
-      if (!todoResult.success) {
+      if (!todoResult.isOk()) {
         return handleError(todoResult.error, c, logger);
-      }
-
-      if (todoResult.data === undefined) {
-        return c.json(
-          {
-            name: "NotFoundError",
-            message: "TODOが見つかりません",
-          },
-          404,
-        );
       }
 
       const attachment = todoResult.data.attachments.find(

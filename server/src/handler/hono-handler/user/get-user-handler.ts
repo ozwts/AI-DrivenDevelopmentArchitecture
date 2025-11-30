@@ -19,7 +19,7 @@ export const buildGetUserHandler =
 
       const result = await useCase.execute({ id: userId });
 
-      if (result.success === false) {
+      if (result.isErr()) {
         return handleError(result.error, c, logger);
       }
 

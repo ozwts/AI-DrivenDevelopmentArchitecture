@@ -1,9 +1,9 @@
 import type { Logger } from "@/domain/support/logger";
-import type { Result } from "@/util/result";
+import { Result } from "@/util/result";
 import type { UseCase } from "../interfaces";
 import { UnexpectedError, NotFoundError } from "@/util/error-util";
 import type { UserRepository } from "@/domain/model/user/user.repository";
-import type { User } from "@/domain/model/user/user";
+import type { User } from "@/domain/model/user/user.entity";
 import type { FetchNow } from "@/domain/support/fetch-now";
 import { dateToIsoString } from "@/util/date-util";
 
@@ -46,74 +46,58 @@ export type UpdateCurrentUserUseCase = UseCase<
  * - email, emailVerified: Cognitoトークンから自動的に同期される
  */
 export class UpdateCurrentUserUseCaseImpl implements UpdateCurrentUserUseCase {
-  readonly #userRepository: UserRepository;
+  readonly #props: UpdateCurrentUserUseCaseProps;
 
-  readonly #logger: Logger;
-
-  readonly #fetchNow: FetchNow;
-
-  constructor({
-    userRepository,
-    logger,
-    fetchNow,
-  }: UpdateCurrentUserUseCaseProps) {
-    this.#userRepository = userRepository;
-    this.#logger = logger;
-    this.#fetchNow = fetchNow;
+  constructor(props: UpdateCurrentUserUseCaseProps) {
+    this.#props = props;
   }
 
   async execute(
     input: UpdateCurrentUserUseCaseInput,
   ): Promise<UpdateCurrentUserUseCaseResult> {
-    this.#logger.debug("ユースケース: 現在のユーザー情報の更新を開始", {
+    const { userRepository, logger, fetchNow } = this.#props;
+
+    logger.debug("ユースケース: 現在のユーザー情報の更新を開始", {
       input,
     });
 
     const { sub, name, email, emailVerified } = input;
 
     // subでユーザーを検索
-    const findResult = await this.#userRepository.findBySub({ sub });
+    const findResult = await userRepository.findBySub({ sub });
 
-    if (!findResult.success) {
-      this.#logger.error("ユーザーの取得に失敗", findResult.error);
-      return {
-        success: false,
-        error: findResult.error,
-      };
+    if (findResult.isErr()) {
+      logger.error("ユーザーの取得に失敗", findResult.error);
+      return Result.err(findResult.error);
     }
 
     if (findResult.data === undefined) {
       const notFoundError = new NotFoundError("ユーザーが見つかりません");
-      this.#logger.info("ユーザーが見つかりませんでした", { sub });
-      return {
-        success: false,
-        error: notFoundError,
-      };
+      logger.info("ユーザーが見つかりませんでした", { sub });
+      return Result.err(notFoundError);
     }
 
-    const now = dateToIsoString(this.#fetchNow());
+    const now = dateToIsoString(fetchNow());
 
-    // ユーザー情報を更新
+    // ユーザー情報を更新（個別メソッドを組み合わせる）
     // name: リクエストボディから（ユーザー入力）
     // email, emailVerified: トークンから（Cognito情報）
-    const updatedUser = findResult.data.update({
-      name,
-      email,
-      emailVerified,
-      updatedAt: now,
-    });
-
-    const saveResult = await this.#userRepository.save({ user: updatedUser });
-
-    if (!saveResult.success) {
-      this.#logger.error("ユーザーの保存に失敗", saveResult.error);
-      return {
-        success: false,
-        error: saveResult.error,
-      };
+    let updatedUser = findResult.data;
+    if (name !== undefined) {
+      updatedUser = updatedUser.rename(name, now);
+    }
+    if (email !== undefined && emailVerified !== undefined) {
+      updatedUser = updatedUser.verifyEmail(email, emailVerified, now);
     }
 
-    this.#logger.info("現在のユーザー情報を更新しました", {
+    const saveResult = await userRepository.save({ user: updatedUser });
+
+    if (saveResult.isErr()) {
+      logger.error("ユーザーの保存に失敗", saveResult.error);
+      return Result.err(saveResult.error);
+    }
+
+    logger.info("現在のユーザー情報を更新しました", {
       userId: updatedUser.id,
       sub: updatedUser.sub,
       name: updatedUser.name,
@@ -121,9 +105,6 @@ export class UpdateCurrentUserUseCaseImpl implements UpdateCurrentUserUseCase {
       emailVerified: updatedUser.emailVerified,
     });
 
-    return {
-      success: true,
-      data: updatedUser,
-    };
+    return Result.ok(updatedUser);
   }
 }

@@ -4,9 +4,10 @@ import { ProjectRepositoryDummy } from "@/domain/model/project/project.repositor
 import { LoggerDummy } from "@/domain/support/logger/dummy";
 import { buildFetchNowDummy } from "@/domain/support/fetch-now/dummy";
 import { UnexpectedError, ValidationError } from "@/util/error-util";
-import { Project } from "@/domain/model/project/project";
+import { Project } from "@/domain/model/project/project.entity";
 import { ProjectColor } from "@/domain/model/project/project-color";
 import { dateToIsoString } from "@/util/date-util";
+import { Result } from "@/util/result";
 
 describe("CreateProjectUseCaseのテスト", () => {
   const now = new Date("2024-01-01T00:00:00+09:00");
@@ -19,10 +20,7 @@ describe("CreateProjectUseCaseのテスト", () => {
       const createProjectUseCase = new CreateProjectUseCaseImpl({
         projectRepository: new ProjectRepositoryDummy({
           projectIdReturnValue: projectId,
-          saveReturnValue: {
-            success: true,
-            data: undefined,
-          },
+          saveReturnValue: Result.ok(undefined),
         }),
         logger: new LoggerDummy(),
         fetchNow,
@@ -49,10 +47,7 @@ describe("CreateProjectUseCaseのテスト", () => {
       const createProjectUseCase = new CreateProjectUseCaseImpl({
         projectRepository: new ProjectRepositoryDummy({
           projectIdReturnValue: projectId,
-          saveReturnValue: {
-            success: true,
-            data: undefined,
-          },
+          saveReturnValue: Result.ok(undefined),
         }),
         logger: new LoggerDummy(),
         fetchNow,
@@ -132,10 +127,7 @@ describe("CreateProjectUseCaseのテスト", () => {
     test("保存に失敗した場合はUnexpectedErrorを返すこと", async () => {
       const createProjectUseCase = new CreateProjectUseCaseImpl({
         projectRepository: new ProjectRepositoryDummy({
-          saveReturnValue: {
-            success: false,
-            error: new UnexpectedError(),
-          },
+          saveReturnValue: Result.err(new UnexpectedError()),
         }),
         logger: new LoggerDummy(),
         fetchNow,
@@ -190,10 +182,7 @@ describe("CreateProjectUseCaseのテスト", () => {
       const createProjectUseCase = new CreateProjectUseCaseImpl({
         projectRepository: new ProjectRepositoryDummy({
           projectIdReturnValue: projectId,
-          saveReturnValue: {
-            success: true,
-            data: undefined,
-          },
+          saveReturnValue: Result.ok(undefined),
         }),
         logger: new LoggerDummy(),
         fetchNow,

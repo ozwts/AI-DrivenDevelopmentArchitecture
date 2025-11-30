@@ -21,7 +21,7 @@ export const buildGetProjectHandler =
 
       const result = await useCase.execute({ projectId });
 
-      if (result.success === false) {
+      if (!result.isOk()) {
         return handleError(result.error, c, logger);
       }
 

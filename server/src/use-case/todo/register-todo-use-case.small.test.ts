@@ -6,7 +6,7 @@ import { userDummyFrom } from "@/domain/model/user/user.dummy";
 import { LoggerDummy } from "@/domain/support/logger/dummy";
 import { buildFetchNowDummy } from "@/domain/support/fetch-now/dummy";
 import { UnexpectedError, ValidationError } from "@/util/error-util";
-import { Todo } from "@/domain/model/todo/todo";
+import { Todo } from "@/domain/model/todo/todo.entity";
 import { dateToIsoString } from "@/util/date-util";
 
 describe("RegisterTodoUseCaseのテスト", () => {

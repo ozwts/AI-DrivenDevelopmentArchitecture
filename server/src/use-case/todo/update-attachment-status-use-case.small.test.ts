@@ -6,7 +6,7 @@ import { attachmentDummyFrom } from "@/domain/model/attachment/attachment.dummy"
 import { LoggerDummy } from "@/domain/support/logger/dummy";
 import { buildFetchNowDummy } from "@/domain/support/fetch-now/dummy";
 import { UnexpectedError } from "@/util/error-util";
-import type { AttachmentStatus } from "@/domain/model/attachment/attachment";
+import type { AttachmentStatus } from "@/domain/model/todo/attachment.entity";
 
 describe("UpdateAttachmentStatusUseCaseのテスト", () => {
   const now = new Date("2024-01-01T00:00:00+09:00");

@@ -1,5 +1,5 @@
 import { fakerJA as faker } from "@faker-js/faker";
-import type { TodoPriority } from "@/domain/model/todo/todo";
+import type { TodoPriority } from "@/domain/model/todo/todo.entity";
 
 // Basic data generators
 export const getDummyId = () => faker.string.uuid();

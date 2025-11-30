@@ -69,12 +69,13 @@ export class Todo {
 
 ## 必須メソッド
 
-| メソッド                 | 説明                                         |
-| ------------------------ | -------------------------------------------- |
+| メソッド                   | 説明                                         |
+| -------------------------- | -------------------------------------------- |
+| ES2022プライベートフィールド | `readonly #value` で真のプライベート性を実現 |
 | プライベートコンストラクタ | 外部からの直接生成を防ぐ                     |
-| `from(props)`            | Props型エイリアスを受け取り、Result型を返す  |
-| `equals(other)`          | 値の等価性を判断                             |
-| `toString()`             | デバッグ・ログ用の文字列表現                 |
+| `from(props)`              | Props型エイリアスを受け取り、Result型を返す  |
+| `equals(other)`            | 値の等価性を判断                             |
+| `toString()`               | デバッグ・ログ用の文字列表現                 |
 
 **参照**: `26-value-object-implementation.md` - 詳細な実装パターン
 
@@ -101,14 +102,28 @@ export type TodoStatusProps = {
   status: string;
 };
 
+type TodoStatusValue = "TODO" | "IN_PROGRESS" | "COMPLETED";
+
 export class TodoStatus {
-  private constructor(private readonly value: string) {}
+  // ES2022プライベートフィールド（意味のある名前を使用）
+  readonly #status: TodoStatusValue;
+
+  // コンストラクタにボディを持たせる
+  private constructor(status: TodoStatusValue) {
+    this.#status = status;
+  }
 
   static from(props: TodoStatusProps): Result<TodoStatus, DomainError> {
-    if (!validValues.includes(props.status)) {
+    const validStatuses = ["TODO", "IN_PROGRESS", "COMPLETED"] as const;
+    if (!validStatuses.includes(props.status as TodoStatusValue)) {
       return Result.err(new DomainError("無効なステータス"));
     }
-    return Result.ok(new TodoStatus(props.status));
+    return Result.ok(new TodoStatus(props.status as TodoStatusValue));
+  }
+
+  // getterで値を公開（フィールド名と同じ名前）
+  get status(): TodoStatusValue {
+    return this.#status;
   }
 
   // 不変条件チェック
@@ -120,11 +135,11 @@ export class TodoStatus {
   }
 
   equals(other: TodoStatus): boolean {
-    return this.value === other.value;
+    return this.#status === other.#status;
   }
 
   toString(): string {
-    return this.value;
+    return this.#status;
   }
 }
 ```
@@ -135,6 +150,16 @@ export class TodoStatus {
 // パブリックコンストラクタ
 export class TodoStatus {
   constructor(public value: string) {} // ❌ privateでない
+}
+
+// アンダースコアプレフィックス（ESLint違反）
+export class TodoStatus {
+  private constructor(private readonly _value: string) {} // ❌ no-underscore-dangle
+}
+
+// パラメータプロパティ（ESLint違反）
+export class TodoStatus {
+  private constructor(private readonly value: string) {} // ❌ no-useless-constructor
 }
 
 // Type Aliasで不変条件を表現できない

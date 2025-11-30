@@ -88,7 +88,12 @@ module.exports = {
               innerType.type === "TSTypeReference" &&
               innerType.typeName?.name === "Result";
 
-            if (!isResult) {
+            // 型エイリアス（SaveResult, FindByIdResult等）も許可
+            const isResultTypeAlias =
+              innerType.type === "TSTypeReference" &&
+              innerType.typeName?.name?.endsWith("Result");
+
+            if (!isResult && !isResultTypeAlias) {
               context.report({
                 node,
                 messageId: "methodNotReturningResult",

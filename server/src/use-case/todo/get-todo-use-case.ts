@@ -1,52 +1,52 @@
-import type { Result } from "@/util/result";
-import type { UnexpectedError, NotFoundError } from "@/util/error-util";
+import { UnexpectedError, NotFoundError } from "@/util/error-util";
 import type { TodoRepository } from "@/domain/model/todo/todo.repository";
-import type { Todo } from "@/domain/model/todo/todo";
+import type { Todo } from "@/domain/model/todo/todo.entity";
+import { Result } from "@/util/result";
+import type { UseCase } from "../interfaces";
 
 export type GetTodoUseCaseInput = {
   todoId: string;
 };
 
-export type GetTodoUseCaseOutput = Result<
-  Todo,
-  UnexpectedError | NotFoundError
+export type GetTodoUseCaseOutput = Todo;
+
+export type GetTodoUseCaseException = UnexpectedError | NotFoundError;
+
+export type GetTodoUseCaseResult = Result<
+  GetTodoUseCaseOutput,
+  GetTodoUseCaseException
 >;
 
-export type GetTodoUseCase = {
-  execute(input: GetTodoUseCaseInput): Promise<GetTodoUseCaseOutput>;
+export type GetTodoUseCaseProps = {
+  readonly todoRepository: TodoRepository;
 };
 
-export type GetTodoUseCaseProps = {
-  todoRepository: TodoRepository;
-};
+export type GetTodoUseCase = UseCase<
+  GetTodoUseCaseInput,
+  GetTodoUseCaseOutput,
+  GetTodoUseCaseException
+>;
 
 export class GetTodoUseCaseImpl implements GetTodoUseCase {
-  readonly #todoRepository: TodoRepository;
+  readonly #props: GetTodoUseCaseProps;
 
-  constructor({ todoRepository }: GetTodoUseCaseProps) {
-    this.#todoRepository = todoRepository;
+  constructor(props: GetTodoUseCaseProps) {
+    this.#props = props;
   }
 
-  async execute(input: GetTodoUseCaseInput): Promise<GetTodoUseCaseOutput> {
-    const result = await this.#todoRepository.findById({ id: input.todoId });
+  async execute(input: GetTodoUseCaseInput): Promise<GetTodoUseCaseResult> {
+    const { todoRepository } = this.#props;
 
-    if (!result.success) {
-      return result;
+    const result = await todoRepository.findById({ id: input.todoId });
+
+    if (result.isErr()) {
+      return Result.err(result.error);
     }
 
     if (result.data === undefined) {
-      return {
-        success: false,
-        error: {
-          name: "NotFoundError",
-          message: "TODOが見つかりません",
-        } as NotFoundError,
-      };
+      return Result.err(new NotFoundError("TODOが見つかりません"));
     }
 
-    return {
-      success: true,
-      data: result.data,
-    };
+    return Result.ok(result.data);
   }
 }

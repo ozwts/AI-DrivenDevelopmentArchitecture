@@ -9,6 +9,7 @@ import {
   AdminDeleteUserCommand,
 } from "@aws-sdk/client-cognito-identity-provider";
 import { UnexpectedError } from "@/util/error-util";
+import { Result } from "@/util/result";
 import type {
   AuthClient,
   AuthPayload,
@@ -128,17 +129,13 @@ export class CognitoAuthClient implements AuthClient {
 
       await this.#cognitoClient.send(command);
 
-      return {
-        success: true,
-        data: undefined,
-      };
+      return Result.ok(undefined);
     } catch (error) {
-      return {
-        success: false,
-        error: new UnexpectedError(
+      return Result.err(
+        new UnexpectedError(
           `ユーザーの削除に失敗しました: ${error instanceof Error ? error.message : String(error)}`,
         ),
-      };
+      );
     }
   }
 

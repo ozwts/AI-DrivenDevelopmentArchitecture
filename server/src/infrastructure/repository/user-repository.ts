@@ -10,14 +10,15 @@ import { v4 as uuid } from "uuid";
 import type { Logger } from "@/domain/support/logger";
 import type { DynamoDBUnitOfWork } from "@/infrastructure/unit-of-work/dynamodb-unit-of-work";
 import {
-  SaveResult,
-  RemoveResult,
-  FindByIdResult,
-  FindAllResult,
+  type SaveResult,
+  type RemoveResult,
+  type FindByIdResult,
+  type FindAllResult,
   type UserRepository,
 } from "@/domain/model/user/user.repository";
-import { User } from "@/domain/model/user/user";
+import { User } from "@/domain/model/user/user.entity";
 import { UnexpectedError } from "@/util/error-util";
+import { Result } from "@/util/result";
 
 /**
  * DynamoDBへ格納時のスキーマと型
@@ -35,7 +36,7 @@ export const userDdbItemSchema = z.object({
 export type UserDdbItem = z.infer<typeof userDdbItemSchema>;
 
 export const userDdbItemToUser = (userDdbItem: UserDdbItem): User =>
-  new User({
+  User.from({
     id: userDdbItem.userId,
     sub: userDdbItem.sub,
     name: userDdbItem.name,
@@ -111,25 +112,16 @@ export class UserRepositoryImpl implements UserRepository {
       );
 
       if (result.Item === undefined) {
-        return {
-          success: true,
-          data: undefined,
-        };
+        return Result.ok(undefined);
       }
 
       const userDdbItem = userDdbItemSchema.parse(result.Item);
       const user = userDdbItemToUser(userDdbItem);
 
-      return {
-        success: true,
-        data: user,
-      };
+      return Result.ok(user);
     } catch (error) {
       this.#logger.error("ユーザーの取得に失敗しました", error as Error);
-      return {
-        success: false,
-        error: new UnexpectedError(),
-      };
+      return Result.err(new UnexpectedError());
     }
   }
 
@@ -165,19 +157,13 @@ export class UserRepositoryImpl implements UserRepository {
       }
 
       // subはユニークなので、最初の1件を返す
-      return {
-        success: true,
-        data: users[0],
-      };
+      return Result.ok(users[0]);
     } catch (error) {
       this.#logger.error(
         "Cognito Subによるユーザーの取得に失敗しました",
         error as Error,
       );
-      return {
-        success: false,
-        error: new UnexpectedError(),
-      };
+      return Result.err(new UnexpectedError());
     }
   }
 
@@ -202,16 +188,10 @@ export class UserRepositoryImpl implements UserRepository {
         }
       }
 
-      return {
-        success: true,
-        data: users,
-      };
+      return Result.ok(users);
     } catch (error) {
       this.#logger.error("ユーザー一覧の取得に失敗しました", error as Error);
-      return {
-        success: false,
-        error: new UnexpectedError(),
-      };
+      return Result.err(new UnexpectedError());
     }
   }
 
@@ -237,16 +217,10 @@ export class UserRepositoryImpl implements UserRepository {
         );
       }
 
-      return {
-        success: true,
-        data: undefined,
-      };
+      return Result.ok(undefined);
     } catch (error) {
       this.#logger.error("ユーザーの保存に失敗しました", error as Error);
-      return {
-        success: false,
-        error: new UnexpectedError(),
-      };
+      return Result.err(new UnexpectedError());
     }
   }
 
@@ -271,16 +245,10 @@ export class UserRepositoryImpl implements UserRepository {
         );
       }
 
-      return {
-        success: true,
-        data: undefined,
-      };
+      return Result.ok(undefined);
     } catch (error) {
       this.#logger.error("ユーザーの削除に失敗しました", error as Error);
-      return {
-        success: false,
-        error: new UnexpectedError(),
-      };
+      return Result.err(new UnexpectedError());
     }
   }
 }

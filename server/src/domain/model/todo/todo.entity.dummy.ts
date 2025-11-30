@@ -37,9 +37,13 @@ export const todoDummyFrom = (props?: TodoDummyProps): Todo => {
   return Todo.from({
     id: props?.id ?? getDummyId(),
     title: props?.title ?? getDummyShortText(),
-    description: props?.description !== undefined ? props.description : getDummyDescription(),
+    description:
+      props?.description !== undefined
+        ? props.description
+        : getDummyDescription(),
     status: props?.status !== undefined ? props.status : todoStatusDummyFrom(),
-    priority: props?.priority !== undefined ? props.priority : getDummyTodoPriority(),
+    priority:
+      props?.priority !== undefined ? props.priority : getDummyTodoPriority(),
     dueDate: props?.dueDate !== undefined ? props.dueDate : getDummyDueDate(),
     projectId: props?.projectId !== undefined ? props.projectId : getDummyId(),
     assigneeUserId: props?.assigneeUserId ?? getDummyId(),

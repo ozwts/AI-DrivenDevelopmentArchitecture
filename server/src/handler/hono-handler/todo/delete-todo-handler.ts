@@ -20,7 +20,7 @@ export const buildDeleteTodoHandler =
 
       const result = await useCase.execute({ todoId });
 
-      if (result.success === false) {
+      if (!result.isOk()) {
         return handleError(result.error, c, logger);
       }
 

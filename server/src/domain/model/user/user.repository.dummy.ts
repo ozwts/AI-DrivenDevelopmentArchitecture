@@ -26,10 +26,7 @@ export type UserRepositoryDummyProps = {
  * @example
  * ```typescript
  * const repository = new UserRepositoryDummy({
- *   findByIdReturnValue: {
- *     success: true,
- *     data: userDummyFrom({ id: "user-123" })
- *   }
+ *   findByIdReturnValue: Result.ok(userDummyFrom({ id: "user-123" }))
  * });
  * ```
  */
@@ -74,7 +71,9 @@ export class UserRepositoryDummy implements UserRepository {
     return this.#findAllReturnValue;
   }
 
-  async save(_props: { user: import("./user.entity").User }): Promise<SaveResult> {
+  async save(_props: {
+    user: import("./user.entity").User;
+  }): Promise<SaveResult> {
     return this.#saveReturnValue;
   }
 

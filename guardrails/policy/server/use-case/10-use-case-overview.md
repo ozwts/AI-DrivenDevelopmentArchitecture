@@ -110,13 +110,14 @@ use-case/
 - 成功時は `data: T`、失敗時は `error: E` を持つ
 - `Result.ok(data)` で成功を生成
 - `Result.err(error)` で失敗を生成
+- `isOk()` / `isErr()` 型ガードで型安全にプロパティアクセス
 - `then()` メソッドでメソッドチェーン可能
 
 **原則**:
 
 - 例外を投げず、Result型でエラーを表現
 - 型システムでエラーハンドリング強制
-- success/errorの判定は`result.success`で実施
+- 成功/失敗の判定は `isOk()` / `isErr()` 型ガードを使用
 
 **基本的な使用パターン**:
 

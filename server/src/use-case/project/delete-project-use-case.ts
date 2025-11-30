@@ -1,12 +1,12 @@
 /* eslint-disable no-await-in-loop */
 /* eslint-disable no-restricted-syntax */
 import type { Logger } from "@/domain/support/logger";
-import type { Result } from "@/util/result";
-import { Result as ResultUtil } from "@/util/result";
+import { Result as ResultUtil, type Result } from "@/util/result";
 import { NotFoundError, UnexpectedError } from "@/util/error-util";
 import type { ProjectRepository } from "@/domain/model/project/project.repository";
 import type { TodoRepository } from "@/domain/model/todo/todo.repository";
 import type { UnitOfWorkRunner } from "@/domain/support/unit-of-work";
+import type { UseCase } from "../interfaces";
 
 export type DeleteProjectUseCaseInput = {
   projectId: string;
@@ -34,11 +34,11 @@ export type DeleteProjectUseCaseProps = {
   readonly uowRunner: UnitOfWorkRunner<DeleteProjectUoWContext>;
 };
 
-export type DeleteProjectUseCase = {
-  execute(
-    input: DeleteProjectUseCaseInput,
-  ): Promise<DeleteProjectUseCaseResult>;
-};
+export type DeleteProjectUseCase = UseCase<
+  DeleteProjectUseCaseInput,
+  DeleteProjectUseCaseOutput,
+  DeleteProjectUseCaseException
+>;
 
 export class DeleteProjectUseCaseImpl implements DeleteProjectUseCase {
   readonly #props: DeleteProjectUseCaseProps;
@@ -63,9 +63,9 @@ export class DeleteProjectUseCaseImpl implements DeleteProjectUseCase {
         id: input.projectId,
       });
 
-      if (!findResult.success) {
+      if (findResult.isErr()) {
         logger.error("プロジェクトの取得に失敗", findResult.error);
-        return findResult;
+        return ResultUtil.err(findResult.error);
       }
 
       if (findResult.data === undefined) {
@@ -82,12 +82,9 @@ export class DeleteProjectUseCaseImpl implements DeleteProjectUseCase {
         projectId: input.projectId,
       });
 
-      if (!todosResult.success) {
-        logger.error(
-          "プロジェクトに紐づくTODOの取得に失敗",
-          todosResult.error,
-        );
-        return todosResult;
+      if (todosResult.isErr()) {
+        logger.error("プロジェクトに紐づくTODOの取得に失敗", todosResult.error);
+        return ResultUtil.err(todosResult.error);
       }
 
       logger.info("プロジェクトに紐づくTODOを削除します", {
@@ -99,12 +96,12 @@ export class DeleteProjectUseCaseImpl implements DeleteProjectUseCase {
       // DynamoDBにはトランザクションが100件までの制限があるため、トランザクション処理の要否はよく検討すること
       for (const todo of todosResult.data) {
         const removeResult = await uow.todoRepository.remove({ id: todo.id });
-        if (!removeResult.success) {
+        if (removeResult.isErr()) {
           logger.error("TODOの削除に失敗", {
             todoId: todo.id,
             error: removeResult.error,
           });
-          return removeResult;
+          return ResultUtil.err(removeResult.error);
         }
       }
 
@@ -113,9 +110,9 @@ export class DeleteProjectUseCaseImpl implements DeleteProjectUseCase {
         id: input.projectId,
       });
 
-      if (!deleteResult.success) {
+      if (deleteResult.isErr()) {
         logger.error("プロジェクトの削除に失敗", deleteResult.error);
-        return deleteResult;
+        return ResultUtil.err(deleteResult.error);
       }
 
       logger.info("プロジェクト削除成功", {

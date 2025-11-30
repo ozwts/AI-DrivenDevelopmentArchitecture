@@ -20,9 +20,11 @@ export const attachmentStatusDummyFrom = (
 
   const result = AttachmentStatus.from({ status: statusValue });
 
-  if (!result.success) {
-    throw new Error(`Failed to generate AttachmentStatus: ${result.error!.message}`);
+  if (result.isErr()) {
+    throw new Error(
+      `Failed to generate AttachmentStatus: ${result.error.message}`,
+    );
   }
 
-  return result.data!;
+  return result.data;
 };

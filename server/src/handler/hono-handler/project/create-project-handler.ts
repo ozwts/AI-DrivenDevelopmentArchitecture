@@ -44,7 +44,7 @@ export const buildCreateProjectHandler =
         color: body.color,
       });
 
-      if (result.success === false) {
+      if (!result.isOk()) {
         return handleError(result.error, c, logger);
       }
 

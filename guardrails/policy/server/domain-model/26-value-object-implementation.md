@@ -2,7 +2,7 @@
 
 ## 核心原則
 
-Value Objectは**プライベートコンストラクタ**と**Props型エイリアス**を使用し、**Result型を返すfrom()メソッド**で生成する。
+Value Objectは**ES2022プライベートフィールド（#）**と**Props型エイリアス**を使用し、**Result型を返すfrom()メソッド**で生成する。
 
 ## 関連ドキュメント
 
@@ -41,45 +41,75 @@ export type FullNameProps = {
 };
 ```
 
-### 3. プライベートコンストラクタとfrom()
+### 3. ES2022プライベートフィールドとプライベートコンストラクタ
+
+**ES2022のプライベートフィールド（#）を使用**する。これによりESLint違反を回避しつつ、真のプライベート性を実現する。
 
 ```typescript
+// 値の型を定義
+type TodoStatusValue = "TODO" | "IN_PROGRESS" | "COMPLETED";
+
 export class TodoStatus {
-  private constructor(private readonly value: string) {}
+  // ES2022プライベートフィールド（意味のある名前を使用）
+  readonly #status: TodoStatusValue;
+
+  // コンストラクタにボディを持たせる（パラメータプロパティを使わない）
+  private constructor(status: TodoStatusValue) {
+    this.#status = status;
+  }
 
   static from(props: TodoStatusProps): Result<TodoStatus, DomainError> {
-    if (!["TODO", "IN_PROGRESS", "COMPLETED"].includes(props.status)) {
+    const validStatuses = ["TODO", "IN_PROGRESS", "COMPLETED"] as const;
+    if (!validStatuses.includes(props.status as TodoStatusValue)) {
       return Result.err(new DomainError("無効なステータス"));
     }
-    return Result.ok(new TodoStatus(props.status));
+    return Result.ok(new TodoStatus(props.status as TodoStatusValue));
+  }
+
+  // getterで値を公開（フィールド名と同じ名前）
+  get status(): TodoStatusValue {
+    return this.#status;
   }
 }
 ```
+
+**理由**:
+- `private readonly _value` はESLintの `no-underscore-dangle` に違反
+- パラメータプロパティ `private constructor(private readonly value)` はESLintの `no-useless-constructor`, `no-empty-function` に違反
+- ES2022の `#field` は言語レベルの真のプライベート性を提供し、ESLint違反なし
+- フィールド名は意味のある名前を使用（`#status`, `#email` など、`#value` は避ける）
 
 ### 4. equals()とtoString()
 
 ```typescript
 equals(other: TodoStatus): boolean {
-  return this.value === other.value;
+  return this.#status === other.#status;
 }
 
 toString(): string {
-  return this.value; // デバッグ用
+  return this.#status; // デバッグ用
 }
 ```
 
 ### 5. 不変条件チェックメソッド
 
-不変条件を持つ場合は検証メソッドを実装する。
+不変条件を持つ場合は検証メソッドを実装する。**インスタンスメソッド**として`this`を使用することで、DDDの慣習に沿った自然なAPIを提供する。
 
 ```typescript
-canTransitionTo(newStatus: TodoStatus): Result<void, DomainError> {
-  if (this.isCompleted() && !newStatus.isCompleted()) {
-    return Result.err(new DomainError("完了済みTODOのステータスは変更できません"));
+canTransitionTo(to: AttachmentStatus): Result<void, DomainError> {
+  // PREPARED -> UPLOADED のみ許可
+  if (this.#status === "PREPARED" && to.#status === "UPLOADED") {
+    return Result.ok(undefined);
   }
-  return Result.ok(undefined);
+  // 同じステータスへの遷移は許可
+  if (this.#status === to.#status) {
+    return Result.ok(undefined);
+  }
+  return Result.err(new DomainError(`Cannot transition from ${this.#status} to ${to.#status}`));
 }
 ```
+
+**注意**: すべての遷移を許可する場合（`TodoStatus`のように）は、メソッド自体が不要。
 
 ### 6. JSDocコメント
 
@@ -94,7 +124,11 @@ canTransitionTo(newStatus: TodoStatus): Result<void, DomainError> {
  * - COMPLETED からは他のステータスに変更不可
  */
 export class TodoStatus {
-  private constructor(private readonly value: string) {}
+  readonly #status: TodoStatusValue;
+
+  private constructor(status: TodoStatusValue) {
+    this.#status = status;
+  }
 
   /**
    * 文字列からTodoStatusを生成
@@ -125,17 +159,28 @@ export type TodoStatusProps = {
   status: string;
 };
 
-export class TodoStatus {
-  private constructor(private readonly value: "TODO" | "IN_PROGRESS" | "COMPLETED") {}
+type TodoStatusValue = "TODO" | "IN_PROGRESS" | "COMPLETED";
 
-  static from(props: TodoStatusProps): Result<TodoStatus, DomainError> {
-    const normalized = props.status.toUpperCase();
-    if (!["TODO", "IN_PROGRESS", "COMPLETED"].includes(normalized)) {
-      return Result.err(new DomainError("無効なステータス"));
-    }
-    return Result.ok(new TodoStatus(normalized as any));
+export class TodoStatus {
+  readonly #status: TodoStatusValue;
+
+  private constructor(status: TodoStatusValue) {
+    this.#status = status;
   }
 
+  static from(props: TodoStatusProps): Result<TodoStatus, DomainError> {
+    const validStatuses = ["TODO", "IN_PROGRESS", "COMPLETED"] as const;
+    if (!validStatuses.includes(props.status as TodoStatusValue)) {
+      return Result.err(new DomainError("無効なステータス"));
+    }
+    return Result.ok(new TodoStatus(props.status as TodoStatusValue));
+  }
+
+  get status(): TodoStatusValue {
+    return this.#status;
+  }
+
+  // 不変条件チェック（thisを使用するのでインスタンスメソッド）
   canTransitionTo(newStatus: TodoStatus): Result<void, DomainError> {
     if (this.isCompleted() && !newStatus.isCompleted()) {
       return Result.err(new DomainError("完了済みTODOのステータスは変更できません"));
@@ -143,14 +188,38 @@ export class TodoStatus {
     return Result.ok(undefined);
   }
 
-  equals(other: TodoStatus): boolean { return this.value === other.value; }
-  toString(): string { return this.value; }
+  equals(other: TodoStatus): boolean {
+    return this.#status === other.#status;
+  }
 
-  isCompleted(): boolean { return this.value === "COMPLETED"; }
-  isTodo(): boolean { return this.value === "TODO"; }
+  toString(): string {
+    return this.#status;
+  }
 
-  static todo(): TodoStatus { return new TodoStatus("TODO"); }
-  static completed(): TodoStatus { return new TodoStatus("COMPLETED"); }
+  isCompleted(): boolean {
+    return this.#status === "COMPLETED";
+  }
+
+  isTodo(): boolean {
+    return this.#status === "TODO";
+  }
+
+  isInProgress(): boolean {
+    return this.#status === "IN_PROGRESS";
+  }
+
+  // ファクトリメソッド
+  static todo(): TodoStatus {
+    return new TodoStatus("TODO");
+  }
+
+  static inProgress(): TodoStatus {
+    return new TodoStatus("IN_PROGRESS");
+  }
+
+  static completed(): TodoStatus {
+    return new TodoStatus("COMPLETED");
+  }
 }
 ```
 
@@ -163,7 +232,11 @@ export type EmailProps = {
 };
 
 export class Email {
-  private constructor(readonly value: string) {}
+  readonly #email: string;
+
+  private constructor(email: string) {
+    this.#email = email;
+  }
 
   static from(props: EmailProps): Result<Email, DomainError> {
     // OpenAPI format: emailで基本形式はチェック済み
@@ -174,11 +247,17 @@ export class Email {
     return Result.ok(new Email(props.email));
   }
 
-  equals(other: Email): boolean {
-    return this.value.toLowerCase() === other.value.toLowerCase();
+  get email(): string {
+    return this.#email;
   }
 
-  toString(): string { return this.value; }
+  equals(other: Email): boolean {
+    return this.#email.toLowerCase() === other.#email.toLowerCase();
+  }
+
+  toString(): string {
+    return this.#email;
+  }
 }
 ```
 
@@ -202,6 +281,40 @@ export class Todo {
 // ❌ 外部から直接生成可能
 export class TodoStatus {
   constructor(public value: string) {}
+}
+```
+
+### アンダースコアプレフィックス（_value）
+
+```typescript
+// ❌ ESLintのno-underscore-dangleに違反
+export class TodoStatus {
+  private constructor(private readonly _value: string) {}
+}
+
+// ✅ ES2022プライベートフィールドを使用
+export class TodoStatus {
+  readonly #value: string;
+  private constructor(value: string) {
+    this.#value = value;
+  }
+}
+```
+
+### パラメータプロパティ
+
+```typescript
+// ❌ ESLintのno-useless-constructor, no-empty-functionに違反
+export class TodoStatus {
+  private constructor(private readonly value: string) {}
+}
+
+// ✅ コンストラクタにボディを持たせる
+export class TodoStatus {
+  readonly #value: string;
+  private constructor(value: string) {
+    this.#value = value;
+  }
 }
 ```
 
@@ -235,14 +348,25 @@ export type TodoStatusProps = {
   status: string;
 };
 
+type TodoStatusValue = "TODO" | "IN_PROGRESS" | "COMPLETED";
+
 export class TodoStatus {
-  private constructor(private readonly value: string) {}
+  readonly #status: TodoStatusValue;
+
+  private constructor(status: TodoStatusValue) {
+    this.#status = status;
+  }
 
   static from(props: TodoStatusProps): Result<TodoStatus, DomainError> {
-    if (!validValues.includes(props.status)) {
+    const validStatuses = ["TODO", "IN_PROGRESS", "COMPLETED"] as const;
+    if (!validStatuses.includes(props.status as TodoStatusValue)) {
       return Result.err(new DomainError("無効なステータス"));
     }
-    return Result.ok(new TodoStatus(props.status));
+    return Result.ok(new TodoStatus(props.status as TodoStatusValue));
+  }
+
+  get status(): TodoStatusValue {
+    return this.#status;
   }
 
   canTransitionTo(newStatus: TodoStatus): Result<void, DomainError> {
@@ -252,8 +376,13 @@ export class TodoStatus {
     return Result.ok(undefined);
   }
 
-  equals(other: TodoStatus): boolean { return this.value === other.value; }
-  toString(): string { return this.value; }
+  equals(other: TodoStatus): boolean {
+    return this.#status === other.#status;
+  }
+
+  toString(): string {
+    return this.#status;
+  }
 }
 ```
 
@@ -262,6 +391,12 @@ export class TodoStatus {
 ```typescript
 // パブリックコンストラクタ
 constructor(public value: string) {} // ❌ privateでない
+
+// アンダースコアプレフィックス
+private readonly _value: string; // ❌ ESLint違反
+
+// パラメータプロパティ
+private constructor(private readonly value: string) {} // ❌ ESLint違反
 
 // Type Aliasで不変条件を表現不可
 export type TodoStatus = "TODO" | "IN_PROGRESS" | "COMPLETED"; // ❌

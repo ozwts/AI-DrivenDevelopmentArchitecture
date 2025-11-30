@@ -1,8 +1,8 @@
 import { inject, injectable } from "inversify";
 import { serviceId } from "@/di-container/service-id";
 import type { UserRepository } from "@/domain/model/user/user.repository";
-import type { User } from "@/domain/model/user/user";
-import type { Result } from "@/util/result";
+import type { User } from "@/domain/model/user/user.entity";
+import { Result } from "@/util/result";
 import { NotFoundError, UnexpectedError } from "@/util/error-util";
 
 export type GetCurrentUserUseCaseExecuteProps = {
@@ -38,20 +38,14 @@ export class GetCurrentUserUseCase {
     // Cognito Subでユーザーを検索
     const findResult = await this.#userRepository.findBySub({ sub });
 
-    if (!findResult.success) {
-      return findResult;
+    if (findResult.isErr()) {
+      return Result.err(findResult.error);
     }
 
     if (findResult.data === undefined) {
-      return {
-        success: false,
-        error: new NotFoundError("ユーザーが見つかりません"),
-      };
+      return Result.err(new NotFoundError("ユーザーが見つかりません"));
     }
 
-    return {
-      success: true,
-      data: findResult.data,
-    };
+    return Result.ok(findResult.data);
   }
 }

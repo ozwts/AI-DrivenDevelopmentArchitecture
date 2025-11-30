@@ -63,7 +63,9 @@ describe("Attachment", () => {
       expect(updatedAttachment.id).toBe(originalAttachment.id);
       expect(updatedAttachment.fileName).toBe(originalAttachment.fileName);
       expect(updatedAttachment.storageKey).toBe(originalAttachment.storageKey);
-      expect(updatedAttachment.contentType).toBe(originalAttachment.contentType);
+      expect(updatedAttachment.contentType).toBe(
+        originalAttachment.contentType,
+      );
       expect(updatedAttachment.fileSize).toBe(originalAttachment.fileSize);
       expect(updatedAttachment.uploadedBy).toBe(originalAttachment.uploadedBy);
       expect(updatedAttachment.createdAt).toBe(originalAttachment.createdAt);

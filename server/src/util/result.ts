@@ -1,102 +1,161 @@
+/*
+ * Result型の実装上、以下のESLintルールを無効化する必要がある:
+ * - no-use-before-define: Ok/Errクラスが相互参照するため
+ * - class-methods-use-this: 型ガードの戻り値型で this を使用するが、ESLintは検出しない
+ * - no-redeclare: Result型とResultオブジェクトを同名で定義するパターン
+ */
+/* eslint-disable no-use-before-define, no-redeclare, class-methods-use-this */
+
 /**
  * Result型
  *
- * 成功（data）または失敗（error）を表すクラス。
- * メソッドチェーンにより、Result型とEntity型を自然に結合できる。
+ * 成功（Ok）または失敗（Err）を表す型。
+ * Ok と Err を別クラスとして実装することで、型ガードが完璧に動作する。
  *
  * @example
  * ```typescript
- * // 完全フラットなメソッドチェーン
- * const result = Result.ok(order)
- *   .then(o => o.markAsRead())        // Orderを返す → 自動でResult.ok()に包む
- *   .then(o => o.approve())           // Result<Order>を返す → そのまま
- *   .then(o => o.ship());             // 完全にフラット
+ * const result = await useCase.execute({ id });
+ *
+ * if (result.isErr()) {
+ *   return handleError(result.error);  // error は E 型
+ * }
+ *
+ * // result.data は T 型として確定
+ * console.log(result.data);
  * ```
  */
-export class Result<T, E extends Error = Error> {
-  readonly success: boolean;
 
-  readonly data?: T;
+/**
+ * 成功を表すクラス
+ */
+class Ok<T, E extends Error = Error> {
+  readonly data: T;
 
-  readonly error?: E;
-
-  private constructor(success: boolean, data?: T, error?: E) {
-    this.success = success;
+  constructor(data: T) {
     this.data = data;
-    this.error = error;
   }
 
   /**
-   * 成功結果を生成
-   *
-   * @param data - 成功時のデータ
-   * @returns Result<T, never>
-   *
-   * @example
-   * ```typescript
-   * const result = Result.ok({ id: "123", name: "Example" });
-   * ```
+   * 成功かどうかを判定する型ガード
+   * @returns 常にtrue
    */
-  static ok<U>(data: U): Result<U, never> {
-    return new Result<U, never>(true, data, undefined);
+  isOk(): this is Ok<T, E> {
+    return true;
   }
 
   /**
-   * 失敗結果を生成
-   *
-   * @param error - エラーオブジェクト
-   * @returns Result<never, E>
-   *
-   * @example
-   * ```typescript
-   * const result = Result.err(new DomainError("Invalid status"));
-   * ```
+   * 失敗かどうかを判定する型ガード
+   * @returns 常にfalse
    */
-  static err<F extends Error>(error: F): Result<never, F> {
-    return new Result<never, F>(false, undefined, error);
+  isErr(): this is Err<T, E> {
+    return !this.isOk();
   }
 
   /**
-   * then（モナディックバインド）
-   *
-   * Result型のメソッドチェーンを可能にする。
-   * 失敗の場合は変換をスキップし、そのまま失敗を返す。
+   * map（モナディックバインド）
    *
    * fnがResultを返す場合 → そのまま使用
-   * fnが普通の値を返す場合 → Result.ok()で自動的に包む
-   *
-   * @param fn - 変換関数
-   * @returns 変換後のResult
-   *
-   * @example
-   * ```typescript
-   * // Resultを返すメソッドと普通の値を返すメソッドを混在できる
-   * const result = Result.ok(todo)
-   *   .then(t => t.update({ title: "新しい" }))   // Todoを返す
-   *   .then(t => repository.save(t))             // Result<void>を返す
-   *   .then(() => t);                            // 完全にフラット
-   * ```
+   * fnが普通の値を返す場合 → Ok で自動的に包む
    */
-  then<U, E2 extends Error>(
+  map<U, E2 extends Error>(
     fn: (value: T) => U | Result<U, E2>,
   ): Result<U, E | E2> {
-    if (!this.success) {
-      return this as unknown as Result<U, E | E2>;
-    }
-
-    const next = fn(this.data!);
+    const next = fn(this.data);
 
     // Resultかどうか判定
     if (
       next !== null &&
       next !== undefined &&
       typeof next === "object" &&
-      "success" in next
+      "isOk" in next &&
+      typeof next.isOk === "function"
     ) {
       return next as Result<U, E2>;
     }
 
-    // 普通の値の場合、Result.ok()で包む
-    return Result.ok(next as U) as Result<U, E | E2>;
+    // 普通の値の場合、Ok で包む
+    return new Ok(next as U);
   }
 }
+
+/**
+ * 失敗を表すクラス
+ */
+class Err<T, E extends Error = Error> {
+  readonly error: E;
+
+  constructor(error: E) {
+    this.error = error;
+  }
+
+  /**
+   * 成功かどうかを判定する型ガード
+   * @returns 常にfalse
+   */
+  isOk(): this is Ok<T, E> {
+    return false;
+  }
+
+  /**
+   * 失敗かどうかを判定する型ガード
+   * @returns 常にtrue
+   */
+  isErr(): this is Err<T, E> {
+    return !this.isOk();
+  }
+
+  /**
+   * map（モナディックバインド）
+   *
+   * 失敗の場合は変換をスキップし、そのまま失敗を返す。
+   */
+  map<U, E2 extends Error>(
+    _fn: (value: T) => U | Result<U, E2>,
+  ): Result<U, E | E2> {
+    return this as unknown as Result<U, E | E2>;
+  }
+}
+
+/**
+ * Result型（Ok または Err の Union）
+ */
+export type Result<T, E extends Error = Error> = Ok<T, E> | Err<T, E>;
+
+/**
+ * Result ヘルパー関数
+ *
+ * 同名の型とオブジェクトを定義することで、以下のように使用可能：
+ * - 型として: `Result<T, E>`
+ * - ファクトリとして: `Result.ok(data)`, `Result.err(error)`
+ */
+export const Result = {
+  /**
+   * 成功結果を生成
+   *
+   * @param data - 成功時のデータ
+   * @returns Ok<T, never>
+   *
+   * @example
+   * ```typescript
+   * const result = Result.ok({ id: "123", name: "Example" });
+   * ```
+   */
+  ok<U>(data: U): Ok<U, never> {
+    return new Ok(data);
+  },
+
+  /**
+   * 失敗結果を生成
+   *
+   * @param error - エラーオブジェクト
+   * @returns Err<never, E>
+   *
+   * @example
+   * ```typescript
+   * const result = Result.err(new DomainError("Invalid status"));
+   * ```
+   */
+  err<F extends Error>(error: F): Err<never, F> {
+    return new Err(error);
+  },
+};

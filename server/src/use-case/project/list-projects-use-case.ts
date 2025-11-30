@@ -1,11 +1,12 @@
-import type { Result } from "@/util/result";
-import type { UnexpectedError } from "@/util/error-util";
+import { UnexpectedError } from "@/util/error-util";
 import type { ProjectRepository } from "@/domain/model/project/project.repository";
-import type { Project } from "@/domain/model/project/project";
+import type { Project } from "@/domain/model/project/project.entity";
+import { Result } from "@/util/result";
+import type { UseCase } from "../interfaces";
 
 export type ListProjectsUseCaseInput = Record<string, never>;
 
-export type ListProjectsUseCaseOutput = Project[];
+export type ListProjectsUseCaseOutput = ReadonlyArray<Project>;
 
 export type ListProjectsUseCaseException = UnexpectedError;
 
@@ -15,21 +16,29 @@ export type ListProjectsUseCaseResult = Result<
 >;
 
 export type ListProjectsUseCaseProps = {
-  projectRepository: ProjectRepository;
+  readonly projectRepository: ProjectRepository;
 };
 
-export type ListProjectsUseCase = {
-  execute(input: ListProjectsUseCaseInput): Promise<ListProjectsUseCaseResult>;
-};
+export type ListProjectsUseCase = UseCase<
+  ListProjectsUseCaseInput,
+  ListProjectsUseCaseOutput,
+  ListProjectsUseCaseException
+>;
 
 export class ListProjectsUseCaseImpl implements ListProjectsUseCase {
-  readonly #projectRepository: ProjectRepository;
+  readonly #props: ListProjectsUseCaseProps;
 
-  constructor({ projectRepository }: ListProjectsUseCaseProps) {
-    this.#projectRepository = projectRepository;
+  constructor(props: ListProjectsUseCaseProps) {
+    this.#props = props;
   }
 
   async execute(): Promise<ListProjectsUseCaseResult> {
-    return this.#projectRepository.findAll();
+    const { projectRepository } = this.#props;
+
+    const result = await projectRepository.findAll();
+    if (result.isErr()) {
+      return Result.err(result.error);
+    }
+    return Result.ok(result.data);
   }
 }

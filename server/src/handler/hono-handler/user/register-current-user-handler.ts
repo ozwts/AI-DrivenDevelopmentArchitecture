@@ -86,7 +86,7 @@ export const buildRegisterCurrentUserHandler =
         emailVerified,
       });
 
-      if (result.success === false) {
+      if (result.isErr()) {
         return handleError(result.error, c, logger);
       }
 

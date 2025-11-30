@@ -8,6 +8,8 @@ export type AttachmentStatusProps = {
   status: string;
 };
 
+type AttachmentStatusValue = "PREPARED" | "UPLOADED";
+
 /**
  * AttachmentStatus Value Object
  *
@@ -22,7 +24,11 @@ export type AttachmentStatusProps = {
  * - UPLOADED -> PREPARED: 不可（逆方向の遷移は許可しない）
  */
 export class AttachmentStatus {
-  private constructor(private readonly _value: "PREPARED" | "UPLOADED") {}
+  readonly #status: AttachmentStatusValue;
+
+  private constructor(status: AttachmentStatusValue) {
+    this.#status = status;
+  }
 
   /**
    * 準備完了状態を返す
@@ -44,9 +50,13 @@ export class AttachmentStatus {
    * @param props - AttachmentStatusProps
    * @returns AttachmentStatusまたはDomainError
    */
-  static from(props: AttachmentStatusProps): Result<AttachmentStatus, DomainError> {
+  static from(
+    props: AttachmentStatusProps,
+  ): Result<AttachmentStatus, DomainError> {
     const validStatuses = ["PREPARED", "UPLOADED"] as const;
-    if (!validStatuses.includes(props.status as typeof validStatuses[number])) {
+    if (
+      !validStatuses.includes(props.status as (typeof validStatuses)[number])
+    ) {
       return Result.err(
         new DomainError(
           `Invalid AttachmentStatus: ${props.status}. Must be one of: ${validStatuses.join(", ")}`,
@@ -54,28 +64,30 @@ export class AttachmentStatus {
       );
     }
 
-    return Result.ok(new AttachmentStatus(props.status as typeof validStatuses[number]));
+    return Result.ok(
+      new AttachmentStatus(props.status as (typeof validStatuses)[number]),
+    );
   }
 
   /**
    * ステータスの値を取得
    */
-  get status(): "PREPARED" | "UPLOADED" {
-    return this._value;
+  get status(): AttachmentStatusValue {
+    return this.#status;
   }
 
   /**
    * 準備完了状態かどうか
    */
   isPrepared(): boolean {
-    return this._value === "PREPARED";
+    return this.#status === "PREPARED";
   }
 
   /**
    * アップロード完了状態かどうか
    */
   isUploaded(): boolean {
-    return this._value === "UPLOADED";
+    return this.#status === "UPLOADED";
   }
 
   /**
@@ -86,18 +98,20 @@ export class AttachmentStatus {
    */
   canTransitionTo(to: AttachmentStatus): Result<void, DomainError> {
     // PREPARED -> UPLOADED のみ許可
-    if (this._value === "PREPARED" && to._value === "UPLOADED") {
+    if (this.#status === "PREPARED" && to.#status === "UPLOADED") {
       return Result.ok(undefined);
     }
 
     // 同じステータスへの遷移は許可
-    if (this._value === to._value) {
+    if (this.#status === to.#status) {
       return Result.ok(undefined);
     }
 
     // その他の遷移は不可
     return Result.err(
-      new DomainError(`Cannot transition from ${this._value} to ${to._value}`),
+      new DomainError(
+        `Cannot transition from ${this.#status} to ${to.#status}`,
+      ),
     );
   }
 
@@ -105,13 +119,13 @@ export class AttachmentStatus {
    * 値の等価性を判定する
    */
   equals(other: AttachmentStatus): boolean {
-    return this._value === other._value;
+    return this.#status === other.#status;
   }
 
   /**
    * デバッグ・ログ用の文字列表現を返す
    */
   toString(): string {
-    return this._value;
+    return this.#status;
   }
 }

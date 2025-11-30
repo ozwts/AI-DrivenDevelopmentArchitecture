@@ -1,5 +1,5 @@
 /* eslint-disable class-methods-use-this */
-import type { Result } from "@/util/result";
+import { Result } from "@/util/result";
 import type { UnitOfWorkRunner } from "./unit-of-work-runner";
 
 /**

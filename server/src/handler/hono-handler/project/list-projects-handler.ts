@@ -19,7 +19,7 @@ export const buildListProjectsHandler =
     try {
       const result = await useCase.execute({});
 
-      if (result.success === false) {
+      if (!result.isOk()) {
         return handleError(result.error, c, logger);
       }
 

@@ -42,7 +42,7 @@ export const buildDeleteCurrentUserHandler =
         sub: userSub,
       });
 
-      if (deleteResult.success === false) {
+      if (deleteResult.isErr()) {
         return handleError(deleteResult.error, c, logger);
       }
 

@@ -83,7 +83,7 @@ export const buildUpdateCurrentUserHandler =
         emailVerified,
       });
 
-      if (updateResult.success === false) {
+      if (updateResult.isErr()) {
         return handleError(updateResult.error, c, logger);
       }
 

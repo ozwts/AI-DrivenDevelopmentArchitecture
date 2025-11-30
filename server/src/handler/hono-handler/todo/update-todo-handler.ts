@@ -7,7 +7,10 @@ import type { UpdateTodoUseCase } from "@/use-case/todo/update-todo-use-case";
 import { UnexpectedError, unexpectedErrorMessage } from "@/util/error-util";
 import { handleError } from "../../hono-handler-util/error-handler";
 import { formatZodError } from "../../hono-handler-util/validation-formatter";
-import { convertToTodoResponse } from "./todo-handler-util";
+import {
+  convertToTodoResponse,
+  convertToTodoStatus,
+} from "./todo-handler-util";
 
 export const buildUpdateTodoHandler =
   ({ container }: { container: Container }) =>
@@ -41,22 +44,26 @@ export const buildUpdateTodoHandler =
 
       // 入力の正規化: 空文字列は意味を持たないのでundefinedに変換
       const projectId =
-        body.projectId?.trim() === "" ? undefined : body.projectId;
+        body.projectId?.trim() === ""
+          ? undefined
+          : (body.projectId ?? undefined);
       const assigneeUserId =
-        body.assigneeUserId?.trim() === "" ? undefined : body.assigneeUserId;
+        body.assigneeUserId?.trim() === ""
+          ? undefined
+          : (body.assigneeUserId ?? undefined);
 
       const result = await useCase.execute({
         todoId,
         title: body.title,
-        description: body.description,
-        status: body.status,
+        description: body.description ?? undefined,
+        status: convertToTodoStatus(body.status),
         priority: body.priority,
-        dueDate: body.dueDate,
+        dueDate: body.dueDate ?? undefined,
         projectId,
         assigneeUserId,
       });
 
-      if (result.success === false) {
+      if (!result.isOk()) {
         return handleError(result.error, c, logger);
       }
 
