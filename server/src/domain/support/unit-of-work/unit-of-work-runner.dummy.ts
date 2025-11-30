@@ -1,4 +1,5 @@
 /* eslint-disable class-methods-use-this */
+import type { Result } from "@/util/result";
 import type { UnitOfWorkRunner } from "./unit-of-work-runner";
 
 /**
@@ -16,9 +17,9 @@ export class UnitOfWorkRunnerDummy<TUoW> implements UnitOfWorkRunner<TUoW> {
     this.#context = context;
   }
 
-  async run<TResult>(
-    callback: (uow: TUoW) => Promise<TResult>,
-  ): Promise<TResult> {
+  async run<TOutput, TError extends Error>(
+    callback: (uow: TUoW) => Promise<Result<TOutput, TError>>,
+  ): Promise<Result<TOutput, TError>> {
     return callback(this.#context);
   }
 }

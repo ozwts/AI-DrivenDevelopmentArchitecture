@@ -5,11 +5,12 @@ import {
 } from "./delete-project-use-case";
 import { ProjectRepositoryDummy } from "@/domain/model/project/project.repository.dummy";
 import { TodoRepositoryDummy } from "@/domain/model/todo/todo.repository.dummy";
-import { projectDummyFrom } from "@/domain/model/project/project.dummy";
-import { todoDummyFrom } from "@/domain/model/todo/todo.dummy";
+import { projectDummyFrom } from "@/domain/model/project/project.entity.dummy";
+import { todoDummyFrom } from "@/domain/model/todo/todo.entity.dummy";
 import { LoggerDummy } from "@/domain/support/logger/dummy";
-import { UnexpectedError, ValidationError } from "@/util/error-util";
+import { NotFoundError, UnexpectedError } from "@/util/error-util";
 import { UnitOfWorkRunnerDummy } from "@/domain/support/unit-of-work/unit-of-work-runner.dummy";
+import { Result } from "@/util/result";
 
 describe("DeleteProjectUseCaseのテスト", () => {
   describe("execute", () => {
@@ -25,25 +26,13 @@ describe("DeleteProjectUseCaseのテスト", () => {
       ];
 
       const projectRepository = new ProjectRepositoryDummy({
-        findByIdReturnValue: {
-          success: true,
-          data: existingProject,
-        },
-        removeReturnValue: {
-          success: true,
-          data: undefined,
-        },
+        findByIdReturnValue: Result.ok(existingProject),
+        removeReturnValue: Result.ok(undefined),
       });
 
       const todoRepository = new TodoRepositoryDummy({
-        findByProjectIdReturnValue: {
-          success: true,
-          data: relatedTodos,
-        },
-        removeReturnValue: {
-          success: true,
-          data: undefined,
-        },
+        findByProjectIdReturnValue: Result.ok(relatedTodos),
+        removeReturnValue: Result.ok(undefined),
       });
 
       const uowRunner = new UnitOfWorkRunnerDummy<DeleteProjectUoWContext>({
@@ -66,12 +55,9 @@ describe("DeleteProjectUseCaseのテスト", () => {
       }
     });
 
-    test("プロジェクトが見つからない場合はValidationErrorを返すこと", async () => {
+    test("プロジェクトが見つからない場合はNotFoundErrorを返すこと", async () => {
       const projectRepository = new ProjectRepositoryDummy({
-        findByIdReturnValue: {
-          success: true,
-          data: undefined,
-        },
+        findByIdReturnValue: Result.ok(undefined),
       });
 
       const todoRepository = new TodoRepositoryDummy();
@@ -92,17 +78,14 @@ describe("DeleteProjectUseCaseのテスト", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error).toBeInstanceOf(NotFoundError);
         expect(result.error.message).toBe("プロジェクトが見つかりませんでした");
       }
     });
 
     test("プロジェクト取得でエラーが発生した場合はUnexpectedErrorを返すこと", async () => {
       const projectRepository = new ProjectRepositoryDummy({
-        findByIdReturnValue: {
-          success: false,
-          error: new UnexpectedError(),
-        },
+        findByIdReturnValue: Result.err(new UnexpectedError()),
       });
 
       const todoRepository = new TodoRepositoryDummy();
@@ -133,17 +116,11 @@ describe("DeleteProjectUseCaseのテスト", () => {
       });
 
       const projectRepository = new ProjectRepositoryDummy({
-        findByIdReturnValue: {
-          success: true,
-          data: existingProject,
-        },
+        findByIdReturnValue: Result.ok(existingProject),
       });
 
       const todoRepository = new TodoRepositoryDummy({
-        findByProjectIdReturnValue: {
-          success: false,
-          error: new UnexpectedError(),
-        },
+        findByProjectIdReturnValue: Result.err(new UnexpectedError()),
       });
 
       const uowRunner = new UnitOfWorkRunnerDummy<DeleteProjectUoWContext>({
@@ -176,21 +153,12 @@ describe("DeleteProjectUseCaseのテスト", () => {
       ];
 
       const projectRepository = new ProjectRepositoryDummy({
-        findByIdReturnValue: {
-          success: true,
-          data: existingProject,
-        },
+        findByIdReturnValue: Result.ok(existingProject),
       });
 
       const todoRepository = new TodoRepositoryDummy({
-        findByProjectIdReturnValue: {
-          success: true,
-          data: relatedTodos,
-        },
-        removeReturnValue: {
-          success: false,
-          error: new UnexpectedError(),
-        },
+        findByProjectIdReturnValue: Result.ok(relatedTodos),
+        removeReturnValue: Result.err(new UnexpectedError()),
       });
 
       const uowRunner = new UnitOfWorkRunnerDummy<DeleteProjectUoWContext>({
@@ -219,21 +187,12 @@ describe("DeleteProjectUseCaseのテスト", () => {
       });
 
       const projectRepository = new ProjectRepositoryDummy({
-        findByIdReturnValue: {
-          success: true,
-          data: existingProject,
-        },
-        removeReturnValue: {
-          success: false,
-          error: new UnexpectedError(),
-        },
+        findByIdReturnValue: Result.ok(existingProject),
+        removeReturnValue: Result.err(new UnexpectedError()),
       });
 
       const todoRepository = new TodoRepositoryDummy({
-        findByProjectIdReturnValue: {
-          success: true,
-          data: [],
-        },
+        findByProjectIdReturnValue: Result.ok([]),
       });
 
       const uowRunner = new UnitOfWorkRunnerDummy<DeleteProjectUoWContext>({
@@ -263,21 +222,12 @@ describe("DeleteProjectUseCaseのテスト", () => {
       });
 
       const projectRepository = new ProjectRepositoryDummy({
-        findByIdReturnValue: {
-          success: true,
-          data: existingProject,
-        },
-        removeReturnValue: {
-          success: true,
-          data: undefined,
-        },
+        findByIdReturnValue: Result.ok(existingProject),
+        removeReturnValue: Result.ok(undefined),
       });
 
       const todoRepository = new TodoRepositoryDummy({
-        findByProjectIdReturnValue: {
-          success: true,
-          data: [],
-        },
+        findByProjectIdReturnValue: Result.ok([]),
       });
 
       const uowRunner = new UnitOfWorkRunnerDummy<DeleteProjectUoWContext>({

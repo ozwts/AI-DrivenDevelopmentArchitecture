@@ -77,6 +77,9 @@
     "local-rules/domain-model/no-throw": "error",
     "local-rules/domain-model/no-null": "error",
     "local-rules/domain-model/no-external-deps": "error",
-    "local-rules/domain-model/repository-interface": "error"
+    "local-rules/domain-model/repository-interface": "error",
+    "local-rules/use-case/use-case-structure": "error",
+    "local-rules/use-case/no-throw": "error",
+    "local-rules/use-case/file-requirements": "warn"
   }
 }

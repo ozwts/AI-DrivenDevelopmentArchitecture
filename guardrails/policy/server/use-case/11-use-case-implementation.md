@@ -7,12 +7,23 @@
 ## 基本実装テンプレート
 
 ```typescript
+import type { UseCase } from "@/use-case/interfaces";
+
+// インターフェース定義（必ずUseCase型を使用）
+export type {Action}{Entity}UseCase = UseCase<
+  {Action}{Entity}UseCaseInput,
+  {Action}{Entity}UseCaseOutput,
+  DomainError | NotFoundError | UnexpectedError
+>;
+
+// Props型（すべてreadonly）
 export type {Action}{Entity}UseCaseProps = {
   readonly {entity}Repository: {Entity}Repository;
   readonly logger: Logger;
   readonly fetchNow: FetchNow;
 };
 
+// 実装クラス（必ずインターフェースをimplements）
 export class {Action}{Entity}UseCaseImpl implements {Action}{Entity}UseCase {
   readonly #props: {Action}{Entity}UseCaseProps;
 
@@ -42,6 +53,12 @@ export class {Action}{Entity}UseCaseImpl implements {Action}{Entity}UseCase {
   }
 }
 ```
+
+**必須要件**:
+
+1. インターフェースは `UseCase<TInput, TOutput, TException>` を使用して定義
+2. 実装クラスは必ずインターフェースを `implements` する
+3. Props型のすべてのプロパティは `readonly` にする
 
 ## executeメソッドの実装原則
 
@@ -271,34 +288,34 @@ export type DeleteProjectUseCaseProps = {
 };
 
 async execute(input: Input): Promise<Result> {
-  try {
-    await this.#uowRunner.run(async (uow) => {
-      const findResult = await uow.projectRepository.findById({ id });
-      if (!findResult.success) {
-        throw findResult.error;  // エラーは例外でスロー
-      }
+  const { logger, uowRunner } = this.#props;
 
-      const removeResult = await uow.todoRepository.remove({ id: todoId });
-      if (!removeResult.success) {
-        throw removeResult.error;
-      }
-      // 成功時は自動commit
-    });
+  // Unit of Work内でトランザクション実行（Result型で返す）
+  return uowRunner.run(async (uow) => {
+    const findResult = await uow.projectRepository.findById({ id: input.id });
+    if (!findResult.success) {
+      return findResult;  // エラーはResult型でそのまま返す → 自動rollback
+    }
 
+    if (findResult.data === undefined) {
+      return Result.err(new NotFoundError("プロジェクトが見つかりません"));
+    }
+
+    const removeResult = await uow.todoRepository.remove({ id: todoId });
+    if (!removeResult.success) {
+      return removeResult;  // エラーはResult型でそのまま返す → 自動rollback
+    }
+
+    // 成功時は自動commit
     return Result.ok(undefined);
-  } catch (error) {
-    // 失敗時は自動rollback済み
-    if (error instanceof DomainError) return Result.err(error);
-    if (error instanceof NotFoundError) return Result.err(error);
-    if (error instanceof ForbiddenError) return Result.err(error);
-    return Result.err(new UnexpectedError());
-  }
+  });
 }
 ```
 
 **重要**:
 
-- UoW内では例外をthrowし、外側のcatchでResult型に変換
+- **throwを使用しない**: Result型でエラーを返す（UseCase層の原則と統一）
+- UoWRunner内部でResult.err()の場合は自動rollback、Result.ok()の場合は自動commit
 - ユースケースごとにUoWContext型を定義
 - 単一リポジトリ操作の場合はUnit of Work不要
 

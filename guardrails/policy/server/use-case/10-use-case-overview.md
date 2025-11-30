@@ -135,6 +135,39 @@ return Result.err(new NotFoundError("プロジェクトが見つかりません"
 
 **詳細な実装パターン**: `11-use-case-implementation.md`
 
+## インターフェース定義
+
+**必須要件**: 各ユースケースのインターフェースは `interfaces.ts` の `UseCase<TInput, TOutput, TException>` を使用して定義する。
+
+```typescript
+// ✅ Good: UseCase型を使用
+export type CreateProjectUseCase = UseCase<
+  CreateProjectUseCaseInput,
+  CreateProjectUseCaseOutput,
+  DomainError | UnexpectedError
+>;
+
+// ❌ Bad: 独自に定義
+export type CreateProjectUseCase = {
+  execute(input: CreateProjectUseCaseInput): Promise<CreateProjectUseCaseResult>;
+};
+```
+
+**理由**:
+
+- **統一性**: 全ユースケースが同じ構造を持つことを保証
+- **型安全性**: 基底インターフェースにより戻り値の型が統一される
+- **保守性**: インターフェース変更時に一箇所で対応可能
+
+**実装クラスの定義**:
+
+```typescript
+// 実装クラスは必ずインターフェースをimplementsする
+export class CreateProjectUseCaseImpl implements CreateProjectUseCase {
+  // ...
+}
+```
+
 ## エラー型の定義
 
 **参照**: `@/util/error-util`

@@ -2,7 +2,8 @@
 /* eslint-disable no-restricted-syntax */
 import type { Logger } from "@/domain/support/logger";
 import type { Result } from "@/util/result";
-import { UnexpectedError, ValidationError } from "@/util/error-util";
+import { Result as ResultUtil } from "@/util/result";
+import { NotFoundError, UnexpectedError } from "@/util/error-util";
 import type { ProjectRepository } from "@/domain/model/project/project.repository";
 import type { TodoRepository } from "@/domain/model/todo/todo.repository";
 import type { UnitOfWorkRunner } from "@/domain/support/unit-of-work";
@@ -13,7 +14,7 @@ export type DeleteProjectUseCaseInput = {
 
 export type DeleteProjectUseCaseOutput = void;
 
-export type DeleteProjectUseCaseException = UnexpectedError | ValidationError;
+export type DeleteProjectUseCaseException = UnexpectedError | NotFoundError;
 
 export type DeleteProjectUseCaseResult = Result<
   DeleteProjectUseCaseOutput,
@@ -29,8 +30,8 @@ export type DeleteProjectUoWContext = {
 };
 
 export type DeleteProjectUseCaseProps = {
-  logger: Logger;
-  uowRunner: UnitOfWorkRunner<DeleteProjectUoWContext>;
+  readonly logger: Logger;
+  readonly uowRunner: UnitOfWorkRunner<DeleteProjectUoWContext>;
 };
 
 export type DeleteProjectUseCase = {
@@ -40,120 +41,89 @@ export type DeleteProjectUseCase = {
 };
 
 export class DeleteProjectUseCaseImpl implements DeleteProjectUseCase {
-  readonly #logger: Logger;
+  readonly #props: DeleteProjectUseCaseProps;
 
-  readonly #uowRunner: UnitOfWorkRunner<DeleteProjectUoWContext>;
-
-  constructor({ logger, uowRunner }: DeleteProjectUseCaseProps) {
-    this.#logger = logger;
-    this.#uowRunner = uowRunner;
+  constructor(props: DeleteProjectUseCaseProps) {
+    this.#props = props;
   }
 
   async execute(
     input: DeleteProjectUseCaseInput,
   ): Promise<DeleteProjectUseCaseResult> {
-    this.#logger.debug("use-case: delete-project-use-case", {
+    const { logger, uowRunner } = this.#props;
+
+    logger.debug("use-case: delete-project-use-case", {
       projectId: input.projectId,
     });
 
-    try {
-      // Unit of Work内でトランザクション実行
-      await this.#uowRunner.run(async (uow) => {
-        // プロジェクトが存在するか確認
-        const findResult = await uow.projectRepository.findById({
-          id: input.projectId,
-        });
-
-        if (!findResult.success) {
-          this.#logger.error("プロジェクトの取得に失敗", findResult.error);
-          throw findResult.error;
-        }
-
-        if (findResult.data === undefined) {
-          const notFoundError = new ValidationError(
-            "プロジェクトが見つかりませんでした",
-          );
-          this.#logger.error("プロジェクトが存在しません", {
-            projectId: input.projectId,
-          });
-          throw notFoundError;
-        }
-
-        // プロジェクトに紐づくTODOをすべて取得
-        const todosResult = await uow.todoRepository.findByProjectId({
-          projectId: input.projectId,
-        });
-
-        if (!todosResult.success) {
-          this.#logger.error(
-            "プロジェクトに紐づくTODOの取得に失敗",
-            todosResult.error,
-          );
-          throw todosResult.error;
-        }
-
-        this.#logger.info("プロジェクトに紐づくTODOを削除します", {
-          projectId: input.projectId,
-          todoCount: todosResult.data.length,
-        });
-
-        // プロジェクトに紐づくすべてのTODO削除をUnit Of Workのサンプルとして実装。
-        // DynamoDBにはトランザクションが100件までの制限があるため、トランザクション処理の要否はよく検討すること
-        for (const todo of todosResult.data) {
-          const removeResult = await uow.todoRepository.remove({ id: todo.id });
-          if (!removeResult.success) {
-            this.#logger.error("TODOの削除に失敗", {
-              todoId: todo.id,
-              error: removeResult.error,
-            });
-            throw removeResult.error;
-          }
-        }
-
-        // プロジェクトを削除
-        const deleteResult = await uow.projectRepository.remove({
-          id: input.projectId,
-        });
-
-        if (!deleteResult.success) {
-          this.#logger.error("プロジェクトの削除に失敗", deleteResult.error);
-          throw deleteResult.error;
-        }
-
-        this.#logger.info("プロジェクト削除成功", {
-          projectId: input.projectId,
-          deletedTodoCount: todosResult.data.length,
-        });
+    // Unit of Work内でトランザクション実行（Result型で返す）
+    return uowRunner.run<void, DeleteProjectUseCaseException>(async (uow) => {
+      // プロジェクトが存在するか確認
+      const findResult = await uow.projectRepository.findById({
+        id: input.projectId,
       });
 
-      return {
-        success: true,
-        data: undefined,
-      };
-    } catch (error) {
-      this.#logger.error("プロジェクト削除に失敗しました", error as Error);
-
-      // ValidationErrorの場合はそのまま返す
-      if (error instanceof ValidationError) {
-        return {
-          success: false,
-          error,
-        };
+      if (!findResult.success) {
+        logger.error("プロジェクトの取得に失敗", findResult.error);
+        return findResult;
       }
 
-      // UnexpectedErrorの場合もそのまま返す
-      if (error instanceof UnexpectedError) {
-        return {
-          success: false,
-          error,
-        };
+      if (findResult.data === undefined) {
+        logger.error("プロジェクトが存在しません", {
+          projectId: input.projectId,
+        });
+        return ResultUtil.err(
+          new NotFoundError("プロジェクトが見つかりませんでした"),
+        );
       }
 
-      // その他のエラーはUnexpectedErrorとして返す
-      return {
-        success: false,
-        error: new UnexpectedError(),
-      };
-    }
+      // プロジェクトに紐づくTODOをすべて取得
+      const todosResult = await uow.todoRepository.findByProjectId({
+        projectId: input.projectId,
+      });
+
+      if (!todosResult.success) {
+        logger.error(
+          "プロジェクトに紐づくTODOの取得に失敗",
+          todosResult.error,
+        );
+        return todosResult;
+      }
+
+      logger.info("プロジェクトに紐づくTODOを削除します", {
+        projectId: input.projectId,
+        todoCount: todosResult.data.length,
+      });
+
+      // プロジェクトに紐づくすべてのTODO削除をUnit Of Workのサンプルとして実装。
+      // DynamoDBにはトランザクションが100件までの制限があるため、トランザクション処理の要否はよく検討すること
+      for (const todo of todosResult.data) {
+        const removeResult = await uow.todoRepository.remove({ id: todo.id });
+        if (!removeResult.success) {
+          logger.error("TODOの削除に失敗", {
+            todoId: todo.id,
+            error: removeResult.error,
+          });
+          return removeResult;
+        }
+      }
+
+      // プロジェクトを削除
+      const deleteResult = await uow.projectRepository.remove({
+        id: input.projectId,
+      });
+
+      if (!deleteResult.success) {
+        logger.error("プロジェクトの削除に失敗", deleteResult.error);
+        return deleteResult;
+      }
+
+      logger.info("プロジェクト削除成功", {
+        projectId: input.projectId,
+        deletedTodoCount: todosResult.data.length,
+      });
+
+      return ResultUtil.ok(undefined);
+    });
   }
 }

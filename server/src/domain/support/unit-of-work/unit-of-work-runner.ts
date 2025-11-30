@@ -1,3 +1,5 @@
+import type { Result } from "@/util/result";
+
 /**
  * Unit of Work Runner interface
  *
@@ -9,8 +11,15 @@ export type UnitOfWorkRunner<TUoW> = {
   /**
    * トランザクション内でコールバックを実行する
    *
-   * @param callback - トランザクション内で実行する処理
-   * @returns コールバックの実行結果
+   * - コールバックはResult型を返す
+   * - Result.ok()の場合のみコミット
+   * - Result.err()の場合はロールバック
+   * - throwは使用しない（Result型でエラーを表現）
+   *
+   * @param callback - トランザクション内で実行する処理（Result型を返す）
+   * @returns コールバックの実行結果（Result型）
    */
-  run<TResult>(callback: (uow: TUoW) => Promise<TResult>): Promise<TResult>;
+  run<TOutput, TError extends Error>(
+    callback: (uow: TUoW) => Promise<Result<TOutput, TError>>,
+  ): Promise<Result<TOutput, TError>>;
 };

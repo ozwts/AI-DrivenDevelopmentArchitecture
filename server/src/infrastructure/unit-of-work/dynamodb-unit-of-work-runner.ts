@@ -1,6 +1,7 @@
 import type { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import type { UnitOfWorkRunner } from "@/domain/support/unit-of-work";
 import type { Logger } from "@/domain/support/logger";
+import type { Result } from "@/util/result";
 import { DynamoDBUnitOfWork } from "./dynamodb-unit-of-work";
 
 export type DynamoDBUnitOfWorkRunnerProps = {
@@ -13,14 +14,20 @@ export type DynamoDBUnitOfWorkRunnerProps = {
  *
  * トランザクション境界を管理し、自動的にコミット/ロールバックを行う
  *
+ * - コールバックはResult型を返す
+ * - Result.ok()の場合のみコミット
+ * - Result.err()の場合はロールバック
+ *
  * @example
  * ```typescript
  * const runner = new DynamoDBUnitOfWorkRunner({ ddbDoc, logger });
  *
  * const result = await runner.run(async (uow) => {
- *   await todoRepository.save(todo, uow);
- *   await userRepository.save(user, uow);
- *   return { success: true };
+ *   const saveResult = await todoRepository.save(todo, uow);
+ *   if (!saveResult.success) {
+ *     return saveResult;  // エラー時はロールバック
+ *   }
+ *   return Result.ok({ todo });  // 成功時はコミット
  * });
  * ```
  */
@@ -40,32 +47,31 @@ export class DynamoDBUnitOfWorkRunner<TUoW> implements UnitOfWorkRunner<TUoW> {
     this.#createUowContext = createUowContext;
   }
 
-  async run<TResult>(
-    callback: (uow: TUoW) => Promise<TResult>,
-  ): Promise<TResult> {
+  async run<TOutput, TError extends Error>(
+    callback: (uow: TUoW) => Promise<Result<TOutput, TError>>,
+  ): Promise<Result<TOutput, TError>> {
     const uow = new DynamoDBUnitOfWork(this.#logger);
     const context = this.#createUowContext(uow);
 
-    try {
-      this.#logger.debug("トランザクションを開始しました");
+    this.#logger.debug("トランザクションを開始しました");
 
-      // コールバックを実行
-      const result = await callback(context);
+    // コールバックを実行
+    const result = await callback(context);
 
-      // 成功時は自動的にコミット
-      await uow.commit(this.#ddbDoc);
-
-      this.#logger.debug("トランザクションのコミットに成功しました");
-
-      return result;
-    } catch (error) {
+    if (!result.success) {
       // エラー時はロールバック（操作をクリア）
       uow.rollback();
-      this.#logger.error(
+      this.#logger.debug(
         "トランザクションが失敗しました。ロールバックします",
-        error as Error,
       );
-      throw error;
+      return result;
     }
+
+    // 成功時は自動的にコミット
+    await uow.commit(this.#ddbDoc);
+
+    this.#logger.debug("トランザクションのコミットに成功しました");
+
+    return result;
   }
 }
