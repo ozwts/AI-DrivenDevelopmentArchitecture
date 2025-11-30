@@ -1,5 +1,7 @@
 import { faker } from "@faker-js/faker";
-import { Attachment, AttachmentStatus } from "./attachment";
+import { Attachment } from "./attachment";
+import { AttachmentStatus } from "./attachment-status.vo";
+import { attachmentStatusDummyFrom } from "./attachment-status.vo.dummy";
 import {
   getDummyId,
   getDummyShortText,
@@ -33,7 +35,7 @@ export type AttachmentDummyProps = Partial<{
  * const attachment = attachmentDummyFrom({
  *   id: "attachment-123",
  *   fileName: "document.pdf",
- *   status: "UPLOADED"
+ *   status: AttachmentStatus.uploaded()
  * });
  * ```
  */
@@ -51,7 +53,7 @@ export const attachmentDummyFrom = (
     storageKey: props?.storageKey ?? `attachments/${todoId}/${id}/${fileName}`,
     contentType: props?.contentType ?? "application/pdf",
     fileSize: props?.fileSize ?? faker.number.int({ min: 1000, max: 10000000 }),
-    status: props?.status !== undefined ? props.status : AttachmentStatus.prepared(),
+    status: props?.status !== undefined ? props.status : attachmentStatusDummyFrom(),
     uploadedBy: props?.uploadedBy ?? getDummyId(),
     createdAt: props?.createdAt ?? now,
     updatedAt: props?.updatedAt ?? now,

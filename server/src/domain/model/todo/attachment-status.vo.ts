@@ -1,10 +1,5 @@
 import { DomainError } from "../../../util/error-util";
 import { Result } from "../../../util/result";
-import {
-  type ValueObject,
-  type ValueObjectConstructor,
-  staticImplements,
-} from "../value-object";
 
 /**
  * AttachmentStatus Props型
@@ -26,8 +21,7 @@ export type AttachmentStatusProps = {
  * - PREPARED -> UPLOADED: 可能（アップロード完了）
  * - UPLOADED -> PREPARED: 不可（逆方向の遷移は許可しない）
  */
-@staticImplements<ValueObjectConstructor<AttachmentStatus>>()
-export class AttachmentStatus implements ValueObject<AttachmentStatus> {
+export class AttachmentStatus {
   private constructor(private readonly _value: "PREPARED" | "UPLOADED") {}
 
   /**
@@ -66,7 +60,7 @@ export class AttachmentStatus implements ValueObject<AttachmentStatus> {
   /**
    * ステータスの値を取得
    */
-  get value(): "PREPARED" | "UPLOADED" {
+  get status(): "PREPARED" | "UPLOADED" {
     return this._value;
   }
 

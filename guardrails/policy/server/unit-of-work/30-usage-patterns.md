@@ -310,10 +310,10 @@ container
 **重要**: Repository DummyとEntity Dummyファクトリを使用する。
 
 ```typescript
-import { todoDummyFrom } from "@/domain/model/todo/todo.dummy";
-import { userDummyFrom } from "@/domain/model/user/user.dummy";
-import { TodoRepositoryDummy } from "@/domain/model/todo/todo-repository.dummy";
-import { UserRepositoryDummy } from "@/domain/model/user/user-repository.dummy";
+import { todoDummyFrom } from "@/domain/model/todo/todo.entity.dummy";
+import { userDummyFrom } from "@/domain/model/user/user.entity.dummy";
+import { TodoRepositoryDummy } from "@/domain/model/todo/todo.repository.dummy";
+import { UserRepositoryDummy } from "@/domain/model/user/user.repository.dummy";
 import { buildFetchNowDummy } from "@/domain/support/fetch-now/dummy";
 
 describe("CreateTodoUseCase", () => {
@@ -362,7 +362,7 @@ describe("CreateTodoUseCase", () => {
 **重要**: Medium TestでもEntity Dummyファクトリを使用する。
 
 ```typescript
-import { todoDummyFrom } from "@/domain/model/todo/todo.dummy";
+import { todoDummyFrom } from "@/domain/model/todo/todo.entity.dummy";
 
 describe("CreateTodoUseCase (Medium Test)", () => {
   test("トランザクションが正常にコミットされる", async () => {

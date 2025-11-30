@@ -1,10 +1,5 @@
 import { DomainError } from "../../../util/error-util";
 import { Result } from "../../../util/result";
-import {
-  type ValueObject,
-  type ValueObjectConstructor,
-  staticImplements,
-} from "../value-object";
 
 /**
  * TodoStatus Props型
@@ -26,8 +21,7 @@ export type TodoStatusProps = {
  * Tier 1（Value Object化が必須）として定義。
  * すべての状態遷移を許可するため、状態遷移の制約は存在しない。
  */
-@staticImplements<ValueObjectConstructor<TodoStatus>>()
-export class TodoStatus implements ValueObject<TodoStatus> {
+export class TodoStatus {
   private constructor(private readonly _value: "TODO" | "IN_PROGRESS" | "COMPLETED") {}
 
   /**
@@ -73,7 +67,7 @@ export class TodoStatus implements ValueObject<TodoStatus> {
   /**
    * ステータスの値を取得
    */
-  get value(): "TODO" | "IN_PROGRESS" | "COMPLETED" {
+  get status(): "TODO" | "IN_PROGRESS" | "COMPLETED" {
     return this._value;
   }
 

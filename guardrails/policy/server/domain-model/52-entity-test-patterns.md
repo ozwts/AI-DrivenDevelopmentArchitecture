@@ -1,199 +1,98 @@
 # Entityテストパターン
 
-## 概要
+## 核心原則
 
-このドキュメントは、Entityの具体的なテスト実装パターンをまとめたものである。
+すべてのテストコードで**Dummyファクトリを使用**し、`new Entity()`を直接使わない（保守性向上）。
 
-**核心原則**: すべてのテストコードでDummyファクトリを使用し、モデル変更時のテスト修正負荷を最小化する。
+## 関連ドキュメント
 
-**関連ドキュメント**:
+| トピック         | ファイル                       |
+| ---------------- | ------------------------------ |
+| テスト概要       | `50-test-overview.md`          |
+| Value Objectテスト | `51-value-object-test-patterns.md` |
+| Entity設計       | `20-entity-overview.md`        |
+| 共通Dummyヘルパー | `server/src/util/testing-util/dummy-data.ts` |
 
-- **テスト概要**: `50-test-overview.md`
-- **Value Objectテスト**: `51-value-object-test-patterns.md`
-- **Entity設計**: `20-entity-overview.md`
-- **共通Dummyヘルパー**: `server/src/util/testing-util/dummy-data.ts`
+## テスト対象
 
-## テスト対象メソッド
+| 対象               | テスト内容                       | 方法                     |
+| ------------------ | -------------------------------- | ------------------------ |
+| `from()`異常系     | 不整合データのエラー             | `Todo.from()`を直接呼ぶ  |
+| 専用更新メソッド   | 正常系、イミュータブル性         | Dummyファクトリを使用    |
 
-Entityは以下のメソッドを持つ（`20-entity-overview.md`参照）:
+**注意**: `from()`正常系のテストは不要。Dummyファクトリが内部で`from()`を呼ぶため、Dummyが動作すれば検証済み。
 
-1. **コンストラクタ** - 必須
-2. **専用更新メソッド** (`changeStatus()`等) - 必須
+## テストパターン
 
-## 1. コンストラクタテスト
+### from()異常系テスト（直接呼び出し）
+
+Dummyファクトリは正常データしか生成しないため、不整合データのテストは`from()`を直接呼ぶ。
 
 ```typescript
-describe("constructor", () => {
-  it("すべてのプロパティを持つインスタンスを作成できる", () => {
-    // Arrange
-    const status = TodoStatus.todo();
-
-    // Act
-    const todo = new Todo({
-      id: "todo-123",
-      title: "新しいタスク",
-      description: "タスクの説明",
-      status,
-      dueDate: "2024-12-31T23:59:59.000Z",
-      completedAt: undefined,
-      createdAt: "2024-01-01T00:00:00.000Z",
-      updatedAt: "2024-01-01T00:00:00.000Z",
-    });
-
-    // Assert
-    expect(todo.id).toBe("todo-123");
-    expect(todo.title).toBe("新しいタスク");
-    expect(todo.description).toBe("タスクの説明");
-    expect(todo.status.isTodo()).toBe(true);
-    expect(todo.dueDate).toBe("2024-12-31T23:59:59.000Z");
-    expect(todo.createdAt).toBe("2024-01-01T00:00:00.000Z");
-    expect(todo.updatedAt).toBe("2024-01-01T00:00:00.000Z");
-  });
-
-  it("undefinedフィールドを明示的に渡してインスタンスを作成できる", () => {
-    const status = TodoStatus.todo();
-
-    const todo = new Todo({
-      id: "todo-123",
-      title: "必須項目のみのタスク",
-      description: undefined, // 明示的にundefinedを渡す
-      status,
-      dueDate: undefined, // 明示的にundefinedを渡す
-      completedAt: undefined, // 明示的にundefinedを渡す
-      createdAt: "2024-01-01T00:00:00.000Z",
-      updatedAt: "2024-01-01T00:00:00.000Z",
-    });
-
-    expect(todo.id).toBe("todo-123");
-    expect(todo.title).toBe("必須項目のみのタスク");
-    expect(todo.description).toBeUndefined();
-    expect(todo.dueDate).toBeUndefined();
-  });
-
-  it("Value Objectを保持できる", () => {
-    const status = TodoStatus.completed();
-
-    const todo = new Todo({
+describe("from", () => {
+  it("不整合なデータの場合DomainErrorを返す", () => {
+    const result = Todo.from({
       id: "todo-123",
       title: "タスク",
       description: undefined,
-      status,
+      status: TodoStatus.completed(),
       dueDate: undefined,
-      completedAt: undefined,
+      completedAt: undefined, // 完了済みなのにcompletedAtがない
       createdAt: "2024-01-01T00:00:00.000Z",
       updatedAt: "2024-01-01T00:00:00.000Z",
     });
 
-    expect(todo.status).toBeInstanceOf(TodoStatus);
-    expect(todo.status.isCompleted()).toBe(true);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toBeInstanceOf(DomainError);
+    }
   });
 });
 ```
 
-**テストカバレッジ目標**:
-
-- ✅ 必須プロパティのみでインスタンス作成
-- ✅ オプショナルプロパティ含めてインスタンス作成
-- ✅ Value Objectが正しく保持されること
-
-## 2. 専用メソッドテスト（changeStatus等）
-
-**Value Objectを保持するEntityの専用更新メソッド**:
+### 専用メソッドテスト（Dummyファクトリ使用）
 
 ```typescript
-describe("changeStatus", () => {
-  it("ステータスを変更した新しいインスタンスを返す", () => {
-    // Arrange
-    const todo = new Todo({
-      id: "todo-123",
-      title: "タスク",
+describe("complete", () => {
+  it("完了した新しいインスタンスを返す", () => {
+    const todo = todoDummyFrom({
       status: TodoStatus.todo(),
-      createdAt: "2024-01-01T00:00:00.000Z",
-      updatedAt: "2024-01-01T00:00:00.000Z",
+      dueDate: "2024-12-31T23:59:59.000Z",
     });
 
-    // Act
-    const updated = todo.changeStatus(
-      TodoStatus.completed(),
+    const result = todo.complete(
+      "2024-01-02T00:00:00.000Z",
       "2024-01-02T00:00:00.000Z",
     );
 
-    // Assert
-    expect(updated.status.isCompleted()).toBe(true);
-    expect(updated.updatedAt).toBe("2024-01-02T00:00:00.000Z");
-    expect(updated.id).toBe(todo.id);
-    expect(updated.title).toBe(todo.title);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.status.isCompleted()).toBe(true);
+      expect(result.data.updatedAt).toBe("2024-01-02T00:00:00.000Z");
+    }
   });
 
   it("元のインスタンスは変更されない", () => {
-    const todo = new Todo({
-      id: "todo-123",
-      title: "タスク",
+    const todo = todoDummyFrom({
       status: TodoStatus.todo(),
-      createdAt: "2024-01-01T00:00:00.000Z",
-      updatedAt: "2024-01-01T00:00:00.000Z",
+      dueDate: "2024-12-31T23:59:59.000Z",
     });
 
-    // Act
-    todo.changeStatus(TodoStatus.completed(), "2024-01-02T00:00:00.000Z");
+    todo.complete("2024-01-02T00:00:00.000Z", "2024-01-02T00:00:00.000Z");
 
-    // Assert
-    expect(todo.status.isTodo()).toBe(true);
-    expect(todo.updatedAt).toBe("2024-01-01T00:00:00.000Z");
+    expect(todo.status.isTodo()).toBe(true); // 不変
   });
 });
 ```
 
-## テスト用ファクトリ（Dummy）実装パターン
+## Entity Dummyファクトリ
 
-### 核心原則
-
-1. **全テストでDummyファクトリを使用** - `new Entity()`を直接使わない（保守性向上）
-2. **ランダム値を使用** - `faker`を使って実世界的なデータ生成
-3. **オプショナルフィールドもランダム化** - 50%の確率で値を設定/undefined
-4. **基本データは共通ヘルパーを活用** - `util/testing-util/dummy-data.ts`の基本ヘルパー（ID、文字列、日付等）を使用
-5. **Value ObjectはDummyファクトリを使用** - 共通ヘルパーではなくValue Object Dummyファクトリを使用
-
-### 共通Dummyヘルパー
-
-すべてのDummyファクトリで基本データ型の共通ヘルパー関数を使用する。
-
-**ファイル**: `server/src/util/testing-util/dummy-data.ts`
-
-**重要**: Value Object用のヘルパーは作らず、Value Object Dummyファクトリを使用する。
+### 実装パターン
 
 ```typescript
-import { fakerJA as faker } from "@faker-js/faker";
-
-// 基本ジェネレータ（ID、文字列、日付等）
-export const getDummyId = () => faker.string.uuid();
-export const getDummyEmail = () => faker.internet.email();
-export const getDummyShortText = () => faker.lorem.words({ min: 1, max: 5 });
-export const getDummyDescription = () => faker.lorem.paragraph();
-export const getDummyRecentDate = () => faker.date.recent().toISOString();
-
-// オプショナルフィールド用（50%の確率でundefined）
-export const getDummyDueDate = () =>
-  faker.helpers.maybe(() => faker.date.future().toISOString(), {
-    probability: 0.5,
-  });
-
-// ❌ Bad: Value Object用のヘルパーは作らない
-// export const getDummyTodoStatus = (): TodoStatus => ...
-// → Value Object Dummyファクトリ（todoStatusDummyFrom()）を使用する
-```
-
-### Entity Dummy実装パターン
-
-**重要**: Value Objectのランダム生成は**Value Object Dummyファクトリ**を使用する（パターン統一、部分オーバーライド可能）。
-
-#### Value Object Dummyファクトリ使用
-
-```typescript
-// todo.dummy.ts
-import { Todo } from "./todo";
-import { TodoStatus } from "./todo-status";
-import { todoStatusDummyFrom } from "./todo-status.dummy"; // ✅ Value Object Dummy
+// todo.entity.dummy.ts
+import { Todo } from "./todo.entity";
+import { todoStatusDummyFrom } from "./todo-status.vo.dummy";
 import {
   getDummyId,
   getDummyShortText,
@@ -213,201 +112,106 @@ export type TodoDummyProps = Partial<{
   updatedAt: string;
 }>;
 
-/**
- * テスト用Todoファクトリ
- *
- * - ランダム値を使用（faker経由）
- * - Value ObjectはDummyファクトリを使用
- * - オプショナルフィールドは50%の確率でundefined
- * - 部分オーバーライド可能
- */
 export const todoDummyFrom = (props?: TodoDummyProps): Todo => {
   const now = getDummyRecentDate();
 
-  return new Todo({
+  const result = Todo.from({
     id: props?.id ?? getDummyId(),
     title: props?.title ?? getDummyShortText(),
     description: props?.description ?? getDummyDescription(),
-    status: props?.status ?? todoStatusDummyFrom(), // ✅ Value Object Dummy
+    status: props?.status ?? todoStatusDummyFrom(), // VO Dummyを使用
     dueDate: props?.dueDate ?? getDummyDueDate(), // 50%でundefined
-    completedAt: props?.completedAt, // 明示的にundefined
+    completedAt: props?.completedAt,
     createdAt: props?.createdAt ?? now,
     updatedAt: props?.updatedAt ?? now,
   });
+
+  if (!result.success) {
+    throw new Error(`Dummy creation failed: ${result.error.message}`);
+  }
+  return result.data;
 };
 ```
 
 ### 使用例
 
 ```typescript
-// ✅ Good: ランダム値でダミー生成
+// ランダム値でダミー生成
 const todo = todoDummyFrom();
-// → id, title, description, status, dueDateなどがランダム値
-// → dueDateは50%の確率でundefined
 
-// ✅ Good: 一部のプロパティをオーバーライド
+// 一部のプロパティをオーバーライド
 const completedTodo = todoDummyFrom({
   title: "完了済みタスク",
   status: TodoStatus.completed(),
-  completedAt: "2024-01-02T00:00:00.000Z",
 });
-// → title, status, completedAtのみ固定、他はランダム
+```
 
-// ❌ Bad: 固定値を使用（ランダム性がない）
-export const todoDummyFrom = (props?: TodoDummyProps): Todo => {
-  return new Todo({
-    id: props?.id ?? "test-todo-id", // ❌ 固定値
-    title: props?.title ?? "Test Task", // ❌ 固定値
-    // ...
+## 共通Dummyヘルパー
+
+**ファイル**: `server/src/util/testing-util/dummy-data.ts`
+
+```typescript
+import { fakerJA as faker } from "@faker-js/faker";
+
+export const getDummyId = () => faker.string.uuid();
+export const getDummyShortText = () => faker.lorem.words({ min: 1, max: 5 });
+export const getDummyDescription = () => faker.lorem.paragraph();
+export const getDummyRecentDate = () => faker.date.recent().toISOString();
+
+// オプショナルフィールド用（50%の確率でundefined）
+export const getDummyDueDate = () =>
+  faker.helpers.maybe(() => faker.date.future().toISOString(), {
+    probability: 0.5,
   });
-};
+```
 
-// ❌ Bad: テストで直接new Todo()を使用
-const todo = new Todo({
+**重要**: Value Object用のヘルパーは作らず、Value Object Dummyファクトリを使用する。
+
+## ファイル構成
+
+```
+domain/model/todo/
+├── todo.entity.ts              # Entity
+├── todo.entity.dummy.ts        # Entity Dummy（VO Dummyを使用）
+├── todo.entity.small.test.ts   # Entityテスト
+├── todo-status.vo.ts           # Value Object
+├── todo-status.vo.dummy.ts     # VO Dummyファクトリ
+└── todo-status.vo.small.test.ts
+```
+
+## Do / Don't
+
+### Good
+
+```typescript
+// Dummyファクトリを使用
+const todo = todoDummyFrom({ title: "テスト" });
+
+// 一部オーバーライド
+const completedTodo = todoDummyFrom({
+  status: TodoStatus.completed(),
+  completedAt: now,
+});
+```
+
+### Bad
+
+```typescript
+// テストで直接Todo.from()を使用（専用メソッドテストの場合）
+const result = Todo.from({
   id: "todo-1",
   title: "タスク",
   status: TodoStatus.todo(),
   // ... モデル変更時に全テストを修正する必要がある
-});
-```
+}); // ❌ Dummyファクトリを使用すべき（from()異常系テスト以外）
 
-### オプショナルフィールドのランダム化パターン
-
-```typescript
-// パターン1: 50%の確率でundefined
-dueDate: props?.dueDate ?? getDummyDueDate(),  // getDummyDueDate()が50%でundefinedを返す
-
-// パターン2: 常にundefined（明示的）
-completedAt: props?.completedAt,  // デフォルトでundefined
-
-// パターン3: ドメインルールに基づく条件付き
-description: props?.description ??
-  (Math.random() > 0.5 ? getDummyDescription() : undefined),
-```
-
-## テストパターン例：Todo Entity
-
-以下は、Todo Entityの完全なテスト例です。
-
-```typescript
-// todo.small.test.ts
-import { describe, expect, it } from "vitest";
-import { Todo } from "./todo";
-import { TodoStatus } from "./todo-status";
-import { todoDummyFrom } from "./todo.dummy";
-
-describe("Todo", () => {
-  describe("constructor", () => {
-    it("すべてのプロパティを持つインスタンスを作成できる", () => {
-      const status = TodoStatus.todo();
-
-      const todo = new Todo({
-        id: "todo-123",
-        title: "新しいタスク",
-        description: "タスクの説明",
-        status,
-        dueDate: "2024-12-31T23:59:59.000Z",
-        completedAt: undefined,
-        createdAt: "2024-01-01T00:00:00.000Z",
-        updatedAt: "2024-01-01T00:00:00.000Z",
-      });
-
-      expect(todo.id).toBe("todo-123");
-      expect(todo.title).toBe("新しいタスク");
-      expect(todo.description).toBe("タスクの説明");
-      expect(todo.status.isTodo()).toBe(true);
-    });
-
-    it("undefinedフィールドを明示的に渡してインスタンスを作成できる", () => {
-      const status = TodoStatus.todo();
-
-      const todo = new Todo({
-        id: "todo-123",
-        title: "必須項目のみのタスク",
-        description: undefined, // 明示的にundefinedを渡す
-        status,
-        dueDate: undefined, // 明示的にundefinedを渡す
-        completedAt: undefined, // 明示的にundefinedを渡す
-        createdAt: "2024-01-01T00:00:00.000Z",
-        updatedAt: "2024-01-01T00:00:00.000Z",
-      });
-
-      expect(todo.description).toBeUndefined();
-      expect(todo.dueDate).toBeUndefined();
-    });
-
-    it("Value Objectを保持できる", () => {
-      const status = TodoStatus.completed();
-
-      const todo = new Todo({
-        id: "todo-123",
-        title: "タスク",
-        description: undefined,
-        status,
-        dueDate: undefined,
-        completedAt: undefined,
-        createdAt: "2024-01-01T00:00:00.000Z",
-        updatedAt: "2024-01-01T00:00:00.000Z",
-      });
-
-      expect(todo.status).toBeInstanceOf(TodoStatus);
-      expect(todo.status.isCompleted()).toBe(true);
-    });
+// 固定値を使用
+export const todoDummyFrom = (): Todo => {
+  const result = Todo.from({
+    id: "test-todo-id", // ❌ ランダム値を使う
+    title: "Test Task",
+    // ...
   });
-
-  describe("changeStatus", () => {
-    it("ステータスを変更した新しいインスタンスを返す", () => {
-      const todo = todoDummyFrom({
-        status: TodoStatus.todo(),
-      });
-
-      const updated = todo.changeStatus(
-        TodoStatus.completed(),
-        "2024-01-02T00:00:00.000Z",
-      );
-
-      expect(updated.status.isCompleted()).toBe(true);
-      expect(updated.updatedAt).toBe("2024-01-02T00:00:00.000Z");
-    });
-
-    it("元のインスタンスは変更されない", () => {
-      const todo = todoDummyFrom({
-        status: TodoStatus.todo(),
-      });
-
-      todo.changeStatus(TodoStatus.completed(), "2024-01-02T00:00:00.000Z");
-
-      expect(todo.status.isTodo()).toBe(true);
-    });
-  });
-});
-```
-
-## チェックリスト
-
-### Dummyファクトリ実装
-
-```
-[ ] Dummyファクトリを実装（{entity}.dummy.ts）
-[ ] Partial<>型でProps定義（全フィールドオプション）
-[ ] 基本データは共通ヘルパーを使用（getDummyId, getDummyShortText等）
-[ ] fakerを使ってランダム値を生成
-[ ] オプショナルフィールドは確率的にundefined（例: 50%）
-[ ] 固定値を使用していない（ランダム性を確保）
-[ ] createdAt/updatedAtは同じnow値を使用（一貫性）
-[ ] Value ObjectはDummyファクトリを使用
-[ ] Value Object Dummyファクトリをインポート（{valueObject}DummyFrom()）
-```
-
-### テスト実装
-
-```
-[ ] constructorテスト（必須、オプショナル）
-[ ] 専用メソッドテスト（changeStatus等）
-[ ] イミュータブル性テスト（元のインスタンス不変）
-[ ] 新しいインスタンス生成の検証
-[ ] ID、createdAtは不変であることの検証
-[ ] Value Object保持の検証
-[ ] ファイル名: {entity}.small.test.ts
-[ ] 全テストケースでDummyファクトリを使用（new Entity()を直接使わない）
+  return result.data!;
+};
 ```

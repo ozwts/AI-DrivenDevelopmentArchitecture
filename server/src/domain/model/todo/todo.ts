@@ -1,5 +1,5 @@
 import type { Attachment } from "./attachment";
-import { TodoStatus } from "./todo-status";
+import { TodoStatus } from "./todo-status.vo";
 
 // TodoStatusを再エクスポート
 export { TodoStatus };
@@ -21,14 +21,14 @@ export type TodoProps = {
   id: string;
   title: string;
   description: string | undefined;
-  status: TodoStatus | undefined;
-  priority: TodoPriority | undefined;
+  status: TodoStatus;
+  priority: TodoPriority;
   dueDate: string | undefined;
   projectId: string | undefined;
   assigneeUserId: string;
   createdAt: string;
   updatedAt: string;
-  attachments: Attachment[] | undefined;
+  attachments: Attachment[];
 };
 
 /**
@@ -87,7 +87,7 @@ export class Todo {
    * TODOの進捗状況。
    * デフォルト値は "TODO"（未着手）。
    */
-  readonly status: TodoStatus | undefined;
+  readonly status: TodoStatus;
 
   /**
    * 優先度
@@ -95,13 +95,13 @@ export class Todo {
    * TODOの重要度。
    * デフォルト値は "MEDIUM"（中優先度）。
    */
-  readonly priority: TodoPriority | undefined;
+  readonly priority: TodoPriority;
 
   /**
    * 期限日
    *
    * TODOの完了期限（ISO 8601形式）。
-   * オプション項目。
+   * - undefined: "期限なし"を意味する
    */
   readonly dueDate: string | undefined;
 
@@ -109,7 +109,7 @@ export class Todo {
    * プロジェクトID
    *
    * このTODOが属するプロジェクトのID。
-   * オプション項目。プロジェクトに属さないTODOも存在可能。
+   * - undefined: "プロジェクトに属さない"を意味する
    */
   readonly projectId: string | undefined;
 
@@ -144,7 +144,7 @@ export class Todo {
    * このTODOに添付されているファイルのリスト。
    * Todoアグリゲートの一部として管理される。
    */
-  readonly attachments: Attachment[] | undefined;
+  readonly attachments: Attachment[];
 
   /**
    * コンストラクタ
@@ -280,7 +280,7 @@ export class Todo {
   addAttachment(attachment: Attachment, updatedAt: string): Todo {
     return new Todo({
       ...this,
-      attachments: [...(this.attachments ?? []), attachment],
+      attachments: [...this.attachments, attachment],
       updatedAt,
     });
   }
@@ -295,7 +295,7 @@ export class Todo {
   removeAttachment(attachmentId: string, updatedAt: string): Todo {
     return new Todo({
       ...this,
-      attachments: (this.attachments ?? []).filter((a) => a.id !== attachmentId),
+      attachments: this.attachments.filter((a) => a.id !== attachmentId),
       updatedAt,
     });
   }
@@ -310,7 +310,7 @@ export class Todo {
   updateAttachment(updatedAttachment: Attachment, updatedAt: string): Todo {
     return new Todo({
       ...this,
-      attachments: (this.attachments ?? []).map((a) =>
+      attachments: this.attachments.map((a) =>
         a.id === updatedAttachment.id ? updatedAttachment : a,
       ),
       updatedAt,

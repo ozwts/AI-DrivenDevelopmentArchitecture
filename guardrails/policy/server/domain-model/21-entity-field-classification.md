@@ -1,424 +1,176 @@
 # エンティティ設計：フィールド分類
 
-## 概要
+## 核心原則
 
-Always Valid原則を厳密に適用しつつ、実用性を考慮した3段階のフィールド分類を採用する。
+Entityフィールドは**必須性とundefinedの意味**で3段階に分類し、**コンストラクタでは全フィールドを必須化**する（analyzability原則）。
 
-**関連ドキュメント**:
+## 関連ドキュメント
 
-- **設計概要**: `20-entity-overview.md`
-- **実装詳細**: `22-entity-implementation.md`
-- **バリデーション戦略**: `11-domain-validation-strategy.md`
+| トピック           | ファイル                       |
+| ------------------ | ------------------------------ |
+| Entity設計概要     | `20-entity-overview.md`        |
+| Entity実装詳細     | `22-entity-implementation.md`  |
+| バリデーション戦略 | `11-domain-validation-strategy.md` |
+| PATCH更新パターン  | `../use-case/20-use-case-implementation.md` |
 
-## 3-Tier分類によるプラグマティックアプローチ
+## 3-Tier分類
 
-### Tier 1: Required（常に必要）
+| Tier   | 分類         | フィールド定義       | コンストラクタ             | undefined の意味 | 例                    |
+| ------ | ------------ | -------------------- | -------------------------- | ---------------- | --------------------- |
+| Tier 1 | Required     | `string`             | `string`（必須）           | -                | id, title, status     |
+| Tier 2 | Special Case | `string \| undefined` | `string \| undefined`（必須） | ビジネス上の意味 | dueDate, completedAt  |
+| Tier 3 | Optional     | `string \| undefined` | `string \| undefined`（必須） | 単に未設定       | description, memo     |
 
-**定義**: ビジネスロジック上、常に値が必要なフィールド
+### Tier 1: Required
 
-**実装**:
+ビジネスロジック上、常に値が必要なフィールド。
 
 ```typescript
-export class Todo {
-  readonly id: string; // Required
-  readonly title: string; // Required
-  readonly status: TodoStatus; // Required（Value Object）
-  readonly createdAt: string; // Required
-  readonly updatedAt: string; // Required
+readonly id: string;
+readonly title: string;
+readonly status: TodoStatus;
+readonly createdAt: string;
+readonly updatedAt: string;
+```
+
+### Tier 2: Special Case
+
+`undefined`がビジネス上の意味を持つフィールド。**JSDocでundefinedの意味を必ず記載する**。
+
+```typescript
+/**
+ * 期限日
+ * - 値あり: 期限が設定されている
+ * - undefined: 「期限なし」を意味する（明示的な業務状態）
+ */
+readonly dueDate: string | undefined;
+
+/**
+ * 完了日時
+ * - 値あり: 完了済み
+ * - undefined: 「未完了」を意味する（明示的な業務状態）
+ */
+readonly completedAt: string | undefined;
+```
+
+### Tier 3: Optional
+
+あってもなくても良いフィールド。undefinedは単に「未設定」を意味する。
+
+```typescript
+/**
+ * 説明
+ * TODOの詳細説明。
+ */
+readonly description: string | undefined;
+```
+
+## コンストラクタ
+
+**analyzability原則**: すべてのフィールドを`| undefined`で必須化し、省略不可にする。
+
+```typescript
+constructor(props: {
+  id: string;
+  title: string;
+  status: TodoStatus;
+  dueDate: string | undefined;      // Tier 2: 必須（undefinedを明示的に渡す）
+  completedAt: string | undefined;  // Tier 2: 必須
+  description: string | undefined;  // Tier 3: 必須
+  createdAt: string;
+  updatedAt: string;
+}) {
+  this.id = props.id;
+  // ...
 }
 ```
 
-**特徴**:
+## PATCH更新との対応
 
-- TypeScriptで非オプショナル（`?`なし）
-- コンストラクタで必須引数
-- 空文字列や特定値も許容しない（必ず意味のある値）
+**参照**: `../use-case/20-use-case-implementation.md`
 
-### Tier 2: Special Case（undefinedに意味がある）
-
-**定義**: `undefined`が特別なビジネス的意味を持つフィールド
-
-**実装**:
+| Tier   | UseCase層での処理                                    |
+| ------ | ---------------------------------------------------- |
+| Tier 1 | Value Object生成後、個別メソッドで更新               |
+| Tier 2 | そのまま個別メソッドに渡す（`undefined`=クリア）     |
+| Tier 3 | そのまま個別メソッドに渡す（`undefined`=クリア）     |
 
 ```typescript
-export class Todo {
-  // フィールド定義: | undefined 明示（undefinedがビジネス的意味を持つ）
-  /**
-   * 期限日
-   *
-   * - 値あり: 期限が設定されている
-   * - undefined: 「期限なし」を意味する（明示的な業務状態）
-   */
-  readonly dueDate: string | undefined;
-
-  /**
-   * 完了日時
-   *
-   * - 値あり: 完了済み
-   * - undefined: 「未完了」を意味する（明示的な業務状態）
-   */
-  readonly completedAt: string | undefined;
-
-  constructor(props: {
-    id: string;
-    title: string;
-    // コンストラクタ: | undefined で必須化（analyzability-principles.md 原則1）
-    dueDate: string | undefined; // 必須（undefinedを明示的に渡す）
-    completedAt: string | undefined; // 必須（undefinedを明示的に渡す）
-    createdAt: string;
-    updatedAt: string;
-  }) {
-    this.id = props.id;
-    this.title = props.title;
-    this.dueDate = props.dueDate;
-    this.completedAt = props.completedAt;
-    this.createdAt = props.createdAt;
-    this.updatedAt = props.updatedAt;
-  }
-}
+// 送られたフィールドのみ更新
+return Result.ok(existing)
+  .then((t) =>
+    "title" in input
+      ? TodoTitle.from({ title: input.title }).then((v) => t.rename(v, now))
+      : t  // 送られていない → 既存値のまま
+  )
+  .then((t) =>
+    "dueDate" in input
+      ? t.reschedule(input.dueDate, now)  // undefined可（クリア）
+      : t
+  );
 ```
 
-**特徴**:
+**重要**: `??`演算子は使用しない。`'in'`演算子でフィールド存在を判定する。
 
-- **フィールド定義**: `| undefined` 明示
-- **コンストラクタ**: `| undefined` で必須化（省略するとコンパイルエラー）
-- **JSDocコメント**: 必ず `undefined` の業務的意味を記載する
-- `undefined`はビジネス上の意味を持つ（単なる「設定忘れ」ではない）
-- 例: 期限なしTODO、完了していないTODO
+## OpenAPI定義との対応
 
-**重要**: `null`は使用しない。`undefined`のみ使用する。
+```yaml
+# Tier 1: required指定
+required:
+  - id
+  - title
+  - status
+  - createdAt
+  - updatedAt
+
+# Tier 2/Tier 3: required指定しない、PATCH時はnullable: true
+properties:
+  dueDate:
+    type: string
+    format: date-time
+    nullable: true  # PATCH時のクリア用
+    description: 期限（undefinedは"期限なし"を意味する）
+```
+
+## Do / Don't
+
+### ✅ Good
 
 ```typescript
-// ✅ Good: フィールド定義（JSDocで意味を明示）
+// Tier 2: JSDocでundefinedの意味を明示
 /**
  * 期限日
  * - undefined: 「期限なし」を意味する
  */
 readonly dueDate: string | undefined;
 
-// ✅ Good: コンストラクタ引数（| undefined で必須化）
+// コンストラクタで全フィールド必須化
 constructor(props: {
   dueDate: string | undefined;  // 省略不可
 })
 
-// ❌ Bad: JSDocなし（undefinedの意味が不明確）
-readonly dueDate: string | undefined;
+// PATCH更新: 'in'演算子で存在確認
+.then((t) =>
+  "dueDate" in input
+    ? t.reschedule(input.dueDate, now)
+    : t
+)
+```
 
-// ❌ Bad: null使用
-readonly dueDate: string | null;
+### ❌ Bad
 
-// ❌ Bad: コンストラクタで省略可能
+```typescript
+// nullを使用
+readonly dueDate: string | null;  // ❌ undefinedを使う
+
+// コンストラクタで省略可能
 constructor(props: {
-  dueDate?: string;  // 省略可能になってしまう
+  dueDate?: string;  // ❌ 省略可能になってしまう
 })
-```
 
-### Tier 3: Optional（純粋に任意）
+// ??演算子を使用
+const dueDate = input.dueDate ?? existing.dueDate;  // ❌ undefinedを意図的に送信しても上書きされない
 
-**定義**: あってもなくても良いフィールド（ビジネスロジックに影響しない）
-
-**実装**:
-
-```typescript
-export class Todo {
-  // フィールド定義: | undefined 明示（Tier 2と同じ型）
-  /**
-   * 説明
-   *
-   * TODOの詳細説明。
-   */
-  readonly description: string | undefined;
-
-  /**
-   * メモ
-   *
-   * 任意のメモ。
-   */
-  readonly memo: string | undefined;
-
-  constructor(props: {
-    id: string;
-    title: string;
-    // コンストラクタ: | undefined で必須化（analyzability-principles.md 原則1）
-    description: string | undefined; // 必須（undefinedを明示的に渡す）
-    memo: string | undefined; // 必須（undefinedを明示的に渡す）
-    createdAt: string;
-    updatedAt: string;
-  }) {
-    this.id = props.id;
-    this.title = props.title;
-    this.description = props.description;
-    this.memo = props.memo;
-    this.createdAt = props.createdAt;
-    this.updatedAt = props.updatedAt;
-  }
-}
-```
-
-**特徴**:
-
-- **フィールド定義**: `| undefined` 明示（Tier 2と同じ型表現）
-- **コンストラクタ**: `| undefined` で必須化（省略するとコンパイルエラー）
-- **JSDocコメント**: 記載するが、`undefined` の意味は記載不要（単なる未設定であることは自明）
-- `undefined`は単に「設定されていない」ことを意味（ビジネス的意味なし）
-- 例: 説明文、メモ、タグ等の補足情報
-
-### 設計判断: Tier 2とTier 3の違い
-
-| 観点                 | Tier 2: Special Case                       | Tier 3: Optional                    |
-| -------------------- | ------------------------------------------ | ----------------------------------- |
-| **フィールド定義**   | `string \| undefined`                      | `string \| undefined`               |
-| **コンストラクタ**   | `string \| undefined`（必須）              | `string \| undefined`（必須）       |
-| **undefined の意味** | ビジネス上の意味あり                       | 単に未設定                          |
-| **ビジネスルール**   | 未設定状態を判定に使う                     | ビジネスロジックに影響しない        |
-| **マージロジック**   | `!== undefined`                            | `!== undefined`（統一）             |
-| **例**               | dueDate（期限なし）、completedAt（未完了） | description（説明文）、memo（メモ） |
-
-**重要**: マージロジックは両方とも `!== undefined` で統一（安全性・シンプルさを優先）
-
-### Tier 2 と Tier 3 の実装上の区別
-
-**型システム上の制約**: Tier 2 と Tier 3 は同じ `string | undefined` 型となる。これはTypeScriptの制約であり、型レベルでの区別は不可能。
-
-**推奨アプローチ**: JSDocコメントで意図を明示する
-
-```typescript
-export class Todo {
-  // Tier 2: ビジネス的意味を持つ undefined
-  /**
-   * 期限日
-   *
-   * - 値あり: 期限が設定されている
-   * - undefined: 「期限なし」を意味する（明示的な業務状態）
-   */
-  readonly dueDate: string | undefined;
-
-  /**
-   * 完了日時
-   *
-   * - 値あり: 完了済み
-   * - undefined: 「未完了」を意味する（明示的な業務状態）
-   */
-  readonly completedAt: string | undefined;
-
-  // Tier 3: 単なるオプショナル
-  /**
-   * 説明
-   *
-   * TODOの詳細説明。
-   */
-  readonly description: string | undefined;
-}
-```
-
-**実装ルール**:
-
-- **Tier 2フィールド**: 必ずJSDocで `undefined` の業務的意味を記載する
-- **Tier 3フィールド**: JSDocは記載するが、`undefined` の意味は記載不要（単なる未設定であることは自明）
-- **過度な抽象化を避ける**: 型エイリアスやヘルパー関数による区別は行わない（YAGNI原則）
-
-## 3-Tierと PATCH統一の関係
-
-**参照**:
-
-- `policy/contract/api/20-endpoint-design.md` - HTTPメソッド統一ポリシー
-- `guardrails/policy/server/use-case/20-use-case-implementation.md` - PATCH更新時のマージロジック
-
-PATCH統一により、3-Tier分類を自然に表現できる。
-
-**重要**: PATCHでは送られたフィールドのみ更新する。個別の更新メソッドをメソッドチェーンで組み合わせる。
-
-**3-Tier分類ごとの処理**:
-
-| Tier                     | フィールド例             | UseCase層での処理                                |
-| ------------------------ | ------------------------ | ------------------------------------------------ |
-| **Tier 1: Required**     | `title`, `status`        | Value Object生成後、個別メソッドで更新           |
-| **Tier 2: Special Case** | `dueDate`, `completedAt` | そのまま個別メソッドに渡す（`undefined`=クリア） |
-| **Tier 3: Optional**     | `description`, `memo`    | そのまま個別メソッドに渡す（`undefined`=クリア） |
-
-**実装詳細**: `guardrails/policy/server/use-case/20-use-case-implementation.md` - PATCH更新時の個別メソッド更新パターン参照
-
-## PATCH更新での自然なマージ
-
-**メソッドチェーンによる自然なマージ**:
-
-PATCH更新では、送られたフィールドのみ個別メソッドで更新し、送られなかったフィールドは既存値のまま残る = **明示的なマージロジック不要**。
-
-```typescript
-// 送られたフィールドのみ更新、送られなかったフィールドは既存値のまま
-return Result.ok(existing)
-  .then(
-    (t) =>
-      "title" in input
-        ? TodoTitle.from({ title: input.title }).then((v) =>
-            t.changeTitle(v, now),
-          )
-        : t, // 送られていない → existingのtitleのまま
-  )
-  .then(
-    (t) =>
-      "dueDate" in input
-        ? t.changeDueDate(input.dueDate, now) // undefined可（クリア）
-        : t, // 送られていない → existingのdueDateのまま
-  );
-```
-
-**重要**: `??`演算子は使用しない（`undefined`を意図的に送信した場合に上書きされる危険性）。`'in'`演算子でフィールド存在を判定する。
-
-## OpenAPI定義との対応
-
-### Tier 1: Required
-
-```yaml
-TodoResponse:
-  type: object
-  required:
-    - id
-    - title
-    - status
-    - createdAt
-    - updatedAt
-  properties:
-    id:
-      type: string
-    title:
-      type: string
-      minLength: 1
-      maxLength: 200
-    status:
-      $ref: "#/components/schemas/TodoStatus"
-    createdAt:
-      type: string
-      format: date-time
-    updatedAt:
-      type: string
-      format: date-time
-```
-
-### Tier 2: Special Case
-
-```yaml
-TodoResponse:
-  properties:
-    dueDate:
-      type: string
-      format: date-time
-      description: 期限（undefinedは"期限なし"を意味する）
-    completedAt:
-      type: string
-      format: date-time
-      description: 完了日時（undefinedは"未完了"を意味する）
-```
-
-**重要**: requiredには含めない（オプショナル）
-
-### Tier 3: Optional
-
-```yaml
-TodoResponse:
-  properties:
-    description:
-      type: string
-      description: 説明文（任意）
-    memo:
-      type: string
-      description: メモ（任意）
-```
-
-**重要**: requiredには含めない（オプショナル）
-
-## PATCH更新パラメータとの対応
-
-### OpenAPI: UpdateTodoParams
-
-```yaml
-UpdateTodoParams:
-  type: object
-  properties:
-    # Tier 1: Required（更新時はオプショナル）
-    title:
-      type: string
-      minLength: 1
-      maxLength: 200
-    status:
-      $ref: "#/components/schemas/TodoStatus"
-
-    # Tier 2: Special Case（nullable: trueでクリア可能）
-    dueDate:
-      type: string
-      format: date-time
-      nullable: true
-      description: 期限（nullで\"期限なし\"に設定）
-    completedAt:
-      type: string
-      format: date-time
-      nullable: true
-      description: 完了日時（nullで\"未完了\"に設定）
-
-    # Tier 3: Optional（nullable: trueでクリア可能）
-    description:
-      type: string
-      nullable: true
-      description: 説明文（nullでクリア）
-    memo:
-      type: string
-      nullable: true
-      description: メモ（nullでクリア）
-```
-
-**重要**:
-
-- すべてのフィールドがオプショナル（requiredフィールドは空）
-- Tier 2/Tier 3は`nullable: true`でフィールドクリア可能
-- Handler層で`null` → `undefined`変換
-
-**実装詳細**:
-
-- **Handler層**: `policy/server/handler/10-handler-overview.md` - null → undefined 変換パターン
-- **UseCase層**: `guardrails/policy/server/use-case/20-use-case-implementation.md` - PATCH更新時の個別メソッド更新
-
-## チェックリスト
-
-### フィールド分類
-
-```
-[ ] Tier 1（Required）: ビジネスロジック上、常に必要なフィールド
-    - フィールド定義: TypeScriptで非オプショナル（`?`なし）
-    - コンストラクタ: 通常の必須引数
-    - OpenAPIでrequired指定
-    - 例: id, title, status, createdAt, updatedAt
-
-[ ] Tier 2（Special Case）: undefinedがビジネス上の意味を持つ
-    - フィールド定義: `| undefined` 明示（`?`なし）
-    - コンストラクタ: `| undefined` で必須化（省略するとコンパイルエラー）
-    - OpenAPIでrequired指定しない
-    - マージ時は `!== undefined` でチェック
-    - 例: dueDate（期限なし）、completedAt（未完了）
-
-[ ] Tier 3（Optional）: 純粋に任意のフィールド
-    - フィールド定義: オプショナル（`?`付き）
-    - コンストラクタ: `| undefined` で必須化（省略するとコンパイルエラー）
-    - OpenAPIでrequired指定しない
-    - マージ時は `!== undefined` でチェック（Tier 2と統一）
-    - 例: description、memo
-```
-
-### PATCH更新
-
-```
-[ ] OpenAPI: Tier 2/Tier 3は`nullable: true`（フィールドクリア可能）
-[ ] Handler層: `'in'`演算子で存在確認、`null` → `undefined`変換
-[ ] UseCase層: Result.then()メソッドチェーンで更新
-[ ] Entity層: 個別メソッド（`changeXxx()`）で値を受け取る
-[ ] `??`演算子は使用しない（`'in'`演算子を使用）
-```
-
-### OpenAPI定義
-
-```
-[ ] Tier 1はrequired指定
-[ ] Tier 2/Tier 3はrequired指定しない
-[ ] PATCH更新パラメータはすべてオプショナル
-[ ] Tier 2/Tier 3にnullable: true（クリア用）
-[ ] descriptionでフィールドの意味を明記
+// Tier 2でJSDocなし
+readonly dueDate: string | undefined;  // ❌ undefinedの意味が不明確
 ```

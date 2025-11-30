@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { Todo, TodoStatus } from "./todo";
-import { Attachment } from "./attachment";
-import { AttachmentStatus } from "./attachment-status";
+import { TodoStatus } from "./todo-status.vo";
+import { todoDummyFrom } from "./todo.dummy";
+import { todoStatusDummyFrom } from "./todo-status.vo.dummy";
+import { attachmentDummyFrom } from "./attachment.dummy";
 
 describe("Todo", () => {
   describe("constructor", () => {
     it("すべてのプロパティを持つTodoインスタンスを作成できる", () => {
       // Arrange & Act
-      const todo = new Todo({
+      const todo = todoDummyFrom({
         id: "todo-123",
         title: "テスト用タスク",
         description: "これはテスト用のタスクです",
@@ -24,7 +25,7 @@ describe("Todo", () => {
       expect(todo.id).toBe("todo-123");
       expect(todo.title).toBe("テスト用タスク");
       expect(todo.description).toBe("これはテスト用のタスクです");
-      expect(todo.status.value).toBe("TODO");
+      expect(todo.status.status).toBe("TODO");
       expect(todo.priority).toBe("HIGH");
       expect(todo.dueDate).toBe("2024-12-31T23:59:59.000Z");
       expect(todo.projectId).toBe("project-456");
@@ -32,48 +33,29 @@ describe("Todo", () => {
       expect(todo.updatedAt).toBe("2024-01-01T00:00:00.000Z");
     });
 
-    it("オプショナルプロパティを省略してTodoインスタンスを作成できる", () => {
+    it("オプショナルプロパティがundefinedのTodoインスタンスを作成できる", () => {
       // Arrange & Act
-      const todo = new Todo({
-        id: "todo-123",
-        title: "必須項目のみのタスク",
+      const todo = todoDummyFrom({
         description: undefined,
-        status: undefined,
-        priority: undefined,
         dueDate: undefined,
         projectId: undefined,
-        assigneeUserId: "user-123",
-        attachments: undefined,
-        createdAt: "2024-01-01T00:00:00.000Z",
-        updatedAt: "2024-01-01T00:00:00.000Z",
       });
 
       // Assert
-      expect(todo.id).toBe("todo-123");
-      expect(todo.title).toBe("必須項目のみのタスク");
       expect(todo.description).toBeUndefined();
-      expect(todo.status).toBeUndefined();
-      expect(todo.priority).toBeUndefined();
       expect(todo.dueDate).toBeUndefined();
       expect(todo.projectId).toBeUndefined();
+      // 必須フィールドは設定されている
+      expect(todo.status).toBeDefined();
+      expect(todo.priority).toBeDefined();
     });
-
   });
 
   describe("changeStatus", () => {
     it("ステータスを変更した新しいTodoインスタンスを返す", () => {
       // Arrange
-      const originalTodo = new Todo({
-        id: "todo-123",
-        title: "タスク",
-        description: undefined,
+      const originalTodo = todoDummyFrom({
         status: TodoStatus.todo(),
-        priority: "MEDIUM",
-        dueDate: undefined,
-        projectId: undefined,
-        assigneeUserId: "user-123",
-        attachments: undefined,
-        createdAt: "2024-01-01T00:00:00.000Z",
         updatedAt: "2024-01-01T00:00:00.000Z",
       });
 
@@ -84,7 +66,7 @@ describe("Todo", () => {
       );
 
       // Assert
-      expect(updatedTodo.status?.value).toBe("IN_PROGRESS");
+      expect(updatedTodo.status.status).toBe("IN_PROGRESS");
       expect(updatedTodo.updatedAt).toBe("2024-01-02T00:00:00.000Z");
       expect(updatedTodo.id).toBe(originalTodo.id);
       expect(updatedTodo.title).toBe(originalTodo.title);
@@ -93,17 +75,8 @@ describe("Todo", () => {
 
     it("元のTodoインスタンスは変更されない（イミュータブル性）", () => {
       // Arrange
-      const originalTodo = new Todo({
-        id: "todo-123",
-        title: "タスク",
-        description: undefined,
+      const originalTodo = todoDummyFrom({
         status: TodoStatus.todo(),
-        priority: "MEDIUM",
-        dueDate: undefined,
-        projectId: undefined,
-        assigneeUserId: "user-123",
-        attachments: undefined,
-        createdAt: "2024-01-01T00:00:00.000Z",
         updatedAt: "2024-01-01T00:00:00.000Z",
       });
 
@@ -111,25 +84,13 @@ describe("Todo", () => {
       originalTodo.changeStatus(TodoStatus.inProgress(), "2024-01-02T00:00:00.000Z");
 
       // Assert
-      expect(originalTodo.status?.value).toBe("TODO");
+      expect(originalTodo.status.status).toBe("TODO");
       expect(originalTodo.updatedAt).toBe("2024-01-01T00:00:00.000Z");
     });
 
     it("新しいインスタンスと元のインスタンスは異なるオブジェクト", () => {
       // Arrange
-      const originalTodo = new Todo({
-        id: "todo-123",
-        title: "タスク",
-        description: undefined,
-        status: TodoStatus.todo(),
-        priority: "MEDIUM",
-        dueDate: undefined,
-        projectId: undefined,
-        assigneeUserId: "user-123",
-        attachments: undefined,
-        createdAt: "2024-01-01T00:00:00.000Z",
-        updatedAt: "2024-01-01T00:00:00.000Z",
-      });
+      const originalTodo = todoDummyFrom();
 
       // Act
       const updatedTodo = originalTodo.changeStatus(
@@ -145,11 +106,8 @@ describe("Todo", () => {
   describe("changePriority", () => {
     it("優先度を変更した新しいTodoインスタンスを返す", () => {
       // Arrange
-      const originalTodo = new Todo({
-        id: "todo-123",
-        title: "タスク",
+      const originalTodo = todoDummyFrom({
         priority: "MEDIUM",
-        createdAt: "2024-01-01T00:00:00.000Z",
         updatedAt: "2024-01-01T00:00:00.000Z",
       });
 
@@ -169,11 +127,8 @@ describe("Todo", () => {
 
     it("元のTodoインスタンスは変更されない（イミュータブル性）", () => {
       // Arrange
-      const originalTodo = new Todo({
-        id: "todo-123",
-        title: "タスク",
+      const originalTodo = todoDummyFrom({
         priority: "MEDIUM",
-        createdAt: "2024-01-01T00:00:00.000Z",
         updatedAt: "2024-01-01T00:00:00.000Z",
       });
 
@@ -187,13 +142,7 @@ describe("Todo", () => {
 
     it("新しいインスタンスと元のインスタンスは異なるオブジェクト", () => {
       // Arrange
-      const originalTodo = new Todo({
-        id: "todo-123",
-        title: "タスク",
-        priority: "LOW",
-        createdAt: "2024-01-01T00:00:00.000Z",
-        updatedAt: "2024-01-01T00:00:00.000Z",
-      });
+      const originalTodo = todoDummyFrom();
 
       // Act
       const updatedTodo = originalTodo.changePriority(
@@ -206,293 +155,258 @@ describe("Todo", () => {
     });
   });
 
-  describe("update", () => {
-    it("すべてのフィールドを更新した新しいTodoインスタンスを返す", () => {
+  describe("changeTitle", () => {
+    it("タイトルを変更した新しいTodoインスタンスを返す", () => {
       // Arrange
-      const originalTodo = new Todo({
-        id: "todo-123",
-        title: "元のタスク",
-        description: "元の説明",
-        status: "TODO",
-        priority: "MEDIUM",
-        dueDate: "2024-12-31T23:59:59.000Z",
-        projectId: "project-1",
-        createdAt: "2024-01-01T00:00:00.000Z",
+      const originalTodo = todoDummyFrom({
+        title: "元のタイトル",
         updatedAt: "2024-01-01T00:00:00.000Z",
       });
 
       // Act
-      const updatedTodo = originalTodo.update({
-        title: "更新されたタスク",
-        description: "更新された説明",
-        status: "IN_PROGRESS",
-        priority: "HIGH",
-        dueDate: "2024-06-30T23:59:59.000Z",
-        projectId: "project-2",
-        updatedAt: "2024-01-02T00:00:00.000Z",
-      });
+      const updatedTodo = originalTodo.changeTitle(
+        "新しいタイトル",
+        "2024-01-02T00:00:00.000Z",
+      );
 
       // Assert
-      expect(updatedTodo.title).toBe("更新されたタスク");
-      expect(updatedTodo.description).toBe("更新された説明");
-      expect(updatedTodo.status).toBe("IN_PROGRESS");
-      expect(updatedTodo.priority).toBe("HIGH");
-      expect(updatedTodo.dueDate).toBe("2024-06-30T23:59:59.000Z");
-      expect(updatedTodo.projectId).toBe("project-2");
+      expect(updatedTodo.title).toBe("新しいタイトル");
       expect(updatedTodo.updatedAt).toBe("2024-01-02T00:00:00.000Z");
       expect(updatedTodo.id).toBe(originalTodo.id);
-      expect(updatedTodo.createdAt).toBe(originalTodo.createdAt);
     });
+  });
 
-    it("一部のフィールドのみ更新した新しいTodoインスタンスを返す", () => {
+  describe("changeDescription", () => {
+    it("説明を変更した新しいTodoインスタンスを返す", () => {
       // Arrange
-      const originalTodo = new Todo({
-        id: "todo-123",
-        title: "元のタスク",
+      const originalTodo = todoDummyFrom({
         description: "元の説明",
-        status: "TODO",
-        priority: "MEDIUM",
-        createdAt: "2024-01-01T00:00:00.000Z",
         updatedAt: "2024-01-01T00:00:00.000Z",
       });
 
       // Act
-      const updatedTodo = originalTodo.update({
-        title: "更新されたタスク",
-        status: "IN_PROGRESS",
-        updatedAt: "2024-01-02T00:00:00.000Z",
-      });
+      const updatedTodo = originalTodo.changeDescription(
+        "新しい説明",
+        "2024-01-02T00:00:00.000Z",
+      );
 
       // Assert
-      expect(updatedTodo.title).toBe("更新されたタスク");
-      expect(updatedTodo.status).toBe("IN_PROGRESS");
-      expect(updatedTodo.description).toBe(originalTodo.description);
-      expect(updatedTodo.priority).toBe(originalTodo.priority);
-      expect(updatedTodo.dueDate).toBe(originalTodo.dueDate);
-      expect(updatedTodo.projectId).toBe(originalTodo.projectId);
+      expect(updatedTodo.description).toBe("新しい説明");
       expect(updatedTodo.updatedAt).toBe("2024-01-02T00:00:00.000Z");
     });
 
-    it("元のTodoインスタンスは変更されない（イミュータブル性）", () => {
+    it("説明をundefinedに設定できる", () => {
       // Arrange
-      const originalTodo = new Todo({
-        id: "todo-123",
-        title: "元のタスク",
+      const originalTodo = todoDummyFrom({
         description: "元の説明",
-        status: "TODO",
-        priority: "MEDIUM",
-        createdAt: "2024-01-01T00:00:00.000Z",
-        updatedAt: "2024-01-01T00:00:00.000Z",
       });
 
       // Act
-      originalTodo.update({
-        title: "更新されたタスク",
-        status: "IN_PROGRESS",
-        priority: "HIGH",
-        updatedAt: "2024-01-02T00:00:00.000Z",
-      });
-
-      // Assert
-      expect(originalTodo.title).toBe("元のタスク");
-      expect(originalTodo.description).toBe("元の説明");
-      expect(originalTodo.status).toBe("TODO");
-      expect(originalTodo.priority).toBe("MEDIUM");
-      expect(originalTodo.updatedAt).toBe("2024-01-01T00:00:00.000Z");
-    });
-
-    it("新しいインスタンスと元のインスタンスは異なるオブジェクト", () => {
-      // Arrange
-      const originalTodo = new Todo({
-        id: "todo-123",
-        title: "タスク",
-        createdAt: "2024-01-01T00:00:00.000Z",
-        updatedAt: "2024-01-01T00:00:00.000Z",
-      });
-
-      // Act
-      const updatedTodo = originalTodo.update({
-        title: "更新されたタスク",
-        updatedAt: "2024-01-02T00:00:00.000Z",
-      });
-
-      // Assert
-      expect(updatedTodo).not.toBe(originalTodo);
-    });
-  });
-});
-
-describe("Attachment", () => {
-  describe("constructor", () => {
-    it("すべてのプロパティを持つAttachmentインスタンスを作成できる", () => {
-      // Arrange & Act
-      const attachment = new Attachment({
-        id: "attachment-123",
-        fileName: "document.pdf",
-        storageKey: "attachments/todo-456/attachment-123/document.pdf",
-        contentType: "application/pdf",
-        fileSize: 102400,
-        status: "UPLOADED",
-        uploadedBy: "user-789",
-        createdAt: "2024-01-01T00:00:00.000Z",
-        updatedAt: "2024-01-01T00:01:00.000Z",
-      });
-
-      // Assert
-      expect(attachment.id).toBe("attachment-123");
-      expect(attachment.fileName).toBe("document.pdf");
-      expect(attachment.storageKey).toBe(
-        "attachments/todo-456/attachment-123/document.pdf",
+      const updatedTodo = originalTodo.changeDescription(
+        undefined,
+        "2024-01-02T00:00:00.000Z",
       );
-      expect(attachment.contentType).toBe("application/pdf");
-      expect(attachment.fileSize).toBe(102400);
-      expect(attachment.status).toBe("UPLOADED");
-      expect(attachment.uploadedBy).toBe("user-789");
-      expect(attachment.createdAt).toBe("2024-01-01T00:00:00.000Z");
-      expect(attachment.updatedAt).toBe("2024-01-01T00:01:00.000Z");
-    });
-
-    it("statusを省略した場合、デフォルト値のPREPAREDが設定される", () => {
-      // Arrange & Act
-      const attachment = new Attachment({
-        id: "attachment-123",
-        fileName: "image.png",
-        storageKey: "attachments/todo-456/attachment-123/image.png",
-        contentType: "image/png",
-        fileSize: 51200,
-        uploadedBy: "user-789",
-        createdAt: "2024-01-01T00:00:00.000Z",
-        updatedAt: "2024-01-01T00:00:00.000Z",
-      });
 
       // Assert
-      expect(attachment.status).toBe("PREPARED");
-    });
-
-    it("PREPARED statusのAttachmentインスタンスを作成できる", () => {
-      // Arrange & Act
-      const attachment = new Attachment({
-        id: "attachment-123",
-        fileName: "spreadsheet.xlsx",
-        storageKey: "attachments/todo-456/attachment-123/spreadsheet.xlsx",
-        contentType:
-          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        fileSize: 204800,
-        status: "PREPARED",
-        uploadedBy: "user-789",
-        createdAt: "2024-01-01T00:00:00.000Z",
-        updatedAt: "2024-01-01T00:00:00.000Z",
-      });
-
-      // Assert
-      expect(attachment.status).toBe("PREPARED");
+      expect(updatedTodo.description).toBeUndefined();
     });
   });
 
-  describe("changeStatus", () => {
-    it("ステータスを変更した新しいAttachmentインスタンスを返す", () => {
+  describe("changeDueDate", () => {
+    it("期限日を変更した新しいTodoインスタンスを返す", () => {
       // Arrange
-      const originalAttachment = new Attachment({
-        id: "attachment-123",
-        fileName: "report.pdf",
-        storageKey: "attachments/todo-456/attachment-123/report.pdf",
-        contentType: "application/pdf",
-        fileSize: 102400,
-        status: "PREPARED",
-        uploadedBy: "user-789",
-        createdAt: "2024-01-01T00:00:00.000Z",
+      const originalTodo = todoDummyFrom({
+        dueDate: "2024-12-31T23:59:59.000Z",
         updatedAt: "2024-01-01T00:00:00.000Z",
       });
 
       // Act
-      const updatedAttachment = originalAttachment.changeStatus(
-        "UPLOADED",
-        "2024-01-01T00:01:00.000Z",
+      const updatedTodo = originalTodo.changeDueDate(
+        "2024-06-30T23:59:59.000Z",
+        "2024-01-02T00:00:00.000Z",
       );
 
       // Assert
-      expect(updatedAttachment.status).toBe("UPLOADED");
-      expect(updatedAttachment.updatedAt).toBe("2024-01-01T00:01:00.000Z");
-      expect(updatedAttachment.id).toBe(originalAttachment.id);
-      expect(updatedAttachment.fileName).toBe(originalAttachment.fileName);
-      expect(updatedAttachment.storageKey).toBe(originalAttachment.storageKey);
-      expect(updatedAttachment.contentType).toBe(
-        originalAttachment.contentType,
-      );
-      expect(updatedAttachment.fileSize).toBe(originalAttachment.fileSize);
-      expect(updatedAttachment.uploadedBy).toBe(originalAttachment.uploadedBy);
-      expect(updatedAttachment.createdAt).toBe(originalAttachment.createdAt);
+      expect(updatedTodo.dueDate).toBe("2024-06-30T23:59:59.000Z");
+      expect(updatedTodo.updatedAt).toBe("2024-01-02T00:00:00.000Z");
     });
 
-    it("元のAttachmentインスタンスは変更されない（イミュータブル性）", () => {
+    it("期限日をundefinedに設定できる（期限なし）", () => {
       // Arrange
-      const originalAttachment = new Attachment({
-        id: "attachment-123",
-        fileName: "photo.jpg",
-        storageKey: "attachments/todo-456/attachment-123/photo.jpg",
-        contentType: "image/jpeg",
-        fileSize: 512000,
-        status: "PREPARED",
-        uploadedBy: "user-789",
-        createdAt: "2024-01-01T00:00:00.000Z",
+      const originalTodo = todoDummyFrom({
+        dueDate: "2024-12-31T23:59:59.000Z",
+      });
+
+      // Act
+      const updatedTodo = originalTodo.changeDueDate(
+        undefined,
+        "2024-01-02T00:00:00.000Z",
+      );
+
+      // Assert
+      expect(updatedTodo.dueDate).toBeUndefined();
+    });
+  });
+
+  describe("changeProjectId", () => {
+    it("プロジェクトIDを変更した新しいTodoインスタンスを返す", () => {
+      // Arrange
+      const originalTodo = todoDummyFrom({
+        projectId: "project-1",
         updatedAt: "2024-01-01T00:00:00.000Z",
       });
 
       // Act
-      originalAttachment.changeStatus("UPLOADED", "2024-01-01T00:01:00.000Z");
+      const updatedTodo = originalTodo.changeProjectId(
+        "project-2",
+        "2024-01-02T00:00:00.000Z",
+      );
 
       // Assert
-      expect(originalAttachment.status).toBe("PREPARED");
-      expect(originalAttachment.updatedAt).toBe("2024-01-01T00:00:00.000Z");
+      expect(updatedTodo.projectId).toBe("project-2");
+      expect(updatedTodo.updatedAt).toBe("2024-01-02T00:00:00.000Z");
     });
 
-    it("新しいインスタンスと元のインスタンスは異なるオブジェクト", () => {
+    it("プロジェクトIDをundefinedに設定できる（プロジェクトに属さない）", () => {
       // Arrange
-      const originalAttachment = new Attachment({
-        id: "attachment-123",
-        fileName: "notes.txt",
-        storageKey: "attachments/todo-456/attachment-123/notes.txt",
-        contentType: "text/plain",
-        fileSize: 2048,
-        status: "PREPARED",
-        uploadedBy: "user-789",
-        createdAt: "2024-01-01T00:00:00.000Z",
+      const originalTodo = todoDummyFrom({
+        projectId: "project-1",
+      });
+
+      // Act
+      const updatedTodo = originalTodo.changeProjectId(
+        undefined,
+        "2024-01-02T00:00:00.000Z",
+      );
+
+      // Assert
+      expect(updatedTodo.projectId).toBeUndefined();
+    });
+  });
+
+  describe("changeAssignee", () => {
+    it("担当者を変更した新しいTodoインスタンスを返す", () => {
+      // Arrange
+      const originalTodo = todoDummyFrom({
+        assigneeUserId: "user-1",
         updatedAt: "2024-01-01T00:00:00.000Z",
       });
 
       // Act
-      const updatedAttachment = originalAttachment.changeStatus(
-        "UPLOADED",
-        "2024-01-01T00:01:00.000Z",
+      const updatedTodo = originalTodo.changeAssignee(
+        "user-2",
+        "2024-01-02T00:00:00.000Z",
       );
 
       // Assert
-      expect(updatedAttachment).not.toBe(originalAttachment);
+      expect(updatedTodo.assigneeUserId).toBe("user-2");
+      expect(updatedTodo.updatedAt).toBe("2024-01-02T00:00:00.000Z");
+    });
+  });
+
+  describe("addAttachment", () => {
+    it("添付ファイルを追加した新しいTodoインスタンスを返す", () => {
+      // Arrange
+      const originalTodo = todoDummyFrom({
+        attachments: [],
+      });
+      const attachment = attachmentDummyFrom({ id: "attachment-1" });
+
+      // Act
+      const updatedTodo = originalTodo.addAttachment(
+        attachment,
+        "2024-01-02T00:00:00.000Z",
+      );
+
+      // Assert
+      expect(updatedTodo.attachments).toHaveLength(1);
+      expect(updatedTodo.attachments[0].id).toBe("attachment-1");
+      expect(updatedTodo.updatedAt).toBe("2024-01-02T00:00:00.000Z");
     });
 
-    it("UPLOADEDからPREPAREDへのステータス変更も可能", () => {
+    it("既存の添付ファイルに追加される", () => {
       // Arrange
-      const originalAttachment = new Attachment({
-        id: "attachment-123",
-        fileName: "video.mp4",
-        storageKey: "attachments/todo-456/attachment-123/video.mp4",
-        contentType: "video/mp4",
-        fileSize: 10485760,
-        status: "UPLOADED",
-        uploadedBy: "user-789",
-        createdAt: "2024-01-01T00:00:00.000Z",
-        updatedAt: "2024-01-01T00:01:00.000Z",
+      const existingAttachment = attachmentDummyFrom({ id: "attachment-1" });
+      const originalTodo = todoDummyFrom({
+        attachments: [existingAttachment],
+      });
+      const newAttachment = attachmentDummyFrom({ id: "attachment-2" });
+
+      // Act
+      const updatedTodo = originalTodo.addAttachment(
+        newAttachment,
+        "2024-01-02T00:00:00.000Z",
+      );
+
+      // Assert
+      expect(updatedTodo.attachments).toHaveLength(2);
+      expect(updatedTodo.attachments[0].id).toBe("attachment-1");
+      expect(updatedTodo.attachments[1].id).toBe("attachment-2");
+    });
+  });
+
+  describe("removeAttachment", () => {
+    it("添付ファイルを削除した新しいTodoインスタンスを返す", () => {
+      // Arrange
+      const attachment = attachmentDummyFrom({ id: "attachment-1" });
+      const originalTodo = todoDummyFrom({
+        attachments: [attachment],
       });
 
       // Act
-      const updatedAttachment = originalAttachment.changeStatus(
-        "PREPARED",
-        "2024-01-01T00:02:00.000Z",
+      const updatedTodo = originalTodo.removeAttachment(
+        "attachment-1",
+        "2024-01-02T00:00:00.000Z",
       );
 
       // Assert
-      expect(updatedAttachment.status).toBe("PREPARED");
-      expect(updatedAttachment.updatedAt).toBe("2024-01-01T00:02:00.000Z");
+      expect(updatedTodo.attachments).toHaveLength(0);
+      expect(updatedTodo.updatedAt).toBe("2024-01-02T00:00:00.000Z");
+    });
+
+    it("存在しないIDを指定した場合は変更なし", () => {
+      // Arrange
+      const attachment = attachmentDummyFrom({ id: "attachment-1" });
+      const originalTodo = todoDummyFrom({
+        attachments: [attachment],
+      });
+
+      // Act
+      const updatedTodo = originalTodo.removeAttachment(
+        "non-existent",
+        "2024-01-02T00:00:00.000Z",
+      );
+
+      // Assert
+      expect(updatedTodo.attachments).toHaveLength(1);
+    });
+  });
+
+  describe("updateAttachment", () => {
+    it("添付ファイルを更新した新しいTodoインスタンスを返す", () => {
+      // Arrange
+      const attachment = attachmentDummyFrom({
+        id: "attachment-1",
+        fileName: "old.pdf",
+      });
+      const originalTodo = todoDummyFrom({
+        attachments: [attachment],
+      });
+      const updatedAttachment = attachmentDummyFrom({
+        id: "attachment-1",
+        fileName: "new.pdf",
+      });
+
+      // Act
+      const updatedTodo = originalTodo.updateAttachment(
+        updatedAttachment,
+        "2024-01-02T00:00:00.000Z",
+      );
+
+      // Assert
+      expect(updatedTodo.attachments).toHaveLength(1);
+      expect(updatedTodo.attachments[0].fileName).toBe("new.pdf");
+      expect(updatedTodo.updatedAt).toBe("2024-01-02T00:00:00.000Z");
     });
   });
 });

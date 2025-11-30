@@ -454,7 +454,7 @@ for (const projectId of projectIds) {
 }
 
 // ✅ Good: リポジトリインターフェースにfindByIdsを追加
-// project-repository.ts（インターフェースに遡って追加）
+// project.repository.ts（インターフェースに遡って追加）
 export type ProjectRepository = {
   findById(props: { id: string }): Promise<FindByIdResult>;
   findByIds(props: { ids: string[] }): Promise<FindByIdsResult>; // 追加

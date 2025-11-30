@@ -31,10 +31,10 @@
 
 ```
 domain/model/{entity}/
-└── {entity}-repository.ts        # インターフェース定義
+└── {entity}.repository.ts         # インターフェース定義
 
 infrastructure/repository/
-└── {entity}-repository.ts         # 実装
+└── {entity}.repository.ts         # 実装
 ```
 
 ## 責務
@@ -62,11 +62,11 @@ infrastructure/repository/
 
 ```
 infrastructure/repository/
-├── todo-repository.ts              # TodoRepository実装
-├── todo-repository.medium.test.ts  # Medium Test
-├── project-repository.ts           # ProjectRepository実装
-├── project-repository.medium.test.ts
-└── user-repository.ts              # UserRepository実装
+├── todo.repository.ts              # TodoRepository実装
+├── todo.repository.medium.test.ts  # Medium Test
+├── project.repository.ts           # ProjectRepository実装
+├── project.repository.medium.test.ts
+└── user.repository.ts              # UserRepository実装
 ```
 
 ### クラス構造
@@ -164,9 +164,9 @@ export const todoDdbItemToTodo = (
     ? statusResult.data
     : TodoStatus.default();
 
-  // Entityはコンストラクタで直接生成
+  // Entity.from()でEntity生成
   // DBデータは既に整合性があると信頼（MECE原則）
-  return new Todo({
+  const todoResult = Todo.from({
     id: todoDdbItem.todoId,
     title: todoDdbItem.title,
     description: todoDdbItem.description,
@@ -175,6 +175,14 @@ export const todoDdbItemToTodo = (
     createdAt: todoDdbItem.createdAt,
     updatedAt: todoDdbItem.updatedAt,
   });
+
+  // DBデータは整合性があるためエラーは発生しないが、
+  // 万が一の場合はデフォルト値を使用（MECE原則）
+  if (!todoResult.success) {
+    // ログ出力推奨
+    return Todo.default();
+  }
+  return todoResult.data;
 };
 ```
 
@@ -183,8 +191,9 @@ export const todoDdbItemToTodo = (
 - DBから取得した文字列をValue Objectに変換
 - `from(props: XxxProps)`メソッドにProps型エイリアスパターンで渡す（例: `{ status: value }`）
 - Value Object変換失敗時は`default()`を使用してフォールバック
-- **Entityはコンストラクタで直接生成**（複数値関係性チェックは不要）
+- **Entity.from()でEntity生成**（private constructorのためnew不可）
 - **DBデータは既に整合性があると信頼**（MECE原則：複数値関係性チェックは保存時に完了済み）
+- Entity.from()がエラーを返す場合は`Entity.default()`でフォールバック
 - データ不整合が発生した場合はLogger経由でモニタリング推奨
 - **throwは使わない**（全層でResult型パターンを徹底）
 

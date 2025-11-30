@@ -72,13 +72,13 @@
 
 ## テストファイル命名規則
 
-`{entity}-repository.medium.test.ts` - DynamoDB統合テスト
+`{entity}.repository.medium.test.ts` - DynamoDB統合テスト
 
 **例**:
 
-- `todo-repository.medium.test.ts`
-- `project-repository.medium.test.ts`
-- `user-repository.medium.test.ts`
+- `todo.repository.medium.test.ts`
+- `project.repository.medium.test.ts`
+- `user.repository.medium.test.ts`
 
 ## テストケースの実装例
 
@@ -87,8 +87,8 @@
 **重要**: すべてのテストケースでDummyファクトリを使用する。
 
 ```typescript
-import { todoDummyFrom } from "@/domain/model/todo/todo.dummy";
-import { attachmentDummyFrom } from "@/domain/model/attachment/attachment.dummy";
+import { todoDummyFrom } from "@/domain/model/todo/todo.entity.dummy";
+import { attachmentDummyFrom } from "@/domain/model/attachment/attachment.entity.dummy";
 
 describe("TodoRepositoryImpl", () => {
   describe("findById", () => {
@@ -329,7 +329,7 @@ function createTestTodo(overrides?: Partial<TodoProps>): Todo {
 }
 
 // ✅ Good: Dummyファクトリを直接使用
-import { todoDummyFrom } from "@/domain/model/todo/todo.dummy";
+import { todoDummyFrom } from "@/domain/model/todo/todo.entity.dummy";
 
 test("テストケース", async () => {
   const todo = todoDummyFrom({
@@ -419,7 +419,7 @@ describe("DynamoDBUnitOfWork with TodoRepository", () => {
 [ ] アグリゲートの場合、子エンティティを含む正常系テストケースを追加
 [ ] Replace戦略の動作を確認するテストケースを追加
 [ ] 存在しないデータの検索で適切に処理されることを確認
-[ ] テストファイル命名規則に従っている（{entity}-repository.medium.test.ts）
+[ ] テストファイル命名規則に従っている（{entity}.repository.medium.test.ts）
 [ ] テストデータのクリーンアップを実装
 [ ] 全テストケースでDummyファクトリを使用（new Entity()を直接使わない）
 [ ] テスト専用ヘルパー関数を作らない（Dummyファクトリで十分）

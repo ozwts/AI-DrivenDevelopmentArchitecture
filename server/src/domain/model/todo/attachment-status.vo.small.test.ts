@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AttachmentStatus } from "./attachment-status";
+import { AttachmentStatus } from "./attachment-status.vo";
 import { DomainError } from "@/util/error-util";
 
 describe("AttachmentStatus", () => {
@@ -11,7 +11,7 @@ describe("AttachmentStatus", () => {
       // Assert
       expect(result.success).toBe(true);
       if (!result.success) return;
-      expect(result.data.value).toBe("PREPARED");
+      expect(result.data.status).toBe("PREPARED");
     });
 
     it("有効なステータス文字列からAttachmentStatusを生成できる（UPLOADED）", () => {
@@ -21,7 +21,7 @@ describe("AttachmentStatus", () => {
       // Assert
       expect(result.success).toBe(true);
       if (!result.success) return;
-      expect(result.data.value).toBe("UPLOADED");
+      expect(result.data.status).toBe("UPLOADED");
     });
 
     it("無効なステータス文字列の場合はDomainErrorを返す", () => {
@@ -42,7 +42,7 @@ describe("AttachmentStatus", () => {
       const status = AttachmentStatus.prepared();
 
       // Assert
-      expect(status.value).toBe("PREPARED");
+      expect(status.status).toBe("PREPARED");
       expect(status.isPrepared()).toBe(true);
       expect(status.isUploaded()).toBe(false);
     });
@@ -52,7 +52,7 @@ describe("AttachmentStatus", () => {
       const status = AttachmentStatus.uploaded();
 
       // Assert
-      expect(status.value).toBe("UPLOADED");
+      expect(status.status).toBe("UPLOADED");
       expect(status.isUploaded()).toBe(true);
       expect(status.isPrepared()).toBe(false);
     });

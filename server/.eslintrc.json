@@ -9,14 +9,16 @@
   "parserOptions": {
     "project": "./tsconfig.json"
   },
-  "plugins": ["@typescript-eslint", "unused-imports"],
+  "plugins": ["@typescript-eslint", "unused-imports", "local-rules"],
   "ignorePatterns": [
     "vitest.config.ts",
     "esbuild.api.config.mjs",
     "dist/",
     "node_modules/",
     "**/*.test.ts",
-    "src/generated/**"
+    "src/generated/**",
+    "eslint-local-rules/**",
+    "eslint-local-rules.cjs"
   ],
   "rules": {
     "@typescript-eslint/array-type": [
@@ -67,6 +69,13 @@
         "selector": "WithStatement",
         "message": "`with` is disallowed in strict mode because it makes code impossible to predict and optimize."
       }
-    ]
+    ],
+    "local-rules/domain-model/entity-structure": "error",
+    "local-rules/domain-model/value-object-structure": "error",
+    "local-rules/domain-model/file-requirements": "error",
+    "local-rules/domain-model/no-throw": "error",
+    "local-rules/domain-model/no-null": "error",
+    "local-rules/domain-model/no-external-deps": "error",
+    "local-rules/domain-model/repository-interface": "error"
   }
 }

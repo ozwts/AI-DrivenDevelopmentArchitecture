@@ -1,4 +1,4 @@
-import { AttachmentStatus } from "./attachment-status";
+import { AttachmentStatus } from "./attachment-status.vo";
 
 // AttachmentStatusを再エクスポート
 export { AttachmentStatus };
@@ -12,7 +12,7 @@ export type AttachmentProps = {
   storageKey: string;
   contentType: string;
   fileSize: number;
-  status: AttachmentStatus | undefined;
+  status: AttachmentStatus;
   uploadedBy: string;
   createdAt: string;
   updatedAt: string;
@@ -96,7 +96,7 @@ export class Attachment {
    * アップロード処理の進行状況。
    * デフォルト値は "PREPARED"（アップロード準備完了）。
    */
-  readonly status: AttachmentStatus | undefined;
+  readonly status: AttachmentStatus;
 
   /**
    * アップロード者ユーザーID

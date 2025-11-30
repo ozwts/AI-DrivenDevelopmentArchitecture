@@ -1,11 +1,11 @@
-import { Todo, type TodoStatus, type TodoPriority } from "./todo";
+import { Todo, TodoStatus, type TodoPriority } from "./todo";
 import type { Attachment } from "./attachment";
+import { todoStatusDummyFrom } from "./todo-status.vo.dummy";
 import {
   getDummyId,
   getDummyShortText,
   getDummyDescription,
   getDummyRecentDate,
-  getDummyTodoStatus,
   getDummyTodoPriority,
   getDummyDueDate,
 } from "@/util/testing-util/dummy-data";
@@ -13,13 +13,13 @@ import {
 export type TodoDummyProps = Partial<{
   id: string;
   title: string;
-  description?: string;
-  status?: TodoStatus;
-  priority?: TodoPriority;
-  dueDate?: string;
-  projectId?: string;
+  description: string | undefined;
+  status: TodoStatus;
+  priority: TodoPriority;
+  dueDate: string | undefined;
+  projectId: string | undefined;
   assigneeUserId: string;
-  attachments?: Attachment[];
+  attachments: Attachment[];
   createdAt: string;
   updatedAt: string;
 }>;
@@ -29,7 +29,7 @@ export type TodoDummyProps = Partial<{
  *
  * @example todoDummyFrom()
  * @example todoDummyFrom({ title: "カスタムタイトル" })
- * @example todoDummyFrom({ status: "IN_PROGRESS", priority: "HIGH" })
+ * @example todoDummyFrom({ status: TodoStatus.inProgress(), priority: "HIGH" })
  */
 export const todoDummyFrom = (props?: TodoDummyProps): Todo => {
   const now = getDummyRecentDate();
@@ -38,7 +38,7 @@ export const todoDummyFrom = (props?: TodoDummyProps): Todo => {
     id: props?.id ?? getDummyId(),
     title: props?.title ?? getDummyShortText(),
     description: props?.description !== undefined ? props.description : getDummyDescription(),
-    status: props?.status !== undefined ? props.status : getDummyTodoStatus(),
+    status: props?.status !== undefined ? props.status : todoStatusDummyFrom(),
     priority: props?.priority !== undefined ? props.priority : getDummyTodoPriority(),
     dueDate: props?.dueDate !== undefined ? props.dueDate : getDummyDueDate(),
     projectId: props?.projectId !== undefined ? props.projectId : getDummyId(),

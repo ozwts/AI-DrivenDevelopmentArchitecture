@@ -67,8 +67,8 @@ export type StaticAnalysisResult = {
  * 静的解析入力パラメータ
  */
 export type StaticAnalysisInput = {
-  /** 解析対象ファイルのパス一覧 */
-  targetFilePaths: string[];
+  /** 解析対象ディレクトリ一覧 */
+  targetDirectories: string[];
   /** 解析タイプ */
   analysisType: StaticAnalysisType;
   /** プロジェクトルートディレクトリ */
@@ -81,7 +81,17 @@ export type StaticAnalysisInput = {
 export const executeStaticAnalysis = async (
   input: StaticAnalysisInput,
 ): Promise<StaticAnalysisResult> => {
-  const { targetFilePaths, analysisType, projectRoot } = input;
+  const { targetDirectories, analysisType, projectRoot } = input;
+
+  /**
+   * ファイルパスが対象ディレクトリ内かどうかを判定
+   */
+  const isInTargetDirectories = (filePath: string): boolean => {
+    const absolutePath = path.isAbsolute(filePath)
+      ? filePath
+      : path.resolve(projectRoot, filePath);
+    return targetDirectories.some((dir) => absolutePath.startsWith(dir));
+  };
 
   /**
    * TypeScript型チェックを実行（内部関数）
@@ -131,7 +141,7 @@ export const executeStaticAnalysis = async (
 
       // tsc のエラー出力をパース
       // 形式: "path/to/file.ts(line,col): error TSxxxx: message"
-      const issues: TypeCheckIssue[] = [];
+      const allIssues: TypeCheckIssue[] = [];
       const lines = output.split("\n");
 
       for (const line of lines) {
@@ -139,7 +149,7 @@ export const executeStaticAnalysis = async (
           /^(.+)\((\d+),(\d+)\):\s+error\s+(TS\d+):\s+(.+)$/,
         );
         if (match !== null && match !== undefined) {
-          issues.push({
+          allIssues.push({
             file: match[1],
             line: parseInt(match[2], 10),
             column: parseInt(match[3], 10),
@@ -149,8 +159,13 @@ export const executeStaticAnalysis = async (
         }
       }
 
+      // 対象ディレクトリ内のファイルのみをフィルタリング
+      const issues = allIssues.filter((issue) =>
+        isInTargetDirectories(issue.file),
+      );
+
       return {
-        passed: false,
+        passed: issues.length === 0,
         issues,
         output,
       };
@@ -165,12 +180,12 @@ export const executeStaticAnalysis = async (
     issues: LintIssue[];
     output: string;
   }> => {
-    // ファイルパス指定なし（空配列）の場合はワークスペース全体を対象
+    // ディレクトリ指定なし（空配列）の場合はワークスペース全体を対象
     const lintTarget =
-      targetFilePaths.length === 0
+      targetDirectories.length === 0
         ? "."
-        : targetFilePaths
-            .map((filePath) => `"${path.relative(projectRoot, filePath)}"`)
+        : targetDirectories
+            .map((dir) => `"${path.relative(projectRoot, dir)}"`)
             .join(" ");
 
     try {

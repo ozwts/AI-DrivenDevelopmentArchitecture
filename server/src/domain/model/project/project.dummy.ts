@@ -10,7 +10,7 @@ import {
 export type ProjectDummyProps = Partial<{
   id: string;
   name: string;
-  description?: string;
+  description: string | undefined;
   color: string;
   createdAt: string;
   updatedAt: string;
@@ -29,7 +29,7 @@ export const projectDummyFrom = (props?: ProjectDummyProps): Project => {
   return new Project({
     id: props?.id ?? getDummyId(),
     name: props?.name ?? getDummyShortText(),
-    description: props?.description ?? getDummyDescription(),
+    description: props?.description !== undefined ? props.description : getDummyDescription(),
     color: props?.color ?? getDummyProjectColor(),
     createdAt: props?.createdAt ?? now,
     updatedAt: props?.updatedAt ?? now,

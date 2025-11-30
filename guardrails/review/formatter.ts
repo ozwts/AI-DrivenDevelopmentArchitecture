@@ -2,7 +2,6 @@
  * 共通フォーマッター（責務非依存）
  */
 
-import * as path from "path";
 import { ReviewResult } from "./qualitative-reviewer";
 import { StaticAnalysisResult } from "./static-analysis-reviewer";
 
@@ -45,12 +44,12 @@ export const formatQualitativeReviewResults = (
  * 静的解析結果を整形
  *
  * @param result - 静的解析結果
- * @param targetFiles - 対象ファイルパス一覧
+ * @param targetDirectories - 対象ディレクトリ一覧
  * @returns 整形されたマークダウン文字列
  */
 export const formatStaticAnalysisResults = (
   result: StaticAnalysisResult,
-  targetFiles: string[],
+  targetDirectories: string[],
 ): string => {
   let output = "";
 
@@ -67,7 +66,6 @@ export const formatStaticAnalysisResults = (
 
   // サマリー
   output += "## サマリー\n\n";
-  output += `- 対象ファイル数: ${targetFiles.length}\n`;
 
   if (result.error !== null && result.error !== undefined) {
     output += "- **ステータス**: ❌ エラー\n\n";
@@ -94,11 +92,10 @@ export const formatStaticAnalysisResults = (
 
   output += "\n";
 
-  // 対象ファイル
-  output += "## 対象ファイル\n\n";
-  targetFiles.forEach((filePath) => {
-    const fileName = path.basename(filePath);
-    output += `- ${fileName} (${filePath})\n`;
+  // 対象ディレクトリ
+  output += "## 対象ディレクトリ\n\n";
+  targetDirectories.forEach((dirPath) => {
+    output += `- ${dirPath}\n`;
   });
   output += "\n";
 

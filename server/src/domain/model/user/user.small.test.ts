@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { User } from "./user";
+import { userDummyFrom } from "./user.dummy";
 
 describe("User", () => {
   describe("constructor", () => {
     it("すべてのプロパティを持つUserインスタンスを作成できる", () => {
       // Arrange & Act
-      const user = new User({
+      const user = userDummyFrom({
         id: "user-123",
         sub: "cognito-sub-456",
         name: "John Doe",
@@ -27,14 +28,8 @@ describe("User", () => {
 
     it("emailVerified が false のUserインスタンスを作成できる", () => {
       // Arrange & Act
-      const user = new User({
-        id: "user-123",
-        sub: "cognito-sub-456",
-        name: "Jane Smith",
-        email: "jane.smith@example.com",
+      const user = userDummyFrom({
         emailVerified: false,
-        createdAt: "2024-01-01T00:00:00.000Z",
-        updatedAt: "2024-01-01T00:00:00.000Z",
       });
 
       // Assert
@@ -45,13 +40,9 @@ describe("User", () => {
   describe("updateEmail", () => {
     it("メールアドレスと検証状態を更新した新しいUserインスタンスを返す", () => {
       // Arrange
-      const originalUser = new User({
-        id: "user-123",
-        sub: "cognito-sub-456",
-        name: "John Doe",
+      const originalUser = userDummyFrom({
         email: "old@example.com",
         emailVerified: false,
-        createdAt: "2024-01-01T00:00:00.000Z",
         updatedAt: "2024-01-01T00:00:00.000Z",
       });
 
@@ -74,13 +65,9 @@ describe("User", () => {
 
     it("元のUserインスタンスは変更されない（イミュータブル性）", () => {
       // Arrange
-      const originalUser = new User({
-        id: "user-123",
-        sub: "cognito-sub-456",
-        name: "John Doe",
+      const originalUser = userDummyFrom({
         email: "old@example.com",
         emailVerified: false,
-        createdAt: "2024-01-01T00:00:00.000Z",
         updatedAt: "2024-01-01T00:00:00.000Z",
       });
 
@@ -99,15 +86,7 @@ describe("User", () => {
 
     it("新しいインスタンスと元のインスタンスは異なるオブジェクト", () => {
       // Arrange
-      const originalUser = new User({
-        id: "user-123",
-        sub: "cognito-sub-456",
-        name: "John Doe",
-        email: "old@example.com",
-        emailVerified: false,
-        createdAt: "2024-01-01T00:00:00.000Z",
-        updatedAt: "2024-01-01T00:00:00.000Z",
-      });
+      const originalUser = userDummyFrom();
 
       // Act
       const updatedUser = originalUser.updateEmail(
@@ -121,106 +100,54 @@ describe("User", () => {
     });
   });
 
-  describe("update", () => {
-    it("すべてのフィールドを更新した新しいUserインスタンスを返す", () => {
+  describe("updateName", () => {
+    it("名前を更新した新しいUserインスタンスを返す", () => {
       // Arrange
-      const originalUser = new User({
-        id: "user-123",
-        sub: "cognito-sub-456",
+      const originalUser = userDummyFrom({
         name: "John Doe",
-        email: "john@example.com",
-        emailVerified: false,
-        createdAt: "2024-01-01T00:00:00.000Z",
         updatedAt: "2024-01-01T00:00:00.000Z",
       });
 
       // Act
-      const updatedUser = originalUser.update({
-        name: "Jane Smith",
-        email: "jane@example.com",
-        emailVerified: true,
-        updatedAt: "2024-01-02T00:00:00.000Z",
-      });
+      const updatedUser = originalUser.updateName(
+        "Jane Smith",
+        "2024-01-02T00:00:00.000Z",
+      );
 
       // Assert
       expect(updatedUser.name).toBe("Jane Smith");
-      expect(updatedUser.email).toBe("jane@example.com");
-      expect(updatedUser.emailVerified).toBe(true);
       expect(updatedUser.updatedAt).toBe("2024-01-02T00:00:00.000Z");
       expect(updatedUser.id).toBe(originalUser.id);
       expect(updatedUser.sub).toBe(originalUser.sub);
-      expect(updatedUser.createdAt).toBe(originalUser.createdAt);
-    });
-
-    it("一部のフィールドのみ更新した新しいUserインスタンスを返す", () => {
-      // Arrange
-      const originalUser = new User({
-        id: "user-123",
-        sub: "cognito-sub-456",
-        name: "John Doe",
-        email: "john@example.com",
-        emailVerified: false,
-        createdAt: "2024-01-01T00:00:00.000Z",
-        updatedAt: "2024-01-01T00:00:00.000Z",
-      });
-
-      // Act
-      const updatedUser = originalUser.update({
-        name: "John Smith",
-        updatedAt: "2024-01-02T00:00:00.000Z",
-      });
-
-      // Assert
-      expect(updatedUser.name).toBe("John Smith");
       expect(updatedUser.email).toBe(originalUser.email);
       expect(updatedUser.emailVerified).toBe(originalUser.emailVerified);
-      expect(updatedUser.updatedAt).toBe("2024-01-02T00:00:00.000Z");
+      expect(updatedUser.createdAt).toBe(originalUser.createdAt);
     });
 
     it("元のUserインスタンスは変更されない（イミュータブル性）", () => {
       // Arrange
-      const originalUser = new User({
-        id: "user-123",
-        sub: "cognito-sub-456",
+      const originalUser = userDummyFrom({
         name: "John Doe",
-        email: "john@example.com",
-        emailVerified: false,
-        createdAt: "2024-01-01T00:00:00.000Z",
         updatedAt: "2024-01-01T00:00:00.000Z",
       });
 
       // Act
-      originalUser.update({
-        name: "Jane Smith",
-        email: "jane@example.com",
-        emailVerified: true,
-        updatedAt: "2024-01-02T00:00:00.000Z",
-      });
+      originalUser.updateName("Jane Smith", "2024-01-02T00:00:00.000Z");
 
       // Assert
       expect(originalUser.name).toBe("John Doe");
-      expect(originalUser.email).toBe("john@example.com");
-      expect(originalUser.emailVerified).toBe(false);
       expect(originalUser.updatedAt).toBe("2024-01-01T00:00:00.000Z");
     });
 
     it("新しいインスタンスと元のインスタンスは異なるオブジェクト", () => {
       // Arrange
-      const originalUser = new User({
-        id: "user-123",
-        sub: "cognito-sub-456",
-        name: "John Doe",
-        email: "john@example.com",
-        emailVerified: false,
-        createdAt: "2024-01-01T00:00:00.000Z",
-        updatedAt: "2024-01-01T00:00:00.000Z",
-      });
+      const originalUser = userDummyFrom();
 
       // Act
-      const updatedUser = originalUser.update({
-        name: "Jane Smith",
-        updatedAt: "2024-01-02T00:00:00.000Z",
-      });
+      const updatedUser = originalUser.updateName(
+        "Jane Smith",
+        "2024-01-02T00:00:00.000Z",
+      );
 
       // Assert
       expect(updatedUser).not.toBe(originalUser);

@@ -27,7 +27,7 @@ import {
 import {
   Attachment,
 } from "@/domain/model/attachment/attachment";
-import { AttachmentStatus } from "@/domain/model/todo/attachment-status";
+import { AttachmentStatus } from "@/domain/model/todo/attachment-status.vo";
 import { UnexpectedError } from "@/util/error-util";
 
 /**

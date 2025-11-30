@@ -8,7 +8,7 @@
 **関連ドキュメント**:
 
 - **Entity Dummyファクトリ**: `../domain-model/52-entity-test-patterns.md`
-- **Repository Dummy**: `domain/model/{entity}/{entity}-repository.dummy.ts`
+- **Repository Dummy**: `domain/model/{entity}/{entity}.repository.dummy.ts`
 - **FetchNow Dummy**: `../../fetch-now/10-fetch-now-overview.md`
 
 ## テストファイル構成
@@ -77,7 +77,7 @@ describe("{Action}{Entity}UseCaseのテスト", () => {
 **重要**: DummyリポジトリはEntity Dummyファクトリを使用する。
 
 ```typescript
-import { projectDummyFrom } from "./project.dummy";
+import { projectDummyFrom } from "./project.entity.dummy";
 
 export type ProjectRepositoryDummyProps = {
   projectIdReturnValue?: string;
@@ -130,7 +130,7 @@ export class ProjectRepositoryDummy implements ProjectRepository {
 - テストケースごとに新しいDummyインスタンスを生成
 - デフォルト値を提供（省略可能）
 
-**Dummy実装の配置**: `domain/model/{entity}/{entity}-repository.dummy.ts`
+**Dummy実装の配置**: `domain/model/{entity}/{entity}.repository.dummy.ts`
 
 ## テストカバレッジ戦略
 
@@ -359,7 +359,7 @@ test("DynamoDB制約違反の場合エラーを返す", async () => {
 
 ```typescript
 // ✅ Good: Entity Dummyファクトリを直接使用
-import { projectDummyFrom } from "@/domain/model/project/project.dummy";
+import { projectDummyFrom } from "@/domain/model/project/project.entity.dummy";
 
 const project = projectDummyFrom({
   id: "test-project-id",
@@ -434,7 +434,7 @@ npm test
 
 ```typescript
 // ✅ Entity Dummyファクトリを使用
-import { projectDummyFrom } from "@/domain/model/project/project.dummy";
+import { projectDummyFrom } from "@/domain/model/project/project.entity.dummy";
 import { buildFetchNowDummy } from "@/domain/support/fetch-now/dummy";
 
 const fixedDate = new Date("2024-01-01T00:00:00+09:00");

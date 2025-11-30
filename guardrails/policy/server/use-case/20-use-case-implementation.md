@@ -541,22 +541,22 @@ async execute(input: UpdateTodoUseCaseInput): Promise<UpdateTodoResult> {
     return Result.err(new ForbiddenError());
   }
 
-  // 3. Result.then()によるメソッドチェーン
+  // 3. Result.then()によるメソッドチェーン（Entity組成）
   const now = dateToIsoString(this.#props.fetchNow());
 
-  return Result.ok(existing)
+  const updatedResult = Result.ok(existing)
     .then(t => 'title' in input
       ? TodoTitle.from({ title: input.title })
           .then(title => t.changeTitle(title, now))
-      : t  // Entity返す → Result.then()が自動でResult.ok()に包む
+      : t
     )
     .then(t => 'status' in input
       ? TodoStatus.from({ status: input.status })
-          .then(status => t.changeStatus(status, now))  // Result<Todo>返す → そのまま
+          .then(status => t.changeStatus(status, now))
       : t
     )
     .then(t => 'dueDate' in input
-      ? t.changeDueDate(input.dueDate, now)  // Entity返す → 自動で包まれる
+      ? t.changeDueDate(input.dueDate, now)
       : t
     )
     .then(t => 'completedAt' in input
@@ -570,11 +570,19 @@ async execute(input: UpdateTodoUseCaseInput): Promise<UpdateTodoResult> {
     .then(t => 'memo' in input
       ? t.changeMemo(input.memo, now)
       : t
-    )
-    .then(updated =>
-      this.#props.todoRepository.save({ todo: updated })
-        .then(() => updated)  // saveが成功したらupdatedを返す
     );
+
+  if (!updatedResult.success) {
+    return updatedResult;
+  }
+
+  // 4. 永続化（Entity組成とsaveは分離）
+  const saveResult = await this.#props.todoRepository.save({ todo: updatedResult.data });
+  if (!saveResult.success) {
+    return saveResult;
+  }
+
+  return Result.ok({ todo: updatedResult.data });
 }
 ```
 
@@ -606,14 +614,19 @@ async execute(input: UpdateTodoUseCaseInput): Promise<UpdateTodoResult> {
    dueDate: string | null | undefined;
    ```
 
-4. **完全フラット**: saveまで含めて1つのチェーン
+4. **Entity組成とsaveは分離**: メソッドチェーンでEntity組成後、別ステップで永続化
    ```typescript
-   return Result.ok(existing)
-     .then(...)  // 更新処理
-     .then(updated =>
-       this.#props.todoRepository.save({ todo: updated })
-         .then(() => updated)
-     );
+   // Entity組成
+   const updatedResult = Result.ok(existing)
+     .then(...)
+     .then(...);
+
+   if (!updatedResult.success) {
+     return updatedResult;
+   }
+
+   // 永続化（別ステップ）
+   const saveResult = await this.#props.todoRepository.save({ todo: updatedResult.data });
    ```
 
 ## Do / Don't
@@ -644,10 +657,10 @@ if (!colorResult.success) {
 const now = dateToIsoString(this.#props.fetchNow());
 createdAt: now;
 
-// PATCH更新時: Result.then()メソッドチェーンで完全フラット
+// PATCH更新時: Result.then()メソッドチェーン（Entity組成とsaveは分離）
 const now = dateToIsoString(this.#props.fetchNow());
 
-return Result.ok(existing)
+const updatedResult = Result.ok(existing)
   .then((t) =>
     "title" in input
       ? TodoTitle.from({ title: input.title }).then((title) =>
@@ -662,10 +675,18 @@ return Result.ok(existing)
     "dueDate" in input
       ? t.changeDueDate(input.dueDate, now) // Handler層でnull→undefined変換済み
       : t,
-  )
-  .then((updated) =>
-    this.#props.todoRepository.save({ todo: updated }).then(() => updated),
   );
+
+if (!updatedResult.success) {
+  return updatedResult;
+}
+
+const saveResult = await this.#props.todoRepository.save({ todo: updatedResult.data });
+if (!saveResult.success) {
+  return saveResult;
+}
+
+return Result.ok({ todo: updatedResult.data });
 ```
 
 ### ❌ Bad
@@ -752,6 +773,7 @@ return {
 [ ] Value Objectエラーの適切な変換
 [ ] エンティティ操作（create/update）
 [ ] PATCH更新時はResult.then()でメソッドチェーン
+[ ] Entity組成とsaveは分離（メソッドチェーン内でsaveしない）
 [ ] 'in'演算子でフィールド存在確認（送られたフィールドのみ処理）
 [ ] 送られなかったフィールドは既存値のまま（三項演算子で分岐）
 [ ] TypeScript内部ではundefinedのみ扱う（Handler層でnull→undefined変換済み）
