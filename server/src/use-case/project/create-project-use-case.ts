@@ -4,7 +4,6 @@ import type { UseCase } from "../interfaces";
 import { UnexpectedError, ValidationError } from "@/util/error-util";
 import type { ProjectRepository } from "@/domain/model/project/project-repository";
 import { Project } from "@/domain/model/project/project";
-import { ProjectColor } from "@/domain/model/project/project-color";
 import type { FetchNow } from "@/domain/support/fetch-now";
 import { dateToIsoString } from "@/util/date-util";
 
@@ -71,16 +70,6 @@ export class CreateProjectUseCaseImpl implements CreateProjectUseCase {
       };
     }
 
-    // バリデーション: カラーコード
-    const colorResult = ProjectColor.fromString(color);
-    if (!colorResult.success) {
-      this.#logger.error("カラーコードバリデーションエラー", colorResult.error);
-      return {
-        success: false,
-        error: colorResult.error,
-      };
-    }
-
     const now = dateToIsoString(this.#fetchNow());
 
     // プロジェクトの登録
@@ -88,7 +77,7 @@ export class CreateProjectUseCaseImpl implements CreateProjectUseCase {
       id: this.#projectRepository.projectId(),
       name,
       description,
-      color: colorResult.data,
+      color,
       createdAt: now,
       updatedAt: now,
     });

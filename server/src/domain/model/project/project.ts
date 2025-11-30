@@ -19,25 +19,17 @@ export type ProjectProps = {
  * @example
  * ```typescript
  * // プロジェクトの作成
- * const colorResult = ProjectColor.fromString("#FF5733");
- * if (!colorResult.success) {
- *   throw colorResult.error;
- * }
- *
  * const project = new Project({
  *   id: "project-123",
  *   name: "新規プロジェクト",
  *   description: "プロジェクトの説明",
- *   color: colorResult.data,
+ *   color: "#FF5733",
  *   createdAt: "2024-01-01T00:00:00.000Z",
  *   updatedAt: "2024-01-01T00:00:00.000Z"
  * });
  *
- * // プロジェクトの更新（新しいインスタンスを生成）
- * const updated = project.update({
- *   name: "更新されたプロジェクト",
- *   updatedAt: "2024-01-02T00:00:00.000Z"
- * });
+ * // プロジェクト名の変更（新しいインスタンスを生成）
+ * const updated = project.changeName("更新されたプロジェクト", "2024-01-02T00:00:00.000Z");
  * ```
  */
 export class Project {
@@ -63,7 +55,7 @@ export class Project {
    * プロジェクトの詳細説明。
    * Tier 3（Optional）項目。
    */
-  readonly description?: string;
+  readonly description: string | undefined;
 
   /**
    * プロジェクトカラー

@@ -1,5 +1,5 @@
 import { fakerJA as faker } from "@faker-js/faker";
-import type { TodoStatus, TodoPriority } from "@/domain/model/todo/todo";
+import { TodoStatus, type TodoPriority } from "@/domain/model/todo/todo";
 
 // Basic data generators
 export const getDummyId = () => faker.string.uuid();
@@ -44,8 +44,10 @@ export const getDummyTodoTitle = () => {
   return `${prefix}: ${subject}`;
 };
 
-export const getDummyTodoStatus = (): TodoStatus =>
-  faker.helpers.arrayElement<TodoStatus>(["TODO", "IN_PROGRESS", "COMPLETED"]);
+export const getDummyTodoStatus = (): TodoStatus => {
+  const statuses = [TodoStatus.todo(), TodoStatus.inProgress(), TodoStatus.completed()];
+  return faker.helpers.arrayElement(statuses);
+};
 
 export const getDummyTodoPriority = (): TodoPriority =>
   faker.helpers.arrayElement<TodoPriority>(["LOW", "MEDIUM", "HIGH"]);

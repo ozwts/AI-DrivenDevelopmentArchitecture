@@ -1,11 +1,7 @@
-/**
- * Attachment ステータス
- *
- * アップロード処理の進行状況を表す。
- * - PREPARED: アップロード準備完了（署名付きURL発行済み）
- * - UPLOADED: S3へのアップロード完了
- */
-export type AttachmentStatus = "PREPARED" | "UPLOADED";
+import { AttachmentStatus } from "./attachment-status";
+
+// AttachmentStatusを再エクスポート
+export { AttachmentStatus };
 
 /**
  * Attachment コンストラクタのProps型
@@ -16,7 +12,7 @@ export type AttachmentProps = {
   storageKey: string;
   contentType: string;
   fileSize: number;
-  status: AttachmentStatus;
+  status: AttachmentStatus | undefined;
   uploadedBy: string;
   createdAt: string;
   updatedAt: string;
@@ -100,7 +96,7 @@ export class Attachment {
    * アップロード処理の進行状況。
    * デフォルト値は "PREPARED"（アップロード準備完了）。
    */
-  readonly status: AttachmentStatus;
+  readonly status: AttachmentStatus | undefined;
 
   /**
    * アップロード者ユーザーID

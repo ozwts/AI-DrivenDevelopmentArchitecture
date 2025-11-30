@@ -13,7 +13,7 @@ export const convertToProjectResponse = (
   id: project.id,
   name: project.name,
   description: project.description,
-  color: project.color.value, // ProjectColorから文字列値を取得
+  color: project.color,
   createdAt: project.createdAt,
   updatedAt: project.updatedAt,
 });

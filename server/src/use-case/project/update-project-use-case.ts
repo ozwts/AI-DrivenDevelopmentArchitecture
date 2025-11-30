@@ -3,7 +3,6 @@ import type { Result } from "@/util/result";
 import { UnexpectedError, ValidationError } from "@/util/error-util";
 import type { ProjectRepository } from "@/domain/model/project/project-repository";
 import type { Project } from "@/domain/model/project/project";
-import { ProjectColor } from "@/domain/model/project/project-color";
 import type { FetchNow } from "@/domain/support/fetch-now";
 import { dateToIsoString } from "@/util/date-util";
 
@@ -85,32 +84,19 @@ export class UpdateProjectUseCaseImpl implements UpdateProjectUseCase {
       };
     }
 
-    // カラーコードのバリデーション（更新がある場合のみ）
-    let colorValue: ProjectColor | undefined;
-    if (input.color !== undefined) {
-      const colorResult = ProjectColor.fromString(input.color);
-      if (!colorResult.success) {
-        this.#logger.error(
-          "カラーコードバリデーションエラー",
-          colorResult.error,
-        );
-        return {
-          success: false,
-          error: colorResult.error,
-        };
-      }
-      colorValue = colorResult.data;
-    }
-
     const now = dateToIsoString(this.#fetchNow());
 
-    // プロジェクトを更新
-    const updatedProject = findResult.data.update({
-      name: input.name,
-      description: input.description,
-      color: colorValue,
-      updatedAt: now,
-    });
+    // プロジェクトを更新（個別メソッドをメソッドチェーンで組み合わせる）
+    let updatedProject = findResult.data;
+    if (input.name !== undefined) {
+      updatedProject = updatedProject.changeName(input.name, now);
+    }
+    if (input.description !== undefined) {
+      updatedProject = updatedProject.changeDescription(input.description, now);
+    }
+    if (input.color !== undefined) {
+      updatedProject = updatedProject.changeColor(input.color, now);
+    }
 
     const saveResult = await this.#projectRepository.save({
       project: updatedProject,

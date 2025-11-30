@@ -22,7 +22,7 @@ export const convertToAttachmentResponse = (
   filename: attachment.fileName,
   contentType: attachment.contentType,
   size: attachment.fileSize,
-  status: attachment.status,
+  status: attachment.status.value,
   createdAt: attachment.createdAt,
   updatedAt: attachment.updatedAt,
 });
@@ -40,13 +40,13 @@ export const convertToTodoResponse = (todo: Todo): TodoResponse => ({
   id: todo.id,
   title: todo.title,
   description: todo.description,
-  status: todo.status,
+  status: todo.status.value,
   priority: todo.priority,
   dueDate: todo.dueDate,
   projectId: todo.projectId,
   assigneeUserId: todo.assigneeUserId,
   attachments: todo.attachments
-    .filter((attachment) => attachment.status === "UPLOADED")
+    .filter((attachment) => attachment.status.isUploaded())
     .map((attachment) => convertToAttachmentResponse(todo.id, attachment)),
   createdAt: todo.createdAt,
   updatedAt: todo.updatedAt,

@@ -1,4 +1,5 @@
 import { v7 as uuid } from "uuid";
+import { Result } from "@/util/result";
 import { todoDummyFrom } from "./todo.dummy";
 import type {
   TodoRepository,
@@ -48,30 +49,16 @@ export class TodoRepositoryDummy implements TodoRepository {
   constructor(props?: TodoRepositoryDummyProps) {
     this.#todoIdReturnValue = props?.todoIdReturnValue ?? uuid();
     this.#attachmentIdReturnValue = props?.attachmentIdReturnValue ?? uuid();
-    this.#findByIdReturnValue = props?.findByIdReturnValue ?? {
-      success: true,
-      data: todoDummyFrom(),
-    };
-    this.#findAllReturnValue = props?.findAllReturnValue ?? {
-      success: true,
-      data: [todoDummyFrom()],
-    };
-    this.#findByStatusReturnValue = props?.findByStatusReturnValue ?? {
-      success: true,
-      data: [todoDummyFrom()],
-    };
-    this.#findByProjectIdReturnValue = props?.findByProjectIdReturnValue ?? {
-      success: true,
-      data: [todoDummyFrom()],
-    };
-    this.#saveReturnValue = props?.saveReturnValue ?? {
-      success: true,
-      data: undefined,
-    };
-    this.#removeReturnValue = props?.removeReturnValue ?? {
-      success: true,
-      data: undefined,
-    };
+    this.#findByIdReturnValue =
+      props?.findByIdReturnValue ?? Result.ok(todoDummyFrom());
+    this.#findAllReturnValue =
+      props?.findAllReturnValue ?? Result.ok([todoDummyFrom()]);
+    this.#findByStatusReturnValue =
+      props?.findByStatusReturnValue ?? Result.ok([todoDummyFrom()]);
+    this.#findByProjectIdReturnValue =
+      props?.findByProjectIdReturnValue ?? Result.ok([todoDummyFrom()]);
+    this.#saveReturnValue = props?.saveReturnValue ?? Result.ok(undefined);
+    this.#removeReturnValue = props?.removeReturnValue ?? Result.ok(undefined);
   }
 
   todoId(): string {

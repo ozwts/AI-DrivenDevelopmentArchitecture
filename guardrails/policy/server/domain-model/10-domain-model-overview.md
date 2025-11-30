@@ -101,7 +101,7 @@ const dueDate: string | undefined;      // フィールド定義
 const dueDate = input.dueDate !== undefined ? input.dueDate : existing.dueDate;
 
 // Tier 3: Optional - 純粋に任意
-readonly description?: string;          // フィールド定義
+readonly description: string | undefined;  // フィールド定義
 const description = input.description !== undefined ? input.description : existing.description;
 
 // ❌ 間違い: ?? 演算子を使うとundefinedが上書きされない
@@ -171,7 +171,7 @@ OpenAPIで表現不可能なドメインルールがある？
 export class Todo {
   readonly id: string;
   readonly title: string;
-  readonly description?: string;
+  readonly description: string | undefined;
   readonly status: TodoStatus;
   readonly createdAt: string;
   readonly updatedAt: string;

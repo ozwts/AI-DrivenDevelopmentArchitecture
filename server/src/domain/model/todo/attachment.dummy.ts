@@ -51,7 +51,7 @@ export const attachmentDummyFrom = (
     storageKey: props?.storageKey ?? `attachments/${todoId}/${id}/${fileName}`,
     contentType: props?.contentType ?? "application/pdf",
     fileSize: props?.fileSize ?? faker.number.int({ min: 1000, max: 10000000 }),
-    status: props?.status ?? "PREPARED",
+    status: props?.status !== undefined ? props.status : AttachmentStatus.prepared(),
     uploadedBy: props?.uploadedBy ?? getDummyId(),
     createdAt: props?.createdAt ?? now,
     updatedAt: props?.updatedAt ?? now,

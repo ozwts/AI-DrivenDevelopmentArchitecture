@@ -1,4 +1,5 @@
 import { v7 as uuid } from "uuid";
+import { Result } from "@/util/result";
 import { projectDummyFrom } from "./project.dummy";
 import type {
   ProjectRepository,
@@ -35,22 +36,12 @@ export class ProjectRepositoryDummy implements ProjectRepository {
 
   constructor(props?: ProjectRepositoryDummyProps) {
     this.#projectIdReturnValue = props?.projectIdReturnValue ?? uuid();
-    this.#findByIdReturnValue = props?.findByIdReturnValue ?? {
-      success: true,
-      data: projectDummyFrom(),
-    };
-    this.#findAllReturnValue = props?.findAllReturnValue ?? {
-      success: true,
-      data: [projectDummyFrom()],
-    };
-    this.#saveReturnValue = props?.saveReturnValue ?? {
-      success: true,
-      data: undefined,
-    };
-    this.#removeReturnValue = props?.removeReturnValue ?? {
-      success: true,
-      data: undefined,
-    };
+    this.#findByIdReturnValue =
+      props?.findByIdReturnValue ?? Result.ok(projectDummyFrom());
+    this.#findAllReturnValue =
+      props?.findAllReturnValue ?? Result.ok([projectDummyFrom()]);
+    this.#saveReturnValue = props?.saveReturnValue ?? Result.ok(undefined);
+    this.#removeReturnValue = props?.removeReturnValue ?? Result.ok(undefined);
   }
 
   projectId(): string {

@@ -107,8 +107,8 @@ OpenAPIで表現不可能なドメインルールがある？
 export class Todo {
   readonly id: string; // プリミティブ
   readonly title: string; // OpenAPI: minLength/maxLength
-  readonly color?: string; // OpenAPI: pattern: "^#[0-9A-Fa-f]{6}$"
-  readonly description?: string; // プリミティブ
+  readonly color: string | undefined; // OpenAPI: pattern: "^#[0-9A-Fa-f]{6}$"
+  readonly description: string | undefined; // プリミティブ
   readonly createdAt: string; // プリミティブ
   readonly status: TodoStatus; // Value Object（不変条件あり）
 }

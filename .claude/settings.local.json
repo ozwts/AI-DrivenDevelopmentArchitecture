@@ -30,7 +30,8 @@
       "Bash(git add:*)",
       "Bash(git rm:*)",
       "mcp__guardrails__review_contract_openapi",
-      "mcp__guardrails__review_server_domain_models"
+      "mcp__guardrails__review_server_domain_models",
+      "mcp__guardrails__review_static_analysis"
     ],
     "deny": [],
     "ask": []

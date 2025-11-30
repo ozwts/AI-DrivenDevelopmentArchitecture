@@ -4,7 +4,7 @@ import { schemas } from "@/generated/zod-schemas";
 import { serviceId } from "@/di-container/service-id";
 import type { Logger } from "@/domain/support/logger";
 import type { ListTodosUseCase } from "@/use-case/todo/list-todos-use-case";
-import type { TodoStatus } from "@/domain/model/todo/todo";
+import { TodoStatus } from "@/domain/model/todo/todo";
 import { UnexpectedError, unexpectedErrorMessage } from "@/util/error-util";
 import { handleError } from "../../hono-handler-util/error-handler";
 import { convertToTodoResponse } from "./todo-handler-util";
@@ -41,11 +41,25 @@ export const buildListTodosHandler =
         }
       }
 
+      // statusParamをTodoStatusに変換
+      let status: TodoStatus | undefined = undefined;
+      if (statusParam !== undefined && statusParam !== "") {
+        const statusResult = TodoStatus.from({ status: statusParam });
+        if (statusResult.isErr()) {
+          logger.debug("TodoStatus変換エラー", { statusParam });
+          return c.json(
+            {
+              name: "ValidationError",
+              message: `status: Invalid status value`,
+            },
+            400,
+          );
+        }
+        status = statusResult.data;
+      }
+
       const result = await useCase.execute({
-        status:
-          statusParam !== undefined && statusParam !== ""
-            ? (statusParam as TodoStatus)
-            : undefined,
+        status,
         projectId:
           projectIdParam !== undefined && projectIdParam !== ""
             ? projectIdParam

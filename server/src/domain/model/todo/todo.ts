@@ -21,14 +21,14 @@ export type TodoProps = {
   id: string;
   title: string;
   description: string | undefined;
-  status: TodoStatus;
-  priority: TodoPriority;
+  status: TodoStatus | undefined;
+  priority: TodoPriority | undefined;
   dueDate: string | undefined;
   projectId: string | undefined;
   assigneeUserId: string;
   createdAt: string;
   updatedAt: string;
-  attachments: Attachment[];
+  attachments: Attachment[] | undefined;
 };
 
 /**
@@ -79,7 +79,7 @@ export class Todo {
    * TODOの詳細説明。
    * Tier 3（Optional）項目。
    */
-  readonly description?: string;
+  readonly description: string | undefined;
 
   /**
    * ステータス
@@ -87,7 +87,7 @@ export class Todo {
    * TODOの進捗状況。
    * デフォルト値は "TODO"（未着手）。
    */
-  readonly status: TodoStatus;
+  readonly status: TodoStatus | undefined;
 
   /**
    * 優先度
@@ -95,7 +95,7 @@ export class Todo {
    * TODOの重要度。
    * デフォルト値は "MEDIUM"（中優先度）。
    */
-  readonly priority: TodoPriority;
+  readonly priority: TodoPriority | undefined;
 
   /**
    * 期限日
@@ -144,7 +144,7 @@ export class Todo {
    * このTODOに添付されているファイルのリスト。
    * Todoアグリゲートの一部として管理される。
    */
-  readonly attachments: Attachment[];
+  readonly attachments: Attachment[] | undefined;
 
   /**
    * コンストラクタ
@@ -280,7 +280,7 @@ export class Todo {
   addAttachment(attachment: Attachment, updatedAt: string): Todo {
     return new Todo({
       ...this,
-      attachments: [...this.attachments, attachment],
+      attachments: [...(this.attachments ?? []), attachment],
       updatedAt,
     });
   }
@@ -295,7 +295,7 @@ export class Todo {
   removeAttachment(attachmentId: string, updatedAt: string): Todo {
     return new Todo({
       ...this,
-      attachments: this.attachments.filter((a) => a.id !== attachmentId),
+      attachments: (this.attachments ?? []).filter((a) => a.id !== attachmentId),
       updatedAt,
     });
   }
@@ -310,7 +310,7 @@ export class Todo {
   updateAttachment(updatedAttachment: Attachment, updatedAt: string): Todo {
     return new Todo({
       ...this,
-      attachments: this.attachments.map((a) =>
+      attachments: (this.attachments ?? []).map((a) =>
         a.id === updatedAttachment.id ? updatedAttachment : a,
       ),
       updatedAt,

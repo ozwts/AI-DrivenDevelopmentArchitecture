@@ -1,3 +1,4 @@
+import { Result } from "@/util/result";
 import type {
   UserRepository,
   SaveResult,
@@ -47,26 +48,14 @@ export class UserRepositoryDummy implements UserRepository {
 
   constructor(props?: UserRepositoryDummyProps) {
     this.#userIdReturnValue = props?.userIdReturnValue ?? "dummy-user-id";
-    this.#findByIdReturnValue = props?.findByIdReturnValue ?? {
-      success: true,
-      data: userDummyFrom(),
-    };
-    this.#findBySubReturnValue = props?.findBySubReturnValue ?? {
-      success: true,
-      data: userDummyFrom(),
-    };
-    this.#findAllReturnValue = props?.findAllReturnValue ?? {
-      success: true,
-      data: [userDummyFrom()],
-    };
-    this.#saveReturnValue = props?.saveReturnValue ?? {
-      success: true,
-      data: undefined,
-    };
-    this.#removeReturnValue = props?.removeReturnValue ?? {
-      success: true,
-      data: undefined,
-    };
+    this.#findByIdReturnValue =
+      props?.findByIdReturnValue ?? Result.ok(userDummyFrom());
+    this.#findBySubReturnValue =
+      props?.findBySubReturnValue ?? Result.ok(userDummyFrom());
+    this.#findAllReturnValue =
+      props?.findAllReturnValue ?? Result.ok([userDummyFrom()]);
+    this.#saveReturnValue = props?.saveReturnValue ?? Result.ok(undefined);
+    this.#removeReturnValue = props?.removeReturnValue ?? Result.ok(undefined);
   }
 
   userId(): string {

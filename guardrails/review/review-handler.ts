@@ -45,7 +45,8 @@ export const createReviewHandler =
 
     // バリデーション
     if (
-      !targetDirectories ||
+      targetDirectories === null ||
+      targetDirectories === undefined ||
       !Array.isArray(targetDirectories) ||
       targetDirectories.length === 0
     ) {

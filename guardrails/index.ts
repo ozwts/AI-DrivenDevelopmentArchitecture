@@ -100,11 +100,11 @@ const main = async (): Promise<void> => {
         description: responsibility.toolDescription,
         inputSchema: responsibility.inputSchema,
       },
-      async ({ workspace, targetFilePaths, analysisType }) => {
+      async ({ workspace, targetDirectories, analysisType }) => {
         try {
           const result = await handler({
             workspace,
-            targetFilePaths,
+            targetDirectories,
             analysisType,
             guardrailsRoot: GUARDRAILS_ROOT,
           });

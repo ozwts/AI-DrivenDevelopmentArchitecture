@@ -222,7 +222,7 @@ export class Todo {
   readonly completedAt: string | undefined; // プリミティブ（undefinedは"未完了"）
 
   // Tier 3: Optional
-  readonly description?: string; // プリミティブ（純粋に任意）
+  readonly description: string | undefined; // プリミティブ（純粋に任意）
 
   // 変更不可
   readonly createdAt: string;

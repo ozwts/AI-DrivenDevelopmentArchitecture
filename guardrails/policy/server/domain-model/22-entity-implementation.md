@@ -61,10 +61,34 @@ export type TodoProps = {
 export class Todo {
   readonly id: string;
   readonly title: string;
-  readonly description?: string; // フィールドはオプショナル
+
+  // Tier 3: 単なるオプショナル
+  /**
+   * 説明
+   *
+   * TODOの詳細説明。
+   */
+  readonly description: string | undefined;
+
   readonly status: TodoStatus;
+
+  // Tier 2: ビジネス的意味を持つ undefined（JSDocでundefinedの意味を明示）
+  /**
+   * 期限日
+   *
+   * - 値あり: 期限が設定されている
+   * - undefined: 「期限なし」を意味する（明示的な業務状態）
+   */
   readonly dueDate: string | undefined;
+
+  /**
+   * 完了日時
+   *
+   * - 値あり: 完了済み
+   * - undefined: 「未完了」を意味する（明示的な業務状態）
+   */
   readonly completedAt: string | undefined;
+
   readonly createdAt: string;
   readonly updatedAt: string;
 
@@ -81,15 +105,17 @@ export class Todo {
 }
 ```
 
-**Tier 3フィールドの重要な区別**:
+**Tier 2 と Tier 3 の型表現**:
 
-- **Props型（コンストラクタ引数）**: `description: string | undefined` （`?` なし - 必須で渡す）
-- **クラスフィールド**: `description?: string` （`?` あり - オプショナル）
+- **Props型**: `string | undefined` （必須で渡す）
+- **クラスフィールド**: `string | undefined` （Props型と統一）
+- **区別方法**: JSDocコメントで明示（Tier 2のみJSDocを記載）
 
-この違いにより、analyzability原則に準拠：
+この統一により：
 
-- コンストラクタでは全フィールドを明示的に渡すことを強制（`| undefined` で型システムが検出）
-- クラス内部ではオプショナルフィールドとして扱う（`?` で実装を簡潔に）
+- TypeScriptのspread operator (`...this`) が正しく動作
+- analyzability原則に準拠（全フィールドを明示的に渡すことを強制）
+- 型システムの制約を受け入れ、ドキュメントで意図を明確化
 
 **Props型エイリアスのメリット**:
 
@@ -524,7 +550,7 @@ export class Todo {
   readonly completedAt: string | undefined;  // undefinedは"未完了"
 
   // Tier 3: Optional（プリミティブでOK）
-  readonly description?: string;    // 純粋に任意
+  readonly description: string | undefined;    // 純粋に任意
 
   // 変更不可
   readonly createdAt: string;
@@ -595,10 +621,32 @@ import type { TodoStatus } from "./todo-status";
 export class Todo {
   readonly id: string;
   readonly title: string;
-  readonly description?: string; // Tier 3: Optional
+
+  /**
+   * 説明
+   *
+   * TODOの詳細説明。
+   */
+  readonly description: string | undefined; // Tier 3: Optional
+
   readonly status: TodoStatus;
+
+  /**
+   * 期限日
+   *
+   * - 値あり: 期限が設定されている
+   * - undefined: 「期限なし」を意味する（明示的な業務状態）
+   */
   readonly dueDate: string | undefined; // Tier 2: Special Case
+
+  /**
+   * 完了日時
+   *
+   * - 値あり: 完了済み
+   * - undefined: 「未完了」を意味する（明示的な業務状態）
+   */
   readonly completedAt: string | undefined; // Tier 2: Special Case
+
   readonly createdAt: string;
   readonly updatedAt: string;
 

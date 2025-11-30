@@ -21,13 +21,13 @@ import {
 } from "@/domain/model/todo/todo-repository";
 import {
   Todo,
-  type TodoStatus,
+  TodoStatus,
   type TodoPriority,
 } from "@/domain/model/todo/todo";
 import {
   Attachment,
-  type AttachmentStatus,
 } from "@/domain/model/attachment/attachment";
+import { AttachmentStatus } from "@/domain/model/todo/attachment-status";
 import { UnexpectedError } from "@/util/error-util";
 
 /**
@@ -88,18 +88,24 @@ export type TodoDdbItem = z.infer<typeof todoDdbItemSchema>;
  */
 export const attachmentDdbItemToAttachment = (
   attachmentDdbItem: AttachmentDdbItem,
-): Attachment =>
-  new Attachment({
+): Attachment => {
+  const statusResult = AttachmentStatus.from({ status: attachmentDdbItem.status });
+  if (statusResult.isErr()) {
+    throw statusResult.error;
+  }
+
+  return new Attachment({
     id: attachmentDdbItem.id,
     fileName: attachmentDdbItem.fileName,
     storageKey: attachmentDdbItem.storageKey,
     contentType: attachmentDdbItem.contentType,
     fileSize: attachmentDdbItem.fileSize,
-    status: attachmentDdbItem.status as AttachmentStatus,
+    status: statusResult.data,
     uploadedBy: attachmentDdbItem.uploadedBy,
     createdAt: attachmentDdbItem.createdAt,
     updatedAt: attachmentDdbItem.updatedAt,
   });
+};
 
 /**
  * Attachment → AttachmentDdbItem 変換
@@ -112,7 +118,7 @@ export const attachmentDdbItemFromAttachment = (
   storageKey: attachment.storageKey,
   contentType: attachment.contentType,
   fileSize: attachment.fileSize,
-  status: attachment.status,
+  status: attachment.status.value,
   uploadedBy: attachment.uploadedBy,
   createdAt: attachment.createdAt,
   updatedAt: attachment.updatedAt,
@@ -131,7 +137,7 @@ export const attachmentTableItemFromAttachment = (
   storageKey: attachment.storageKey,
   contentType: attachment.contentType,
   fileSize: attachment.fileSize,
-  status: attachment.status,
+  status: attachment.status.value,
   uploadedBy: attachment.uploadedBy,
   createdAt: attachment.createdAt,
   updatedAt: attachment.updatedAt,
@@ -145,12 +151,17 @@ export const attachmentTableItemFromAttachment = (
 export const todoDdbItemToTodo = (
   todoDdbItem: TodoDdbItem,
   attachments: Attachment[] = [],
-): Todo =>
-  new Todo({
+): Todo => {
+  const statusResult = TodoStatus.from({ status: todoDdbItem.status });
+  if (statusResult.isErr()) {
+    throw statusResult.error;
+  }
+
+  return new Todo({
     id: todoDdbItem.todoId,
     title: todoDdbItem.title,
     description: todoDdbItem.description,
-    status: todoDdbItem.status as TodoStatus,
+    status: statusResult.data,
     priority: todoDdbItem.priority as TodoPriority,
     dueDate: todoDdbItem.dueDate,
     projectId: todoDdbItem.projectId,
@@ -159,6 +170,7 @@ export const todoDdbItemToTodo = (
     createdAt: todoDdbItem.createdAt,
     updatedAt: todoDdbItem.updatedAt,
   });
+};
 
 /**
  * Todo → TodoDdbItem 変換
@@ -193,7 +205,7 @@ export const todoDdbItemFromTodo = (todo: Todo): TodoDdbItem => {
     todoId: todo.id,
     title: todo.title,
     description: todo.description,
-    status: todo.status,
+    status: todo.status.value,
     priority: todo.priority,
     dueDate: todo.dueDate,
     projectId, // 空文字列の場合はundefined

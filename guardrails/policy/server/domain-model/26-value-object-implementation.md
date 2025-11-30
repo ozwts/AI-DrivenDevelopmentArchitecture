@@ -505,8 +505,8 @@ color:
 export class Todo {
   readonly id: string; // プリミティブ（バリデーション不要）
   readonly title: string; // OpenAPI: minLength/maxLength
-  readonly color?: string; // OpenAPI: pattern
-  readonly description?: string; // プリミティブ
+  readonly color: string | undefined; // OpenAPI: pattern
+  readonly description: string | undefined; // プリミティブ
   readonly createdAt: string; // プリミティブ
   readonly status: TodoStatus; // Value Object（不変条件あり）
 }

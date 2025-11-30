@@ -17,15 +17,14 @@ export type TodoStatusProps = {
  * TodoStatus Value Object
  *
  * TODOの進捗状況を表すValue Object。
- * 状態遷移ルールを持つため、Value Object化が必須（Tier 1）。
  *
- * 状態遷移ルール:
- * - TODO -> IN_PROGRESS: 可能
- * - TODO -> COMPLETED: 可能（直接完了も許可）
- * - IN_PROGRESS -> TODO: 可能（作業を戻す）
- * - IN_PROGRESS -> COMPLETED: 可能
- * - COMPLETED -> TODO: 可能（再開）
- * - COMPLETED -> IN_PROGRESS: 可能（再開）
+ * 値の種類：
+ * - TODO: 未着手
+ * - IN_PROGRESS: 作業中
+ * - COMPLETED: 完了
+ *
+ * Tier 1（Value Object化が必須）として定義。
+ * すべての状態遷移を許可するため、状態遷移の制約は存在しない。
  */
 @staticImplements<ValueObjectConstructor<TodoStatus>>()
 export class TodoStatus implements ValueObject<TodoStatus> {
@@ -79,7 +78,7 @@ export class TodoStatus implements ValueObject<TodoStatus> {
   }
 
   /**
-   * TODO状態かどうか
+   * 未着手状態かどうか
    */
   isTodo(): boolean {
     return this._value === "TODO";
@@ -97,6 +96,19 @@ export class TodoStatus implements ValueObject<TodoStatus> {
    */
   isCompleted(): boolean {
     return this._value === "COMPLETED";
+  }
+
+  /**
+   * 指定されたステータスへの遷移が可能かどうかを判定する
+   *
+   * このプロジェクトではすべての状態遷移を許可するため、常に成功を返す。
+   *
+   * @param _to - 遷移先のステータス（未使用）
+   * @returns 常に成功
+   */
+  canTransitionTo(_to: TodoStatus): Result<void, DomainError> {
+    // すべての遷移を許可
+    return Result.ok(undefined);
   }
 
   /**

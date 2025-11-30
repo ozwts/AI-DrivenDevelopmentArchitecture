@@ -18,7 +18,7 @@ export type StaticAnalysisResponsibility = {
   /** 入力スキーマ */
   inputSchema: {
     workspace: z.ZodEnum<["server", "web"]>;
-    targetFilePaths: z.ZodArray<z.ZodString>;
+    targetDirectories: z.ZodArray<z.ZodString>;
     analysisType: z.ZodDefault<
       z.ZodOptional<z.ZodEnum<["type-check", "lint", "both"]>>
     >;
@@ -126,17 +126,17 @@ export const STATIC_ANALYSIS_RESPONSIBILITIES: StaticAnalysisResponsibility[] =
     {
       id: "review_static_analysis",
       toolDescription:
-        "指定されたワークスペースの静的解析を実行します。TypeScript型チェック（tsc --noEmit）、ESLint（eslint --format json）、または両方を選択できます。型チェックはプロジェクト全体、Lintは指定ファイル（空配列の場合はワークスペース全体）をチェックします。",
+        "指定されたワークスペースの静的解析を実行します。TypeScript型チェック（tsc --noEmit）、ESLint（eslint --format json）、または両方を選択できます。型チェックはプロジェクト全体、Lintは指定ディレクトリ配下のファイルをチェックします。",
       inputSchema: {
         workspace: z
           .enum(["server", "web"])
           .describe(
             "静的解析を実行するワークスペース: 'server'（サーバー側）、'web'（フロントエンド側）",
           ),
-        targetFilePaths: z
+        targetDirectories: z
           .array(z.string())
           .describe(
-            "レビュー対象ファイルの絶対パスの配列。空配列の場合はワークスペース全体をLint対象とします（例: ['/path/to/server/src/file1.ts', '/path/to/server/src/file2.ts'] または []）",
+            "レビュー対象ディレクトリの絶対パスの配列（例: ['/path/to/server/src/domain/model']）",
           ),
         analysisType: z
           .enum(["type-check", "lint", "both"])

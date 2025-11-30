@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { Todo } from "./todo";
+import { Todo, TodoStatus } from "./todo";
 import { Attachment } from "./attachment";
+import { AttachmentStatus } from "./attachment-status";
 
 describe("Todo", () => {
   describe("constructor", () => {
@@ -10,10 +11,11 @@ describe("Todo", () => {
         id: "todo-123",
         title: "テスト用タスク",
         description: "これはテスト用のタスクです",
-        status: "TODO",
+        status: TodoStatus.todo(),
         priority: "HIGH",
         dueDate: "2024-12-31T23:59:59.000Z",
         projectId: "project-456",
+        assigneeUserId: "user-123",
         createdAt: "2024-01-01T00:00:00.000Z",
         updatedAt: "2024-01-01T00:00:00.000Z",
       });
@@ -22,7 +24,7 @@ describe("Todo", () => {
       expect(todo.id).toBe("todo-123");
       expect(todo.title).toBe("テスト用タスク");
       expect(todo.description).toBe("これはテスト用のタスクです");
-      expect(todo.status).toBe("TODO");
+      expect(todo.status.value).toBe("TODO");
       expect(todo.priority).toBe("HIGH");
       expect(todo.dueDate).toBe("2024-12-31T23:59:59.000Z");
       expect(todo.projectId).toBe("project-456");
@@ -35,6 +37,13 @@ describe("Todo", () => {
       const todo = new Todo({
         id: "todo-123",
         title: "必須項目のみのタスク",
+        description: undefined,
+        status: undefined,
+        priority: undefined,
+        dueDate: undefined,
+        projectId: undefined,
+        assigneeUserId: "user-123",
+        attachments: undefined,
         createdAt: "2024-01-01T00:00:00.000Z",
         updatedAt: "2024-01-01T00:00:00.000Z",
       });
@@ -43,37 +52,12 @@ describe("Todo", () => {
       expect(todo.id).toBe("todo-123");
       expect(todo.title).toBe("必須項目のみのタスク");
       expect(todo.description).toBeUndefined();
-      expect(todo.status).toBe("TODO"); // デフォルト値
-      expect(todo.priority).toBe("MEDIUM"); // デフォルト値
+      expect(todo.status).toBeUndefined();
+      expect(todo.priority).toBeUndefined();
       expect(todo.dueDate).toBeUndefined();
       expect(todo.projectId).toBeUndefined();
     });
 
-    it("statusのデフォルト値はTODO", () => {
-      // Arrange & Act
-      const todo = new Todo({
-        id: "todo-123",
-        title: "タスク",
-        createdAt: "2024-01-01T00:00:00.000Z",
-        updatedAt: "2024-01-01T00:00:00.000Z",
-      });
-
-      // Assert
-      expect(todo.status).toBe("TODO");
-    });
-
-    it("priorityのデフォルト値はMEDIUM", () => {
-      // Arrange & Act
-      const todo = new Todo({
-        id: "todo-123",
-        title: "タスク",
-        createdAt: "2024-01-01T00:00:00.000Z",
-        updatedAt: "2024-01-01T00:00:00.000Z",
-      });
-
-      // Assert
-      expect(todo.priority).toBe("MEDIUM");
-    });
   });
 
   describe("changeStatus", () => {
@@ -82,19 +66,25 @@ describe("Todo", () => {
       const originalTodo = new Todo({
         id: "todo-123",
         title: "タスク",
-        status: "TODO",
+        description: undefined,
+        status: TodoStatus.todo(),
+        priority: "MEDIUM",
+        dueDate: undefined,
+        projectId: undefined,
+        assigneeUserId: "user-123",
+        attachments: undefined,
         createdAt: "2024-01-01T00:00:00.000Z",
         updatedAt: "2024-01-01T00:00:00.000Z",
       });
 
       // Act
       const updatedTodo = originalTodo.changeStatus(
-        "IN_PROGRESS",
+        TodoStatus.inProgress(),
         "2024-01-02T00:00:00.000Z",
       );
 
       // Assert
-      expect(updatedTodo.status).toBe("IN_PROGRESS");
+      expect(updatedTodo.status?.value).toBe("IN_PROGRESS");
       expect(updatedTodo.updatedAt).toBe("2024-01-02T00:00:00.000Z");
       expect(updatedTodo.id).toBe(originalTodo.id);
       expect(updatedTodo.title).toBe(originalTodo.title);
@@ -106,16 +96,22 @@ describe("Todo", () => {
       const originalTodo = new Todo({
         id: "todo-123",
         title: "タスク",
-        status: "TODO",
+        description: undefined,
+        status: TodoStatus.todo(),
+        priority: "MEDIUM",
+        dueDate: undefined,
+        projectId: undefined,
+        assigneeUserId: "user-123",
+        attachments: undefined,
         createdAt: "2024-01-01T00:00:00.000Z",
         updatedAt: "2024-01-01T00:00:00.000Z",
       });
 
       // Act
-      originalTodo.changeStatus("IN_PROGRESS", "2024-01-02T00:00:00.000Z");
+      originalTodo.changeStatus(TodoStatus.inProgress(), "2024-01-02T00:00:00.000Z");
 
       // Assert
-      expect(originalTodo.status).toBe("TODO");
+      expect(originalTodo.status?.value).toBe("TODO");
       expect(originalTodo.updatedAt).toBe("2024-01-01T00:00:00.000Z");
     });
 
@@ -124,14 +120,20 @@ describe("Todo", () => {
       const originalTodo = new Todo({
         id: "todo-123",
         title: "タスク",
-        status: "TODO",
+        description: undefined,
+        status: TodoStatus.todo(),
+        priority: "MEDIUM",
+        dueDate: undefined,
+        projectId: undefined,
+        assigneeUserId: "user-123",
+        attachments: undefined,
         createdAt: "2024-01-01T00:00:00.000Z",
         updatedAt: "2024-01-01T00:00:00.000Z",
       });
 
       // Act
       const updatedTodo = originalTodo.changeStatus(
-        "COMPLETED",
+        TodoStatus.completed(),
         "2024-01-02T00:00:00.000Z",
       );
 

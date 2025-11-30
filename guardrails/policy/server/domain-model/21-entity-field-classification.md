@@ -42,9 +42,22 @@ export class Todo {
 
 ```typescript
 export class Todo {
-  // フィールド定義: | undefined 明示（undefinedがビジネス的意味を持つことを明確化）
-  readonly dueDate: string | undefined; // Special Case: undefinedは"期限なし"を意味
-  readonly completedAt: string | undefined; // Special Case: undefinedは"未完了"を意味
+  // フィールド定義: | undefined 明示（undefinedがビジネス的意味を持つ）
+  /**
+   * 期限日
+   *
+   * - 値あり: 期限が設定されている
+   * - undefined: 「期限なし」を意味する（明示的な業務状態）
+   */
+  readonly dueDate: string | undefined;
+
+  /**
+   * 完了日時
+   *
+   * - 値あり: 完了済み
+   * - undefined: 「未完了」を意味する（明示的な業務状態）
+   */
+  readonly completedAt: string | undefined;
 
   constructor(props: {
     id: string;
@@ -67,15 +80,20 @@ export class Todo {
 
 **特徴**:
 
-- **フィールド定義**: `| undefined` 明示（`?`なし）- undefinedがビジネス的意味を持つことが一目で分かる
+- **フィールド定義**: `| undefined` 明示
 - **コンストラクタ**: `| undefined` で必須化（省略するとコンパイルエラー）
+- **JSDocコメント**: 必ず `undefined` の業務的意味を記載する
 - `undefined`はビジネス上の意味を持つ（単なる「設定忘れ」ではない）
 - 例: 期限なしTODO、完了していないTODO
 
 **重要**: `null`は使用しない。`undefined`のみ使用する。
 
 ```typescript
-// ✅ Good: フィールド定義（| undefined 明示）
+// ✅ Good: フィールド定義（JSDocで意味を明示）
+/**
+ * 期限日
+ * - undefined: 「期限なし」を意味する
+ */
 readonly dueDate: string | undefined;
 
 // ✅ Good: コンストラクタ引数（| undefined で必須化）
@@ -83,8 +101,8 @@ constructor(props: {
   dueDate: string | undefined;  // 省略不可
 })
 
-// ❌ Bad: ? を使用（undefinedの意味が不明確）
-readonly dueDate?: string;
+// ❌ Bad: JSDocなし（undefinedの意味が不明確）
+readonly dueDate: string | undefined;
 
 // ❌ Bad: null使用
 readonly dueDate: string | null;
@@ -103,9 +121,20 @@ constructor(props: {
 
 ```typescript
 export class Todo {
-  // フィールド定義: オプショナル（?付き）- undefinedは単に「未設定」を意味
-  readonly description?: string; // Optional: 純粋に任意の説明文
-  readonly memo?: string; // Optional: メモ（任意）
+  // フィールド定義: | undefined 明示（Tier 2と同じ型）
+  /**
+   * 説明
+   *
+   * TODOの詳細説明。
+   */
+  readonly description: string | undefined;
+
+  /**
+   * メモ
+   *
+   * 任意のメモ。
+   */
+  readonly memo: string | undefined;
 
   constructor(props: {
     id: string;
@@ -128,8 +157,9 @@ export class Todo {
 
 **特徴**:
 
-- **フィールド定義**: オプショナル（`?`付き）- undefinedは単に「未設定」を意味
+- **フィールド定義**: `| undefined` 明示（Tier 2と同じ型表現）
 - **コンストラクタ**: `| undefined` で必須化（省略するとコンパイルエラー）
+- **JSDocコメント**: 記載するが、`undefined` の意味は記載不要（単なる未設定であることは自明）
 - `undefined`は単に「設定されていない」ことを意味（ビジネス的意味なし）
 - 例: 説明文、メモ、タグ等の補足情報
 
@@ -137,7 +167,7 @@ export class Todo {
 
 | 観点                 | Tier 2: Special Case                       | Tier 3: Optional                    |
 | -------------------- | ------------------------------------------ | ----------------------------------- |
-| **フィールド定義**   | `string \| undefined`（`?`なし）           | `?`付き                             |
+| **フィールド定義**   | `string \| undefined`                      | `string \| undefined`               |
 | **コンストラクタ**   | `string \| undefined`（必須）              | `string \| undefined`（必須）       |
 | **undefined の意味** | ビジネス上の意味あり                       | 単に未設定                          |
 | **ビジネスルール**   | 未設定状態を判定に使う                     | ビジネスロジックに影響しない        |
@@ -145,6 +175,47 @@ export class Todo {
 | **例**               | dueDate（期限なし）、completedAt（未完了） | description（説明文）、memo（メモ） |
 
 **重要**: マージロジックは両方とも `!== undefined` で統一（安全性・シンプルさを優先）
+
+### Tier 2 と Tier 3 の実装上の区別
+
+**型システム上の制約**: Tier 2 と Tier 3 は同じ `string | undefined` 型となる。これはTypeScriptの制約であり、型レベルでの区別は不可能。
+
+**推奨アプローチ**: JSDocコメントで意図を明示する
+
+```typescript
+export class Todo {
+  // Tier 2: ビジネス的意味を持つ undefined
+  /**
+   * 期限日
+   *
+   * - 値あり: 期限が設定されている
+   * - undefined: 「期限なし」を意味する（明示的な業務状態）
+   */
+  readonly dueDate: string | undefined;
+
+  /**
+   * 完了日時
+   *
+   * - 値あり: 完了済み
+   * - undefined: 「未完了」を意味する（明示的な業務状態）
+   */
+  readonly completedAt: string | undefined;
+
+  // Tier 3: 単なるオプショナル
+  /**
+   * 説明
+   *
+   * TODOの詳細説明。
+   */
+  readonly description: string | undefined;
+}
+```
+
+**実装ルール**:
+
+- **Tier 2フィールド**: 必ずJSDocで `undefined` の業務的意味を記載する
+- **Tier 3フィールド**: JSDocは記載するが、`undefined` の意味は記載不要（単なる未設定であることは自明）
+- **過度な抽象化を避ける**: 型エイリアスやヘルパー関数による区別は行わない（YAGNI原則）
 
 ## 3-Tierと PATCH統一の関係
 

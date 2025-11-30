@@ -3,6 +3,7 @@
  */
 
 import * as path from "path";
+import fg from "fast-glob";
 import {
   StaticAnalysisType,
   executeStaticAnalysis,
@@ -20,7 +21,7 @@ export type Workspace = "server" | "web";
  */
 export type StaticAnalysisHandlerInput = {
   workspace: Workspace;
-  targetFilePaths: string[];
+  targetDirectories: string[];
   guardrailsRoot: string;
   analysisType?: StaticAnalysisType;
 };
@@ -33,7 +34,7 @@ export const createStaticAnalysisHandler =
   async (args: StaticAnalysisHandlerInput): Promise<string> => {
     const {
       workspace,
-      targetFilePaths,
+      targetDirectories,
       guardrailsRoot,
       analysisType = "both",
     } = args;
@@ -48,11 +49,11 @@ export const createStaticAnalysisHandler =
     }
 
     if (
-      targetFilePaths === null ||
-      targetFilePaths === undefined ||
-      !Array.isArray(targetFilePaths)
+      targetDirectories === null ||
+      targetDirectories === undefined ||
+      !Array.isArray(targetDirectories)
     ) {
-      throw new Error("targetFilePathsは配列である必要があります");
+      throw new Error("targetDirectoriesは配列である必要があります");
     }
 
     if (
@@ -66,6 +67,18 @@ export const createStaticAnalysisHandler =
 
     // workspaceに基づいてprojectRootを決定
     const projectRoot = path.join(guardrailsRoot, "..", workspace);
+
+    // targetDirectoriesから対象ファイルパスを収集
+    const fileSearchPromises = targetDirectories.map((dir) =>
+      // TypeScript/JavaScriptファイルを再帰的に検索
+      fg("**/*.{ts,tsx,js,jsx}", {
+        cwd: dir,
+        absolute: true,
+        ignore: ["**/node_modules/**", "**/*.test.{ts,tsx,js,jsx}", "**/*.spec.{ts,tsx,js,jsx}"],
+      }),
+    );
+    const fileArrays = await Promise.all(fileSearchPromises);
+    const targetFilePaths = fileArrays.flat();
 
     // 静的解析実行
     const analysisResult: StaticAnalysisResult = await executeStaticAnalysis({
