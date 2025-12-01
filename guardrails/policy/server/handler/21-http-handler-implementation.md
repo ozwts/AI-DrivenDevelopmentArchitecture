@@ -222,7 +222,9 @@ const result = await useCase.execute({
 });
 ```
 
-### PUTリクエストの null → undefined 変換（3値判別）
+### PATCHリクエストの null → undefined 変換（3値判別）
+
+**参照**: `policy/contract/api/20-endpoint-design.md` - PATCH操作でのフィールドクリア（null使用）
 
 OpenAPIで`nullable: true`のフィールドがある場合、以下の3値を区別する必要がある：
 
@@ -259,7 +261,7 @@ const result = await useCase.execute({
 });
 ```
 
-**注意**: この変換はPUTリクエスト（部分更新）で必要。POSTリクエスト（新規作成）では通常不要。
+**注意**: この変換はPATCHリクエスト（部分更新）で必要。POSTリクエスト（新規作成）では通常不要。
 
 ## 禁止パターン
 
