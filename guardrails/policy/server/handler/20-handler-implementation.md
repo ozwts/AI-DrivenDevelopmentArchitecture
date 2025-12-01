@@ -222,6 +222,45 @@ const result = await useCase.execute({
 });
 ```
 
+### PUTリクエストの null → undefined 変換（3値判別）
+
+OpenAPIで`nullable: true`のフィールドがある場合、以下の3値を区別する必要がある：
+
+| リクエスト状態 | 意味 | UseCaseへの渡し方 |
+| -------------- | ---- | ----------------- |
+| キー未指定 | 更新しない | フィールドを渡さない |
+| `null` | 値をクリア | `undefined`を渡す |
+| 値あり | その値で更新 | その値を渡す |
+
+```typescript
+const body = parseResult.data;
+
+// null → undefined 変換（nullable: trueフィールド）
+// "in"演算子でキーの存在を確認し、3値を判別
+const description =
+  "description" in body
+    ? body.description === null
+      ? undefined        // null → undefined（値をクリア）
+      : body.description // 値あり → そのまま
+    : undefined;         // キー未指定 → フィールドを渡さない
+
+const dueDate =
+  "dueDate" in body
+    ? body.dueDate === null
+      ? undefined
+      : body.dueDate
+    : undefined;
+
+const result = await useCase.execute({
+  todoId,
+  title: body.title,
+  description,  // undefined | string
+  dueDate,      // undefined | string
+});
+```
+
+**注意**: この変換はPUTリクエスト（部分更新）で必要。POSTリクエスト（新規作成）では通常不要。
+
 ## 禁止パターン
 
 ### ❌ 複数ユースケースの呼び出し
