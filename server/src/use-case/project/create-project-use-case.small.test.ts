@@ -3,7 +3,7 @@ import { CreateProjectUseCaseImpl } from "./create-project-use-case";
 import { ProjectRepositoryDummy } from "@/domain/model/project/project.repository.dummy";
 import { LoggerDummy } from "@/domain/support/logger/dummy";
 import { buildFetchNowDummy } from "@/domain/support/fetch-now/dummy";
-import { UnexpectedError, ValidationError } from "@/util/error-util";
+import { UnexpectedError } from "@/util/error-util";
 import { Project } from "@/domain/model/project/project.entity";
 import { ProjectColor } from "@/domain/model/project/project-color";
 import { dateToIsoString } from "@/util/date-util";
@@ -65,62 +65,6 @@ describe("CreateProjectUseCaseのテスト", () => {
         expect(result.data.name).toBe("完全なプロジェクト");
         expect(result.data.description).toBe("詳細な説明");
         expect(result.data.color.value).toBe("#3498DB");
-      }
-    });
-
-    test("プロジェクト名が空文字の場合はValidationErrorを返すこと", async () => {
-      const createProjectUseCase = new CreateProjectUseCaseImpl({
-        projectRepository: new ProjectRepositoryDummy(),
-        logger: new LoggerDummy(),
-        fetchNow,
-      });
-
-      const result = await createProjectUseCase.execute({
-        name: "",
-        color: "#FF5733",
-      });
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.message).toBe("プロジェクト名を入力してください");
-      }
-    });
-
-    test("プロジェクト名が空白文字のみの場合はValidationErrorを返すこと", async () => {
-      const createProjectUseCase = new CreateProjectUseCaseImpl({
-        projectRepository: new ProjectRepositoryDummy(),
-        logger: new LoggerDummy(),
-        fetchNow,
-      });
-
-      const result = await createProjectUseCase.execute({
-        name: "   ",
-        color: "#FF5733",
-      });
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.message).toBe("プロジェクト名を入力してください");
-      }
-    });
-
-    test("無効なカラーコード形式の場合はValidationErrorを返すこと", async () => {
-      const createProjectUseCase = new CreateProjectUseCaseImpl({
-        projectRepository: new ProjectRepositoryDummy(),
-        logger: new LoggerDummy(),
-        fetchNow,
-      });
-
-      const result = await createProjectUseCase.execute({
-        name: "テストプロジェクト",
-        color: "invalid-color",
-      });
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toBeInstanceOf(ValidationError);
       }
     });
 

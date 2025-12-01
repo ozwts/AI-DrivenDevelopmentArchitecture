@@ -5,7 +5,7 @@ import { UserRepositoryDummy } from "@/domain/model/user/user.repository.dummy";
 import { userDummyFrom } from "@/domain/model/user/user.dummy";
 import { LoggerDummy } from "@/domain/support/logger/dummy";
 import { buildFetchNowDummy } from "@/domain/support/fetch-now/dummy";
-import { UnexpectedError, ValidationError } from "@/util/error-util";
+import { UnexpectedError } from "@/util/error-util";
 import { Todo } from "@/domain/model/todo/todo.entity";
 import { dateToIsoString } from "@/util/date-util";
 
@@ -102,56 +102,6 @@ describe("RegisterTodoUseCaseのテスト", () => {
         expect(result.data.dueDate).toBe(dueDate);
         expect(result.data.projectId).toBe(projectId);
         expect(result.data.assigneeUserId).toBe(assigneeUserId); // 指定された担当者
-      }
-    });
-
-    test("タイトルが空文字の場合はValidationErrorを返すこと", async () => {
-      const registerTodoUseCase = new RegisterTodoUseCaseImpl({
-        todoRepository: new TodoRepositoryDummy(),
-        userRepository: new UserRepositoryDummy({
-          findBySubReturnValue: {
-            success: true,
-            data: userDummyFrom({ id: creatorUserId, sub: userSub }),
-          },
-        }),
-        logger: new LoggerDummy(),
-        fetchNow,
-      });
-
-      const result = await registerTodoUseCase.execute({
-        userSub,
-        title: "",
-      });
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.message).toBe("TODOタイトルを入力してください");
-      }
-    });
-
-    test("タイトルが空白文字のみの場合はValidationErrorを返すこと", async () => {
-      const registerTodoUseCase = new RegisterTodoUseCaseImpl({
-        todoRepository: new TodoRepositoryDummy(),
-        userRepository: new UserRepositoryDummy({
-          findBySubReturnValue: {
-            success: true,
-            data: userDummyFrom({ id: creatorUserId, sub: userSub }),
-          },
-        }),
-        logger: new LoggerDummy(),
-        fetchNow,
-      });
-
-      const result = await registerTodoUseCase.execute({
-        userSub,
-        title: "   ",
-      });
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.message).toBe("TODOタイトルを入力してください");
       }
     });
 

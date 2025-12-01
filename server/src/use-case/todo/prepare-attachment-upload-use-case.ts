@@ -1,8 +1,4 @@
-import {
-  UnexpectedError,
-  NotFoundError,
-  ValidationError,
-} from "@/util/error-util";
+import { UnexpectedError, NotFoundError } from "@/util/error-util";
 import type { TodoRepository } from "@/domain/model/todo/todo.repository";
 import type { StorageClient } from "@/domain/support/storage-client";
 import type { FetchNow } from "@/domain/support/fetch-now";
@@ -30,8 +26,7 @@ export type PrepareAttachmentUploadUseCaseOutput = {
 
 export type PrepareAttachmentUploadUseCaseException =
   | UnexpectedError
-  | NotFoundError
-  | ValidationError;
+  | NotFoundError;
 
 export type PrepareAttachmentUploadUseCaseResult = Result<
   PrepareAttachmentUploadUseCaseOutput,
@@ -69,25 +64,6 @@ export class PrepareAttachmentUploadUseCaseImpl
       todoId: input.todoId,
       fileName: input.fileName,
     });
-
-    // バリデーション
-    if (
-      input.fileName === undefined ||
-      input.fileName === "" ||
-      input.fileName.trim().length === 0
-    ) {
-      const validationError = new ValidationError(
-        "ファイル名を入力してください",
-      );
-      logger.error("バリデーションエラー", validationError);
-      return Result.err(validationError);
-    }
-
-    if (input.fileSize <= 0) {
-      const validationError = new ValidationError("ファイルサイズが不正です");
-      logger.error("バリデーションエラー", validationError);
-      return Result.err(validationError);
-    }
 
     // TODOを取得
     const todoResult = await todoRepository.findById({

@@ -226,18 +226,18 @@ const todo = findResult.data;
 ### メソッドチェーンパターン
 
 ```typescript
-// Result.then()はEntity/Result両方を透過的に扱える
+// Result.map()はEntity/Result両方を透過的に扱える
 const result = Result.ok(todo)
-  .then((t) => t.clarify(description, now))
-  .then((t) => t.reschedule(dueDate, now))
-  .then((t) => t.complete(completedAt, now));
+  .map((t) => t.clarify(description, now))
+  .map((t) => t.reschedule(dueDate, now))
+  .map((t) => t.complete(now));
 
-if (!result.success) {
+if (result.isErr()) {
   return result;
 }
 ```
 
-**重要**: `Result.then()`はEntityを返すと自動で`Result.ok()`に包むため、UseCase側では戻り値の型を意識せずにチェーンできる。
+**重要**: `Result.map()`はEntityを返すと自動で`Result.ok()`に包むため、UseCase側では戻り値の型を意識せずにチェーンできる。
 
 ## PATCH更新パターン
 
@@ -262,38 +262,38 @@ OpenAPIでPATCH更新を定義する場合、Handler層で`'in'`演算子を使�
 
 ```typescript
 async execute(input: UpdateTodoUseCaseInput): Promise<UpdateTodoResult> {
-  // 1. 既存Entity取得・権限チェック
+  // 1. 既存Entity取得
   const existingResult = await this.#props.todoRepository.findById({
     id: input.todoId,
   });
-  if (!existingResult.success || !existingResult.data) {
-    return Result.err(new NotFoundError());
+  if (existingResult.isErr()) {
+    return Result.err(existingResult.error);
+  }
+  if (existingResult.data === undefined) {
+    return Result.err(new NotFoundError("TODOが見つかりません"));
   }
   const existing = existingResult.data;
 
-  if (existing.userSub !== input.userSub) {
-    return Result.err(new ForbiddenError());
-  }
-
-  // 2. Result.then()によるメソッドチェーン
+  // 2. Result.map()によるメソッドチェーン
   const now = dateToIsoString(this.#props.fetchNow());
 
   const updatedResult = Result.ok(existing)
-    .then(t => 'title' in input
-      ? TodoTitle.from({ title: input.title })
-          .then(title => t.rename(title, now))
-      : t
+    // Tier 1: クリア不可（'in' && !== undefined）
+    .map((t: Todo) =>
+      "title" in input && input.title !== undefined
+        ? t.retitle(input.title, now)
+        : t,
     )
-    .then(t => 'dueDate' in input
-      ? t.reschedule(input.dueDate, now)
-      : t
+    // Tier 2: undefinedでクリア可（'in' のみ）
+    .map((t: Todo) =>
+      "dueDate" in input ? t.reschedule(input.dueDate, now) : t,
     )
-    .then(t => 'description' in input
-      ? t.clarify(input.description, now)
-      : t
+    // Tier 3: undefinedでクリア可（'in' のみ）
+    .map((t: Todo) =>
+      "description" in input ? t.clarify(input.description, now) : t,
     );
 
-  if (!updatedResult.success) {
+  if (updatedResult.isErr()) {
     return updatedResult;
   }
 
@@ -301,20 +301,24 @@ async execute(input: UpdateTodoUseCaseInput): Promise<UpdateTodoResult> {
   const saveResult = await this.#props.todoRepository.save({
     todo: updatedResult.data,
   });
-  if (!saveResult.success) {
-    return saveResult;
+  if (saveResult.isErr()) {
+    return Result.err(saveResult.error);
   }
 
-  return Result.ok({ todo: updatedResult.data });
+  return Result.ok(updatedResult.data);
 }
 ```
 
 **重要なポイント**:
 
-1. **Result.then()の自動変換**: Entityを返すと自動で`Result.ok()`に包まれる
+1. **Result.map()の自動変換**: Entityを返すと自動で`Result.ok()`に包まれる
 2. **'in'演算子**: フィールド存在確認（Handler層で送られたか判定）
-3. **null不使用**: TypeScript内部は`undefined`のみ
-4. **Entity組成とsaveは分離**: メソッドチェーンでEntity組成後、別ステップで永続化
+3. **Tierによる判定パターンの使い分け**（参照: `../domain-model/21-entity-field-classification.md`）:
+   - **Tier 1（Required）**: `'in' && !== undefined` → クリア不可
+   - **Tier 2（Special Case）**: `'in'` のみ → `undefined`でクリア可（業務上の意味あり）
+   - **Tier 3（Optional）**: `'in'` のみ → `undefined`でクリア可
+4. **null不使用**: TypeScript内部は`undefined`のみ（Handler層で`null` → `undefined`変換済み）
+5. **Entity組成とsaveは分離**: メソッドチェーンでEntity組成後、別ステップで永続化
 
 ## トランザクション管理
 
@@ -372,16 +376,12 @@ import { dateToIsoString } from "@/util/date-util";
 
 const now = dateToIsoString(this.#props.fetchNow());
 
-// Entity.from()でインスタンス生成
-const projectResult = Project.from({
+// Entity.from()でインスタンス生成（直接Entityを返す）
+const newProject = Project.from({
   // ...
   createdAt: now,
   updatedAt: now,
 });
-if (!projectResult.success) {
-  return projectResult;
-}
-const project = projectResult.data;
 ```
 
 **重要**: `fetchNow()` は `Date` を返し、必ず `dateToIsoString()` でISO 8601文字列に変換する
@@ -416,29 +416,22 @@ export class CreateProjectUseCaseImpl implements CreateProjectUseCase {
     const projectId = projectRepository.projectId();
     const now = dateToIsoString(fetchNow());
 
-    const colorResult = ProjectColor.from({ value: input.color });
-    if (!colorResult.success) {
-      return Result.err(colorResult.error);
-    }
-
-    // Entity.from()でインスタンス生成（privateコンストラクタ）
-    const projectResult = Project.from({
+    // Entity.from()でインスタンス生成（直接Entityを返す）
+    const newProject = Project.from({
       id: projectId,
       name: input.name,
-      color: colorResult.data,
+      color: input.color,
+      description: input.description,
       createdAt: now,
       updatedAt: now,
     });
-    if (!projectResult.success) {
-      return Result.err(projectResult.error);
-    }
 
-    const saveResult = await projectRepository.save({ project: projectResult.data });
-    if (!saveResult.success) {
+    const saveResult = await projectRepository.save({ project: newProject });
+    if (saveResult.isErr()) {
       return Result.err(saveResult.error);
     }
 
-    return Result.ok({ project: projectResult.data });
+    return Result.ok(newProject);
   }
 }
 
@@ -449,10 +442,9 @@ export type CreateProjectUseCaseProps = {
   readonly fetchNow: FetchNow;
 };
 
-// PATCH更新: 'in'演算子でフィールド存在確認
-.then(t => 'dueDate' in input
-  ? t.reschedule(input.dueDate, now)
-  : t
+// PATCH更新: Result.map()でメソッドチェーン、'in'演算子でフィールド存在確認
+.map((t: Todo) =>
+  "dueDate" in input ? t.reschedule(input.dueDate, now) : t,
 )
 ```
 
@@ -480,8 +472,14 @@ export type CreateProjectUseCaseProps = {
 // 直接Date生成
 createdAt: new Date().toISOString(); // ❌ テスト不可能
 
-// !== undefinedでフィールド存在チェック
+// !== undefinedのみでフィールド存在チェック
 if (input.title !== undefined) {  // ❌ 'in'演算子を使うべき
   updated = updated.rename(input.title, now);
 }
+
+// Result.then()を使用（thenable問題）
+.then(t => 'dueDate' in input  // ❌ thenはTypeScriptでthenable扱いされる
+  ? t.reschedule(input.dueDate, now)
+  : t
+)
 ```

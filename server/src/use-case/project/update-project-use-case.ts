@@ -73,20 +73,28 @@ export class UpdateProjectUseCaseImpl implements UpdateProjectUseCase {
 
     const now = dateToIsoString(fetchNow());
 
-    // プロジェクトを更新（個別メソッドをメソッドチェーンで組み合わせる）
-    let updatedProject = findResult.data;
-    if (input.name !== undefined) {
-      updatedProject = updatedProject.rename(input.name, now);
-    }
-    if (input.description !== undefined) {
-      updatedProject = updatedProject.clarify(input.description, now);
-    }
-    if (input.color !== undefined) {
-      updatedProject = updatedProject.recolor(input.color, now);
+    // Result.map()によるメソッドチェーンでプロジェクトを更新
+    const updatedResult = Result.ok(findResult.data)
+      .map((p: Project) =>
+        "name" in input && input.name !== undefined
+          ? p.rename(input.name, now)
+          : p,
+      )
+      .map((p: Project) =>
+        "description" in input ? p.clarify(input.description, now) : p,
+      )
+      .map((p: Project) =>
+        "color" in input && input.color !== undefined
+          ? p.recolor(input.color, now)
+          : p,
+      );
+
+    if (updatedResult.isErr()) {
+      return updatedResult;
     }
 
     const saveResult = await projectRepository.save({
-      project: updatedProject,
+      project: updatedResult.data,
     });
 
     if (saveResult.isErr()) {
@@ -95,9 +103,9 @@ export class UpdateProjectUseCaseImpl implements UpdateProjectUseCase {
     }
 
     logger.info("プロジェクト更新成功", {
-      projectId: updatedProject.id,
+      projectId: updatedResult.data.id,
     });
 
-    return Result.ok(updatedProject);
+    return Result.ok(updatedResult.data);
   }
 }

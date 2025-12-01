@@ -21,7 +21,7 @@ import {
   DeleteProjectUseCaseImpl,
   type DeleteProjectUoWContext,
 } from "./delete-project-use-case";
-import { ValidationError } from "@/util/error-util";
+import { NotFoundError } from "@/util/error-util";
 
 const { ddb, ddbDoc } = buildDdbClients();
 const todosTableName = getRandomIdentifier();
@@ -314,10 +314,10 @@ describe("DeleteProjectUseCaseのミディアムテスト", () => {
         projectId: "non-existent-project-id",
       });
 
-      // ValidationErrorが返されることを確認
+      // NotFoundErrorが返されることを確認
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error).toBeInstanceOf(NotFoundError);
         expect(result.error.message).toBe("プロジェクトが見つかりませんでした");
       }
 

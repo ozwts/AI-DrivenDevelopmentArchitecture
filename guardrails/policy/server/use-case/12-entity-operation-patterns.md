@@ -30,14 +30,14 @@
 
 ### メソッドチェーンパターン
 
-**重要**: `Result.then()`はEntityを返すと自動で`Result.ok()`に包むため、UseCase側では戻り値の型を意識せずにチェーンできる。
+**重要**: `Result.map()`はEntityを返すと自動で`Result.ok()`に包むため、UseCase側では戻り値の型を意識せずにチェーンできる。
 
 ```typescript
-// Result.then()はEntity/Result両方を透過的に扱える
+// Result.map()はEntity/Result両方を透過的に扱える
 const result = Result.ok(existing)
-  .then((t) => t.clarify(input.description, now))
-  .then((t) => t.reschedule(input.dueDate, now))
-  .then((t) => t.complete(input.completedAt, now));
+  .map((t) => t.clarify(input.description, now))
+  .map((t) => t.reschedule(input.dueDate, now))
+  .map((t) => t.complete(input.completedAt, now));
 
 if (!result.success) {
   return result;
@@ -51,45 +51,44 @@ if (!result.success) {
 ```typescript
 // UseCase層
 async execute(input: RegisterTodoUseCaseInput): Promise<Result> {
-  // 1. Value Object生成
-  const statusResult = TodoStatus.from({ value: input.status });
-  if (!statusResult.success) {
-    return Result.err(statusResult.error);
-  }
-
-  // 2. ID生成・時刻取得
+  // 1. ID生成・時刻取得
   const todoId = this.#props.todoRepository.todoId();
   const now = dateToIsoString(this.#props.fetchNow());
 
-  // 3. Entity生成（Entity.from()でインスタンス生成）
-  const todoResult = Todo.from({
+  // 2. Entity生成（Entity.from()でインスタンス生成）
+  // Entity.from()は直接Entityを返す（バリデーションはHandler層で済んでいる前提）
+  const newTodo = Todo.from({
     id: todoId,
     title: input.title,
     description: input.description,
-    status: statusResult.data,
+    status: input.status ?? TodoStatus.todo(),
+    priority: input.priority ?? "MEDIUM",
     dueDate: input.dueDate,
-    completedAt: undefined,
-    userSub: input.userSub,
+    assigneeUserId: input.assigneeUserId,
+    attachments: [],
     createdAt: now,
     updatedAt: now,
   });
-  if (!todoResult.success) {
-    return Result.err(todoResult.error);
-  }
 
-  // 4. リポジトリ保存
-  const saveResult = await this.#props.todoRepository.save({ todo: todoResult.data });
-  if (!saveResult.success) {
+  // 3. リポジトリ保存
+  const saveResult = await this.#props.todoRepository.save({ todo: newTodo });
+  if (saveResult.isErr()) {
     return Result.err(saveResult.error);
   }
 
-  return Result.ok({ todo: todoResult.data });
+  return Result.ok(newTodo);
 }
 ```
 
+**ポイント**:
+
+- `Entity.from()`は直接Entityを返す（Resultで包まない）
+- 入力値のバリデーションはHandler層で済んでいるため、UseCase層ではバリデーション不要
+- Value Objectのファクトリメソッド（例: `TodoStatus.todo()`）を使用してデフォルト値を設定
+
 ### パターン2: 更新（ビジネスメソッド使用）
 
-**使用条件**: 操作の前提条件チェックが必要な場合
+**使用条件**: 単一のビジネス操作（完了、開始など）を行う場合
 
 ```typescript
 // UseCase層
@@ -98,34 +97,34 @@ async execute(input: CompleteTodoUseCaseInput): Promise<Result> {
   const existingResult = await this.#props.todoRepository.findById({
     id: input.todoId,
   });
-  if (!existingResult.success || !existingResult.data) {
-    return Result.err(new NotFoundError());
+  if (existingResult.isErr()) {
+    return Result.err(existingResult.error);
+  }
+  if (existingResult.data === undefined) {
+    return Result.err(new NotFoundError("TODOが見つかりません"));
   }
   const existing = existingResult.data;
 
-  // 2. 権限チェック
-  if (existing.userSub !== input.userSub) {
-    return Result.err(new ForbiddenError());
-  }
-
-  // 3. ビジネスメソッド呼び出し
+  // 2. ビジネスメソッド呼び出し（Entityを直接返す）
   const now = dateToIsoString(this.#props.fetchNow());
-  const completedResult = existing.complete(now, now);
-  if (!completedResult.success) {
-    return Result.err(completedResult.error);
-  }
+  const completed = existing.complete(now);
 
-  // 4. 保存
+  // 3. 保存
   const saveResult = await this.#props.todoRepository.save({
-    todo: completedResult.data,
+    todo: completed,
   });
-  if (!saveResult.success) {
+  if (saveResult.isErr()) {
     return Result.err(saveResult.error);
   }
 
-  return Result.ok({ todo: completedResult.data });
+  return Result.ok(completed);
 }
 ```
+
+**ポイント**:
+
+- Entityのビジネスメソッドは新しいEntityを直接返す（Resultで包まない）
+- `result.isErr()`でエラーチェック、`result.data`でデータアクセス
 
 ### パターン3: PATCH更新
 
@@ -134,60 +133,63 @@ async execute(input: CompleteTodoUseCaseInput): Promise<Result> {
 **原則**:
 
 - 送られたフィールドのみ更新（`'in'`演算子で判定）
-- Result.then()でメソッドチェーン
+- `Result.map()`でメソッドチェーン
 
 ```typescript
 async execute(input: UpdateTodoUseCaseInput): Promise<UpdateTodoResult> {
-  // 1. 既存Entity取得・権限チェック（省略）
+  // 1. 既存Entity取得
+  const todoResult = await todoRepository.findById({ id: input.todoId });
+  if (todoResult.isErr()) {
+    return Result.err(todoResult.error);
+  }
+  if (todoResult.data === undefined) {
+    return Result.err(new NotFoundError("TODOが見つかりません"));
+  }
 
-  const now = dateToIsoString(this.#props.fetchNow());
+  const now = dateToIsoString(fetchNow());
 
-  // 2. Result.then()によるメソッドチェーン
-  const updatedResult = Result.ok(existing)
-    .then(t => 'title' in input
-      ? TodoTitle.from({ title: input.title }).then(title => t.rename(title, now))
-      : t
+  // 2. Result.map()によるメソッドチェーン
+  const updatedResult = Result.ok(todoResult.data)
+    .map((t: Todo) =>
+      "title" in input && input.title !== undefined
+        ? t.retitle(input.title, now)
+        : t,
     )
-    .then(t => 'dueDate' in input
-      ? t.reschedule(input.dueDate, now)
-      : t
+    .map((t: Todo) =>
+      "description" in input ? t.clarify(input.description, now) : t,
     )
-    .then(t => 'description' in input
-      ? t.clarify(input.description, now)
-      : t
-    )
-    .then(t => {
-      if (!('status' in input)) return t;
-      switch (input.status) {
-        case 'COMPLETED':
-          return t.complete(now, now);
-        case 'PENDING':
-          return t.reopen(now);
-        default:
-          return t;
-      }
-    });
+    .map((t: Todo) => {
+      if (!("status" in input) || input.status === undefined) return t;
+      if (input.status.isTodo()) return t.reopen(now);
+      if (input.status.isInProgress()) return t.start(now);
+      if (input.status.isCompleted()) return t.complete(now);
+      return t;
+    })
+    .map((t: Todo) =>
+      "priority" in input && input.priority !== undefined
+        ? t.prioritize(input.priority, now)
+        : t,
+    );
 
-  if (!updatedResult.success) {
+  if (updatedResult.isErr()) {
     return updatedResult;
   }
 
   // 3. 永続化
-  const saveResult = await this.#props.todoRepository.save({
-    todo: updatedResult.data,
-  });
-  if (!saveResult.success) {
-    return saveResult;
+  const saveResult = await todoRepository.save({ todo: updatedResult.data });
+  if (saveResult.isErr()) {
+    return Result.err(saveResult.error);
   }
 
-  return Result.ok({ todo: updatedResult.data });
+  return Result.ok(updatedResult.data);
 }
 ```
 
 **ポイント**:
 
-- `Result.then()`はEntity/Result両方を透過的に扱える
-- statusのような複数の値を持つフィールドはswitchで分岐
+- `Result.map()`はEntity/Result両方を透過的に扱える
+- `'in'`演算子でフィールドの存在を判定し、undefinedチェックも併用
+- statusのようなValue Objectはメソッド（例: `isTodo()`）で状態を判定
 - エラーが発生した時点でチェーンが中断され、エラーが伝播する
 
 ## Value Objectエラーの伝播パターン
@@ -215,18 +217,18 @@ const color = colorResult.data;
 
 ドメインメソッドを**使用すべき**場合（Entity層に既にメソッドがある前提）:
 
-| 条件                           | 例                               |
-| ------------------------------ | -------------------------------- |
-| ビジネス操作を表現する         | `todo.complete(now, now)`        |
-| 複数フィールドが連動する       | `todo.reschedule(dueDate, now)`  |
-| 状態遷移ルールがある           | `todo.reopen(now)`               |
+| 条件                     | 例                              |
+| ------------------------ | ------------------------------- |
+| ビジネス操作を表現する   | `todo.complete(now, now)`       |
+| 複数フィールドが連動する | `todo.reschedule(dueDate, now)` |
+| 状態遷移ルールがある     | `todo.reopen(now)`              |
 
 ### UseCase層で直接Entity組成を行う場合
 
-| 条件                           | 例                               |
-| ------------------------------ | -------------------------------- |
-| 新規作成時                     | `Todo.from({ ... })`             |
-| 単純なValue Object設定         | Value Object生成後にEntityメソッドで設定 |
+| 条件                   | 例                                       |
+| ---------------------- | ---------------------------------------- |
+| 新規作成時             | `Todo.from({ ... })`                     |
+| 単純なValue Object設定 | Value Object生成後にEntityメソッドで設定 |
 
 **重要**: ドメインメソッドの追加・設計は`domain-model`ポリシーの責務。UseCase層はドメインメソッドを**利用する**立場。
 
@@ -235,22 +237,18 @@ const color = colorResult.data;
 ### ✅ Good
 
 ```typescript
-// Result.then()でメソッドチェーン
+// Result.map()でメソッドチェーン
 const result = Result.ok(existing)
-  .then((t) => t.clarify(input.description, now))
-  .then((t) => t.complete(input.completedAt, now));
+  .map((t) => t.clarify(input.description, now))
+  .map((t) => t.complete(now));
 
-// Entity.from()でインスタンス生成
-const todoResult = Todo.from({ /* props */ });
-if (!todoResult.success) {
-  return todoResult;
-}
+// Entity.from()でインスタンス生成（直接Entityを返す）
+const newTodo = Todo.from({
+  /* props */
+});
 
-// ビジネスロジックはドメイン層のメソッドに委譲
-const completedResult = existing.complete(now, now);
-if (!completedResult.success) {
-  return completedResult;
-}
+// ビジネスロジックはドメイン層のメソッドに委譲（直接Entityを返す）
+const completed = existing.complete(now);
 ```
 
 ### ❌ Bad
@@ -268,5 +266,10 @@ const updated = new Todo({
 // ❌ UseCase層でEntity状態を直接操作
 
 // new Entity()で直接インスタンス生成
-const todo = new Todo({ /* props */ }); // ❌ Entity.from()を使うべき
+const todo = new Todo({
+  /* props */
+}); // ❌ Entity.from()を使うべき
+
+// Result.then()を使用（thenable問題）
+const result = Result.ok(existing).then((t) => t.complete(now)); // ❌ thenはTypeScriptでthenable扱いされる
 ```

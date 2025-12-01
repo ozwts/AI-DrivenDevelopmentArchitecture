@@ -61,7 +61,7 @@ export class UpdateCurrentUserUseCaseImpl implements UpdateCurrentUserUseCase {
       input,
     });
 
-    const { sub, name, email, emailVerified } = input;
+    const { sub } = input;
 
     // subでユーザーを検索
     const findResult = await userRepository.findBySub({ sub });
@@ -79,18 +79,29 @@ export class UpdateCurrentUserUseCaseImpl implements UpdateCurrentUserUseCase {
 
     const now = dateToIsoString(fetchNow());
 
-    // ユーザー情報を更新（個別メソッドを組み合わせる）
+    // Result.map()によるメソッドチェーンでユーザー情報を更新
     // name: リクエストボディから（ユーザー入力）
     // email, emailVerified: トークンから（Cognito情報）
-    let updatedUser = findResult.data;
-    if (name !== undefined) {
-      updatedUser = updatedUser.rename(name, now);
-    }
-    if (email !== undefined && emailVerified !== undefined) {
-      updatedUser = updatedUser.verifyEmail(email, emailVerified, now);
+    const updatedResult = Result.ok(findResult.data)
+      .map((u: User) =>
+        "name" in input && input.name !== undefined
+          ? u.rename(input.name, now)
+          : u,
+      )
+      .map((u: User) =>
+        "email" in input &&
+        "emailVerified" in input &&
+        input.email !== undefined &&
+        input.emailVerified !== undefined
+          ? u.verifyEmail(input.email, input.emailVerified, now)
+          : u,
+      );
+
+    if (updatedResult.isErr()) {
+      return updatedResult;
     }
 
-    const saveResult = await userRepository.save({ user: updatedUser });
+    const saveResult = await userRepository.save({ user: updatedResult.data });
 
     if (saveResult.isErr()) {
       logger.error("ユーザーの保存に失敗", saveResult.error);
@@ -98,13 +109,13 @@ export class UpdateCurrentUserUseCaseImpl implements UpdateCurrentUserUseCase {
     }
 
     logger.info("現在のユーザー情報を更新しました", {
-      userId: updatedUser.id,
-      sub: updatedUser.sub,
-      name: updatedUser.name,
-      email: updatedUser.email,
-      emailVerified: updatedUser.emailVerified,
+      userId: updatedResult.data.id,
+      sub: updatedResult.data.sub,
+      name: updatedResult.data.name,
+      email: updatedResult.data.email,
+      emailVerified: updatedResult.data.emailVerified,
     });
 
-    return Result.ok(updatedUser);
+    return Result.ok(updatedResult.data);
   }
 }

@@ -6,6 +6,7 @@ import type {
   TodoPriority,
 } from "@/domain/model/todo/todo.entity";
 import type { FetchNow } from "@/domain/support/fetch-now";
+import type { Logger } from "@/domain/support/logger";
 import { Result } from "@/util/result";
 import { dateToIsoString } from "@/util/date-util";
 import type { UseCase } from "../interfaces";
@@ -33,6 +34,7 @@ export type UpdateTodoUseCaseResult = Result<
 export type UpdateTodoUseCaseProps = {
   readonly todoRepository: TodoRepository;
   readonly fetchNow: FetchNow;
+  readonly logger: Logger;
 };
 
 export type UpdateTodoUseCase = UseCase<
@@ -51,7 +53,11 @@ export class UpdateTodoUseCaseImpl implements UpdateTodoUseCase {
   async execute(
     input: UpdateTodoUseCaseInput,
   ): Promise<UpdateTodoUseCaseResult> {
-    const { todoRepository, fetchNow } = this.#props;
+    const { todoRepository, fetchNow, logger } = this.#props;
+
+    logger.debug("use-case: update-todo-use-case", {
+      todoId: input.todoId,
+    });
 
     // 既存のTODOを取得
     const todoResult = await todoRepository.findById({
@@ -59,52 +65,68 @@ export class UpdateTodoUseCaseImpl implements UpdateTodoUseCase {
     });
 
     if (todoResult.isErr()) {
+      logger.error("TODOの取得に失敗", todoResult.error);
       return Result.err(todoResult.error);
     }
 
     if (todoResult.data === undefined) {
-      return Result.err(new NotFoundError("TODOが見つかりません"));
+      const notFoundError = new NotFoundError("TODOが見つかりません");
+      logger.error("TODOが存在しません", { todoId: input.todoId });
+      return Result.err(notFoundError);
     }
 
-    // TODOを更新（個別メソッドを組み合わせる）
+    // Result.map()によるメソッドチェーンでTODOを更新
     const now = dateToIsoString(fetchNow());
-    let updatedTodo = todoResult.data;
-    if (input.title !== undefined) {
-      updatedTodo = updatedTodo.retitle(input.title, now);
-    }
-    if (input.description !== undefined) {
-      updatedTodo = updatedTodo.clarify(input.description, now);
-    }
-    if (input.status !== undefined) {
-      // ステータスに応じたメソッドを呼び出す
-      if (input.status.isTodo()) {
-        updatedTodo = updatedTodo.reopen(now);
-      } else if (input.status.isInProgress()) {
-        updatedTodo = updatedTodo.start(now);
-      } else if (input.status.isCompleted()) {
-        updatedTodo = updatedTodo.complete(now);
-      }
-    }
-    if (input.priority !== undefined) {
-      updatedTodo = updatedTodo.prioritize(input.priority, now);
-    }
-    if (input.dueDate !== undefined) {
-      updatedTodo = updatedTodo.reschedule(input.dueDate, now);
-    }
-    if (input.projectId !== undefined) {
-      updatedTodo = updatedTodo.moveToProject(input.projectId, now);
-    }
-    if (input.assigneeUserId !== undefined) {
-      updatedTodo = updatedTodo.assign(input.assigneeUserId, now);
+
+    const updatedResult = Result.ok(todoResult.data)
+      .map((t: Todo) =>
+        "title" in input && input.title !== undefined
+          ? t.retitle(input.title, now)
+          : t,
+      )
+      .map((t: Todo) =>
+        "description" in input ? t.clarify(input.description, now) : t,
+      )
+      .map((t: Todo) => {
+        if (!("status" in input) || input.status === undefined) return t;
+        if (input.status.isTodo()) return t.reopen(now);
+        if (input.status.isInProgress()) return t.start(now);
+        if (input.status.isCompleted()) return t.complete(now);
+        return t;
+      })
+      .map((t: Todo) =>
+        "priority" in input && input.priority !== undefined
+          ? t.prioritize(input.priority, now)
+          : t,
+      )
+      .map((t: Todo) =>
+        "dueDate" in input ? t.reschedule(input.dueDate, now) : t,
+      )
+      .map((t: Todo) =>
+        "projectId" in input ? t.moveToProject(input.projectId, now) : t,
+      )
+      .map((t: Todo) =>
+        "assigneeUserId" in input && input.assigneeUserId !== undefined
+          ? t.assign(input.assigneeUserId, now)
+          : t,
+      );
+
+    if (updatedResult.isErr()) {
+      return updatedResult;
     }
 
     // 保存
-    const saveResult = await todoRepository.save({ todo: updatedTodo });
+    const saveResult = await todoRepository.save({ todo: updatedResult.data });
 
     if (saveResult.isErr()) {
+      logger.error("TODOの保存に失敗", saveResult.error);
       return Result.err(saveResult.error);
     }
 
-    return Result.ok(updatedTodo);
+    logger.info("TODO更新成功", {
+      todoId: updatedResult.data.id,
+    });
+
+    return Result.ok(updatedResult.data);
   }
 }

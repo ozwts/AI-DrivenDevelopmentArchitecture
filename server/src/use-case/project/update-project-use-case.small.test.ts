@@ -5,7 +5,7 @@ import { projectDummyFrom } from "@/domain/model/project/project.dummy";
 import { ProjectColor } from "@/domain/model/project/project-color";
 import { LoggerDummy } from "@/domain/support/logger/dummy";
 import { buildFetchNowDummy } from "@/domain/support/fetch-now/dummy";
-import { UnexpectedError, ValidationError } from "@/util/error-util";
+import { UnexpectedError, NotFoundError } from "@/util/error-util";
 
 describe("UpdateProjectUseCaseのテスト", () => {
   const now = new Date("2024-01-01T00:00:00+09:00");
@@ -126,7 +126,7 @@ describe("UpdateProjectUseCaseのテスト", () => {
       }
     });
 
-    test("プロジェクトが見つからない場合はValidationErrorを返すこと", async () => {
+    test("プロジェクトが見つからない場合はNotFoundErrorを返すこと", async () => {
       const updateProjectUseCase = new UpdateProjectUseCaseImpl({
         projectRepository: new ProjectRepositoryDummy({
           findByIdReturnValue: {
@@ -145,7 +145,7 @@ describe("UpdateProjectUseCaseのテスト", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error).toBeInstanceOf(NotFoundError);
         expect(result.error.message).toBe("プロジェクトが見つかりませんでした");
       }
     });
@@ -170,33 +170,6 @@ describe("UpdateProjectUseCaseのテスト", () => {
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error).toBeInstanceOf(UnexpectedError);
-      }
-    });
-
-    test("無効なカラーコードの場合はValidationErrorを返すこと", async () => {
-      const existingProject = projectDummyFrom({
-        id: "project-5",
-      });
-
-      const updateProjectUseCase = new UpdateProjectUseCaseImpl({
-        projectRepository: new ProjectRepositoryDummy({
-          findByIdReturnValue: {
-            success: true,
-            data: existingProject,
-          },
-        }),
-        logger: new LoggerDummy(),
-        fetchNow,
-      });
-
-      const result = await updateProjectUseCase.execute({
-        projectId: "project-5",
-        color: "invalid-color",
-      });
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toBeInstanceOf(ValidationError);
       }
     });
 
