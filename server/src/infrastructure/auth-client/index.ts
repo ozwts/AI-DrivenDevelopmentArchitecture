@@ -1,4 +1,3 @@
-/* eslint-disable class-methods-use-this */
 import { CognitoJwtVerifier } from "aws-jwt-verify";
 import type {
   CognitoIdentityProviderClient,
@@ -145,12 +144,14 @@ export class CognitoAuthClient implements AuthClient {
    * この実装ではエラーを投げます。
    * 必要に応じてLambda Authorizerと組み合わせて使用してください。
    */
-  async createCustomToken(
+  createCustomToken(
     _userId: string,
     _additionalClaims?: Record<string, unknown>,
   ): Promise<string> {
-    throw new UnexpectedError(
-      "Cognitoでは直接カスタムトークンを生成できません。AWS SDKのInitiateAuthを使用してください。",
+    return Promise.reject(
+      new UnexpectedError(
+        "Cognitoでは直接カスタムトークンを生成できません。AWS SDKのInitiateAuthを使用してください。",
+      ),
     );
   }
 

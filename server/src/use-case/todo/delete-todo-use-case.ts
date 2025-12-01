@@ -69,7 +69,6 @@ export class DeleteTodoUseCaseImpl implements DeleteTodoUseCase {
     // 添付ファイルをS3から削除
     // 順次削除することで、エラー時に即座に処理を中断し、詳細なログを記録する
     for (const attachment of todo.attachments) {
-      // eslint-disable-next-line no-await-in-loop
       const deleteResult = await storageClient.deleteObject({
         key: attachment.storageKey,
       });

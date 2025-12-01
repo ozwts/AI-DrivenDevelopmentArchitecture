@@ -7,7 +7,7 @@ import type { ListTodosUseCase } from "@/use-case/todo/list-todos-use-case";
 import { TodoStatus } from "@/domain/model/todo/todo.entity";
 import { UnexpectedError, unexpectedErrorMessage } from "@/util/error-util";
 import { handleError } from "../../hono-handler-util/error-handler";
-import { convertToTodoResponse } from "./todo-handler-util";
+import { convertToTodoResponse } from "./todo-response-mapper";
 
 export const buildListTodosHandler =
   ({ container }: { container: Container }) =>

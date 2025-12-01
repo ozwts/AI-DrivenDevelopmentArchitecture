@@ -36,10 +36,10 @@ export class DynamoDBUnitOfWork implements UnitOfWork {
 
     if (this.#operations.length >= MAX_TRANSACTION_ITEMS) {
       this.#logger.error(
-        `DynamoDBトランザクションの制限を超えました: ${MAX_TRANSACTION_ITEMS}`,
+        `DynamoDBトランザクションの制限を超えました: ${String(MAX_TRANSACTION_ITEMS)}`,
       );
       throw new Error(
-        `単一トランザクションに${MAX_TRANSACTION_ITEMS}個を超える操作を追加できません`,
+        `単一トランザクションに${String(MAX_TRANSACTION_ITEMS)}個を超える操作を追加できません`,
       );
     }
 
@@ -61,7 +61,9 @@ export class DynamoDBUnitOfWork implements UnitOfWork {
       return;
     }
 
-    this.#logger.debug(`${this.#operations.length}個の操作をコミットします`);
+    this.#logger.debug(
+      `${String(this.#operations.length)}個の操作をコミットします`,
+    );
 
     try {
       await ddbDoc.send(

@@ -2,7 +2,10 @@ import { UnexpectedError, NotFoundError } from "@/util/error-util";
 import type { TodoRepository } from "@/domain/model/todo/todo.repository";
 import type { FetchNow } from "@/domain/support/fetch-now";
 import type { Logger } from "@/domain/support/logger";
-import type { AttachmentStatus } from "@/domain/model/todo/attachment.entity";
+import {
+  Attachment,
+  type AttachmentStatus,
+} from "@/domain/model/todo/attachment.entity";
 import { Result } from "@/util/result";
 import { dateToIsoString } from "@/util/date-util";
 import type { UseCase } from "../interfaces";
@@ -13,7 +16,7 @@ export type UpdateAttachmentStatusUseCaseInput = {
   status: AttachmentStatus;
 };
 
-export type UpdateAttachmentStatusUseCaseOutput = void;
+export type UpdateAttachmentStatusUseCaseOutput = Attachment;
 
 export type UpdateAttachmentStatusUseCaseException =
   | UnexpectedError
@@ -111,6 +114,6 @@ export class UpdateAttachmentStatusUseCaseImpl
       status: input.status,
     });
 
-    return Result.ok(undefined);
+    return Result.ok(updatedAttachment);
   }
 }

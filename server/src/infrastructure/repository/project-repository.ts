@@ -88,7 +88,6 @@ export class ProjectRepositoryImpl implements ProjectRepository {
     this.#uow = uow;
   }
 
-  // eslint-disable-next-line class-methods-use-this
   projectId(): string {
     return uuid();
   }

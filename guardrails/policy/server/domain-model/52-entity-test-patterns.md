@@ -91,7 +91,7 @@ describe("complete", () => {
 
 ```typescript
 // todo.entity.dummy.ts
-import { Todo } from "./todo.entity";
+import { Todo, TodoStatus } from "./todo.entity";
 import { todoStatusDummyFrom } from "./todo-status.vo.dummy";
 import {
   getDummyId,
@@ -104,10 +104,9 @@ import {
 export type TodoDummyProps = Partial<{
   id: string;
   title: string;
-  description: string | undefined;
-  status: TodoStatus;
-  dueDate: string | undefined;
-  completedAt: string | undefined;
+  description: string | undefined;  // オプショナル（undefinedを許容）
+  status: TodoStatus;               // 必須
+  dueDate: string | undefined;      // オプショナル（undefinedを許容）
   createdAt: string;
   updatedAt: string;
 }>;
@@ -115,22 +114,45 @@ export type TodoDummyProps = Partial<{
 export const todoDummyFrom = (props?: TodoDummyProps): Todo => {
   const now = getDummyRecentDate();
 
-  const result = Todo.from({
+  return Todo.from({
+    // 必須フィールド: ?? を使用
     id: props?.id ?? getDummyId(),
     title: props?.title ?? getDummyShortText(),
-    description: props?.description ?? getDummyDescription(),
-    status: props?.status ?? todoStatusDummyFrom(), // VO Dummyを使用
-    dueDate: props?.dueDate ?? getDummyDueDate(), // 50%でundefined
-    completedAt: props?.completedAt,
+    status: props?.status ?? todoStatusDummyFrom(),
     createdAt: props?.createdAt ?? now,
     updatedAt: props?.updatedAt ?? now,
-  });
 
-  if (!result.success) {
-    throw new Error(`Dummy creation failed: ${result.error.message}`);
-  }
-  return result.data;
+    // オプショナルフィールド: "key" in props パターンを使用
+    // 理由: 明示的に undefined を指定した場合と、キーを省略した場合を区別する
+    description:
+      props !== undefined && "description" in props
+        ? props.description
+        : getDummyDescription(),
+    dueDate:
+      props !== undefined && "dueDate" in props
+        ? props.dueDate
+        : getDummyDueDate(),
+  });
 };
+```
+
+### フィールド種別による書き分け
+
+| フィールド種別 | 型の例 | パターン | 理由 |
+| --- | --- | --- | --- |
+| 必須 | `status: TodoStatus` | `props?.status ?? default` | undefinedは渡されない |
+| オプショナル | `description: string \| undefined` | `"key" in props` | 明示的undefinedとキー省略を区別 |
+
+**なぜ区別が必要か：**
+
+```typescript
+// ❌ ?? だけだと区別できない
+todoDummyFrom({ description: undefined })  // → getDummyDescription() が使われる（意図と異なる）
+todoDummyFrom({})                          // → getDummyDescription() が使われる
+
+// ✅ "key" in props なら区別できる
+todoDummyFrom({ description: undefined })  // → undefined が設定される（意図通り）
+todoDummyFrom({})                          // → getDummyDescription() が使われる
 ```
 
 ### 使用例

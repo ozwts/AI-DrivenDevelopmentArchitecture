@@ -1,4 +1,3 @@
-/* eslint-disable class-methods-use-this */
 import { Result } from "@/util/result";
 import type { AuthClient, AuthPayload, AuthUser, DeleteUserResult } from ".";
 
@@ -42,9 +41,9 @@ export class AuthClientDummy implements AuthClient {
 
   readonly #deleteUserReturnValue: DeleteUserResult;
 
-  readonly #tokenMap: Record<string, AuthPayload>;
+  readonly #tokenMap: Partial<Record<string, AuthPayload>>;
 
-  readonly #userIdMap: Record<string, AuthUser>;
+  readonly #userIdMap: Partial<Record<string, AuthUser>>;
 
   constructor(props?: AuthClientDummyProps) {
     this.#decodeTokenReturnValue =
@@ -59,26 +58,32 @@ export class AuthClientDummy implements AuthClient {
     this.#userIdMap = props?.userIdMap ?? {};
   }
 
-  async decodeToken(token: string): Promise<AuthPayload> {
-    return this.#tokenMap[token] ?? this.#decodeTokenReturnValue;
+  decodeToken(token: string): Promise<AuthPayload> {
+    return Promise.resolve(
+      this.#tokenMap[token] ?? this.#decodeTokenReturnValue,
+    );
   }
 
-  async getUserById(userId: string): Promise<AuthUser> {
-    return this.#userIdMap[userId] ?? this.#getUserByIdReturnValue;
+  getUserById(userId: string): Promise<AuthUser> {
+    return Promise.resolve(
+      this.#userIdMap[userId] ?? this.#getUserByIdReturnValue,
+    );
   }
 
-  async verifyToken(token: string): Promise<boolean> {
-    return this.#tokenMap[token] !== undefined || this.#verifyTokenReturnValue;
+  verifyToken(token: string): Promise<boolean> {
+    return Promise.resolve(
+      this.#tokenMap[token] !== undefined || this.#verifyTokenReturnValue,
+    );
   }
 
-  async deleteUser(_userId: string): Promise<DeleteUserResult> {
-    return this.#deleteUserReturnValue;
+  deleteUser(_userId: string): Promise<DeleteUserResult> {
+    return Promise.resolve(this.#deleteUserReturnValue);
   }
 
-  async createCustomToken(
+  createCustomToken(
     userId: string,
     _additionalClaims?: Record<string, unknown>,
   ): Promise<string> {
-    return `dummy-custom-token-for-${userId}`;
+    return Promise.resolve(`dummy-custom-token-for-${userId}`);
   }
 }

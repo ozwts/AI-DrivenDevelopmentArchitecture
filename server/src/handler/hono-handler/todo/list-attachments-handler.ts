@@ -6,7 +6,7 @@ import type { Logger } from "@/domain/support/logger";
 import type { GetTodoUseCase } from "@/use-case/todo/get-todo-use-case";
 import { UnexpectedError, unexpectedErrorMessage } from "@/util/error-util";
 import { handleError } from "../../hono-handler-util/error-handler";
-import { convertToTodoResponse } from "./todo-handler-util";
+import { convertToTodoResponse } from "./todo-response-mapper";
 
 export const buildListAttachmentsHandler =
   ({ container }: { container: Container }) =>

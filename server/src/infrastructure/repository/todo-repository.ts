@@ -184,18 +184,12 @@ export const todoDdbItemToTodo = (
 export const todoDdbItemFromTodo = (todo: Todo): TodoDdbItem => {
   // GSIキー属性の空文字列をundefinedに変換
   const projectId =
-    todo.projectId === undefined ||
-    todo.projectId === null ||
-    todo.projectId === ""
+    todo.projectId === undefined || todo.projectId === ""
       ? undefined
       : todo.projectId;
 
   const assigneeUserId =
-    todo.assigneeUserId === undefined ||
-    todo.assigneeUserId === null ||
-    todo.assigneeUserId === ""
-      ? undefined
-      : todo.assigneeUserId;
+    todo.assigneeUserId === "" ? undefined : todo.assigneeUserId;
 
   // assigneeUserIdが空の場合はエラー（必須フィールド）
   if (assigneeUserId === undefined) {
@@ -252,12 +246,10 @@ export class TodoRepositoryImpl implements TodoRepository {
     this.#uow = uow;
   }
 
-  // eslint-disable-next-line class-methods-use-this
   todoId(): string {
     return uuid();
   }
 
-  // eslint-disable-next-line class-methods-use-this
   attachmentId(): string {
     return uuid();
   }
@@ -571,7 +563,7 @@ export class TodoRepositoryImpl implements TodoRepository {
         }));
 
       // 新しいattachmentsを挿入する操作
-      const putAttachmentOperations = (props.todo.attachments ?? []).map(
+      const putAttachmentOperations = props.todo.attachments.map(
         (attachment) => ({
           Put: {
             TableName: this.#attachmentsTableName,

@@ -1,5 +1,6 @@
 import { UnexpectedError, NotFoundError } from "@/util/error-util";
 import type { TodoRepository } from "@/domain/model/todo/todo.repository";
+import type { UserRepository } from "@/domain/model/user/user.repository";
 import type { StorageClient } from "@/domain/support/storage-client";
 import type { FetchNow } from "@/domain/support/fetch-now";
 import type { Logger } from "@/domain/support/logger";
@@ -13,15 +14,15 @@ import type { UseCase } from "../interfaces";
 
 export type PrepareAttachmentUploadUseCaseInput = {
   todoId: string;
+  userSub: string;
   fileName: string;
   contentType: string;
   fileSize: number;
-  uploadedBy: string;
 };
 
 export type PrepareAttachmentUploadUseCaseOutput = {
-  attachmentId: string;
   uploadUrl: string;
+  attachment: Attachment;
 };
 
 export type PrepareAttachmentUploadUseCaseException =
@@ -35,6 +36,7 @@ export type PrepareAttachmentUploadUseCaseResult = Result<
 
 export type PrepareAttachmentUploadUseCaseProps = {
   readonly todoRepository: TodoRepository;
+  readonly userRepository: UserRepository;
   readonly storageClient: StorageClient;
   readonly fetchNow: FetchNow;
   readonly logger: Logger;
@@ -58,12 +60,28 @@ export class PrepareAttachmentUploadUseCaseImpl
   async execute(
     input: PrepareAttachmentUploadUseCaseInput,
   ): Promise<PrepareAttachmentUploadUseCaseResult> {
-    const { todoRepository, storageClient, fetchNow, logger } = this.#props;
+    const { todoRepository, userRepository, storageClient, fetchNow, logger } =
+      this.#props;
 
     logger.debug("use-case: prepare-attachment-upload-use-case", {
       todoId: input.todoId,
       fileName: input.fileName,
     });
+
+    // userSubからユーザーIDを取得
+    const userResult = await userRepository.findBySub({ sub: input.userSub });
+    if (userResult.isErr()) {
+      logger.error("ユーザー情報の取得に失敗しました", userResult.error);
+      return Result.err(userResult.error);
+    }
+
+    if (userResult.data === undefined) {
+      const notFoundError = new NotFoundError("ユーザーが見つかりません");
+      logger.error("ユーザーが見つかりません", { userSub: input.userSub });
+      return Result.err(notFoundError);
+    }
+
+    const uploadedBy = userResult.data.id;
 
     // TODOを取得
     const todoResult = await todoRepository.findById({
@@ -95,7 +113,7 @@ export class PrepareAttachmentUploadUseCaseImpl
       contentType: input.contentType,
       fileSize: input.fileSize,
       status: AttachmentStatus.prepared(),
-      uploadedBy: input.uploadedBy,
+      uploadedBy,
       createdAt: now,
       updatedAt: now,
     });
@@ -129,8 +147,8 @@ export class PrepareAttachmentUploadUseCaseImpl
     });
 
     return Result.ok({
-      attachmentId,
       uploadUrl: urlResult.data,
+      attachment,
     });
   }
 }

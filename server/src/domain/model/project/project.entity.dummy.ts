@@ -30,7 +30,7 @@ export const projectDummyFrom = (props?: ProjectDummyProps): Project => {
     id: props?.id ?? getDummyId(),
     name: props?.name ?? getDummyShortText(),
     description:
-      props?.description !== undefined
+      props !== undefined && "description" in props
         ? props.description
         : getDummyDescription(),
     color: props?.color ?? getDummyProjectColor(),

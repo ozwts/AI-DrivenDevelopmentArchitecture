@@ -84,14 +84,14 @@ export const isoStringFromParts = (
   year: number,
   month: number,
   day: number,
-  hour: number = 0,
-  minute: number = 0,
-  second: number = 0,
-  millisecond: number = 0,
+  hour = 0,
+  minute = 0,
+  second = 0,
+  millisecond = 0,
 ): string =>
   dayjs
     .tz(
-      `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")} ${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:${String(second).padStart(2, "0")}.${String(millisecond).padStart(3, "0")}`,
+      `${String(year)}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")} ${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:${String(second).padStart(2, "0")}.${String(millisecond).padStart(3, "0")}`,
       "Asia/Tokyo",
     )
     .format("YYYY-MM-DDTHH:mm:ss.SSSZ");

@@ -62,7 +62,7 @@ export class LoggerImpl implements Logger {
     }
   }
 
-  appendKeys(options: { [key: string]: unknown }): void {
+  appendKeys(options: Record<string, unknown>): void {
     this.#logger.appendKeys(options);
   }
 }

@@ -9,10 +9,14 @@ import { NotFoundError } from "@/util/error-util";
 import { buildTodoRouter } from "./todo/todo-router";
 import { buildProjectRouter } from "./project/project-router";
 import { buildUserRouter } from "./user/user-router";
-import { USER_SUB } from "./constants";
+import { USER_SUB, type AppEnv } from "./constants";
 
-export const buildApp = ({ container }: { container: Container }): Hono => {
-  const app = new Hono();
+export const buildApp = ({
+  container,
+}: {
+  container: Container;
+}): Hono<AppEnv> => {
+  const app = new Hono<AppEnv>();
   const logger = container.get<Logger>(serviceId.LOGGER);
   const authClient = container.get<AuthClient>(serviceId.AUTH_CLIENT);
   const allowedOrigins = container.get<string>(serviceId.ALLOWED_ORIGINS);
@@ -77,7 +81,8 @@ export const buildApp = ({ container }: { container: Container }): Hono => {
 
       logger.appendKeys({ userSub: payload.userSub });
 
-      return await next();
+      await next();
+      return;
     } catch (error) {
       logger.warn("トークン検証失敗", {
         error: error instanceof Error ? error.message : String(error),

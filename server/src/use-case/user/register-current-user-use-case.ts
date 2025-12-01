@@ -1,4 +1,5 @@
 import type { Logger } from "@/domain/support/logger";
+import type { AuthClient } from "@/domain/support/auth-client";
 import { Result } from "@/util/result";
 import type { UseCase } from "../interfaces";
 import { UnexpectedError, ConflictError } from "@/util/error-util";
@@ -9,8 +10,6 @@ import { dateToIsoString } from "@/util/date-util";
 
 export type RegisterCurrentUserUseCaseInput = {
   sub: string;
-  email: string;
-  emailVerified: boolean;
 };
 
 export type RegisterCurrentUserUseCaseOutput = User;
@@ -26,6 +25,7 @@ export type RegisterCurrentUserUseCaseResult = Result<
 
 export type RegisterCurrentUserUseCaseProps = {
   readonly userRepository: UserRepository;
+  readonly authClient: AuthClient;
   readonly logger: Logger;
   readonly fetchNow: FetchNow;
 };
@@ -59,13 +59,39 @@ export class RegisterCurrentUserUseCaseImpl
   async execute(
     input: RegisterCurrentUserUseCaseInput,
   ): Promise<RegisterCurrentUserUseCaseResult> {
-    const { userRepository, logger, fetchNow } = this.#props;
+    const { userRepository, authClient, logger, fetchNow } = this.#props;
 
     logger.debug("ユースケース: 現在のユーザーの登録を開始", {
       input,
     });
 
-    const { sub, email, emailVerified } = input;
+    const { sub } = input;
+
+    // Cognitoからユーザー情報を取得（email, email_verified）
+    let email: string;
+    let emailVerified: boolean;
+
+    try {
+      const cognitoUser = await authClient.getUserById(sub);
+      logger.info("Cognitoユーザー情報取得成功", {
+        email: cognitoUser.email,
+        emailVerified: cognitoUser.emailVerified,
+      });
+
+      if (cognitoUser.email === undefined || cognitoUser.email === "") {
+        logger.error("Cognitoユーザーにemailが設定されていません", { sub });
+        return Result.err(new UnexpectedError());
+      }
+
+      email = cognitoUser.email;
+      emailVerified = cognitoUser.emailVerified ?? false;
+    } catch (error) {
+      logger.error("Cognitoからのユーザー情報取得に失敗", {
+        sub,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return Result.err(new UnexpectedError());
+    }
 
     // subで既存ユーザーを検索
     const findResult = await userRepository.findBySub({ sub });

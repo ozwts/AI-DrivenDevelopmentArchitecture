@@ -1,4 +1,3 @@
-import type { Context } from "hono";
 import type { Container } from "inversify";
 import { schemas } from "@/generated/zod-schemas";
 import { serviceId } from "@/di-container/service-id";
@@ -10,11 +9,12 @@ import { formatZodError } from "../../hono-handler-util/validation-formatter";
 import {
   convertToTodoResponse,
   convertToTodoStatus,
-} from "./todo-handler-util";
+} from "./todo-response-mapper";
+import type { AppContext } from "../constants";
 
 export const buildUpdateTodoHandler =
   ({ container }: { container: Container }) =>
-  async (c: Context) => {
+  async (c: AppContext) => {
     const logger = container.get<Logger>(serviceId.LOGGER);
     const useCase = container.get<UpdateTodoUseCase>(
       serviceId.UPDATE_TODO_USE_CASE,
@@ -22,7 +22,7 @@ export const buildUpdateTodoHandler =
 
     try {
       const { todoId } = c.req.param();
-      const rawBody = await c.req.json();
+      const rawBody: unknown = await c.req.json();
 
       // リクエストボディのZodバリデーション
       const parseResult = schemas.UpdateTodoParams.safeParse(rawBody);
@@ -52,13 +52,27 @@ export const buildUpdateTodoHandler =
           ? undefined
           : (body.assigneeUserId ?? undefined);
 
+      // null → undefined 変換（Special Case/Optionalフィールド）
+      const description =
+        "description" in body
+          ? body.description === null
+            ? undefined
+            : body.description
+          : undefined;
+      const dueDate =
+        "dueDate" in body
+          ? body.dueDate === null
+            ? undefined
+            : body.dueDate
+          : undefined;
+
       const result = await useCase.execute({
         todoId,
         title: body.title,
-        description: body.description ?? undefined,
+        description,
         status: convertToTodoStatus(body.status),
         priority: body.priority,
-        dueDate: body.dueDate ?? undefined,
+        dueDate,
         projectId,
         assigneeUserId,
       });

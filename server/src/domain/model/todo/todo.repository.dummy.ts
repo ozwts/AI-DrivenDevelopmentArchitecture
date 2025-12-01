@@ -69,31 +69,29 @@ export class TodoRepositoryDummy implements TodoRepository {
     return this.#attachmentIdReturnValue;
   }
 
-  async findById(_props: { id: string }): Promise<FindByIdResult> {
-    return this.#findByIdReturnValue;
+  findById(_props: { id: string }): Promise<FindByIdResult> {
+    return Promise.resolve(this.#findByIdReturnValue);
   }
 
-  async findAll(): Promise<FindAllResult> {
-    return this.#findAllReturnValue;
+  findAll(): Promise<FindAllResult> {
+    return Promise.resolve(this.#findAllReturnValue);
   }
 
-  async findByStatus(_props: {
-    status: TodoStatus;
-  }): Promise<FindByStatusResult> {
-    return this.#findByStatusReturnValue;
+  findByStatus(_props: { status: TodoStatus }): Promise<FindByStatusResult> {
+    return Promise.resolve(this.#findByStatusReturnValue);
   }
 
-  async findByProjectId(_props: {
+  findByProjectId(_props: {
     projectId: string;
   }): Promise<FindByProjectIdResult> {
-    return this.#findByProjectIdReturnValue;
+    return Promise.resolve(this.#findByProjectIdReturnValue);
   }
 
-  async save(_props: { todo: unknown }): Promise<SaveResult> {
-    return this.#saveReturnValue;
+  save(_props: { todo: unknown }): Promise<SaveResult> {
+    return Promise.resolve(this.#saveReturnValue);
   }
 
-  async remove(_props: { id: string }): Promise<RemoveResult> {
-    return this.#removeReturnValue;
+  remove(_props: { id: string }): Promise<RemoveResult> {
+    return Promise.resolve(this.#removeReturnValue);
   }
 }

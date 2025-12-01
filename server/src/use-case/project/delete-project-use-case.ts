@@ -1,5 +1,3 @@
-/* eslint-disable no-await-in-loop */
-/* eslint-disable no-restricted-syntax */
 import type { Logger } from "@/domain/support/logger";
 import { Result as ResultUtil, type Result } from "@/util/result";
 import { NotFoundError, UnexpectedError } from "@/util/error-util";

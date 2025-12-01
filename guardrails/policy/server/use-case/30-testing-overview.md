@@ -77,7 +77,16 @@ describe("{Action}{Entity}UseCaseのテスト", () => {
 **重要**: DummyリポジトリはEntity Dummyファクトリを使用する。
 
 ```typescript
+import { v7 as uuid } from "uuid";
+import { Result } from "@/util/result";
 import { projectDummyFrom } from "./project.entity.dummy";
+import type {
+  ProjectRepository,
+  FindByIdResult,
+  FindAllResult,
+  SaveResult,
+  RemoveResult,
+} from "./project.repository";
 
 export type ProjectRepositoryDummyProps = {
   projectIdReturnValue?: string;
@@ -113,12 +122,12 @@ export class ProjectRepositoryDummy implements ProjectRepository {
     return this.#projectIdReturnValue;
   }
 
-  async findById(_props: { id: string }): Promise<FindByIdResult> {
-    return this.#findByIdReturnValue;
+  findById(_props: { id: string }): Promise<FindByIdResult> {
+    return Promise.resolve(this.#findByIdReturnValue);
   }
 
-  async save(_props: { project: unknown }): Promise<SaveResult> {
-    return this.#saveReturnValue;
+  save(_props: { project: unknown }): Promise<SaveResult> {
+    return Promise.resolve(this.#saveReturnValue);
   }
 }
 ```
@@ -140,15 +149,15 @@ UseCase層のテストは**ビジネスルール検証**に焦点を当てる。
 
 ### Small Testでカバーすべきケース
 
-| ケース                       | テスト内容                                           |
-| ---------------------------- | ---------------------------------------------------- |
-| 正常系                       | 正常データで成功すること                             |
-| ビジネスルール違反           | 権限なし → ForbiddenError                            |
-| リソース未検出               | 存在しないID → NotFoundError                         |
-| 重複エラー                   | 既存リソース → ConflictError                         |
-| Value Objectエラー伝播       | 不正値 → DomainError（伝播確認）                     |
-| リポジトリエラー伝播         | 保存失敗 → UnexpectedError（伝播確認）               |
-| ビジネスロジック境界値       | 最大添付ファイル数など（型レベルではない境界）       |
+| ケース                 | テスト内容                                     |
+| ---------------------- | ---------------------------------------------- |
+| 正常系                 | 正常データで成功すること                       |
+| ビジネスルール違反     | 権限なし → ForbiddenError                      |
+| リソース未検出         | 存在しないID → NotFoundError                   |
+| 重複エラー             | 既存リソース → ConflictError                   |
+| Value Objectエラー伝播 | 不正値 → DomainError（伝播確認）               |
+| リポジトリエラー伝播   | 保存失敗 → UnexpectedError（伝播確認）         |
+| ビジネスロジック境界値 | 最大添付ファイル数など（型レベルではない境界） |
 
 **注**: 型レベルの境界値テスト（文字列長など）はHandler層でテスト済み。UseCase層では**ビジネスロジック固有の境界値**のみをテストする。
 
@@ -196,10 +205,10 @@ describe("{Action}{Entity}UseCase Medium Test", () => {
 
 ### Medium Testでカバーすべきケース
 
-| ケース               | テスト内容                               |
-| -------------------- | ---------------------------------------- |
-| トランザクションの原子性 | エラー時にロールバックされること         |
-| 実際のDB制約         | DynamoDB制約違反時のエラーハンドリング   |
+| ケース                   | テスト内容                             |
+| ------------------------ | -------------------------------------- |
+| トランザクションの原子性 | エラー時にロールバックされること       |
+| 実際のDB制約             | DynamoDB制約違反時のエラーハンドリング |
 
 ## テストヘルパーパターン
 
@@ -321,7 +330,9 @@ expect(result.error.message).toContain("見つかりません");
 ```typescript
 // テスト専用ヘルパー関数を作成（保守コスト増）
 const createTestProject = (overrides?: Partial<Project>) => {
-  return new Project({ /* ... 固定値 */ });
+  return new Project({
+    /* ... 固定値 */
+  });
 };
 
 // インラインで時刻モック作成
@@ -338,7 +349,9 @@ expect(result.data.name).toBe("Expected Name"); // ❌ errorの可能性
 // beforeEachで共有インスタンス（独立性低下）
 let useCase: CreateProjectUseCase;
 beforeEach(() => {
-  useCase = new CreateProjectUseCaseImpl({ /* ... */ }); // ❌ テスト間で状態共有のリスク
+  useCase = new CreateProjectUseCaseImpl({
+    /* ... */
+  }); // ❌ テスト間で状態共有のリスク
 });
 
 // エラー型を検証しない

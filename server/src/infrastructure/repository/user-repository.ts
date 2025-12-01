@@ -56,7 +56,7 @@ export const userDdbItemToUser = (userDdbItem: UserDdbItem): User =>
  */
 export const userDdbItemFromUser = (user: User): UserDdbItem => {
   // GSIキー属性の空文字列チェック
-  if (user.sub === undefined || user.sub === null || user.sub === "") {
+  if (user.sub === "") {
     throw new UnexpectedError("subは必須です");
   }
 
@@ -97,7 +97,6 @@ export class UserRepositoryImpl implements UserRepository {
     this.#uow = uow;
   }
 
-  // eslint-disable-next-line class-methods-use-this
   userId(): string {
     return uuid();
   }

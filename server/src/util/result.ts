@@ -4,7 +4,6 @@
  * - class-methods-use-this: 型ガードの戻り値型で this を使用するが、ESLintは検出しない
  * - no-redeclare: Result型とResultオブジェクトを同名で定義するパターン
  */
-/* eslint-disable no-use-before-define, no-redeclare, class-methods-use-this */
 
 /**
  * Result型

@@ -40,7 +40,10 @@
       "Bash(if [[ ! -f \"$test_file\" ]])",
       "Bash(then echo \"MISSING: $test_file for $file\")",
       "Bash(fi)",
-      "WebFetch(domain:raw.githubusercontent.com)"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:typescript-eslint.io)",
+      "Bash(xargs -I {} sh -c 'echo \"\"\"\"=== {} ===\"\"\"\" && grep -c \"\"\"\"^export class\"\"\"\" {}')",
+      "WebFetch(domain:hono.dev)"
     ],
     "deny": [],
     "ask": []

@@ -48,19 +48,19 @@ export class ProjectRepositoryDummy implements ProjectRepository {
     return this.#projectIdReturnValue;
   }
 
-  async findById(_props: { id: string }): Promise<FindByIdResult> {
-    return this.#findByIdReturnValue;
+  findById(_props: { id: string }): Promise<FindByIdResult> {
+    return Promise.resolve(this.#findByIdReturnValue);
   }
 
-  async findAll(): Promise<FindAllResult> {
-    return this.#findAllReturnValue;
+  findAll(): Promise<FindAllResult> {
+    return Promise.resolve(this.#findAllReturnValue);
   }
 
-  async save(_props: { project: unknown }): Promise<SaveResult> {
-    return this.#saveReturnValue;
+  save(_props: { project: unknown }): Promise<SaveResult> {
+    return Promise.resolve(this.#saveReturnValue);
   }
 
-  async remove(_props: { id: string }): Promise<RemoveResult> {
-    return this.#removeReturnValue;
+  remove(_props: { id: string }): Promise<RemoveResult> {
+    return Promise.resolve(this.#removeReturnValue);
   }
 }

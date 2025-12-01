@@ -38,16 +38,21 @@ export const todoDummyFrom = (props?: TodoDummyProps): Todo => {
     id: props?.id ?? getDummyId(),
     title: props?.title ?? getDummyShortText(),
     description:
-      props?.description !== undefined
+      props !== undefined && "description" in props
         ? props.description
         : getDummyDescription(),
-    status: props?.status !== undefined ? props.status : todoStatusDummyFrom(),
-    priority:
-      props?.priority !== undefined ? props.priority : getDummyTodoPriority(),
-    dueDate: props?.dueDate !== undefined ? props.dueDate : getDummyDueDate(),
-    projectId: props?.projectId !== undefined ? props.projectId : getDummyId(),
+    status: props?.status ?? todoStatusDummyFrom(),
+    priority: props?.priority ?? getDummyTodoPriority(),
+    dueDate:
+      props !== undefined && "dueDate" in props
+        ? props.dueDate
+        : getDummyDueDate(),
+    projectId:
+      props !== undefined && "projectId" in props
+        ? props.projectId
+        : getDummyId(),
     assigneeUserId: props?.assigneeUserId ?? getDummyId(),
-    attachments: props?.attachments !== undefined ? props.attachments : [],
+    attachments: props?.attachments ?? [],
     createdAt: props?.createdAt ?? now,
     updatedAt: props?.updatedAt ?? now,
   });

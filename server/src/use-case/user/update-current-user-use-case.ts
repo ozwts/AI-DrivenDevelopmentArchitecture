@@ -1,4 +1,5 @@
 import type { Logger } from "@/domain/support/logger";
+import type { AuthClient } from "@/domain/support/auth-client";
 import { Result } from "@/util/result";
 import type { UseCase } from "../interfaces";
 import { UnexpectedError, NotFoundError } from "@/util/error-util";
@@ -10,8 +11,6 @@ import { dateToIsoString } from "@/util/date-util";
 export type UpdateCurrentUserUseCaseInput = {
   sub: string;
   name?: string;
-  email?: string;
-  emailVerified?: boolean;
 };
 
 export type UpdateCurrentUserUseCaseOutput = User;
@@ -25,6 +24,7 @@ export type UpdateCurrentUserUseCaseResult = Result<
 
 export type UpdateCurrentUserUseCaseProps = {
   readonly userRepository: UserRepository;
+  readonly authClient: AuthClient;
   readonly logger: Logger;
   readonly fetchNow: FetchNow;
 };
@@ -55,7 +55,7 @@ export class UpdateCurrentUserUseCaseImpl implements UpdateCurrentUserUseCase {
   async execute(
     input: UpdateCurrentUserUseCaseInput,
   ): Promise<UpdateCurrentUserUseCaseResult> {
-    const { userRepository, logger, fetchNow } = this.#props;
+    const { userRepository, authClient, logger, fetchNow } = this.#props;
 
     logger.debug("ユースケース: 現在のユーザー情報の更新を開始", {
       input,
@@ -77,11 +77,32 @@ export class UpdateCurrentUserUseCaseImpl implements UpdateCurrentUserUseCase {
       return Result.err(notFoundError);
     }
 
+    // Cognitoからユーザー情報を取得（email, email_verified）
+    // 更新時はオプショナル（取得失敗してもエラーにしない）
+    let email: string | undefined;
+    let emailVerified: boolean | undefined;
+
+    try {
+      const cognitoUser = await authClient.getUserById(sub);
+      email = cognitoUser.email;
+      emailVerified = cognitoUser.emailVerified;
+      logger.info("Cognitoユーザー情報取得成功", {
+        email,
+        emailVerified,
+      });
+    } catch (error) {
+      logger.warn("Cognitoからのユーザー情報取得に失敗（続行）", {
+        sub,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      // 取得失敗してもエラーにせず続行（既存のemail情報を保持）
+    }
+
     const now = dateToIsoString(fetchNow());
 
     // Result.map()によるメソッドチェーンでユーザー情報を更新
     // name: リクエストボディから（ユーザー入力）
-    // email, emailVerified: トークンから（Cognito情報）
+    // email, emailVerified: Cognitoから（AuthClient経由）
     const updatedResult = Result.ok(findResult.data)
       .map((u: User) =>
         "name" in input && input.name !== undefined
@@ -89,11 +110,8 @@ export class UpdateCurrentUserUseCaseImpl implements UpdateCurrentUserUseCase {
           : u,
       )
       .map((u: User) =>
-        "email" in input &&
-        "emailVerified" in input &&
-        input.email !== undefined &&
-        input.emailVerified !== undefined
-          ? u.verifyEmail(input.email, input.emailVerified, now)
+        email !== undefined && emailVerified !== undefined
+          ? u.verifyEmail(email, emailVerified, now)
           : u,
       );
 

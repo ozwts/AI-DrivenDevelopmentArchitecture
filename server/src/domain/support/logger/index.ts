@@ -1,8 +1,4 @@
-export type AdditionalData =
-  | Error
-  | {
-      [key: string]: unknown;
-    };
+export type AdditionalData = Error | Record<string, unknown>;
 
 /**
  * ロガー
@@ -54,5 +50,5 @@ export type Logger = {
    * logger.info({ message: "ログメッセージ" });
    * // => { userId: "user1", message: "ログメッセージ" }
    */
-  appendKeys(params: { [key: string]: unknown }): void;
+  appendKeys(params: Record<string, unknown>): void;
 };

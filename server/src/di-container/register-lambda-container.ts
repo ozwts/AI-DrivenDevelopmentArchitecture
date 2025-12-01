@@ -20,8 +20,10 @@ import { TodoRepositoryImpl } from "@/infrastructure/repository/todo-repository"
 import type { FetchNow } from "@/domain/support/fetch-now";
 import type { GetUserUseCase } from "@/use-case/user/get-user-use-case";
 import { GetUserUseCaseImpl } from "@/use-case/user/get-user-use-case";
-import { GetCurrentUserUseCase } from "@/use-case/user/get-current-user-use-case";
-import { ListUsersUseCase } from "@/use-case/user/list-users-use-case";
+import type { GetCurrentUserUseCase } from "@/use-case/user/get-current-user-use-case";
+import { GetCurrentUserUseCaseImpl } from "@/use-case/user/get-current-user-use-case";
+import type { ListUsersUseCase } from "@/use-case/user/list-users-use-case";
+import { ListUsersUseCaseImpl } from "@/use-case/user/list-users-use-case";
 import type { RegisterCurrentUserUseCase } from "@/use-case/user/register-current-user-use-case";
 import { RegisterCurrentUserUseCaseImpl } from "@/use-case/user/register-current-user-use-case";
 import type { UpdateCurrentUserUseCase } from "@/use-case/user/update-current-user-use-case";
@@ -65,7 +67,7 @@ import type { UnitOfWorkRunner } from "@/domain/support/unit-of-work";
 import { DynamoDBUnitOfWorkRunner } from "@/infrastructure/unit-of-work/dynamodb-unit-of-work-runner";
 import { unwrapEnv } from "./env-util";
 
-export const registerLambdaContainer = async (): Promise<Container> => {
+export const registerLambdaContainer = (): Container => {
   const container = new Container();
 
   // AWSリージョン設定
@@ -324,10 +326,12 @@ export const registerLambdaContainer = async (): Promise<Container> => {
         serviceId.TODO_REPOSITORY,
       );
       const fetchNow = ctx.container.get<FetchNow>(serviceId.FETCH_NOW);
+      const logger = ctx.container.get<Logger>(serviceId.LOGGER);
 
       return new UpdateTodoUseCaseImpl({
         todoRepository,
         fetchNow,
+        logger,
       });
     })
     .inSingletonScope();
@@ -366,8 +370,13 @@ export const registerLambdaContainer = async (): Promise<Container> => {
       const fetchNow = ctx.container.get<FetchNow>(serviceId.FETCH_NOW);
       const logger = ctx.container.get<Logger>(serviceId.LOGGER);
 
+      const userRepository = ctx.container.get<UserRepository>(
+        serviceId.USER_REPOSITORY,
+      );
+
       return new PrepareAttachmentUploadUseCaseImpl({
         todoRepository,
+        userRepository,
         storageClient,
         fetchNow,
         logger,
@@ -575,8 +584,9 @@ export const registerLambdaContainer = async (): Promise<Container> => {
       const userRepository = ctx.container.get<UserRepository>(
         serviceId.USER_REPOSITORY,
       );
+      const logger = ctx.container.get<Logger>(serviceId.LOGGER);
 
-      return new GetCurrentUserUseCase(userRepository);
+      return new GetCurrentUserUseCaseImpl({ userRepository, logger });
     })
     .inSingletonScope();
 
@@ -586,8 +596,9 @@ export const registerLambdaContainer = async (): Promise<Container> => {
       const userRepository = ctx.container.get<UserRepository>(
         serviceId.USER_REPOSITORY,
       );
+      const logger = ctx.container.get<Logger>(serviceId.LOGGER);
 
-      return new ListUsersUseCase(userRepository);
+      return new ListUsersUseCaseImpl({ userRepository, logger });
     })
     .inSingletonScope();
 
@@ -600,8 +611,11 @@ export const registerLambdaContainer = async (): Promise<Container> => {
       const logger = ctx.container.get<Logger>(serviceId.LOGGER);
       const fetchNow = ctx.container.get<FetchNow>(serviceId.FETCH_NOW);
 
+      const authClient = ctx.container.get<AuthClient>(serviceId.AUTH_CLIENT);
+
       return new RegisterCurrentUserUseCaseImpl({
         userRepository,
+        authClient,
         logger,
         fetchNow,
       });
@@ -614,11 +628,13 @@ export const registerLambdaContainer = async (): Promise<Container> => {
       const userRepository = ctx.container.get<UserRepository>(
         serviceId.USER_REPOSITORY,
       );
+      const authClient = ctx.container.get<AuthClient>(serviceId.AUTH_CLIENT);
       const logger = ctx.container.get<Logger>(serviceId.LOGGER);
       const fetchNow = ctx.container.get<FetchNow>(serviceId.FETCH_NOW);
 
       return new UpdateCurrentUserUseCaseImpl({
         userRepository,
+        authClient,
         logger,
         fetchNow,
       });

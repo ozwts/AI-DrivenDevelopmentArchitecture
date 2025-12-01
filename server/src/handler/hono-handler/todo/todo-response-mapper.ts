@@ -6,6 +6,9 @@ import type { Attachment } from "@/domain/model/todo/attachment.entity";
 
 type TodoResponse = z.infer<typeof schemas.TodoResponse>;
 type AttachmentResponse = z.infer<typeof schemas.AttachmentResponse>;
+type PrepareAttachmentResponse = z.infer<
+  typeof schemas.PrepareAttachmentResponse
+>;
 
 /**
  * Attachmentエンティティを AttachmentResponseに変換する
@@ -76,3 +79,20 @@ export const convertToTodoStatus = (
       return undefined;
   }
 };
+
+/**
+ * アップロード準備完了レスポンスを生成する
+ *
+ * @param todoId 親TODOのID
+ * @param uploadUrl 署名済みアップロードURL
+ * @param attachment 添付ファイルエンティティ
+ * @returns PrepareAttachmentResponse
+ */
+export const convertToPrepareAttachmentResponse = (
+  todoId: string,
+  uploadUrl: string,
+  attachment: Attachment,
+): PrepareAttachmentResponse => ({
+  uploadUrl,
+  attachment: convertToAttachmentResponse(todoId, attachment),
+});

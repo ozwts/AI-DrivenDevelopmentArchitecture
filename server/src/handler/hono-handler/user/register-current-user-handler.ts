@@ -1,20 +1,17 @@
-import type { Context } from "hono";
 import type { Container } from "inversify";
 import { schemas } from "@/generated/zod-schemas";
 import { serviceId } from "@/di-container/service-id";
 import type { Logger } from "@/domain/support/logger";
-import type { AuthClient } from "@/domain/support/auth-client";
 import type { RegisterCurrentUserUseCase } from "@/use-case/user/register-current-user-use-case";
 import { UnexpectedError, unexpectedErrorMessage } from "@/util/error-util";
 import { handleError } from "../../hono-handler-util/error-handler";
-import { convertToUserResponse } from "./user-handler-util";
-import { USER_SUB } from "../constants";
+import { convertToUserResponse } from "./user-response-mapper";
+import { USER_SUB, type AppContext } from "../constants";
 
 export const buildRegisterCurrentUserHandler =
   ({ container }: { container: Container }) =>
-  async (c: Context) => {
+  async (c: AppContext) => {
     const logger = container.get<Logger>(serviceId.LOGGER);
-    const authClient = container.get<AuthClient>(serviceId.AUTH_CLIENT);
     const useCase = container.get<RegisterCurrentUserUseCase>(
       serviceId.REGISTER_CURRENT_USER_USE_CASE,
     );
@@ -23,7 +20,7 @@ export const buildRegisterCurrentUserHandler =
       // 認証ミドルウェアで設定されたuserSubを取得
       const userSub = c.get(USER_SUB);
 
-      if (typeof userSub !== "string" || userSub === "") {
+      if (userSub === "") {
         logger.error("userSubがコンテキストに設定されていません");
         return c.json(
           {
@@ -34,56 +31,9 @@ export const buildRegisterCurrentUserHandler =
         );
       }
 
-      // Cognitoからユーザー情報を取得（email, email_verified）
-      logger.info("Cognitoからユーザー情報を取得", { userSub });
-      let email: string;
-      let emailVerified: boolean;
-
-      try {
-        const cognitoUser = await authClient.getUserById(userSub);
-        logger.info("Cognitoユーザー情報取得成功", {
-          email: cognitoUser.email,
-          emailVerified: cognitoUser.emailVerified,
-        });
-
-        if (
-          cognitoUser.email === undefined ||
-          cognitoUser.email === null ||
-          cognitoUser.email === ""
-        ) {
-          logger.error("Cognitoユーザーにemailが設定されていません", {
-            userSub,
-          });
-          return c.json(
-            {
-              name: new UnexpectedError().name,
-              message: unexpectedErrorMessage,
-            },
-            500,
-          );
-        }
-
-        email = cognitoUser.email;
-        emailVerified = cognitoUser.emailVerified ?? false;
-      } catch (error) {
-        logger.error("Cognitoからのユーザー情報取得に失敗", {
-          userSub,
-          error: error instanceof Error ? error.message : String(error),
-        });
-        return c.json(
-          {
-            name: new UnexpectedError().name,
-            message: unexpectedErrorMessage,
-          },
-          500,
-        );
-      }
-
-      // 現在のユーザーを登録
+      // 現在のユーザーを登録（AuthClientはUseCase内で呼び出し）
       const result = await useCase.execute({
         sub: userSub,
-        email,
-        emailVerified,
       });
 
       if (result.isErr()) {

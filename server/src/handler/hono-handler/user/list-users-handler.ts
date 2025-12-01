@@ -6,7 +6,7 @@ import type { Logger } from "@/domain/support/logger";
 import type { ListUsersUseCase } from "@/use-case/user/list-users-use-case";
 import { UnexpectedError, unexpectedErrorMessage } from "@/util/error-util";
 import { handleError } from "../../hono-handler-util/error-handler";
-import { convertToUserResponse } from "./user-handler-util";
+import { convertToUserResponse } from "./user-response-mapper";
 
 export const buildListUsersHandler =
   ({ container }: { container: Container }) =>
@@ -17,7 +17,7 @@ export const buildListUsersHandler =
     );
 
     try {
-      const result = await useCase.execute();
+      const result = await useCase.execute({});
 
       if (result.isErr()) {
         return handleError(result.error, c, logger);

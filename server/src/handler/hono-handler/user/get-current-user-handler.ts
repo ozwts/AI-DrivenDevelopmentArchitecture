@@ -1,4 +1,3 @@
-import type { Context } from "hono";
 import type { Container } from "inversify";
 import { schemas } from "@/generated/zod-schemas";
 import { serviceId } from "@/di-container/service-id";
@@ -6,12 +5,12 @@ import type { Logger } from "@/domain/support/logger";
 import type { GetCurrentUserUseCase } from "@/use-case/user/get-current-user-use-case";
 import { UnexpectedError, unexpectedErrorMessage } from "@/util/error-util";
 import { handleError } from "../../hono-handler-util/error-handler";
-import { convertToUserResponse } from "./user-handler-util";
-import { USER_SUB } from "../constants";
+import { convertToUserResponse } from "./user-response-mapper";
+import { USER_SUB, type AppContext } from "../constants";
 
 export const buildGetCurrentUserHandler =
   ({ container }: { container: Container }) =>
-  async (c: Context) => {
+  async (c: AppContext) => {
     const logger = container.get<Logger>(serviceId.LOGGER);
     const useCase = container.get<GetCurrentUserUseCase>(
       serviceId.GET_CURRENT_USER_USE_CASE,
@@ -21,7 +20,7 @@ export const buildGetCurrentUserHandler =
       // 認証ミドルウェアで設定されたuserSubを取得
       const userSub = c.get(USER_SUB);
 
-      if (typeof userSub !== "string" || userSub === "") {
+      if (userSub === "") {
         logger.error("userSubがコンテキストに設定されていません");
         return c.json(
           {

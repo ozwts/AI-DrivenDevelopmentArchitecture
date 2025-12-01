@@ -1,14 +1,23 @@
-/* eslint-disable class-methods-use-this */
 import type { Logger, AdditionalData } from ".";
 
 export class LoggerDummy implements Logger {
-  debug(_message: string, _additionalData?: AdditionalData): void {}
+  debug(_message: string, _additionalData?: AdditionalData): void {
+    // No-op for testing
+  }
 
-  info(_message: string, _additionalData?: AdditionalData): void {}
+  info(_message: string, _additionalData?: AdditionalData): void {
+    // No-op for testing
+  }
 
-  warn(_message: string, _additionalData?: AdditionalData): void {}
+  warn(_message: string, _additionalData?: AdditionalData): void {
+    // No-op for testing
+  }
 
-  error(_message: string, _additionalData?: AdditionalData): void {}
+  error(_message: string, _additionalData?: AdditionalData): void {
+    // No-op for testing
+  }
 
-  appendKeys(_: { [key: string]: unknown }): void {}
+  appendKeys(_params: Record<string, unknown>): void {
+    // No-op for testing
+  }
 }

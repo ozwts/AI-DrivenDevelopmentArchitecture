@@ -9,14 +9,15 @@
 ```typescript
 export const build{Action}{Entity}Handler =
   ({ container }: { container: Container }) =>
-  async (c: Context) => {
+  async (c: AppContext) => {
+    // container.getはLoggerとUseCaseのみ
     const logger = container.get<Logger>(serviceId.LOGGER);
     const useCase = container.get<UseCase>(serviceId.USE_CASE);
 
     try {
       // 1. リクエストパラメータ取得
       const param = c.req.param("id");
-      const rawBody = await c.req.json();
+      const rawBody: unknown = await c.req.json();  // unknown型で受け取る
 
       // 2. 入力バリデーション（Zod）
       const parseResult = schemas.RequestSchema.safeParse(rawBody);
@@ -27,15 +28,15 @@ export const build{Action}{Entity}Handler =
         );
       }
 
-      // 3. ユースケース実行（単一）
+      // 3. ユースケース実行（単一のみ）
       const result = await useCase.execute(parseResult.data);
 
       // 4. Result型チェック
-      if (result.success === false) {
+      if (!result.isOk()) {
         return handleError(result.error, c, logger);
       }
 
-      // 5. レスポンス変換
+      // 5. レスポンス変換（変換関数を使用）
       const responseData = convertTo{Entity}Response(result.data);
 
       // 6. 出力バリデーション（Zod）
@@ -175,21 +176,27 @@ convertTo{Entity}Response(entity: {Entity}): {Entity}Response
 
 ### Current User（認証済みユーザー）
 
+`AppContext`型を使用することで、`c.get(USER_SUB)`は`string`型を返す。
+
 ```typescript
-const userSub = c.get(USER_SUB);
+// AppContext型を使用（constants.tsで定義）
+async (c: AppContext) => {
+  const userSub = c.get(USER_SUB);  // string型（型安全）
 
-if (typeof userSub !== "string" || userSub === "") {
-  logger.error("userSubがコンテキストに設定されていません");
-  return c.json({ name: new UnexpectedError().name, ... }, 500);
-}
+  // 空文字チェックのみ（typeof不要）
+  if (userSub === "") {
+    logger.error("userSubがコンテキストに設定されていません");
+    return c.json({ name: new UnexpectedError().name, ... }, 500);
+  }
 
-const result = await useCase.execute({ sub: userSub });
+  const result = await useCase.execute({ sub: userSub });
+};
 ```
 
 **特徴**:
 
+- `AppContext`型で型安全に取得
 - コンテキストから取得（トークンから抽出済み）
-- 型チェック必須
 - パスパラメータではなくトークンベース
 
 ## 入力正規化パターン
@@ -245,16 +252,66 @@ const result = await useCase.execute({ color: rawBody.color });
 // UseCaseがビジネスルールをチェック
 ```
 
-### ❌ データベース直接アクセス
+### ❌ リポジトリ直接アクセス
 
 ```typescript
-// ❌ Bad
-const repository = container.get<ProjectRepository>(
-  serviceId.PROJECT_REPOSITORY,
-);
-const project = await repository.findById({ id: projectId });
+// ❌ Bad: ハンドラーでリポジトリを呼び出す
+const userRepository = container.get<UserRepository>(serviceId.USER_REPOSITORY);
+const userResult = await userRepository.findBySub({ sub: userSub });
 
 // ✅ Good: UseCaseに委譲
-const result = await useCase.execute({ projectId });
+const result = await useCase.execute({ userSub });
+```
+
+### ❌ 外部サービス直接アクセス
+
+```typescript
+// ❌ Bad: ハンドラーでAuthClientを呼び出す
+const authClient = container.get<AuthClient>(serviceId.AUTH_CLIENT);
+const cognitoUser = await authClient.getUserById(userSub);
+const result = await useCase.execute({ sub: userSub, email: cognitoUser.email });
+
+// ✅ Good: UseCaseに委譲（AuthClientはUseCase内で呼び出す）
+const result = await useCase.execute({ sub: userSub });
+// UseCase内でAuthClientを呼び出してemail等を取得
+```
+
+### ❌ ハンドラー内でレスポンスデータを組み立てる
+
+```typescript
+// ❌ Bad: ハンドラーでレスポンスデータを組み立てる
+const result = await useCase.execute({ ... });
+const responseData = {
+  uploadUrl: result.data.uploadUrl,
+  attachment: {
+    id: result.data.attachmentId,
+    todoId,
+    filename: body.filename,
+    status: "PREPARED" as const,
+    createdAt: new Date().toISOString(),  // ❌ ハンドラーで日時生成
+    updatedAt: new Date().toISOString(),
+  },
+};
+
+// ✅ Good: UseCaseが完全なレスポンスデータを返す
+const result = await useCase.execute({ ... });
+const responseData = convertToAttachmentUploadResponse(result.data);
+// UseCaseの出力にcreatedAt等が含まれている
+```
+
+### ❌ container.getの過剰使用
+
+ハンドラーで取得してよいのは**Logger**と**UseCase**のみ。
+
+```typescript
+// ❌ Bad: ハンドラーでRepository/AuthClient等を取得
+const logger = container.get<Logger>(serviceId.LOGGER);
+const useCase = container.get<UseCase>(serviceId.USE_CASE);
+const userRepository = container.get<UserRepository>(serviceId.USER_REPOSITORY);  // ❌
+const authClient = container.get<AuthClient>(serviceId.AUTH_CLIENT);  // ❌
+
+// ✅ Good: LoggerとUseCaseのみ
+const logger = container.get<Logger>(serviceId.LOGGER);
+const useCase = container.get<UseCase>(serviceId.USE_CASE);
 ```
 

@@ -6,7 +6,7 @@ import type { Logger } from "@/domain/support/logger";
 import type { GetProjectUseCase } from "@/use-case/project/get-project-use-case";
 import { UnexpectedError, unexpectedErrorMessage } from "@/util/error-util";
 import { handleError } from "../../hono-handler-util/error-handler";
-import { convertToProjectResponse } from "./project-handler-util";
+import { convertToProjectResponse } from "./project-response-mapper";
 
 export const buildGetProjectHandler =
   ({ container }: { container: Container }) =>

@@ -9,7 +9,7 @@ export type ListTodosUseCaseInput = {
   projectId?: string;
 };
 
-export type ListTodosUseCaseOutput = ReadonlyArray<Todo>;
+export type ListTodosUseCaseOutput = readonly Todo[];
 
 export type ListTodosUseCaseException = UnexpectedError;
 

@@ -6,11 +6,11 @@
 
 ## 関連ドキュメント
 
-| トピック           | ファイル                           |
-| ------------------ | ---------------------------------- |
-| リポジトリ実装     | `../repository/10-repository-overview.md` |
-| UseCaseテスト      | `../use-case/30-testing-overview.md`      |
-| Entity Dummy       | `52-entity-test-patterns.md`              |
+| トピック       | ファイル                                  |
+| -------------- | ----------------------------------------- |
+| リポジトリ実装 | `../repository/10-repository-overview.md` |
+| UseCaseテスト  | `../use-case/30-testing-overview.md`      |
+| Entity Dummy   | `52-entity-test-patterns.md`              |
 
 ## 実装要件
 
@@ -151,8 +151,14 @@ domain/model/todo/
 **目的**: UseCase/UnitOfWorkのSmall Testで使用する軽量なモック実装。
 
 ```typescript
+import { v7 as uuid } from "uuid";
+import { Result } from "@/util/result";
 import { todoDummyFrom } from "./todo.entity.dummy";
-import type { TodoRepository, FindByIdResult, SaveResult } from "./todo.repository";
+import type {
+  TodoRepository,
+  FindByIdResult,
+  SaveResult,
+} from "./todo.repository";
 
 export type TodoRepositoryDummyProps = {
   findByIdReturnValue?: FindByIdResult;
@@ -164,22 +170,21 @@ export class TodoRepositoryDummy implements TodoRepository {
   readonly #saveReturnValue: SaveResult;
 
   constructor(props?: TodoRepositoryDummyProps) {
-    this.#findByIdReturnValue = props?.findByIdReturnValue ?? {
-      success: true,
-      data: todoDummyFrom(), // Entity Dummyファクトリを使用
-    };
-    this.#saveReturnValue = props?.saveReturnValue ?? {
-      success: true,
-      data: undefined,
-    };
+    this.#findByIdReturnValue =
+      props?.findByIdReturnValue ?? Result.ok(todoDummyFrom());
+    this.#saveReturnValue = props?.saveReturnValue ?? Result.ok(undefined);
   }
 
-  todoId(): string { return uuid(); }
-  async findById(_props: { id: string }): Promise<FindByIdResult> {
-    return this.#findByIdReturnValue;
+  todoId(): string {
+    return uuid();
   }
-  async save(_props: { todo: unknown }): Promise<SaveResult> {
-    return this.#saveReturnValue;
+
+  findById(_props: { id: string }): Promise<FindByIdResult> {
+    return Promise.resolve(this.#findByIdReturnValue);
+  }
+
+  save(_props: { todo: unknown }): Promise<SaveResult> {
+    return Promise.resolve(this.#saveReturnValue);
   }
 }
 ```

@@ -1,4 +1,3 @@
-/* eslint-disable class-methods-use-this */
 import { Result } from "@/util/result";
 import type {
   StorageClient,
@@ -66,22 +65,22 @@ export class StorageClientDummy implements StorageClient {
       props?.deleteObjectReturnValue ?? this.#defaultDeleteObjectReturnValue;
   }
 
-  async generatePresignedUploadUrl(_props: {
+  generatePresignedUploadUrl(_props: {
     key: string;
     contentType: string;
     expiresIn?: number;
   }): Promise<GeneratePresignedUrlResult> {
-    return this.#generatePresignedUploadUrlReturnValue;
+    return Promise.resolve(this.#generatePresignedUploadUrlReturnValue);
   }
 
-  async generatePresignedDownloadUrl(_props: {
+  generatePresignedDownloadUrl(_props: {
     key: string;
     expiresIn?: number;
   }): Promise<GeneratePresignedUrlResult> {
-    return this.#generatePresignedDownloadUrlReturnValue;
+    return Promise.resolve(this.#generatePresignedDownloadUrlReturnValue);
   }
 
-  async deleteObject(_props: { key: string }): Promise<DeleteObjectResult> {
-    return this.#deleteObjectReturnValue;
+  deleteObject(_props: { key: string }): Promise<DeleteObjectResult> {
+    return Promise.resolve(this.#deleteObjectReturnValue);
   }
 }

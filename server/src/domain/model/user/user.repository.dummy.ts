@@ -6,6 +6,7 @@ import type {
   FindAllResult,
   RemoveResult,
 } from "./user.repository";
+import type { User } from "./user.entity";
 import { userDummyFrom } from "./user.entity.dummy";
 
 export type UserRepositoryDummyProps = {
@@ -59,25 +60,23 @@ export class UserRepositoryDummy implements UserRepository {
     return this.#userIdReturnValue;
   }
 
-  async findById(_props: { id: string }): Promise<FindByIdResult> {
-    return this.#findByIdReturnValue;
+  findById(_props: { id: string }): Promise<FindByIdResult> {
+    return Promise.resolve(this.#findByIdReturnValue);
   }
 
-  async findBySub(_props: { sub: string }): Promise<FindByIdResult> {
-    return this.#findBySubReturnValue;
+  findBySub(_props: { sub: string }): Promise<FindByIdResult> {
+    return Promise.resolve(this.#findBySubReturnValue);
   }
 
-  async findAll(): Promise<FindAllResult> {
-    return this.#findAllReturnValue;
+  findAll(): Promise<FindAllResult> {
+    return Promise.resolve(this.#findAllReturnValue);
   }
 
-  async save(_props: {
-    user: import("./user.entity").User;
-  }): Promise<SaveResult> {
-    return this.#saveReturnValue;
+  save(_props: { user: User }): Promise<SaveResult> {
+    return Promise.resolve(this.#saveReturnValue);
   }
 
-  async remove(_props: { id: string }): Promise<RemoveResult> {
-    return this.#removeReturnValue;
+  remove(_props: { id: string }): Promise<RemoveResult> {
+    return Promise.resolve(this.#removeReturnValue);
   }
 }

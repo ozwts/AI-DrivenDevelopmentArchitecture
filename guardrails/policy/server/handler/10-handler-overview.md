@@ -238,7 +238,10 @@ Handler層は**型レベルのバリデーション**のみを実施する。
 ```typescript
 export const buildCreateProjectHandler =
   ({ container }: { container: Container }) =>
-  async (c: Context) => {
+  async (c: AppContext) => {
+    // container.getはLoggerとUseCaseのみ
+    const logger = container.get<Logger>(serviceId.LOGGER);
+    const useCase = container.get<UseCase>(serviceId.USE_CASE);
     // ハンドラ実装
   };
 ```
@@ -250,6 +253,8 @@ export const buildCreateProjectHandler =
 - 関数型プログラミングスタイル
 - クロージャで状態を保持
 
+**制約**: `container.get`で取得してよいのは**Logger**と**UseCase**のみ
+
 ### Result型パターン
 
 ユースケースから返される `Result<T, E>` 型を使用して、成功・失敗を明示的に扱う。
@@ -257,7 +262,7 @@ export const buildCreateProjectHandler =
 ```typescript
 const result = await useCase.execute({ projectId });
 
-if (result.success === false) {
+if (!result.isOk()) {
   return handleError(result.error, c, logger);
 }
 
@@ -290,12 +295,12 @@ PATCH操作で既存フィールドをクリアする場合、JSON層では`null
 ```typescript
 export const buildUpdateTodoHandler =
   ({ container }: { container: Container }) =>
-  async (c: Context) => {
+  async (c: AppContext) => {
     const logger = container.get<Logger>(serviceId.LOGGER);
     const useCase = container.get<UpdateTodoUseCase>(serviceId.UPDATE_TODO_USE_CASE);
 
     try {
-      const rawBody = await c.req.json();
+      const rawBody: unknown = await c.req.json();
 
       // Zodバリデーション（nullable: trueを許可）
       const parseResult = schemas.UpdateTodoParams.safeParse(rawBody);
@@ -331,7 +336,7 @@ export const buildUpdateTodoHandler =
         ...updates,
       });
 
-      if (!result.success) {
+      if (!result.isOk()) {
         return handleError(result.error, c, logger);
       }
 
@@ -389,7 +394,7 @@ export const buildUpdateTodoHandler =
 ```typescript
 export const buildXxxHandler =
   ({ container }: { container: Container }) =>
-  async (c: Context) => {
+  async (c: AppContext) => {
     const logger = container.get<Logger>(serviceId.LOGGER);
 
     try {
@@ -431,12 +436,13 @@ Handler層は薄いアダプターであり、ロジックが少ないため、�
 // ビルダーパターンでDI注入
 export const buildCreateProjectHandler =
   ({ container }: { container: Container }) =>
-  async (c: Context) => {
+  async (c: AppContext) => {
+    // container.getはLoggerとUseCaseのみ
     const logger = container.get<Logger>(serviceId.LOGGER);
     const useCase = container.get<CreateProjectUseCase>(serviceId.CREATE_PROJECT_USE_CASE);
 
     try {
-      const rawBody = await c.req.json();
+      const rawBody: unknown = await c.req.json();
 
       // Zodバリデーション
       const parseResult = schemas.CreateProjectParams.safeParse(rawBody);
@@ -444,11 +450,11 @@ export const buildCreateProjectHandler =
         return c.json({ name: "ValidationError", ... }, 400);
       }
 
-      // ユースケース実行
+      // ユースケース実行（単一のみ）
       const result = await useCase.execute(parseResult.data);
 
       // Result型チェック
-      if (result.success === false) {
+      if (!result.isOk()) {
         return handleError(result.error, c, logger);
       }
 
@@ -474,7 +480,7 @@ export const buildCreateProjectHandler =
 
 ```typescript
 // ビルダーパターン不使用（DI注入なし）
-export const createProjectHandler = async (c: Context) => {
+export const createProjectHandler = async (c: AppContext) => {
   // DIコンテナが使えない
   const logger = new ConsoleLogger(); // ❌ ハードコーディング
   const useCase = new CreateProjectUseCaseImpl(); // ❌ ハードコーディング
@@ -495,7 +501,7 @@ return c.json(responseData, 201); // ❌ OpenAPI仕様との不一致を検出�
 // try-catchなし
 export const buildXxxHandler =
   ({ container }: { container: Container }) =>
-  async (c: Context) => {
+  async (c: AppContext) => {
     // ❌ 予期しない例外が上位に伝播
     const result = await useCase.execute(data);
     return c.json(result.data, 200);
@@ -504,7 +510,7 @@ export const buildXxxHandler =
 // ビジネスロジックの実装
 export const buildCreateProjectHandler =
   ({ container }: { container: Container }) =>
-  async (c: Context) => {
+  async (c: AppContext) => {
     const rawBody = await c.req.json();
 
     // ❌ ハンドラでビジネスロジックを実装（UseCaseに委譲すべき）
@@ -522,7 +528,7 @@ export const buildCreateProjectHandler =
 // 直接データベースアクセス
 export const buildGetProjectHandler =
   ({ container }: { container: Container }) =>
-  async (c: Context) => {
+  async (c: AppContext) => {
     const repository = container.get<ProjectRepository>(
       serviceId.PROJECT_REPOSITORY,
     );
@@ -657,7 +663,7 @@ export abstract class BaseHandler {
 // ✅ Good: ビルダーパターンで直接的に実装
 export const buildCreateProjectHandler =
   ({ container }: { container: Container }) =>
-  async (c: Context) => {
+  async (c: AppContext) => {
     // 直接的なハンドラー実装
   };
 ```

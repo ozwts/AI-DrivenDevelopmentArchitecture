@@ -6,7 +6,7 @@ import type { UseCase } from "../interfaces";
 
 export type ListProjectsUseCaseInput = Record<string, never>;
 
-export type ListProjectsUseCaseOutput = ReadonlyArray<Project>;
+export type ListProjectsUseCaseOutput = readonly Project[];
 
 export type ListProjectsUseCaseException = UnexpectedError;
 

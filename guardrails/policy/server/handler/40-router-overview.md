@@ -107,21 +107,25 @@ DELETE /users/me           # 自分のアカウント削除
 
 ## Honoアプリケーション構築
 
+`AppEnv`型を使用して、コンテキスト変数（`userSub`等）を型安全に扱う。
+
 ```typescript
-export const buildApp = ({ container }: { container: Container }): Hono => {
-  const app = new Hono();
+import type { AppEnv } from "./constants";
+
+export const buildApp = ({ container }: { container: Container }): Hono<AppEnv> => {
+  const app = new Hono<AppEnv>();
   const logger = container.get<Logger>(serviceId.LOGGER);
   const authClient = container.get<AuthClient>(serviceId.AUTH_CLIENT);
 
   // ミドルウェア（順序重要）
   app.use("*", cors({ ... }));
-  app.use("*", honoLogger());
-  app.use("*", authMiddleware);  // 認証
+  app.use("*", loggingMiddleware);
+  app.use("*", authMiddleware);  // 認証: c.set(USER_SUB, ...)で型安全に設定
 
   // ルーター登録
-  app.route("/", buildProjectRouter({ container }));
-  app.route("/", buildTodoRouter({ container }));
-  app.route("/", buildUserRouter({ container }));
+  app.route("/todos", buildTodoRouter({ container }));
+  app.route("/projects", buildProjectRouter({ container }));
+  app.route("/users", buildUserRouter({ container }));
 
   return app;
 };

@@ -30,7 +30,7 @@ Handler層は**OpenAPI定義に基づくZodスキーマで型レベルのバリ�
 ### リクエストボディ
 
 ```typescript
-const rawBody = await c.req.json();
+const rawBody: unknown = await c.req.json();
 
 const parseResult = schemas.CreateProjectParams.safeParse(rawBody);
 if (!parseResult.success) {
@@ -156,7 +156,7 @@ export const handleError = (error: Error, c: Context, logger: Logger) => {
 const result = await useCase.execute({ ... });
 
 // Result型チェック
-if (result.success === false) {
+if (!result.isOk()) {
   return handleError(result.error, c, logger);
 }
 
@@ -188,26 +188,18 @@ export const formatZodError = (zodError: ZodError): string =>
 
 ### コンテキスト値の検証
 
-```typescript
-const userSub = c.get(USER_SUB);
+`AppContext`型を使用すると`c.get(USER_SUB)`は`string`型を返すため、`typeof`チェックは不要。
 
-if (typeof userSub !== "string" || userSub === "") {
+```typescript
+// AppContext型を使用
+const userSub = c.get(USER_SUB);  // string型
+
+// 空文字チェックのみ
+if (userSub === "") {
   logger.error("userSubがコンテキストに設定されていません");
   return c.json({ name: new UnexpectedError().name, ... }, 500);
 }
 ```
 
 **理由**: ミドルウェア設定ミスの検出（500エラー）
-
-### 外部システムエラーの処理
-
-```typescript
-try {
-  const cognitoUser = await authClient.getUserById(userSub);
-  email = cognitoUser.email;
-} catch (error) {
-  logger.warn("Cognitoからのユーザー情報取得に失敗（続行）", { error });
-  // 取得失敗してもエラーにせず続行（オプション情報の場合）
-}
-```
 

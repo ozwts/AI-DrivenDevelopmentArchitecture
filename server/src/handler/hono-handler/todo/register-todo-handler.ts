@@ -1,4 +1,3 @@
-import type { Context } from "hono";
 import type { Container } from "inversify";
 import { schemas } from "@/generated/zod-schemas";
 import { serviceId } from "@/di-container/service-id";
@@ -10,12 +9,12 @@ import { formatZodError } from "../../hono-handler-util/validation-formatter";
 import {
   convertToTodoResponse,
   convertToTodoStatus,
-} from "./todo-handler-util";
-import { USER_SUB } from "../constants";
+} from "./todo-response-mapper";
+import { USER_SUB, type AppContext } from "../constants";
 
 export const buildRegisterTodoHandler =
   ({ container }: { container: Container }) =>
-  async (c: Context) => {
+  async (c: AppContext) => {
     const logger = container.get<Logger>(serviceId.LOGGER);
     const useCase = container.get<RegisterTodoUseCase>(
       serviceId.REGISTER_TODO_USE_CASE,
@@ -25,7 +24,7 @@ export const buildRegisterTodoHandler =
       // 認証ミドルウェアで設定されたuserSubを取得
       const userSub = c.get(USER_SUB);
 
-      if (typeof userSub !== "string" || userSub === "") {
+      if (userSub === "") {
         logger.error("userSubがコンテキストに設定されていません");
         return c.json(
           {
@@ -36,7 +35,7 @@ export const buildRegisterTodoHandler =
         );
       }
 
-      const rawBody = await c.req.json();
+      const rawBody: unknown = await c.req.json();
 
       // リクエストボディのZodバリデーション
       const parseResult = schemas.RegisterTodoParams.safeParse(rawBody);

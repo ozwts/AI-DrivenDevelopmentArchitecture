@@ -4,10 +4,10 @@ import { buildApp } from "./hono-handler/client-side-app";
 import { initHandler } from "./init-handler";
 
 // Initialize container and build app
-const initializeApp = async () => {
-  const { container } = await initHandler();
+const initializeApp = () => {
+  const { container } = initHandler();
   return buildApp({ container });
 };
 
-// Export Lambda handler (using top-level await - ESM native)
-export const handler = handle(await initializeApp());
+// Export Lambda handler
+export const handler = handle(initializeApp());

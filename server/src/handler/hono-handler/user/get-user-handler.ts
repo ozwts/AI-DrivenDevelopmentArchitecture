@@ -6,7 +6,7 @@ import type { Logger } from "@/domain/support/logger";
 import type { GetUserUseCase } from "@/use-case/user/get-user-use-case";
 import { UnexpectedError, unexpectedErrorMessage } from "@/util/error-util";
 import { handleError } from "../../hono-handler-util/error-handler";
-import { convertToUserResponse } from "./user-handler-util";
+import { convertToUserResponse } from "./user-response-mapper";
 
 export const buildGetUserHandler =
   ({ container }: { container: Container }) =>

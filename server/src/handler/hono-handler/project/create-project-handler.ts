@@ -7,7 +7,7 @@ import type { CreateProjectUseCase } from "@/use-case/project/create-project-use
 import { UnexpectedError, unexpectedErrorMessage } from "@/util/error-util";
 import { handleError } from "../../hono-handler-util/error-handler";
 import { formatZodError } from "../../hono-handler-util/validation-formatter";
-import { convertToProjectResponse } from "./project-handler-util";
+import { convertToProjectResponse } from "./project-response-mapper";
 
 export const buildCreateProjectHandler =
   ({ container }: { container: Container }) =>
@@ -18,7 +18,7 @@ export const buildCreateProjectHandler =
     );
 
     try {
-      const rawBody = await c.req.json();
+      const rawBody: unknown = await c.req.json();
 
       // リクエストボディのZodバリデーション
       const parseResult = schemas.CreateProjectParams.safeParse(rawBody);

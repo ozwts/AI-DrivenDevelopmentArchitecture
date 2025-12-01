@@ -1,4 +1,3 @@
-/* eslint-disable class-methods-use-this */
 import { Result } from "@/util/result";
 import type { UnitOfWorkRunner } from "./unit-of-work-runner";
 
