@@ -89,8 +89,8 @@ test.describe("TodoForm", () => {
     );
 
     const statusSelect = component.getByLabel("ステータス");
-    await statusSelect.selectOption("DONE");
-    await expect(statusSelect).toHaveValue("DONE");
+    await statusSelect.selectOption("COMPLETED");
+    await expect(statusSelect).toHaveValue("COMPLETED");
   });
 
   test("優先度が選択可能", async ({ mount }) => {

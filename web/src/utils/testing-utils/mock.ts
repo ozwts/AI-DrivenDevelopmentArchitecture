@@ -404,7 +404,7 @@ export const PrepareAttachmentResponseDummy = [
         todoId: todoId as string,
         filename: body.filename,
         contentType: body.contentType,
-        size: body.size,
+        filesize: body.filesize,
         status: "PREPARED",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),

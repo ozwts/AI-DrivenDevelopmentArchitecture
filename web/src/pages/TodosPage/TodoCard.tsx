@@ -48,7 +48,7 @@ const statusConfig: Record<
     variant: "info",
     icon: ClockIcon,
   },
-  DONE: {
+  COMPLETED: {
     label: "完了",
     variant: "success",
     icon: CheckCircleIcon,
@@ -80,13 +80,13 @@ export const TodoCard = ({
   const isOverdue =
     todo.dueDate &&
     new Date(todo.dueDate) < new Date() &&
-    todo.status !== "DONE";
+    todo.status !== "COMPLETED";
 
   const handleStatusClick = () => {
     if (todo.status === "TODO") {
       onStatusChange(todo, "IN_PROGRESS");
     } else if (todo.status === "IN_PROGRESS") {
-      onStatusChange(todo, "DONE");
+      onStatusChange(todo, "COMPLETED");
     }
   };
 
@@ -169,7 +169,7 @@ export const TodoCard = ({
             )}
           </div>
           <div className="flex gap-2">
-            {todo.status !== "DONE" && (
+            {todo.status !== "COMPLETED" && (
               <Button variant="secondary" size="sm" onClick={handleStatusClick}>
                 {todo.status === "TODO" ? "開始" : "完了"}
               </Button>

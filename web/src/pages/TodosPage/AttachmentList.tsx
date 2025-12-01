@@ -58,7 +58,7 @@ export const AttachmentList = ({
                 {attachment.filename}
               </p>
               <p className="text-xs text-text-tertiary">
-                {formatFileSize(attachment.size)} •{" "}
+                {formatFileSize(attachment.filesize)} •{" "}
                 {formatDate(attachment.createdAt)}
               </p>
             </div>

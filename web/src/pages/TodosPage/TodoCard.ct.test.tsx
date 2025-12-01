@@ -241,7 +241,7 @@ test("ステータスが「完了」の場合、ステータス変更ボタン�
 }) => {
   const doneTodo: TodoResponse = {
     ...mockTodo,
-    status: "DONE",
+    status: "COMPLETED",
   };
 
   const component = await mount(
@@ -303,7 +303,7 @@ test("「完了」ボタンをクリックするとステータスが「完了�
   );
 
   await component.getByRole("button", { name: "完了" }).click();
-  expect(changedStatus).toBe("DONE");
+  expect(changedStatus).toBe("COMPLETED");
 });
 
 test("詳細を見るボタンをクリックするとonViewが呼ばれる", async ({ mount }) => {
@@ -335,8 +335,7 @@ test("添付ファイルがある場合、添付ファイル数が表示され�
         id: "attachment-1",
         todoId: "todo-1",
         filename: "file1.pdf",
-        fileUrl: "https://example.com/file1.pdf",
-        size: 1024,
+        filesize: 1024,
         contentType: "application/pdf",
         status: "UPLOADED",
         createdAt: "2025-01-15T00:00:00Z",
@@ -346,8 +345,7 @@ test("添付ファイルがある場合、添付ファイル数が表示され�
         id: "attachment-2",
         todoId: "todo-1",
         filename: "file2.pdf",
-        fileUrl: "https://example.com/file2.pdf",
-        size: 2048,
+        filesize: 2048,
         contentType: "application/pdf",
         status: "UPLOADED",
         createdAt: "2025-01-15T00:00:00Z",

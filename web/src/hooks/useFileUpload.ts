@@ -30,7 +30,7 @@ export const useFileUpload = () => {
             {
               filename: file.name,
               contentType: file.type,
-              size: file.size,
+              filesize: file.size,
             },
           );
 

@@ -7,7 +7,7 @@ type TodoPriority = z.infer<typeof schemas.TodoPriority>;
 export const STATUS_VALUE_LABEL_PAIRS: [value: TodoStatus, label: string][] = [
   ["TODO", "未着手"],
   ["IN_PROGRESS", "進行中"],
-  ["DONE", "完了"],
+  ["COMPLETED", "完了"],
 ];
 
 export const PRIORITY_VALUE_LABEL_PAIRS: [

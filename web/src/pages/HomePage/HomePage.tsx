@@ -29,12 +29,13 @@ export function HomePage() {
     todos?.filter((t: { status: string }) => t.status === "IN_PROGRESS")
       .length || 0;
   const doneCount =
-    todos?.filter((t: { status: string }) => t.status === "DONE").length || 0;
+    todos?.filter((t: { status: string }) => t.status === "COMPLETED").length ||
+    0;
 
   // 最近追加されたタスク（5件）
   const recentTodos =
     todos
-      ?.filter((t: TodoResponse) => t.status !== "DONE")
+      ?.filter((t: TodoResponse) => t.status !== "COMPLETED")
       .sort(
         (a: TodoResponse, b: TodoResponse) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
@@ -47,7 +48,7 @@ export function HomePage() {
   const upcomingTodos =
     todos
       ?.filter((t: TodoResponse) => {
-        if (t.status === "DONE" || !t.dueDate) return false;
+        if (t.status === "COMPLETED" || !t.dueDate) return false;
         const dueDate = new Date(t.dueDate);
         return dueDate <= threeDaysLater;
       })

@@ -53,7 +53,7 @@ export function useUploadAttachment() {
       const prepareData: PrepareAttachmentParams = {
         filename: file.name,
         contentType: file.type,
-        size: file.size,
+        filesize: file.size,
       };
 
       const { uploadUrl, attachment } = await apiClient.prepareAttachment(

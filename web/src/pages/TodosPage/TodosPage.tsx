@@ -143,7 +143,7 @@ export const TodosPage = () => {
     { value: "", label: "全てのステータス" },
     { value: "TODO", label: "未着手" },
     { value: "IN_PROGRESS", label: "進行中" },
-    { value: "DONE", label: "完了" },
+    { value: "COMPLETED", label: "完了" },
   ];
 
   const projectFilterOptions = [
