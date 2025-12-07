@@ -1,0 +1,29 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": ["src/main.tsx", "src/routes/**/*.tsx"],
+  "project": ["src/**/*.{ts,tsx}"],
+  "ignore": ["src/generated/**", "playwright/**", "**/*.ct.test.tsx", "**/*.ss.test.ts", "**/*.dummy.ts"],
+  "playwright": false,
+  "playwright-ct": false,
+  "ignoreDependencies": [
+    "@types/*",
+    "autoprefixer",
+    "npm-check-updates",
+    "npm-run-all",
+    "openapi-zod-client",
+    "postcss",
+    "prettier",
+    "prettier-plugin-tailwindcss",
+    "sort-package-json",
+    "tailwindcss"
+  ],
+  "ignoreBinaries": [
+    "openapi-zod-client",
+    "run-s",
+    "run-p",
+    "prettier",
+    "sort-package-json",
+    "playwright"
+  ],
+  "ignoreExportsUsedInFile": true
+}

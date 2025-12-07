@@ -1,0 +1,26 @@
+{
+  "entry": ["src/handler/**/*.ts"],
+  "project": ["src/**/*.ts"],
+  "ignore": ["src/generated/**", "**/*.dummy.ts", "**/*.test.ts"],
+  "ignoreDependencies": [
+    "tslib",
+    "@types/*",
+    "npm-run-all",
+    "openapi-zod-client",
+    "prettier",
+    "sort-package-json",
+    "tsx",
+    "wait-on"
+  ],
+  "ignoreBinaries": [
+    "openapi-zod-client",
+    "tsx",
+    "run-s",
+    "run-p",
+    "prettier",
+    "wait-on",
+    "sort-package-json",
+    "vitest"
+  ],
+  "ignoreExportsUsedInFile": true
+}

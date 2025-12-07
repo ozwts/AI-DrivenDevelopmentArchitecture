@@ -80,7 +80,6 @@ export default defineConfig(
       ],
       eqeqeq: ["error", "always", { null: "ignore" }],
       "func-style": "error",
-      quotes: ["error", "double", { avoidEscape: true }],
 
       // local-rules（共通）
       "local-rules/common/no-new-date": "error",

@@ -16,8 +16,10 @@ import { createReviewHandler } from "./review/review-handler";
 import {
   REVIEW_RESPONSIBILITIES,
   STATIC_ANALYSIS_RESPONSIBILITIES,
+  UNUSED_EXPORTS_RESPONSIBILITIES,
 } from "./review/responsibilities";
 import { createStaticAnalysisHandler } from "./review/static-analysis-handler";
+import { createUnusedExportsHandler } from "./review/unused-exports-handler";
 
 // ESMで__dirnameを取得
 const __filename = fileURLToPath(import.meta.url);
@@ -106,6 +108,53 @@ const main = async (): Promise<void> => {
             workspace,
             targetDirectories,
             analysisType,
+            guardrailsRoot: GUARDRAILS_ROOT,
+          });
+
+          return {
+            content: [
+              {
+                type: "text",
+                text: result,
+              },
+            ],
+          };
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          return {
+            content: [
+              {
+                type: "text",
+                text: `エラー: ${errorMessage}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+      },
+    );
+  }
+
+  // ----- 未使用export検出 (Unused Exports Detection) -----
+  // knipを使用した未使用export検出
+  // 責務定義（review/responsibilities.ts）から動的にツールを登録
+  //
+  // 例: review_unused_exports
+  for (const responsibility of UNUSED_EXPORTS_RESPONSIBILITIES) {
+    const handler = createUnusedExportsHandler();
+
+    server.registerTool(
+      responsibility.id,
+      {
+        description: responsibility.toolDescription,
+        inputSchema: responsibility.inputSchema,
+      },
+      async ({ workspace, targetDirectories }) => {
+        try {
+          const result = await handler({
+            workspace,
+            targetDirectories,
             guardrailsRoot: GUARDRAILS_ROOT,
           });
 

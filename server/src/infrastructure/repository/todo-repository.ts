@@ -109,23 +109,6 @@ export const attachmentDdbItemToAttachment = (
 };
 
 /**
- * Attachment → AttachmentDdbItem 変換
- */
-export const attachmentDdbItemFromAttachment = (
-  attachment: Attachment,
-): AttachmentDdbItem => ({
-  id: attachment.id,
-  fileName: attachment.fileName,
-  storageKey: attachment.storageKey,
-  contentType: attachment.contentType,
-  fileSize: attachment.fileSize,
-  status: attachment.status.status,
-  uploadedBy: attachment.uploadedBy,
-  createdAt: attachment.createdAt,
-  updatedAt: attachment.updatedAt,
-});
-
-/**
  * Attachment → AttachmentTableItem 変換（Attachmentsテーブル用）
  */
 export const attachmentTableItemFromAttachment = (
