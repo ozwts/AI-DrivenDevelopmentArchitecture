@@ -75,18 +75,12 @@ export default function TodoNewRoute() {
     <div className="max-w-2xl mx-auto">
       {/* Header */}
       <div className="mb-6">
-        <Button
-          variant="ghost"
-          onClick={handleCancel}
-          className="mb-4"
-        >
+        <Button variant="ghost" onClick={handleCancel} className="mb-4">
           <ArrowLeftIcon className="h-4 w-4 mr-2" />
           戻る
         </Button>
         <h1 className="text-3xl font-bold text-text-primary">新規TODO</h1>
-        <p className="mt-2 text-text-secondary">
-          新しいタスクを作成します
-        </p>
+        <p className="mt-2 text-text-secondary">新しいタスクを作成します</p>
       </div>
 
       {/* Form */}

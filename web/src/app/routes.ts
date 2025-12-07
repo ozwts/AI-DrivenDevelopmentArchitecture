@@ -1,4 +1,9 @@
-import { type RouteConfig, index, route, layout } from "@react-router/dev/routes";
+import {
+  type RouteConfig,
+  index,
+  route,
+  layout,
+} from "@react-router/dev/routes";
 
 export default [
   // 未認証ユーザー専用（GuestLayout適用）
@@ -18,7 +23,10 @@ export default [
     route("projects", "routes/projects+/route.tsx"),
     route("projects/new", "routes/projects+/new+/route.tsx"),
     route("projects/:projectId", "routes/projects+/$projectId+/route.tsx"),
-    route("projects/:projectId/edit", "routes/projects+/$projectId+/edit+/route.tsx"),
+    route(
+      "projects/:projectId/edit",
+      "routes/projects+/$projectId+/edit+/route.tsx",
+    ),
 
     // Todos
     route("todos", "routes/todos+/route.tsx"),

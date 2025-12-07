@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import { Link, useSearchParams } from "react-router";
+import { Link, useSearchParams, useNavigate } from "react-router";
 import { PlusIcon, ListBulletIcon } from "@heroicons/react/24/outline";
 import { Button, LoadingPage, Alert, EmptyState, Select } from "@/app/lib/ui";
 import { useToast } from "@/app/features/toast";
@@ -18,28 +17,40 @@ type TodoStatus = z.infer<typeof schemas.TodoStatus>;
  * 責務: 一覧表示、フィルタリング、ステータス変更、削除
  */
 export default function TodosIndexRoute() {
-  const [searchParams] = useSearchParams();
-  const [filterStatus, setFilterStatus] = useState<TodoStatus | "">("");
-  const [filterProjectId, setFilterProjectId] = useState<string>("");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+
+  // URL クエリパラメータから直接フィルタ値を取得
+  const filterStatus = (searchParams.get("status") ?? "") as TodoStatus | "";
+  const filterProjectId = searchParams.get("projectId") ?? "";
 
   const toast = useToast();
-
-  // URL クエリパラメータからフィルタを取得
-  useEffect(() => {
-    const statusParam = searchParams.get("status");
-    const projectIdParam = searchParams.get("projectId");
-
-    if (statusParam) {
-      setFilterStatus(statusParam as TodoStatus);
-    }
-    if (projectIdParam) {
-      setFilterProjectId(projectIdParam);
-    }
-  }, [searchParams]);
 
   const filters = {
     status: filterStatus || undefined,
     projectId: filterProjectId || undefined,
+  };
+
+  const setFilterStatus = (status: TodoStatus | "") => {
+    setSearchParams((prev) => {
+      if (status) {
+        prev.set("status", status);
+      } else {
+        prev.delete("status");
+      }
+      return prev;
+    });
+  };
+
+  const setFilterProjectId = (projectId: string) => {
+    setSearchParams((prev) => {
+      if (projectId) {
+        prev.set("projectId", projectId);
+      } else {
+        prev.delete("projectId");
+      }
+      return prev;
+    });
   };
 
   const { data: todos, isLoading, error } = useTodos(filters);
@@ -167,12 +178,12 @@ export default function TodosIndexRoute() {
               project={getProjectById(todo.projectId)}
               assignee={getUserById(todo.assigneeUserId)}
               onEdit={(t) => {
-                window.location.href = `/todos/${t.id}/edit`;
+                navigate(`/todos/${t.id}/edit`);
               }}
               onDelete={handleDelete}
               onStatusChange={handleStatusChange}
               onView={(t) => {
-                window.location.href = `/todos/${t.id}`;
+                navigate(`/todos/${t.id}`);
               }}
             />
           ))}

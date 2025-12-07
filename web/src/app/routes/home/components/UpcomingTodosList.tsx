@@ -48,7 +48,9 @@ export function UpcomingTodosList({ todos, onTodoClick }: Props) {
           return (
             <button
               key={todo.id}
-              onClick={() => onTodoClick(todo)}
+              onClick={() => {
+                onTodoClick(todo);
+              }}
               className="w-full text-left p-4 border border-border-light rounded-md hover:border-primary-600 hover:shadow-sm transition-all cursor-pointer"
             >
               <div className="flex items-start justify-between">

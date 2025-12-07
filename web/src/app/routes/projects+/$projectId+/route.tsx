@@ -1,5 +1,9 @@
 import { useParams, useNavigate } from "react-router";
-import { ArrowLeftIcon, PencilIcon, FolderIcon } from "@heroicons/react/24/outline";
+import {
+  ArrowLeftIcon,
+  PencilIcon,
+  FolderIcon,
+} from "@heroicons/react/24/outline";
 import { Button, Card, LoadingPage, Alert } from "@/app/lib/ui";
 import { useTodos } from "@/app/features/todo";
 import { useProject } from "@/app/features/project";
@@ -12,10 +16,11 @@ export default function ProjectDetailRoute() {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
 
-  const { data: project, isLoading, error } = useProject(projectId!);
+  const { data: project, isLoading, error } = useProject(projectId ?? "");
   const { data: allTodos } = useTodos();
 
-  const todoCount = allTodos?.filter((todo) => todo.projectId === projectId).length ?? 0;
+  const todoCount =
+    allTodos?.filter((todo) => todo.projectId === projectId).length ?? 0;
 
   if (isLoading) {
     return <LoadingPage />;
@@ -55,9 +60,7 @@ export default function ProjectDetailRoute() {
               <h1 className="text-3xl font-bold text-text-primary">
                 {project.name}
               </h1>
-              <p className="text-text-secondary">
-                {todoCount}件のTODO
-              </p>
+              <p className="text-text-secondary">{todoCount}件のTODO</p>
             </div>
           </div>
           <Button
@@ -78,7 +81,7 @@ export default function ProjectDetailRoute() {
               説明
             </h2>
             <p className="text-text-primary">
-              {project.description || "説明はありません"}
+              {project.description ?? "説明はありません"}
             </p>
           </div>
 

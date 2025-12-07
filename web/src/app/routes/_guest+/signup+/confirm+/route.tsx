@@ -3,11 +3,11 @@ import { useNavigate, useLocation, Link } from "react-router";
 import { useAuth } from "@/app/features/auth";
 import { Button } from "@/app/lib/ui";
 
-interface LocationState {
+type LocationState = {
   email?: string;
   password?: string;
   needsConfirmation?: boolean;
-}
+};
 
 /**
  * メール確認ページ
@@ -17,7 +17,7 @@ export default function SignupConfirmRoute(): ReactNode {
   const location = useLocation();
   const locationState = location.state as LocationState | null;
 
-  const [email, setEmail] = useState(locationState?.email ?? "");
+  const [email] = useState(locationState?.email ?? "");
   const [password] = useState(locationState?.password ?? "");
   const [confirmationCode, setConfirmationCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);

@@ -244,9 +244,8 @@ export function AuthProvider({ children }: AuthProviderProps): ReactNode {
         return;
       }
 
-      const { resetPassword: amplifyResetPassword } = await import(
-        "aws-amplify/auth"
-      );
+      const { resetPassword: amplifyResetPassword } =
+        await import("aws-amplify/auth");
       await amplifyResetPassword({ username });
     } catch (error) {
       const err =

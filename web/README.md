@@ -403,12 +403,10 @@ test.describe("Input Component", () => {
 ### テスト対象
 
 - **共有コンポーネント** (`src/components/`): 必須
-
   - Button, Input, Select, Textarea, Modal など
   - 複数のページで使用されるため、品質保証が重要
 
 - **ページ固有のフォームコンポーネント** (`src/pages/*/`): 推奨
-
   - TodoForm, ProjectForm, ProfileEditForm など
   - 複雑なバリデーションロジックがある場合
 

@@ -1,13 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { PlusIcon, FolderIcon } from "@heroicons/react/24/outline";
-import {
-  Button,
-  Modal,
-  LoadingPage,
-  Alert,
-  EmptyState,
-} from "@/app/lib/ui";
+import { Button, Modal, LoadingPage, Alert, EmptyState } from "@/app/lib/ui";
 import { useToast } from "@/app/features/toast";
 import { useTodos } from "@/app/features/todo";
 import { useProjects, useDeleteProject } from "@/app/features/project";
@@ -131,13 +125,17 @@ export default function ProjectsIndexRoute() {
       {/* 削除確認モーダル */}
       <Modal
         isOpen={!!deletingProject}
-        onClose={() => setDeletingProject(undefined)}
+        onClose={() => {
+          setDeletingProject(undefined);
+        }}
         title="プロジェクトの削除"
         footer={
           <>
             <Button
               variant="ghost"
-              onClick={() => setDeletingProject(undefined)}
+              onClick={() => {
+                setDeletingProject(undefined);
+              }}
             >
               キャンセル
             </Button>

@@ -13,7 +13,7 @@ export default function TodoDetailRoute() {
   const { todoId } = useParams();
   const navigate = useNavigate();
 
-  const { data: todo, isLoading, error } = useTodo(todoId!);
+  const { data: todo, isLoading, error } = useTodo(todoId ?? "");
   const { data: projects } = useProjects();
 
   const getProjectById = (projectId?: string) => {
@@ -48,10 +48,7 @@ export default function TodoDetailRoute() {
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
-          <Button
-            variant="ghost"
-            onClick={() => navigate("/todos")}
-          >
+          <Button variant="ghost" onClick={() => navigate("/todos")}>
             <ArrowLeftIcon className="h-4 w-4 mr-2" />
             戻る
           </Button>
@@ -67,10 +64,7 @@ export default function TodoDetailRoute() {
 
       {/* Detail */}
       <Card>
-        <TodoDetail
-          todo={todo}
-          project={getProjectById(todo.projectId)}
-        />
+        <TodoDetail todo={todo} project={getProjectById(todo.projectId)} />
       </Card>
     </div>
   );

@@ -33,7 +33,12 @@ test.describe("TodoForm", () => {
 
   test("編集モード: 既存データが初期値として表示される", async ({ mount }) => {
     const component = await mount(
-      <TodoForm mode="edit" todo={mockTodo} onSubmit={() => {}} onCancel={() => {}} />,
+      <TodoForm
+        mode="edit"
+        todo={mockTodo}
+        onSubmit={() => {}}
+        onCancel={() => {}}
+      />,
     );
 
     // タイトルの初期値が表示される
@@ -351,7 +356,12 @@ test.describe("TodoForm", () => {
     mount,
   }) => {
     const component = await mount(
-      <TodoForm mode="edit" todo={mockTodo} onSubmit={() => {}} onCancel={() => {}} />,
+      <TodoForm
+        mode="edit"
+        todo={mockTodo}
+        onSubmit={() => {}}
+        onCancel={() => {}}
+      />,
     );
 
     // ファイル添付セクションが表示されない（data-testid）

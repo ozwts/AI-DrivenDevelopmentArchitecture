@@ -66,7 +66,10 @@ export default function HomeRoute() {
             inProgressCount={inProgressCount}
             doneCount={doneCount}
           />
-          <UpcomingTodosList todos={upcomingTodos} onTodoClick={handleTodoClick} />
+          <UpcomingTodosList
+            todos={upcomingTodos}
+            onTodoClick={handleTodoClick}
+          />
           <RecentTodosList todos={recentTodos} onTodoClick={handleTodoClick} />
         </>
       )}

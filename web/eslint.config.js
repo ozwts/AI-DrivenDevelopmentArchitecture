@@ -36,6 +36,7 @@ export default defineConfig(
   // 無視パターン
   {
     ignores: [
+      ".react-router/",
       "dist/",
       "node_modules/",
       "build/",
@@ -59,6 +60,7 @@ export default defineConfig(
       "eslint-local-rules.cjs",
       "playwright-ct.config.ts",
       "playwright-ss.config.ts",
+      "react-router.config.ts",
       "src/mocks/**",
     ],
   },

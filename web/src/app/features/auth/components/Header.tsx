@@ -1,4 +1,4 @@
-import { Link, useLocation, useNavigate } from "react-router";
+import { Link, NavLink, useNavigate } from "react-router";
 import {
   ListBulletIcon,
   HomeIcon,
@@ -22,7 +22,6 @@ const navItems: NavItem[] = [
 ];
 
 export const Header = () => {
-  const location = useLocation();
   const navigate = useNavigate();
   const { logout } = useAuth();
 
@@ -54,25 +53,22 @@ export const Header = () => {
             <nav className="flex space-x-1">
               {navItems.map((item) => {
                 const Icon = item.icon;
-                const isActive = location.pathname === item.path;
 
                 return (
-                  <Link
+                  <NavLink
                     key={item.path}
                     to={item.path}
-                    className={`
-                      flex items-center space-x-2 px-4 py-2 rounded-md
-                      transition-colors duration-200
-                      ${
+                    className={({ isActive }) =>
+                      `flex items-center space-x-2 px-4 py-2 rounded-md transition-colors duration-200 ${
                         isActive
                           ? "bg-primary-100 text-text-primary"
                           : "text-text-primary hover:text-text-tertiary"
-                      }
-                    `}
+                      }`
+                    }
                   >
                     <Icon className="h-5 w-5" />
                     <span>{item.name}</span>
-                  </Link>
+                  </NavLink>
                 );
               })}
             </nav>

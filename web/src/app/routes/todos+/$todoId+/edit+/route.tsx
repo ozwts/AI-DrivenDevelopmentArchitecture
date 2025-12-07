@@ -18,13 +18,13 @@ export default function TodoEditRoute() {
   const navigate = useNavigate();
   const toast = useToast();
 
-  const { data: todo, isLoading, error } = useTodo(todoId!);
+  const { data: todo, isLoading, error } = useTodo(todoId ?? "");
   const updateTodo = useUpdateTodo();
 
   const handleUpdate = async (data: UpdateTodoParams) => {
     try {
       await updateTodo.mutateAsync({
-        todoId: todoId!,
+        todoId: todoId ?? "",
         data,
       });
       toast.success("TODOを更新しました");
@@ -64,18 +64,12 @@ export default function TodoEditRoute() {
     <div className="max-w-2xl mx-auto">
       {/* Header */}
       <div className="mb-6">
-        <Button
-          variant="ghost"
-          onClick={handleCancel}
-          className="mb-4"
-        >
+        <Button variant="ghost" onClick={handleCancel} className="mb-4">
           <ArrowLeftIcon className="h-4 w-4 mr-2" />
           戻る
         </Button>
         <h1 className="text-3xl font-bold text-text-primary">TODO編集</h1>
-        <p className="mt-2 text-text-secondary">
-          タスクの内容を編集します
-        </p>
+        <p className="mt-2 text-text-secondary">タスクの内容を編集します</p>
       </div>
 
       {/* Form */}

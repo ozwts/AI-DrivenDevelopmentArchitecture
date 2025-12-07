@@ -36,7 +36,9 @@ export default function LoginRoute(): ReactNode {
 
         if (isUserNotConfirmed) {
           // エラーではないので、メッセージを表示せずに直接確認画面に遷移
-          navigate("/signup/confirm", { state: { email, needsConfirmation: true } });
+          navigate("/signup/confirm", {
+            state: { email, needsConfirmation: true },
+          });
         } else {
           setErrorMessage(error.message);
         }

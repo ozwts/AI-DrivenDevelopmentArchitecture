@@ -18,13 +18,13 @@ export default function EditProjectRoute() {
   const navigate = useNavigate();
   const toast = useToast();
 
-  const { data: project, isLoading, error } = useProject(projectId!);
+  const { data: project, isLoading, error } = useProject(projectId ?? "");
   const updateProject = useUpdateProject();
 
   const handleSubmit = async (data: CreateProjectParams) => {
     try {
       await updateProject.mutateAsync({
-        projectId: projectId!,
+        projectId: projectId ?? "",
         data,
       });
       toast.success("プロジェクトを更新しました");
