@@ -11,10 +11,12 @@
 ## 配置先
 
 ```
-app/utils/testing-utils/
+src/mocks/
 ├── mock-data.ts      # テストデータ定義
 └── mock.ts           # MSWハンドラー
 ```
+
+**インポート**: `@/mocks/*` でアクセス可能（例: `import { mockUser } from "@/mocks/mock-data"`）
 
 ## 命名規則
 
@@ -31,7 +33,7 @@ app/utils/testing-utils/
 **固定値**を使用し、コンポーネント単体テストに使用。
 
 ```typescript
-// app/utils/testing-utils/mock-data.ts
+// mocks/mock-data.ts
 import type { UserResponse, TodoResponse } from "@/generated/zod-schemas";
 
 export const mockUser: UserResponse = {
@@ -61,7 +63,7 @@ export const mockTodo: TodoResponse = {
 **相対日時**を使用し、よりリアルなデータでスナップショットテストやMSWハンドラーに使用。
 
 ```typescript
-// app/utils/testing-utils/mock-data.ts
+// mocks/mock-data.ts
 export const UserDummy1: UserResponse = {
   id: "user-dummy-1",
   email: "tanaka@example.com",

@@ -59,7 +59,7 @@ export default defineConfig(
       "eslint-local-rules.cjs",
       "playwright-ct.config.ts",
       "playwright-ss.config.ts",
-      "src/utils/testing-utils/**",
+      "src/mocks/**",
     ],
   },
 

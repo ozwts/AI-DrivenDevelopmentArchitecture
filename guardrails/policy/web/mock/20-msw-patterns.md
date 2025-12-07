@@ -10,7 +10,7 @@ MSW（Mock Service Worker）を使用したAPIモックのパターン。スナ�
 ## 基本構造
 
 ```typescript
-// app/utils/testing-utils/mock.ts
+// src/mocks/mock.ts
 import { setupWorker, rest } from "msw";
 import { TodoDummy1, TodoDummy2, TodoDummy3, UserDummy1 } from "./mock-data";
 
@@ -35,7 +35,7 @@ const handlers = [
 テストシナリオに応じてハンドラーを切り替える。
 
 ```typescript
-// app/utils/testing-utils/mock.ts
+// src/mocks/mock.ts
 
 // 空のレスポンス用ハンドラー
 const emptyHandlers = [
@@ -71,7 +71,7 @@ export function getHandlersByType(type: string) {
 開発時やE2Eテストでハンドラーを動的に切り替える。
 
 ```typescript
-// app/utils/testing-utils/mock.ts
+// src/mocks/mock.ts
 
 if (typeof window !== "undefined") {
   window.msw = {
