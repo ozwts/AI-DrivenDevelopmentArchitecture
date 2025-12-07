@@ -15,7 +15,7 @@ test("[SS]TODO詳細ページが表示される", async ({ page }) => {
     checkMswAndSetHandlers();
   });
 
-  await page.goto("/todos/todo-001");
+  await page.goto("/todos/1");
   await page.waitForLoadState("networkidle");
   await expect(page).toHaveScreenshot({ fullPage: true });
 });

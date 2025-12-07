@@ -15,7 +15,7 @@ test("[SS]プロジェクト詳細ページが表示される", async ({ page })
     checkMswAndSetHandlers();
   });
 
-  await page.goto("/projects/project-001");
+  await page.goto("/projects/project-1");
   await page.waitForLoadState("networkidle");
   await expect(page).toHaveScreenshot({ fullPage: true });
 });

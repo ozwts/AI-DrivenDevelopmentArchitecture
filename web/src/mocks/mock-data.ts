@@ -204,7 +204,7 @@ export const TodoDummy5: TodoResponse = {
   projectId: "project-2",
   assigneeUserId: "user-2",
   attachments: [AttachmentDummy4],
-  createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+  createdAt: new Date(Date.now() - 0.5 * 24 * 60 * 60 * 1000).toISOString(),
   updatedAt: new Date().toISOString(),
 };
 

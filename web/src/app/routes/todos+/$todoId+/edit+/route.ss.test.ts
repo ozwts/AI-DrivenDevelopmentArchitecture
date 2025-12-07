@@ -15,7 +15,7 @@ test("[SS]TODO編集ページが表示される", async ({ page }) => {
     checkMswAndSetHandlers();
   });
 
-  await page.goto("/todos/todo-001/edit");
+  await page.goto("/todos/1/edit");
   await page.waitForLoadState("networkidle");
   await expect(page).toHaveScreenshot({ fullPage: true });
 });
