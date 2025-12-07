@@ -5,6 +5,7 @@ import unusedImports from "eslint-plugin-unused-imports";
 import prettier from "eslint-config-prettier";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
+import localRules from "eslint-plugin-local-rules";
 import globals from "globals";
 
 export default defineConfig(
@@ -28,6 +29,7 @@ export default defineConfig(
       "unused-imports": unusedImports,
       "react-hooks": reactHooks,
       "react-refresh": reactRefresh,
+      "local-rules": localRules,
     },
   },
 
@@ -53,6 +55,8 @@ export default defineConfig(
       "**/*.ct.test.tsx",
       "**/*.ss.test.ts",
       "eslint.config.js",
+      "eslint-local-rules/**",
+      "eslint-local-rules.cjs",
       "playwright-ct.config.ts",
       "playwright-ss.config.ts",
       "src/utils/testing-utils/**",
@@ -140,6 +144,26 @@ export default defineConfig(
       // non-nullable-type-assertion-style: `as T`より`!`を推奨するルールだが、
       // `!`は危険なためoffにし、明示的な`as`を許容
       "@typescript-eslint/non-nullable-type-assertion-style": "off",
+
+      // ===== local-rules（Web固有） =====
+
+      // 共通: 依存の方向（routes → features → lib）
+      "local-rules/common/dependency-direction": "error",
+
+      // 共通: 直接fetch呼び出し禁止（apiClient使用）
+      "local-rules/common/no-direct-fetch": "warn",
+
+      // コンポーネント設計: Props型のreadonly修飾子
+      "local-rules/component/props-readonly": "warn",
+
+      // Feature設計: Feature間直接インポート禁止
+      "local-rules/feature/no-cross-feature-import": "error",
+
+      // 技術基盤: lib/内でのProvider/Context禁止
+      "local-rules/lib/no-provider-context": "error",
+
+      // デザイン: Tailwind arbitrary values禁止
+      "local-rules/design/no-arbitrary-values": "error",
     },
   },
 );

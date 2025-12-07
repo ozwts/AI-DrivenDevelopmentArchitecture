@@ -44,7 +44,9 @@
       "WebFetch(domain:typescript-eslint.io)",
       "Bash(xargs -I {} sh -c 'echo \"\"\"\"=== {} ===\"\"\"\" && grep -c \"\"\"\"^export class\"\"\"\" {}')",
       "WebFetch(domain:hono.dev)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(ls:*)",
+      "Bash(xargs:*)"
     ],
     "deny": [],
     "ask": []

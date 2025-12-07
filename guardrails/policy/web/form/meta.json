@@ -1,0 +1,5 @@
+{
+  "label": "フォーム",
+  "description": "Zod + React Hook Formによるフォームバリデーション",
+  "dependencies": ["lib", "component", "design"]
+}

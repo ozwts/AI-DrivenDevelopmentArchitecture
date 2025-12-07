@@ -1,7 +1,7 @@
 /**
  * ハンドラー層用ESLintルール
  *
- * 参照: guardrails/policy/server/handler/20-handler-implementation.md
+ * 参照: guardrails/policy/server/handler/21-http-handler-implementation.md
  */
 
 "use strict";

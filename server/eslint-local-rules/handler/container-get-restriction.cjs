@@ -11,7 +11,7 @@
  * - container.get<Logger>(...) → 許可
  * - container.get<...UseCase>(...) → 許可
  *
- * 参照: guardrails/policy/server/handler/20-handler-implementation.md
+ * 参照: guardrails/policy/server/handler/21-http-handler-implementation.md
  */
 
 "use strict";
@@ -79,9 +79,9 @@ module.exports = {
     schema: [],
     messages: {
       forbiddenContainerGet:
-        "ハンドラーで{{category}}（{{typeName}}）を直接取得することは禁止されています。UseCase経由でアクセスしてください。参照: handler/20-handler-implementation.md",
+        "ハンドラーで{{category}}（{{typeName}}）を直接取得することは禁止されています。UseCase経由でアクセスしてください。参照: handler/21-http-handler-implementation.md",
       unknownServiceType:
-        "ハンドラーで container.get に許可されているのは Logger と UseCase のみです。'{{typeName}}' は許可されていません。参照: handler/20-handler-implementation.md",
+        "ハンドラーで container.get に許可されているのは Logger と UseCase のみです。'{{typeName}}' は許可されていません。参照: handler/21-http-handler-implementation.md",
     },
   },
 

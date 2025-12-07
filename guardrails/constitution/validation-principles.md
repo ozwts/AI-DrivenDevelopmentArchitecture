@@ -90,8 +90,8 @@
 各レイヤー・カテゴリごとに、具体的なバリデーション責務を定義：
 
 - `policy/server/domain-model/` - サーバー側ドメインモデルのバリデーション責務
-- `policy/web/test-strategy/` - フロントエンド側のバリデーション責務
-- `policy/api/` - API境界でのバリデーション責務（将来対応）
+- `policy/server/handler/` - サーバー側入力バリデーション責務
+- `policy/web/component/` - フロントエンド側フォームバリデーション責務
 
 ### Procedure（行政）
 

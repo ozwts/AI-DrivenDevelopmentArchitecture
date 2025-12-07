@@ -1,0 +1,5 @@
+{
+  "label": "モック",
+  "description": "テストデータ・MSWハンドラーの命名規則とパターン",
+  "dependencies": ["route", "component"]
+}

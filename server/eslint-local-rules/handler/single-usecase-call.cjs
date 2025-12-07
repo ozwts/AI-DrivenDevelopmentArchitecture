@@ -5,7 +5,7 @@
  * - useCase.execute() の呼び出しは1回のみ許可
  * - 複数のユースケース呼び出しは禁止
  *
- * 参照: guardrails/policy/server/handler/20-handler-implementation.md
+ * 参照: guardrails/policy/server/handler/21-http-handler-implementation.md
  */
 
 "use strict";
@@ -21,7 +21,7 @@ module.exports = {
     schema: [],
     messages: {
       multipleUseCaseCalls:
-        "ハンドラー内で複数のユースケース（execute）を呼び出すことは禁止されています。単一のUseCaseに統合してください。参照: handler/20-handler-implementation.md",
+        "ハンドラー内で複数のユースケース（execute）を呼び出すことは禁止されています。単一のUseCaseに統合してください。参照: handler/21-http-handler-implementation.md",
     },
   },
 

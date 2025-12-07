@@ -1,0 +1,108 @@
+# UIプリミティブ実装パターン
+
+## 概要
+
+`app/lib/ui/`に配置するUIプリミティブの実装パターン。
+
+**根拠となる憲法**:
+- `design-principles.md`: 反復（UIプリミティブによる一貫性）
+- `architecture-principles.md`: 依存の制御
+- `analyzability-principles.md`: 純粋関数の優先
+
+## 実装原則
+
+1. **forwardRefで参照転送**: 親コンポーネントからのref制御を可能に
+2. **アクセシビリティ属性**: `aria-*`属性で状態を通知
+3. **バリアント/サイズのProps**: 一貫したスタイルバリエーション
+4. **testId Props**: テスト用の`data-testid`を使用側で指定可能に
+5. **Public API経由のエクスポート**: `index.ts`からのみ公開
+
+## Button実装例
+
+```typescript
+// app/lib/ui/button.tsx
+import { forwardRef, type ComponentPropsWithoutRef } from "react";
+
+type ButtonProps = ComponentPropsWithoutRef<"button"> & {
+  readonly variant?: "primary" | "secondary" | "danger" | "ghost";
+  readonly size?: "sm" | "md" | "lg";
+  readonly isLoading?: boolean;
+  readonly testId?: string;
+};
+
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ variant = "primary", size = "md", isLoading, disabled, testId, children, ...props }, ref) => {
+    return (
+      <button
+        ref={ref}
+        data-testid={testId}
+        disabled={disabled || isLoading}
+        aria-busy={isLoading}
+        aria-disabled={disabled || isLoading}
+        {...props}
+      >
+        {isLoading ? <span aria-hidden="true">...</span> : children}
+      </button>
+    );
+  }
+);
+Button.displayName = "Button";
+```
+
+## Input実装例
+
+```typescript
+// app/lib/ui/input.tsx
+import { forwardRef, type ComponentPropsWithoutRef } from "react";
+
+type InputProps = ComponentPropsWithoutRef<"input"> & {
+  readonly error?: boolean;
+  readonly testId?: string;
+};
+
+export const Input = forwardRef<HTMLInputElement, InputProps>(
+  ({ error, testId, className, ...props }, ref) => {
+    return (
+      <input
+        ref={ref}
+        data-testid={testId}
+        aria-invalid={error}
+        className={`${error ? "border-red-500" : "border-gray-300"} ${className ?? ""}`}
+        {...props}
+      />
+    );
+  }
+);
+Input.displayName = "Input";
+```
+
+## 使用例
+
+```typescript
+// app/routes/todos+/components/todo-form.tsx
+import { Button, Input } from "@/lib/ui";
+
+export function TodoForm() {
+  return (
+    <form>
+      <Input testId="input-title" {...register("title")} />
+      <Button testId="submit-button" type="submit">作成</Button>
+      <Button testId="cancel-button" type="button" variant="secondary">キャンセル</Button>
+    </form>
+  );
+}
+```
+
+## Public API
+
+```typescript
+// app/lib/ui/index.ts
+export { Button } from "./button";
+export { Input } from "./input";
+export { Select } from "./select";
+```
+
+## 関連ドキュメント
+
+- `10-lib-overview.md`: 技術基盤設計概要
+- `../component/20-selector-strategy.md`: セレクタ戦略
