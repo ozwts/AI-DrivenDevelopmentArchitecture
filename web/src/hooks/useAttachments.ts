@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
-import { apiClient } from "../api/client";
+import { apiClient } from "../api/api-client";
 import { schemas } from "../generated/zod-schemas";
 
 type PrepareAttachmentParams = z.infer<typeof schemas.PrepareAttachmentParams>;
