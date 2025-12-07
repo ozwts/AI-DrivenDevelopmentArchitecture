@@ -10,6 +10,7 @@
 - **Entity Dummyファクトリ**: `../domain-model/52-entity-test-patterns.md`
 - **Repository Dummy**: `domain/model/{entity}/{entity}.repository.dummy.ts`
 - **FetchNow Dummy**: `../fetch-now/10-fetch-now-overview.md`
+- **Logger Dummy**: `../logger/10-logger-overview.md`
 
 ## テストファイル構成
 
@@ -341,6 +342,13 @@ const fetchNow = () => new Date("2024-01-01");
 // 実DBを使用（Small Testで）
 const useCase = new CreateProjectUseCaseImpl({
   projectRepository: new ProjectRepositoryImpl({ dynamoDBClient }), // ❌ 低速
+});
+
+// LoggerImplを使用（テスト出力がノイズになる）
+const useCase = new CreateProjectUseCaseImpl({
+  projectRepository: new ProjectRepositoryDummy(),
+  logger: new LoggerImpl(), // ❌ LoggerDummyを使うべき
+  fetchNow: buildFetchNowDummy(),
 });
 
 // Result型をチェックせずdata参照

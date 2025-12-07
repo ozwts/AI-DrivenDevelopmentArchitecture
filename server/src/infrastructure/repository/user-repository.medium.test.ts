@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach } from "vitest";
 import { User } from "@/domain/model/user/user.entity";
 import { UserRepositoryImpl } from "./user-repository";
-import { LoggerDummy } from "@/domain/support/logger/dummy";
+import { LoggerDummy } from "@/application/port/logger/dummy";
 import {
   buildDdbClients,
   refreshTable,

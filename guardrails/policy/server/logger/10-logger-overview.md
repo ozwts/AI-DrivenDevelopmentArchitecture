@@ -83,6 +83,39 @@ logger.info("処理開始");
 // => { requestId: "req-123", userId: "user-456", message: "処理開始" }
 ```
 
+## テストでの使用
+
+### 基本方針
+
+テストでは**常にLoggerDummyを使用**する。ログ出力はテストの検証対象ではないため、何も出力しないDummy実装で十分。
+
+```typescript
+// ✅ テストでは常にLoggerDummyを使用
+const useCase = new CreateTodoUseCaseImpl({
+  todoRepository: new TodoRepositoryDummy(),
+  logger: new LoggerDummy(),
+  fetchNow: buildFetchNowDummy(),
+});
+```
+
+### デバッグ時の一時的なImpl使用
+
+テストが失敗してログを確認したい場合のみ、**一時的に**LoggerImpl（またはConsoleLogger）を使用する。デバッグ完了後は必ずLoggerDummyに戻す。
+
+```typescript
+// ⚠️ デバッグ時のみ一時的に使用（コミット前に戻すこと）
+const useCase = new CreateTodoUseCaseImpl({
+  todoRepository: new TodoRepositoryDummy(),
+  logger: new ConsoleLogger(), // デバッグ用
+  fetchNow: buildFetchNowDummy(),
+});
+```
+
+**理由**:
+- テストの実行速度を維持
+- テスト出力をクリーンに保つ
+- CI/CDでのログノイズを防ぐ
+
 ## Dummy実装
 
 ```typescript

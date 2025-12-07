@@ -9,7 +9,7 @@ import {
   getRandomIdentifier,
   refreshTable,
 } from "@/util/testing-util/dynamodb";
-import { LoggerDummy } from "@/domain/support/logger/dummy";
+import { LoggerDummy } from "@/application/port/logger/dummy";
 import { TodoRepositoryImpl } from "@/infrastructure/repository/todo-repository";
 import { ProjectRepositoryImpl } from "@/infrastructure/repository/project-repository";
 import { UserRepositoryImpl } from "@/infrastructure/repository/user-repository";

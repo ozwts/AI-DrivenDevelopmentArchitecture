@@ -128,6 +128,129 @@ export class TodoRepositoryImpl implements TodoRepository {
 - アグリゲート境界を見直す
 - 必要最小限の操作のみをトランザクションに含める
 
+## テスト戦略
+
+**関連ドキュメント**:
+- `../use-case/30-testing-overview.md`（UseCase層のテスト）
+- `../repository/40-test-patterns.md`（UnitOfWorkとの統合テスト）
+
+### テスト種別
+
+| テスト種別 | 対象 | 目的 |
+| --- | --- | --- |
+| Small Test | UseCase層 | UnitOfWorkRunnerDummyでビジネスロジック検証 |
+| Medium Test | Infrastructure層 | 実DBでトランザクション整合性を検証 |
+
+### Small Test（UseCase層）
+
+UseCase層のテストでは`UnitOfWorkRunnerDummy`を使用し、トランザクション処理をスキップする。
+
+```typescript
+import { LoggerDummy } from "@/domain/support/logger/dummy";
+import { buildFetchNowDummy } from "@/application/port/fetch-now/dummy";
+
+describe("CreateTodoUseCase", () => {
+  test("TODOを作成する", async () => {
+    // Arrange: UnitOfWorkRunnerDummyを使用
+    const dummyRunner = new UnitOfWorkRunnerDummy(() => ({
+      todoRepository: new TodoRepositoryDummy({
+        saveReturnValue: Result.ok(undefined),
+      }),
+      userRepository: new UserRepositoryDummy({
+        findByIdReturnValue: Result.ok(userDummyFrom({ id: "user-123" })),
+        saveReturnValue: Result.ok(undefined),
+      }),
+    }));
+
+    const useCase = new CreateTodoUseCase({
+      runner: dummyRunner,
+      logger: new LoggerDummy(),
+      fetchNow: buildFetchNowDummy(new Date("2024-01-01")),
+    });
+
+    // Act
+    const result = await useCase.execute({ userId: "user-123", title: "New TODO" });
+
+    // Assert
+    expect(result.success).toBe(true);
+  });
+});
+```
+
+### Medium Test（Infrastructure層）
+
+トランザクションの整合性はDummyでは検証できないため、**実際のDynamoDB**を使用する。
+
+**テストファイル配置**:
+```
+infrastructure/unit-of-work/
+└── dynamodb-unit-of-work.medium.test.ts  # UoW統合テスト
+```
+
+### 新規リポジトリ追加時のテスト追加
+
+**重要**: 新規リポジトリを追加した場合は、**UnitOfWorkのミディアムテスト**にテストケースを追加する。
+
+追加が必要な理由：
+1. **トランザクション整合性の検証**: 複数のリポジトリ操作が1つのトランザクションで正しくコミット/ロールバックされることを確認
+2. **UoW統合の動作確認**: `registerOperation()`メソッドが正しく呼び出されることを検証
+3. **リグレッション防止**: 既存のトランザクション処理に影響を与えないことを保証
+
+### Medium Testケース例
+
+```typescript
+import { LoggerDummy } from "@/domain/support/logger/dummy";
+
+describe("DynamoDBUnitOfWork with NewEntityRepository", () => {
+  test("[正常系] UoWを使って新エンティティを保存する", async () => {
+    // Arrange
+    const uow = new DynamoDBUnitOfWork({ ddbDoc });
+    const repository = new NewEntityRepositoryImpl({
+      ddbDoc,
+      tableName,
+      logger: new LoggerDummy(),
+      uow,  // UoWを注入
+    });
+
+    const entity = newEntityDummyFrom({ id: repository.entityId() });
+
+    // Act
+    await repository.save({ entity });
+    await uow.commit();
+
+    // Assert: 保存されたことを確認
+    const findResult = await repository.findById({ id: entity.id });
+    expect(findResult.data).toBeDefined();
+  });
+
+  test("[正常系] UoWでロールバックすると保存されない", async () => {
+    // Arrange
+    const uow = new DynamoDBUnitOfWork({ ddbDoc });
+    const repository = new NewEntityRepositoryImpl({
+      ddbDoc,
+      tableName,
+      logger: new LoggerDummy(),
+      uow,
+    });
+
+    const entity = newEntityDummyFrom({ id: repository.entityId() });
+
+    // Act
+    await repository.save({ entity });
+    // コミットしない（ロールバック相当）
+
+    // Assert: 保存されていないことを確認
+    const repositoryWithoutUow = new NewEntityRepositoryImpl({
+      ddbDoc,
+      tableName,
+      logger: new LoggerDummy(),
+    });
+    const findResult = await repositoryWithoutUow.findById({ id: entity.id });
+    expect(findResult.data).toBeUndefined();
+  });
+});
+```
+
 ## 設計判断の理由
 
 ### なぜUnit of Workパターンを使うのか

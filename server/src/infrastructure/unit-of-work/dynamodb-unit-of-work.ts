@@ -3,8 +3,8 @@ import type {
   TransactWriteCommandInput,
 } from "@aws-sdk/lib-dynamodb";
 import { TransactWriteCommand } from "@aws-sdk/lib-dynamodb";
-import type { UnitOfWork } from "@/domain/support/unit-of-work";
-import type { Logger } from "@/domain/support/logger";
+import type { UnitOfWork } from "@/application/port/unit-of-work";
+import type { Logger } from "@/application/port/logger";
 
 /**
  * TransactWriteCommandInputのTransactItems配列の要素型

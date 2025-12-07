@@ -1,5 +1,5 @@
 import { Logger as PowertoolsLogger } from "@aws-lambda-powertools/logger";
-import type { Logger, AdditionalData } from "@/domain/support/logger";
+import type { Logger, AdditionalData } from "@/application/port/logger";
 
 export type LogLevel = "DEBUG" | "INFO" | "WARN" | "ERROR";
 

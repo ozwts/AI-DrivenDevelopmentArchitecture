@@ -57,6 +57,7 @@ const toReviewResponsibility = (
       .array(z.string())
       .describe("レビュー対象ディレクトリの絶対パスの配列"),
   },
+  dependencies: policy.meta.dependencies,
 });
 
 /**

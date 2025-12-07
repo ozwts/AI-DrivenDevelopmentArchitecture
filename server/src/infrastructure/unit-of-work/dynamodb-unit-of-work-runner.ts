@@ -1,6 +1,6 @@
 import type { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
-import type { UnitOfWorkRunner } from "@/domain/support/unit-of-work";
-import type { Logger } from "@/domain/support/logger";
+import type { UnitOfWorkRunner } from "@/application/port/unit-of-work";
+import type { Logger } from "@/application/port/logger";
 import { Result } from "@/util/result";
 import { DynamoDBUnitOfWork } from "./dynamodb-unit-of-work";
 

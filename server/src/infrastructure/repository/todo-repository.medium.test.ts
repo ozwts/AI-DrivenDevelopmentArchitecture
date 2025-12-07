@@ -7,7 +7,7 @@ import {
   getRandomIdentifier,
   refreshTable,
 } from "@/util/testing-util/dynamodb";
-import { LoggerDummy } from "@/domain/support/logger/dummy";
+import { LoggerDummy } from "@/application/port/logger/dummy";
 import { TodoRepositoryImpl } from "./todo-repository";
 import type { TodoRepository } from "@/domain/model/todo/todo.repository";
 import { Todo } from "@/domain/model/todo/todo.entity";

@@ -364,7 +364,12 @@ infrastructure/unit-of-work/
 
 ### テストケース例
 
+**重要**: Medium TestでもLoggerDummyを使用する。デバッグ時のみ一時的にLoggerImplを使用。
+
 ```typescript
+import { todoDummyFrom } from "@/domain/model/todo/todo.entity.dummy";
+import { LoggerDummy } from "@/domain/support/logger/dummy";
+
 describe("DynamoDBUnitOfWork with TodoRepository", () => {
   test("[正常系] UoWを使ってTodoを保存する", async () => {
     // Arrange
@@ -373,11 +378,11 @@ describe("DynamoDBUnitOfWork with TodoRepository", () => {
       ddbDoc,
       todosTableName,
       attachmentsTableName,
-      logger,
+      logger: new LoggerDummy(),  // LoggerDummyを使用
       uow,  // UoWを注入
     });
 
-    const todo = new Todo({ id: todoRepository.todoId(), ... });
+    const todo = todoDummyFrom({ id: todoRepository.todoId() });
 
     // Act
     await todoRepository.save({ todo });
@@ -395,18 +400,24 @@ describe("DynamoDBUnitOfWork with TodoRepository", () => {
       ddbDoc,
       todosTableName,
       attachmentsTableName,
-      logger,
+      logger: new LoggerDummy(),  // LoggerDummyを使用
       uow,
     });
 
-    const todo = new Todo({ id: todoRepository.todoId(), ... });
+    const todo = todoDummyFrom({ id: todoRepository.todoId() });
 
     // Act
     await todoRepository.save({ todo });
-    await uow.rollback();  // トランザクションロールバック
+    // コミットしない（ロールバック相当）
 
     // Assert: 保存されていないことを確認
-    const findResult = await todoRepository.findById({ id: todo.id });
+    const repositoryWithoutUow = new TodoRepositoryImpl({
+      ddbDoc,
+      todosTableName,
+      attachmentsTableName,
+      logger: new LoggerDummy(),
+    });
+    const findResult = await repositoryWithoutUow.findById({ id: todo.id });
     expect(findResult.data).toBeUndefined();
   });
 });

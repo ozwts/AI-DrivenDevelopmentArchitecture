@@ -17,8 +17,8 @@
     "validate": "npm run validate:format && npm run validate:tf",
     "validate:format": "terraform fmt -check -recursive terraform/",
     "validate:tf": "npm run validate:tf:dev && npm run validate:tf:stg && npm run validate:tf:prd",
-    "validate:tf:dev": "terraform -chdir=terraform/environments/dev validate",
-    "validate:tf:stg": "terraform -chdir=terraform/environments/stg validate",
-    "validate:tf:prd": "terraform -chdir=terraform/environments/prd validate"
+    "validate:tf:dev": "terraform -chdir=terraform/environments/dev init -backend=false > /dev/null && terraform -chdir=terraform/environments/dev validate",
+    "validate:tf:stg": "terraform -chdir=terraform/environments/stg init -backend=false > /dev/null && terraform -chdir=terraform/environments/stg validate",
+    "validate:tf:prd": "terraform -chdir=terraform/environments/prd init -backend=false > /dev/null && terraform -chdir=terraform/environments/prd validate"
   }
 }

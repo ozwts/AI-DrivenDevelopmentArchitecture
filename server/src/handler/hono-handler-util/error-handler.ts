@@ -1,5 +1,5 @@
 import type { Context } from "hono";
-import type { Logger } from "@/domain/support/logger";
+import type { Logger } from "@/application/port/logger";
 import {
   UnexpectedError,
   NotFoundError,

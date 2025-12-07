@@ -1,8 +1,8 @@
 import type { Container } from "inversify";
 import { schemas } from "@/generated/zod-schemas";
 import { serviceId } from "@/di-container/service-id";
-import type { Logger } from "@/domain/support/logger";
-import type { GetCurrentUserUseCase } from "@/use-case/user/get-current-user-use-case";
+import type { Logger } from "@/application/port/logger";
+import type { GetCurrentUserUseCase } from "@/application/use-case/user/get-current-user-use-case";
 import { UnexpectedError, unexpectedErrorMessage } from "@/util/error-util";
 import { handleError } from "../../hono-handler-util/error-handler";
 import { convertToUserResponse } from "./user-response-mapper";

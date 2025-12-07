@@ -6,7 +6,7 @@ import {
   getRandomIdentifier,
   refreshTable,
 } from "@/util/testing-util/dynamodb";
-import { LoggerDummy } from "@/domain/support/logger/dummy";
+import { LoggerDummy } from "@/application/port/logger/dummy";
 import { ProjectRepositoryImpl } from "./project-repository";
 import type { ProjectRepository } from "@/domain/model/project/project.repository";
 import { ProjectColor } from "@/domain/model/project/project-color";

@@ -1,8 +1,8 @@
 import type { Context } from "hono";
 import type { Container } from "inversify";
 import { serviceId } from "@/di-container/service-id";
-import type { Logger } from "@/domain/support/logger";
-import type { DeleteCurrentUserUseCase } from "@/use-case/user/delete-current-user-use-case";
+import type { Logger } from "@/application/port/logger";
+import type { DeleteCurrentUserUseCase } from "@/application/use-case/user/delete-current-user-use-case";
 import { UnexpectedError, unexpectedErrorMessage } from "@/util/error-util";
 import { handleError } from "../../hono-handler-util/error-handler";
 import { USER_SUB } from "../constants";

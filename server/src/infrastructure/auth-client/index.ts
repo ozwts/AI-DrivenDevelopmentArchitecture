@@ -14,7 +14,7 @@ import type {
   AuthPayload,
   AuthUser,
   DeleteUserResult,
-} from "@/domain/support/auth-client";
+} from "@/application/port/auth-client";
 
 export type CognitoAuthClientProps = {
   /**

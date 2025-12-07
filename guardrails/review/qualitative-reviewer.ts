@@ -19,6 +19,8 @@ export type ReviewInput = {
   policyDir: string;
   /** レビュー責務（例: "ドメインモデル (Domain Model)"） */
   responsibility: string;
+  /** 依存ポリシーディレクトリの絶対パス一覧（オプション） */
+  dependencyPolicyDirs?: string[];
 };
 
 /**
@@ -42,6 +44,7 @@ const buildGuidanceMessage = (
   targetDirectories: string[],
   policyDir: string,
   responsibility: string,
+  dependencyPolicyDirs?: string[],
 ): string => {
   let guidance =
     "以下の情報を使って `guardrails-reviewer` サブエージェントを起動し、ポリシーレビューを実行してください。\n\n";
@@ -52,7 +55,20 @@ const buildGuidanceMessage = (
   }
   guidance += "\n";
 
-  guidance += `**ポリシーディレクトリ:** ${policyDir}\n\n`;
+  guidance += `**メインポリシーディレクトリ:** ${policyDir}\n\n`;
+
+  if (
+    dependencyPolicyDirs !== undefined &&
+    dependencyPolicyDirs !== null &&
+    dependencyPolicyDirs.length > 0
+  ) {
+    guidance += "**依存ポリシーディレクトリ（必要に応じて参照）:**\n";
+    for (const depDir of dependencyPolicyDirs) {
+      guidance += `- ${depDir}\n`;
+    }
+    guidance += "\n";
+  }
+
   guidance += `**レビュー責務:** ${responsibility}\n`;
 
   return guidance;
@@ -67,7 +83,8 @@ const buildGuidanceMessage = (
 export const executeReview = async (
   input: ReviewInput,
 ): Promise<ReviewResult> => {
-  const { targetDirectories, policyDir, responsibility } = input;
+  const { targetDirectories, policyDir, responsibility, dependencyPolicyDirs } =
+    input;
 
   try {
     // 1. 対象ディレクトリの存在確認
@@ -125,6 +142,7 @@ export const executeReview = async (
       targetDirectories,
       policyDir,
       responsibility,
+      dependencyPolicyDirs,
     );
 
     // 4. 結果を構造化

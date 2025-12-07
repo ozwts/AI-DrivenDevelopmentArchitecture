@@ -1,8 +1,8 @@
 import type { Container } from "inversify";
 import { schemas } from "@/generated/zod-schemas";
 import { serviceId } from "@/di-container/service-id";
-import type { Logger } from "@/domain/support/logger";
-import type { UpdateTodoUseCase } from "@/use-case/todo/update-todo-use-case";
+import type { Logger } from "@/application/port/logger";
+import type { UpdateTodoUseCase } from "@/application/use-case/todo/update-todo-use-case";
 import { UnexpectedError, unexpectedErrorMessage } from "@/util/error-util";
 import { handleError } from "../../hono-handler-util/error-handler";
 import { formatZodError } from "../../hono-handler-util/validation-formatter";

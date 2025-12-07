@@ -11,7 +11,7 @@ import type {
   StorageClient,
   GeneratePresignedUrlResult,
   DeleteObjectResult,
-} from "@/domain/support/storage-client";
+} from "@/application/port/storage-client";
 
 export type S3StorageClientProps = {
   /**
