@@ -1,0 +1,5 @@
+{
+  "label": "ロガー",
+  "description": "ログ出力の抽象インターフェース",
+  "dependencies": ["port"]
+}

@@ -1,0 +1,5 @@
+{
+  "label": "リポジトリ",
+  "description": "データ永続化実装、ドメインモデルとDB形式の変換",
+  "dependencies": ["domain-model", "port"]
+}

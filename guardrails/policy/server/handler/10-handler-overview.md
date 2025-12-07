@@ -142,5 +142,6 @@ export const buildCreateProjectHandler =
 - **HTTPハンドラー実装**: `21-http-handler-implementation.md`
 - **バリデーション・エラー**: `22-http-validation-error.md`
 - **ルーターパターン**: `23-http-router-patterns.md`
-- **バリデーション戦略**: `policy/server/domain-model/11-domain-validation-strategy.md`
-- **UseCase層**: `policy/server/use-case/10-use-case-overview.md`
+- **バリデーション戦略**: `../domain-model/11-domain-validation-strategy.md`
+- **UseCase層**: `../use-case/10-use-case-overview.md`
+- **ポート層**: `../port/10-port-overview.md`

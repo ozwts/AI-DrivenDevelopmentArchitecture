@@ -1,0 +1,5 @@
+{
+  "label": "ハンドラー",
+  "description": "HTTPリクエスト/レスポンス処理、入力バリデーション",
+  "dependencies": ["use-case", "domain-model", "port"]
+}

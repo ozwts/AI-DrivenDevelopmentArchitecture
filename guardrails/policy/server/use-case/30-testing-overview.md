@@ -9,7 +9,7 @@
 
 - **Entity Dummyファクトリ**: `../domain-model/52-entity-test-patterns.md`
 - **Repository Dummy**: `domain/model/{entity}/{entity}.repository.dummy.ts`
-- **FetchNow Dummy**: `../../fetch-now/10-fetch-now-overview.md`
+- **FetchNow Dummy**: `../fetch-now/10-fetch-now-overview.md`
 
 ## テストファイル構成
 
@@ -245,10 +245,10 @@ export const createTestProject = (overrides?: Partial<Project>): Project => {
 
 ### 時刻モック（buildFetchNowDummy使用）
 
-**参照**: `../../fetch-now/10-fetch-now-overview.md`
+**参照**: `../fetch-now/10-fetch-now-overview.md`
 
 ```typescript
-import { buildFetchNowDummy } from "@/domain/support/fetch-now/dummy";
+import { buildFetchNowDummy } from "@/application/port/fetch-now/dummy";
 
 // ✅ Good: buildFetchNowDummy使用
 const fixedDate = new Date("2024-01-01T00:00:00+09:00");
@@ -294,7 +294,7 @@ npm test
 ```typescript
 // Entity Dummyファクトリを使用
 import { projectDummyFrom } from "@/domain/model/project/project.entity.dummy";
-import { buildFetchNowDummy } from "@/domain/support/fetch-now/dummy";
+import { buildFetchNowDummy } from "@/application/port/fetch-now/dummy";
 
 const fixedDate = new Date("2024-01-01T00:00:00+09:00");
 const fetchNow = buildFetchNowDummy(fixedDate);

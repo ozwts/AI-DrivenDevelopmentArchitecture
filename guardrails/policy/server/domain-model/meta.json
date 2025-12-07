@@ -1,0 +1,4 @@
+{
+  "label": "ドメインモデル",
+  "description": "Entity、Value Object、リポジトリインターフェースの設計・実装"
+}

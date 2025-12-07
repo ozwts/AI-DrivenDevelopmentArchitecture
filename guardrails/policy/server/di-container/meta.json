@@ -1,0 +1,5 @@
+{
+  "label": "DIコンテナ",
+  "description": "依存関係の解決、Composition Root",
+  "dependencies": ["use-case", "repository", "handler"]
+}

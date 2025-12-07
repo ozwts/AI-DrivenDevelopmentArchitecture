@@ -1,11 +1,12 @@
 /**
  * レビュー責務定義
  *
- * 新しい責務を追加する場合は、ここに定義を追加するだけでMCPツールが自動登録されます
+ * meta.jsonから動的にスキャンした結果を基にレビュー責務を生成する
  */
 
 import { z } from "zod";
 import { ReviewResponsibility } from "./review-handler";
+import { scanAllPolicies, ScannedPolicy } from "./policy-scanner";
 
 /**
  * 静的解析責務定義
@@ -40,98 +41,43 @@ export type UnusedExportsResponsibility = {
   };
 };
 
-export const REVIEW_RESPONSIBILITIES: ReviewResponsibility[] = [
-  {
-    id: "review_server_domain_models",
-    title: "ドメインモデルレビュー",
-    policyDir: "policy/server/domain-model",
-    responsibility: "ドメインモデル (Domain Model)",
-    toolDescription:
-      "指定したディレクトリ配下のサーバー側ドメインモデルファイルがドメインモデルポリシーに準拠しているかを審査します。",
-    inputSchema: {
-      targetDirectories: z
-        .array(z.string())
-        .describe(
-          "レビュー対象ディレクトリの絶対パスの配列（例: ['/path/to/server/src/domain/model']）",
-        ),
-    },
+/**
+ * ScannedPolicyからReviewResponsibilityを生成する
+ */
+const toReviewResponsibility = (
+  policy: ScannedPolicy,
+): ReviewResponsibility => ({
+  id: `review_${policy.id.replace(/-/g, "_")}`,
+  title: `${policy.meta.label}レビュー`,
+  policyDir: policy.policyDir,
+  responsibility: `${policy.meta.label} (${policy.id})`,
+  toolDescription: `指定したディレクトリ配下のファイルが${policy.meta.label}ポリシーに準拠しているかを審査します。${policy.meta.description}`,
+  inputSchema: {
+    targetDirectories: z
+      .array(z.string())
+      .describe("レビュー対象ディレクトリの絶対パスの配列"),
   },
-  {
-    id: "review_web_tests",
-    title: "テストファイルレビュー",
-    policyDir: "policy/web/test-strategy",
-    responsibility: "Webテスト戦略 (Web Test Strategy)",
-    toolDescription:
-      "指定したディレクトリ配下のフロントエンドテストファイルがテスト戦略ポリシーに準拠しているかを審査します。",
-    inputSchema: {
-      targetDirectories: z
-        .array(z.string())
-        .describe(
-          "レビュー対象ディレクトリの絶対パスの配列（例: ['/path/to/web/src/components']）",
-        ),
-    },
-  },
-  {
-    id: "review_server_use_cases",
-    title: "ユースケース層レビュー",
-    policyDir: "policy/server/use-case",
-    responsibility: "ユースケース層 (Use Case Layer)",
-    toolDescription:
-      "指定したディレクトリ配下のサーバー側ユースケースファイルがユースケース層ポリシーに準拠しているかを審査します。",
-    inputSchema: {
-      targetDirectories: z
-        .array(z.string())
-        .describe(
-          "レビュー対象ディレクトリの絶対パスの配列（例: ['/path/to/server/src/use-case']）",
-        ),
-    },
-  },
-  {
-    id: "review_server_handlers",
-    title: "ハンドラー層レビュー",
-    policyDir: "policy/server/handler",
-    responsibility: "ハンドラー層 (Handler Layer)",
-    toolDescription:
-      "指定したディレクトリ配下のサーバー側ハンドラーファイルがハンドラー層ポリシーに準拠しているかを審査します。",
-    inputSchema: {
-      targetDirectories: z
-        .array(z.string())
-        .describe(
-          "レビュー対象ディレクトリの絶対パスの配列（例: ['/path/to/server/src/handler']）",
-        ),
-    },
-  },
-  {
-    id: "review_server_repositories",
-    title: "リポジトリ実装レビュー",
-    policyDir: "policy/server/repository",
-    responsibility: "リポジトリ実装 (Repository Implementation)",
-    toolDescription:
-      "指定したディレクトリ配下のサーバー側リポジトリ実装ファイルがリポジトリポリシーに準拠しているかを審査します。",
-    inputSchema: {
-      targetDirectories: z
-        .array(z.string())
-        .describe(
-          "レビュー対象ディレクトリの絶対パスの配列（例: ['/path/to/server/src/infrastructure/repository']）",
-        ),
-    },
-  },
-  {
-    id: "review_contract_openapi",
-    title: "OpenAPI仕様レビュー",
-    policyDir: "policy/contract/api",
-    responsibility: "API契約仕様 (OpenAPI Specification)",
-    toolDescription:
-      "指定したディレクトリ配下のOpenAPI仕様ファイルがAPI契約ポリシーに準拠しているかを審査します。",
-    inputSchema: {
-      targetDirectories: z
-        .array(z.string())
-        .describe(
-          "レビュー対象ディレクトリの絶対パスの配列（例: ['/path/to/contract']）",
-        ),
-    },
-  },
-];
+});
+
+/**
+ * レビュー責務を動的に生成する
+ *
+ * meta.jsonを持つすべてのポリシーがMCPツールとして公開される
+ *
+ * @param guardrailsRoot guardrailsディレクトリのルートパス
+ * @returns レビュー責務一覧
+ */
+export const buildReviewResponsibilities = (
+  guardrailsRoot: string,
+): ReviewResponsibility[] => {
+  const allPolicies = scanAllPolicies(guardrailsRoot);
+
+  return [
+    ...allPolicies.server,
+    ...allPolicies.web,
+    ...allPolicies.contract,
+  ].map(toReviewResponsibility);
+};
 
 /**
  * 静的解析責務定義

@@ -88,8 +88,8 @@ di-container/
 
 ```typescript
 // ✅ Good: 型（インターフェース）とImpl（実装）を分けてimport
-import type { CreateProjectUseCase } from "@/use-case/project/create-project-use-case";
-import { CreateProjectUseCaseImpl } from "@/use-case/project/create-project-use-case";
+import type { CreateProjectUseCase } from "@/application/use-case/project/create-project-use-case";
+import { CreateProjectUseCaseImpl } from "@/application/use-case/project/create-project-use-case";
 
 // ✅ Good: bindは型、toDynamicValueはImplを使用
 container
@@ -101,7 +101,7 @@ container
 
 ```typescript
 // ❌ Bad: 型のみimportしてインスタンス化しようとする
-import { CreateProjectUseCase } from "@/use-case/project/create-project-use-case";
+import { CreateProjectUseCase } from "@/application/use-case/project/create-project-use-case";
 
 container
   .bind<CreateProjectUseCase>(serviceId.CREATE_PROJECT_USE_CASE)
@@ -188,8 +188,8 @@ container
 
 ```typescript
 // 型とImplを分けてimport
-import type { GetUserUseCase } from "@/use-case/user/get-user-use-case";
-import { GetUserUseCaseImpl } from "@/use-case/user/get-user-use-case";
+import type { GetUserUseCase } from "@/application/use-case/user/get-user-use-case";
+import { GetUserUseCaseImpl } from "@/application/use-case/user/get-user-use-case";
 
 // Propsパターンで依存を渡す
 return new GetUserUseCaseImpl({
@@ -207,7 +207,7 @@ const userRepository = ctx.container.get<UserRepository>(
 
 ```typescript
 // 型のみimport（Implがない）
-import { GetUserUseCase } from "@/use-case/user/get-user-use-case";
+import { GetUserUseCase } from "@/application/use-case/user/get-user-use-case";
 
 // 型をnewしようとする
 return new GetUserUseCase(userRepository); // ❌ エラー

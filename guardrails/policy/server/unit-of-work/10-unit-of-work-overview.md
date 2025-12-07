@@ -4,11 +4,7 @@
 
 Unit of Workは**トランザクション境界を管理**し、**複数のリポジトリ操作をアトミックに実行**する。コールバック成功時は自動コミット、エラー時は自動ロールバック。
 
-**関連ドキュメント**:
-
-- **DynamoDB実装**: `20-dynamodb-implementation.md`
-- **使用パターン**: `30-usage-patterns.md`
-- **Repository統合**: `../repository/10-repository-overview.md`
+**関連ドキュメント**: `../port/10-port-overview.md`
 
 ## 責務
 
@@ -114,27 +110,6 @@ export class TodoRepositoryImpl implements TodoRepository {
 }
 ```
 
-## ファイル配置
-
-### ドメイン層（インターフェース）
-
-```
-domain/support/unit-of-work/
-├── unit-of-work.ts                 # UnitOfWorkインターフェース
-├── unit-of-work-runner.ts          # UnitOfWorkRunnerインターフェース
-└── unit-of-work-runner.dummy.ts    # テスト用Dummy実装
-```
-
-### インフラ層（実装）
-
-```
-infrastructure/unit-of-work/
-├── dynamodb-unit-of-work.ts        # DynamoDBUnitOfWork実装
-└── dynamodb-unit-of-work-runner.ts # DynamoDBUnitOfWorkRunner実装
-```
-
-**詳細**: `20-dynamodb-implementation.md`
-
 ## トランザクション制約
 
 ### 永続化技術固有の制約
@@ -152,8 +127,6 @@ infrastructure/unit-of-work/
 - 制約を超える場合はトランザクションを分割
 - アグリゲート境界を見直す
 - 必要最小限の操作のみをトランザクションに含める
-
-**詳細**: `20-dynamodb-implementation.md`
 
 ## 設計判断の理由
 

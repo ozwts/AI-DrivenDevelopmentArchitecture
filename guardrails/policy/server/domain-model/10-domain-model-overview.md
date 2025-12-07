@@ -94,20 +94,20 @@ Entityインスタンス（常にvalid、Value Object内包）
 
 ```
 domain/
-├── model/
-│   └── {aggregate}/                           # アグリゲートごとにディレクトリ
-│       ├── {entity}.entity.ts                 # Entity定義
-│       ├── {entity}.entity.small.test.ts      # Entityテスト
-│       ├── {entity}.entity.dummy.ts           # Entityダミー
-│       ├── {value-object}.vo.ts               # Value Object定義（.vo.ts）
-│       ├── {value-object}.vo.small.test.ts    # Value Objectテスト
-│       ├── {value-object}.vo.dummy.ts         # Value Objectダミー（Entity Dummyから使用）
-│       ├── {entity}.repository.ts             # リポジトリインターフェース
-│       └── {entity}.repository.dummy.ts       # リポジトリモック
-│
-└── support/                                   # サポートインターフェース
-    └── .../                                   # logger, fetch-now, auth-client等
+└── model/
+    └── {aggregate}/                           # アグリゲートごとにディレクトリ
+        ├── {entity}.entity.ts                 # Entity定義
+        ├── {entity}.entity.small.test.ts      # Entityテスト
+        ├── {entity}.entity.dummy.ts           # Entityダミー
+        ├── {value-object}.vo.ts               # Value Object定義（.vo.ts）
+        ├── {value-object}.vo.small.test.ts    # Value Objectテスト
+        ├── {value-object}.vo.dummy.ts         # Value Objectダミー（Entity Dummyから使用）
+        ├── {entity}.repository.ts             # リポジトリインターフェース
+        └── {entity}.repository.dummy.ts       # リポジトリモック
 ```
+
+**注**: 外部サービスへの抽象インターフェース（Logger, FetchNow等）は `application/port/` に配置。
+**参照**: `../port/10-port-overview.md`
 
 ## ファイル命名規則
 

@@ -72,7 +72,7 @@ infrastructure/repository/
 ### クラス構造
 
 ```typescript
-import type { Logger } from "@/domain/support/logger";
+import type { Logger } from "@/application/port/logger";
 import type { DynamoDBUnitOfWork } from "@/infrastructure/unit-of-work/dynamodb-unit-of-work";
 import type { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 

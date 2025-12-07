@@ -8,7 +8,7 @@
 
 ```typescript
 import { Result } from "@/util/result";
-import type { UseCase } from "@/use-case/interfaces";
+import type { UseCase } from "@/application/use-case/interfaces";
 
 // Input型
 export type {Action}{Entity}UseCaseInput = {

@@ -4,11 +4,7 @@
 
 FetchNowは**現在時刻を取得する関数型インターフェース**であり、**テスト可能性**と**時刻制御**を実現する。
 
-**関連ドキュメント**:
-
-- **実装**: `server/src/domain/support/fetch-now/index.ts`
-- **Dummy実装**: `server/src/domain/support/fetch-now/dummy.ts`
-- **憲法**: `../../constitution/policy-structure-principles.md`
+**関連ドキュメント**: `../port/10-port-overview.md`
 
 ## 責務
 
@@ -38,8 +34,8 @@ export type FetchNow = () => Date;
 ### 本番環境での実装
 
 ```typescript
-// infrastructure/support/fetch-now-impl.ts
-import type { FetchNow } from "@/domain/support/fetch-now";
+// infrastructure/fetch-now/fetch-now-impl.ts
+import type { FetchNow } from "@/application/port/fetch-now";
 
 /**
  * 本番環境用のFetchNow実装
@@ -50,8 +46,8 @@ export const fetchNowImpl: FetchNow = () => new Date();
 ### テスト用のDummy実装
 
 ```typescript
-// domain/support/fetch-now/dummy.ts
-import type { FetchNow } from "@/domain/support/fetch-now";
+// application/port/fetch-now/dummy.ts
+import type { FetchNow } from "@/application/port/fetch-now";
 
 /**
  * テスト用の固定日時を返すFetchNow実装を生成する
@@ -106,7 +102,7 @@ export class CreateTodoUseCase
 
 ```typescript
 // register-lambda-container.ts
-import { fetchNowImpl } from "@/infrastructure/support/fetch-now-impl";
+import { fetchNowImpl } from "@/infrastructure/fetch-now/fetch-now-impl";
 
 container.bind<FetchNow>(FETCH_NOW).toConstantValue(fetchNowImpl);
 ```
@@ -114,7 +110,7 @@ container.bind<FetchNow>(FETCH_NOW).toConstantValue(fetchNowImpl);
 ### テストでの使用
 
 ```typescript
-import { buildFetchNowDummy } from "@/domain/support/fetch-now/dummy";
+import { buildFetchNowDummy } from "@/application/port/fetch-now/dummy";
 
 describe("CreateTodoUseCase", () => {
   test("TODOを作成できる", async () => {
@@ -191,4 +187,3 @@ buildFetchNowDummy();
 // 特定の日時でテストしたい場合
 const fetchNow = buildFetchNowDummy(new Date("2024-06-15T14:30:00+09:00"));
 ```
-

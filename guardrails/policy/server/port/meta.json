@@ -1,0 +1,4 @@
+{
+  "label": "ポート",
+  "description": "外部サービスへの抽象インターフェース（Logger, FetchNow, StorageClient等）"
+}

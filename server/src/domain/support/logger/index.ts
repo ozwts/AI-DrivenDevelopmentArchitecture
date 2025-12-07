@@ -1,54 +1,50 @@
+/**
+ * ログに付与する補足情報
+ * 例外オブジェクトまたは構造化データを指定可能
+ */
 export type AdditionalData = Error | Record<string, unknown>;
 
 /**
- * ロガー
- * 各ログレベルは『システム運用アンチパターン』の「3.5.2 何を記録すべきか？」を参考
+ * アプリケーション共通のログ出力インターフェース
  *
- * @interface Logger
+ * @description
+ * 実装詳細を隠蔽し、構造化ログ出力を可能にする。
  */
 export type Logger = {
   /**
-   * プログラム内で起こっていることに関連するあらゆる情報。デバッグのためのメッセージなど
-   *
-   * @param {string} message ログメッセージ
-   * @param {AdditionalData} data 付加情報
-   * @memberof Logger
+   * デバッグレベルのログを出力
+   * @param message - 出力するメッセージ
+   * @param data - 補足情報（任意）
    */
   debug(message: string, data?: AdditionalData): void;
+
   /**
-   * ユーザが開始したアクションや、スケジュールされたタスクの実行、システムのスタートアップやシャットダウンなどのシステム操作
-   *
-   * @param {string} message ログメッセージ
-   * @param {AdditionalData} data 付加情報
-   * @memberof Logger
+   * 情報レベルのログを出力
+   * @param message - 出力するメッセージ
+   * @param data - 補足情報（任意）
    */
   info(message: string, data?: AdditionalData): void;
+
   /**
-   * 将来的にエラーになる可能性の状態。ライブラリ廃止警告、使用可能リソースの不足、パフォーマンス低下など
-   *
-   * @param {string} message ログメッセージ
-   * @param {AdditionalData} data 付加情報
-   * @memberof Logger
+   * 警告レベルのログを出力
+   * @param message - 出力するメッセージ
+   * @param data - 補足情報（任意）
    */
   warn(message: string, data?: AdditionalData): void;
+
   /**
-   * すべてのエラー状態
-   *
-   * @param {string} message ログメッセージ
-   * @param {AdditionalData} data 付加情報
-   * @memberof Logger
+   * エラーレベルのログを出力
+   * @param message - 出力するメッセージ
+   * @param data - 補足情報（任意）
    */
   error(message: string, data?: AdditionalData): void;
+
   /**
-   *
-   * ログに追加するキーを追加する
-   *
-   * @param params
-   * @memberof Logger
+   * 以降の全ログに共通キーを付与
+   * @param params - 付与するキーと値のペア
    * @example
-   * logger.appendKeys({ userId: "user1" });
-   * logger.info({ message: "ログメッセージ" });
-   * // => { userId: "user1", message: "ログメッセージ" }
+   * logger.appendKeys({ requestId: "abc-123" });
+   * logger.info("処理開始"); // requestIdが自動付与される
    */
   appendKeys(params: Record<string, unknown>): void;
 };

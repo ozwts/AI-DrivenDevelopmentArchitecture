@@ -1,0 +1,5 @@
+{
+  "label": "ストレージクライアント",
+  "description": "ファイルストレージ（S3等）への抽象インターフェース",
+  "dependencies": ["port"]
+}

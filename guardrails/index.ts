@@ -14,7 +14,7 @@ import * as path from "path";
 import { fileURLToPath } from "url";
 import { createReviewHandler } from "./review/review-handler";
 import {
-  REVIEW_RESPONSIBILITIES,
+  buildReviewResponsibilities,
   STATIC_ANALYSIS_RESPONSIBILITIES,
   UNUSED_EXPORTS_RESPONSIBILITIES,
 } from "./review/responsibilities";
@@ -43,11 +43,12 @@ const main = async (): Promise<void> => {
 
   // ----- 定性的レビュー (Qualitative Review) -----
   // サブエージェント起動を促すガイダンスメッセージを返す
-  // 責務定義（review/responsibilities.ts）から動的にツールを登録
-  // 新しいレビュー責務を追加する場合は、responsibilities.ts に定義を追加するだけで自動登録されます
+  // policy/配下のmeta.jsonから動的にツールを登録
+  // 新しいレビュー責務を追加する場合は、meta.jsonを配置しREVIEWABLE_*_POLICIESに追加するだけで自動登録されます
   //
-  // 例: review_server_domain_models, review_web_tests
-  for (const responsibility of REVIEW_RESPONSIBILITIES) {
+  // 例: review_server_domain_model, review_server_use_case
+  const reviewResponsibilities = buildReviewResponsibilities(GUARDRAILS_ROOT);
+  for (const responsibility of reviewResponsibilities) {
     const handler = createReviewHandler(responsibility);
 
     server.registerTool(

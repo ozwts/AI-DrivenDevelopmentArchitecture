@@ -6,6 +6,15 @@
 2. **Result型で成功/失敗を明示的に表現**
 3. **executeメソッドで書き切る**（プライベートメソッドを作らず、全体の流れをexecuteメソッド内に記述）
 
+## 関連ドキュメント
+
+| トピック | ファイル |
+| --- | --- |
+| ドメインモデル | `../domain-model/10-domain-model-overview.md` |
+| ポート | `../port/10-port-overview.md` |
+| ハンドラー | `../handler/10-handler-overview.md` |
+| バリデーション戦略 | `../../constitution/validation-principles.md` |
+
 ## UseCase層の責務
 
 ### 実施すること
@@ -37,12 +46,17 @@
 ## ファイル構成
 
 ```
-use-case/
-├── interfaces.ts                     # 基底インターフェース
-├── {entity}/                         # エンティティごとのディレクトリ
-│   ├── {action}-{entity}-use-case.ts
-│   └── {action}-{entity}-use-case.small.test.ts
+application/
+├── use-case/
+│   ├── interfaces.ts                     # 基底インターフェース
+│   └── {entity}/                         # エンティティごとのディレクトリ
+│       ├── {action}-{entity}-use-case.ts
+│       └── {action}-{entity}-use-case.small.test.ts
+└── port/                                 # ポート層（別ポリシー参照）
+    └── ...
 ```
+
+**参照**: ポート層の詳細は `../port/10-port-overview.md`
 
 ## 命名規則
 
@@ -122,7 +136,7 @@ use-case/
 **基本的な使用パターン**:
 
 ```typescript
-// UseCase基底インターフェース（use-case/interfaces.ts）
+// UseCase基底インターフェース（application/use-case/interfaces.ts）
 export type UseCase<TInput, TOutput, TException extends Error> = {
   execute(input: TInput): Promise<Result<TOutput, TException>>;
 };

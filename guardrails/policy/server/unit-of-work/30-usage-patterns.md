@@ -314,7 +314,7 @@ import { todoDummyFrom } from "@/domain/model/todo/todo.entity.dummy";
 import { userDummyFrom } from "@/domain/model/user/user.entity.dummy";
 import { TodoRepositoryDummy } from "@/domain/model/todo/todo.repository.dummy";
 import { UserRepositoryDummy } from "@/domain/model/user/user.repository.dummy";
-import { buildFetchNowDummy } from "@/domain/support/fetch-now/dummy";
+import { buildFetchNowDummy } from "@/application/port/fetch-now/dummy";
 
 describe("CreateTodoUseCase", () => {
   test("TODOを作成し、ユーザーのカウントを更新する", async () => {

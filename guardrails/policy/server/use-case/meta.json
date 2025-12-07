@@ -1,0 +1,5 @@
+{
+  "label": "ユースケース",
+  "description": "ビジネスロジックの実装、Result型パターン",
+  "dependencies": ["domain-model", "port"]
+}

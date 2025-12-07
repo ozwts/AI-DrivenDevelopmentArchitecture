@@ -1,0 +1,5 @@
+{
+  "label": "FetchNow",
+  "description": "現在時刻取得の抽象化、テスト時の時刻制御",
+  "dependencies": ["port"]
+}
