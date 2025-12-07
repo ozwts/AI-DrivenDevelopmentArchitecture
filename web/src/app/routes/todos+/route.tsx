@@ -1,0 +1,197 @@
+import { useState, useEffect } from "react";
+import { Link, useSearchParams } from "react-router";
+import { PlusIcon, ListBulletIcon } from "@heroicons/react/24/outline";
+import { Button, LoadingPage, Alert, EmptyState, Select } from "@/app/lib/ui";
+import { useToast } from "@/app/features/toast";
+import { useTodos, useUpdateTodo, useDeleteTodo } from "@/app/features/todo";
+import { useUsers } from "@/app/features/user";
+import { useProjects } from "@/app/features/project";
+import { z } from "zod";
+import { schemas } from "@/generated/zod-schemas";
+import { TodoCard } from "./_shared/components";
+
+type TodoResponse = z.infer<typeof schemas.TodoResponse>;
+type TodoStatus = z.infer<typeof schemas.TodoStatus>;
+
+/**
+ * TODO一覧ページ
+ * 責務: 一覧表示、フィルタリング、ステータス変更、削除
+ */
+export default function TodosIndexRoute() {
+  const [searchParams] = useSearchParams();
+  const [filterStatus, setFilterStatus] = useState<TodoStatus | "">("");
+  const [filterProjectId, setFilterProjectId] = useState<string>("");
+
+  const toast = useToast();
+
+  // URL クエリパラメータからフィルタを取得
+  useEffect(() => {
+    const statusParam = searchParams.get("status");
+    const projectIdParam = searchParams.get("projectId");
+
+    if (statusParam) {
+      setFilterStatus(statusParam as TodoStatus);
+    }
+    if (projectIdParam) {
+      setFilterProjectId(projectIdParam);
+    }
+  }, [searchParams]);
+
+  const filters = {
+    status: filterStatus || undefined,
+    projectId: filterProjectId || undefined,
+  };
+
+  const { data: todos, isLoading, error } = useTodos(filters);
+  const { data: projects } = useProjects();
+  const { data: users } = useUsers();
+  const updateTodo = useUpdateTodo();
+  const deleteTodo = useDeleteTodo();
+
+  const handleStatusChange = async (todo: TodoResponse, status: TodoStatus) => {
+    try {
+      await updateTodo.mutateAsync({
+        todoId: todo.id,
+        data: { ...todo, status },
+      });
+      toast.success("ステータスを更新しました");
+    } catch {
+      toast.error("ステータスの更新に失敗しました");
+    }
+  };
+
+  const handleDelete = async (todo: TodoResponse) => {
+    if (!confirm(`TODO「${todo.title}」を削除してもよろしいですか？`)) {
+      return;
+    }
+    try {
+      await deleteTodo.mutateAsync(todo.id);
+      toast.success("TODOを削除しました");
+    } catch {
+      toast.error("TODOの削除に失敗しました");
+    }
+  };
+
+  const statusFilterOptions = [
+    { value: "", label: "全てのステータス" },
+    { value: "TODO", label: "未着手" },
+    { value: "IN_PROGRESS", label: "進行中" },
+    { value: "COMPLETED", label: "完了" },
+  ];
+
+  const projectFilterOptions = [
+    { value: "", label: "全てのプロジェクト" },
+    ...(projects ?? []).map((project) => ({
+      value: project.id,
+      label: project.name,
+    })),
+  ];
+
+  const getProjectById = (projectId?: string) => {
+    if (!projectId || !projects) return undefined;
+    return projects.find((p) => p.id === projectId);
+  };
+
+  const getUserById = (userId?: string) => {
+    if (!userId || !users) return undefined;
+    return users.find((u) => u.id === userId);
+  };
+
+  if (isLoading) {
+    return <LoadingPage />;
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-7xl mx-auto">
+        <Alert variant="error" title="エラーが発生しました">
+          TODOの読み込みに失敗しました。
+        </Alert>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-text-primary">TODO</h1>
+            <p className="mt-2 text-text-secondary">
+              タスクを管理して、効率的に作業を進めましょう
+            </p>
+          </div>
+          <Link to="/todos/new">
+            <Button
+              variant="primary"
+              className="flex items-center gap-2"
+              data-testid="create-todo-button"
+            >
+              <PlusIcon className="h-5 w-5" />
+              新規TODO
+            </Button>
+          </Link>
+        </div>
+
+        {/* Filters */}
+        <div className="flex gap-4">
+          <div className="w-48">
+            <Select
+              options={statusFilterOptions}
+              value={filterStatus}
+              onChange={(e) => {
+                setFilterStatus(e.target.value as TodoStatus);
+              }}
+            />
+          </div>
+          <div className="w-48">
+            <Select
+              options={projectFilterOptions}
+              value={filterProjectId}
+              onChange={(e) => {
+                setFilterProjectId(e.target.value);
+              }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Todos Grid */}
+      {todos && todos.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {todos.map((todo: TodoResponse) => (
+            <TodoCard
+              key={todo.id}
+              todo={todo}
+              project={getProjectById(todo.projectId)}
+              assignee={getUserById(todo.assigneeUserId)}
+              onEdit={(t) => {
+                window.location.href = `/todos/${t.id}/edit`;
+              }}
+              onDelete={handleDelete}
+              onStatusChange={handleStatusChange}
+              onView={(t) => {
+                window.location.href = `/todos/${t.id}`;
+              }}
+            />
+          ))}
+        </div>
+      ) : (
+        <EmptyState
+          icon={<ListBulletIcon className="h-16 w-16 text-gray-400" />}
+          title="TODOがありません"
+          description="新しいTODOを作成して始めましょう"
+          action={
+            <Link to="/todos/new">
+              <Button variant="primary" data-testid="create-todo-button">
+                <PlusIcon className="h-5 w-5 mr-2" />
+                新規TODO
+              </Button>
+            </Link>
+          }
+        />
+      )}
+    </div>
+  );
+}

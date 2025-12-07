@@ -225,11 +225,22 @@ await expect(page).toHaveScreenshot(); // スクロール領域が欠ける
 ## ファイル配置
 
 ```
-app/routes/todos+/
-├── route.tsx
-├── components/
-└── todos.ss.test.ts      # スナップショットテスト
+app/routes/{feature}+/
+├── route.tsx             # ルートコンポーネント
+├── route.ss.test.ts      # スナップショットテスト（route.tsxに対応）
+└── components/
+    ├── {Component}.tsx
+    └── {Component}.ct.test.tsx  # コンポーネントテスト
 ```
+
+### 命名規則
+
+| テスト種別 | ファイル名 | 配置場所 |
+|-----------|-----------|----------|
+| スナップショット（ルート） | `route.ss.test.ts` | ルートディレクトリ直下 |
+| コンポーネント | `{Component}.ct.test.tsx` | `components/`内 |
+
+**根拠**: `route.tsx` がエントリーポイントなので、テストも `route.ss.test.ts` で統一。ディレクトリ名で機能を識別できる。
 
 ## 関連ドキュメント
 

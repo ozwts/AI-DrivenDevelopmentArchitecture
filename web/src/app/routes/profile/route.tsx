@@ -7,13 +7,13 @@ import {
 } from "@heroicons/react/24/outline";
 import { Card, Button, Modal, Alert } from "@/app/lib/ui";
 import { useToast } from "@/app/features/toast";
-import { z } from "zod";
-import { schemas } from "@/generated/zod-schemas";
 import {
   useCurrentUser,
   useUpdateCurrentUser,
   useDeleteCurrentUser,
-} from "./hooks/useUsers";
+} from "@/app/features/user";
+import { z } from "zod";
+import { schemas } from "@/generated/zod-schemas";
 import { ProfileEditForm } from "./components/ProfileEditForm";
 import { DeleteAccountConfirmation } from "./components/DeleteAccountConfirmation";
 

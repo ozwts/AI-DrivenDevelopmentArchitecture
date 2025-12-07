@@ -13,14 +13,12 @@
 ```
 app/routes/{feature}+/
 ├── route.tsx            # ルートコンポーネント（エントリーポイント）
-├── loader.ts            # データ取得（オプション）
-├── action.ts            # データ更新（オプション）
 ├── components/          # ルート固有コンポーネント
-│   ├── feature-list.tsx
-│   └── feature-item.tsx
+│   ├── {Feature}List.tsx
+│   └── {Feature}Item.tsx
 ├── hooks/               # ルート固有フック
-│   └── use-feature.ts
-└── {feature}.test.tsx   # テスト
+│   └── use{Feature}.ts
+└── {Feature}.ss.test.ts # スナップショットテスト
 ```
 
 ## コロケーションの判断基準
@@ -36,9 +34,9 @@ app/routes/{feature}+/
 
 ---
 
-## 実践パターン①: ロールによる分割
+## 実践パターン①: ロールによる分離
 
-レイアウトルート（`_buyer+`, `_seller+`, `_admin+`）でユーザー体験を完全に分離する。各ルート内にはそのロールに必要な機能だけを実装する。
+レイアウトルート（`_{role}+/`）でユーザー体験を完全に分離する。各ルート内にはそのロールに必要な機能だけを実装する。
 
 **根拠となる憲法**:
 - `module-cohesion-principles.md`: 原則2「ロール・コンテキストによる構造的分離」
@@ -47,69 +45,50 @@ app/routes/{feature}+/
 
 ```
 app/routes/
-├── _buyer+/                   # 購入者向けレイアウト
-│   └── products+/
-│       └── $productId+/
-│           └── route.tsx      # 購入者の機能のみ
+├── _{roleA}+/              # ロールAのルート
+│   └── {feature}+/
+│       └── route.tsx       # ロールA向けのデータ取得・処理
 │
-├── _seller+/                  # 出品者向けレイアウト
-│   └── products+/
-│       └── $productId+/
-│           └── route.tsx      # 出品者の機能のみ
-│
-└── _admin+/                   # 管理者向けレイアウト
-    └── ...
+└── _{roleB}+/              # ロールBのルート
+    └── {feature}+/
+        └── route.tsx       # ロールB向けのデータ取得・処理
 ```
 
-### 購入者向けルート
+### ロール別の責務分離
+
+各ロールに必要な機能（データ取得/更新処理）だけを実装する。
 
 ```typescript
-// app/routes/_buyer+/products+/$productId+/route.tsx
-export async function loader({ params }: LoaderFunctionArgs) {
-  // 購入者向けのデータ取得
-  return { product: await getProductForBuyer(params.productId) };
+// _{roleA}+/{feature}+/route.tsx
+// ロールA: 参照のみ（データ取得のみ）
+export function useRoleAFeature() {
+  return useQuery({ /* ロールA向けのデータ取得 */ });
 }
 
-// actionは存在しない（購入者は商品を編集できない）
-```
-
-### 出品者向けルート
-
-```typescript
-// app/routes/_seller+/products+/$productId+/route.tsx
-export async function loader({ params }: LoaderFunctionArgs) {
-  // 出品者向けのデータ取得（在庫情報等を含む）
-  return { product: await getProductForSeller(params.productId) };
+// _{roleB}+/{feature}+/route.tsx
+// ロールB: 参照 + 更新（データ取得 + 更新処理）
+export function useRoleBFeature() {
+  return useQuery({ /* ロールB向けのデータ取得 */ });
 }
-
-export async function action({ request }: ActionFunctionArgs) {
-  // 在庫更新などの出品者向け処理
-  const formData = await request.formData();
-  await updateProductStock(formData);
-  return redirect(".");
+export function useRoleBMutation() {
+  return useMutation({ /* ロールB向けの更新処理 */ });
 }
 ```
 
 ### Do / Don't
 
-**Do**: ロールごとにディレクトリを分離
+**Do**: ロールは物理グループ化、各ロールに必要な機能のみ実装
 ```
-app/routes/
-├── _buyer+/products+/     # 購入者の機能のみ
-└── _seller+/products+/    # 出品者の機能のみ
+routes/
+├── _{roleA}+/{feature}+/route.tsx  # ロールA向け機能のみ
+└── _{roleB}+/{feature}+/route.tsx  # ロールB向け機能のみ
 ```
 
-**Don't**: 条件分岐によるロール分離（論理的凝集）
-```typescript
-function ProductPage({ role }: { role: "buyer" | "seller" }) {
-  return (
-    <>
-      {role === "buyer" && <PurchaseButton />}
-      {role === "seller" && <StockEditor />}
-      {/* さらに条件分岐が増えていく... */}
-    </>
-  );
-}
+**Don't**: 技術的条件で物理グループ化
+```
+routes/
+├── _{technicalCondition}/          # 技術的条件はロールではない
+│   └── {feature}/
 ```
 
 ---
@@ -124,99 +103,36 @@ function ProductPage({ role }: { role: "buyer" | "seller" }) {
 ### ディレクトリ構造
 
 ```
-app/routes/products+/
+app/routes/{feature}+/
 ├── _shared/
 │   └── components/
-│       └── product-form.tsx   # ← 共通フォーム
+│       └── {Feature}Form.tsx   # ← 共通フォーム
 │
+├── route.tsx                   # 一覧
 ├── new+/
-│   └── route.tsx              # ← actionのみ（新規作成）
+│   └── route.tsx               # ← 新規作成
 │
-└── $productId+/
+└── ${param}+/
+    ├── route.tsx               # ← 親: データ取得 + Outlet
+    ├── _index/
+    │   └── route.tsx           # ← 子: 詳細表示
     └── edit+/
-        └── route.tsx          # ← loader + action（編集）
+        └── route.tsx           # ← 子: 編集フォーム
 ```
 
 ### 共通フォームコンポーネント
 
 ```typescript
-// app/routes/products+/_shared/components/product-form.tsx
-import type { ProductResponse } from "@/generated/zod-schemas";
-
+// app/routes/{feature}+/_shared/components/{Feature}Form.tsx
 type Props = {
-  readonly defaultValues?: ProductResponse;
+  readonly defaultValues?: {Feature}Response;
+  readonly onSubmit: (data: {Feature}FormData) => void;
+  readonly onCancel: () => void;
+  readonly isLoading?: boolean;
 };
 
-export function ProductForm({ defaultValues }: Props) {
-  return (
-    <Form method="post">
-      <input
-        name="title"
-        defaultValue={defaultValues?.title}
-        required
-      />
-      <textarea
-        name="description"
-        defaultValue={defaultValues?.description}
-      />
-      <button type="submit">
-        {defaultValues ? "更新" : "作成"}
-      </button>
-    </Form>
-  );
-}
-```
-
-### 新規作成ルート（actionのみ）
-
-```typescript
-// app/routes/products+/new+/route.tsx
-import { ProductForm } from "../_shared/components/product-form";
-
-// loaderは不要（初期値がない）
-
-export async function action({ request }: ActionFunctionArgs) {
-  const formData = await request.formData();
-  const product = await createProduct(formData);
-  return redirect(`/products/${product.id}`);
-}
-
-export default function NewProductPage() {
-  return (
-    <div>
-      <h1>商品を作成</h1>
-      <ProductForm />
-    </div>
-  );
-}
-```
-
-### 編集ルート（loader + action）
-
-```typescript
-// app/routes/products+/$productId+/edit+/route.tsx
-import { ProductForm } from "../../_shared/components/product-form";
-
-export async function loader({ params }: LoaderFunctionArgs) {
-  const product = await getProduct(params.productId);
-  if (!product) throw new Response("Not Found", { status: 404 });
-  return { product };
-}
-
-export async function action({ request, params }: ActionFunctionArgs) {
-  const formData = await request.formData();
-  await updateProduct(params.productId, formData);
-  return redirect(`/products/${params.productId}`);
-}
-
-export default function EditProductPage() {
-  const { product } = useLoaderData<typeof loader>();
-  return (
-    <div>
-      <h1>商品を編集</h1>
-      <ProductForm defaultValues={product} />
-    </div>
-  );
+export function {Feature}Form({ defaultValues, onSubmit, onCancel, isLoading }: Props) {
+  // フォームUIのみ（データ取得・更新は呼び出し元の責務）
 }
 ```
 
@@ -224,136 +140,101 @@ export default function EditProductPage() {
 
 **Do**: 責務ごとにルートを分離、共通UIは`_shared/`に配置
 ```
-products+/
-├── _shared/components/product-form.tsx  # 共通UI
-├── new+/route.tsx                        # 作成の責務
-└── $productId+/edit+/route.tsx          # 編集の責務
+{feature}+/
+├── _shared/components/{Feature}Form.tsx  # 共通UI
+├── new+/route.tsx                         # 作成の責務
+└── ${param}+/edit+/route.tsx             # 編集の責務
 ```
 
 **Don't**: 作成と編集を1つのルートで処理
 ```typescript
-function ProductFormPage({ mode }: { mode: "new" | "edit" }) {
+function {Feature}FormPage({ mode }: { mode: "new" | "edit" }) {
   // modeによる条件分岐が増殖...
-  const product = mode === "edit" ? await getProduct(id) : null;
-  // ...
 }
 ```
 
 ---
 
-## 実践パターン③: Outletによるネスト
+## 実践パターン③: Outletによるネスト（親子データ共有）
 
-親ルートで共通のデータ（例：商品情報）を取得し、共通のレイアウトを定義する。子ルート（詳細、レビュー、編集フォーム）は自身の機能とデータ取得に集中できる。
+親ルートで共通のデータを取得し、共通のレイアウト（ヘッダー、ナビゲーション等）を定義する。子ルートは自身の機能とデータ取得に集中できる。
+
+**根拠となる憲法**:
+- `module-cohesion-principles.md`: 原則1「ディレクトリ = 機能境界」
 
 ### ディレクトリ構造
 
 ```
-app/routes/products+/$productId+/
-├── route.tsx              # 親ルート（レイアウト）
+app/routes/{feature}+/${param}+/
+├── route.tsx              # 親ルート（共通データ取得 + 共通レイアウト + Outlet）
 ├── _index/
-│   └── route.tsx          # 詳細タブ（デフォルト）
-├── reviews+/
-│   └── route.tsx          # レビュータブ
+│   └── route.tsx          # 詳細表示（デフォルト）
+├── {subFeatureA}+/
+│   └── route.tsx          # サブ機能A
 └── edit+/
-    └── route.tsx          # 編集タブ
+    └── route.tsx          # 編集フォーム
 ```
 
-### 親ルート（レイアウト）
+### 親ルート（共通レイアウト + Outlet）
+
+親ルートで共通のヘッダーやナビゲーションを定義し、子ルートコンポーネントが`<Outlet />`にレンダリングされる。
 
 ```typescript
-// app/routes/products+/$productId+/route.tsx
-import { Outlet, NavLink } from "react-router";
+// app/routes/{feature}+/${param}+/route.tsx
+export type {Feature}OutletContext = {
+  {feature}: {Feature}Response;
+};
 
-export async function loader({ params }: LoaderFunctionArgs) {
-  // 共通データを取得
-  const product = await getProduct(params.productId);
-  if (!product) throw new Response("Not Found", { status: 404 });
-  return { product };
-}
+export default function {Feature}Layout() {
+  const { {param} } = useParams();
+  const { data, isLoading, error } = use{Feature}({param}!);
 
-export default function ProductLayout() {
-  const { product } = useLoaderData<typeof loader>();
+  if (isLoading) return <LoadingPage />;
+  if (error || !data) return <Alert variant="error">データが見つかりません</Alert>;
 
   return (
     <>
-      {/* 共通ヘッダー */}
-      <ProductHeader product={product} />
-
-      {/* ナビゲーションタブ */}
-      <nav>
-        <NavLink to="." end>詳細</NavLink>
-        <NavLink to="reviews">レビュー</NavLink>
-        <NavLink to="edit">編集</NavLink>
-      </nav>
-
-      {/* 子ルートがここにレンダリングされる */}
-      <Outlet />
+      <{Feature}Header data={data} />
+      <NavigationTabs />
+      <Outlet context={{ {feature}: data } satisfies {Feature}OutletContext} />
     </>
   );
 }
 ```
 
-### 子ルート（詳細タブ）
+### 子ルート
+
+子ルートは`useOutletContext`で親のデータを受け取り、自身の機能に集中する。
 
 ```typescript
-// app/routes/products+/$productId+/_index/route.tsx
-import { useRouteLoaderData } from "react-router";
-
-export default function ProductDetailPage() {
-  // 親ルートのデータを参照
-  const { product } = useRouteLoaderData("routes/products+/$productId+/route");
-
-  return (
-    <div>
-      <p>{product.description}</p>
-      <p>価格: {product.price}円</p>
-    </div>
-  );
+// app/routes/{feature}+/${param}+/_index/route.tsx
+export default function {Feature}DetailRoute() {
+  const { {feature} } = useOutletContext<{Feature}OutletContext>();
+  return <{Feature}Detail data={{feature}} />;
 }
 ```
 
-### 子ルート（レビュータブ）
+### Do / Don't
 
+**Do**: 親で共通レイアウト + データ取得、子はOutlet contextで受け取る
 ```typescript
-// app/routes/products+/$productId+/reviews+/route.tsx
+// 親: 共通レイアウト
+<{Feature}Header />
+<NavigationTabs />
+<Outlet context={{ {feature} }} />
 
-export async function loader({ params }: LoaderFunctionArgs) {
-  // このタブ固有のデータを取得
-  const reviews = await getProductReviews(params.productId);
-  return { reviews };
-}
-
-export default function ProductReviewsPage() {
-  const { reviews } = useLoaderData<typeof loader>();
-
-  return (
-    <ul>
-      {reviews.map((review) => (
-        <li key={review.id}>{review.comment}</li>
-      ))}
-    </ul>
-  );
-}
+// 子: 自身の機能に集中
+const { {feature} } = useOutletContext<{Feature}OutletContext>();
 ```
 
-### Outletの効果
+**Don't**: 親子で同じデータを重複取得
+```typescript
+// 親ルート
+const { data } = use{Feature}({param});
 
+// 子ルート
+const { data } = use{Feature}({param}); // 重複！
 ```
-┌─────────────────────────────────────────┐
-│ Product Header                          │  ← 親ルートで定義
-├─────────────────────────────────────────┤
-│ [詳細] [レビュー] [編集]                │  ← 親ルートで定義
-├─────────────────────────────────────────┤
-│                                         │
-│           <Outlet />                    │  ← 子ルートがレンダリング
-│                                         │
-└─────────────────────────────────────────┘
-```
-
-**効果**:
-- 親ルートで共通データを1回だけ取得
-- 子ルートは自身の機能に集中できる
-- タブ切り替え時に共通部分は再レンダリングされない
 
 ---
 
@@ -362,12 +243,12 @@ export default function ProductReviewsPage() {
 ルート内でデータフローが完結するように設計する。
 
 ```
-route.tsx（loader）
-    ↓ データ取得
-components/feature-list.tsx
-    ↓ ユーザー操作
-route.tsx（action）
-    ↓ データ更新
+route.tsx（データ取得）
+    ↓ Outlet context
+_index/route.tsx（詳細表示）
+edit+/route.tsx（編集フォーム）
+    ↓ mutation
+route.tsx（データ再取得 → 自動更新）
 ```
 
 **効果**:
@@ -375,14 +256,11 @@ route.tsx（action）
 - AIが機能を理解するために必要なコンテキストが局所化
 - 並行開発時のコンフリクトを構造的に回避
 
-**根拠となる憲法**:
-- `distributed-collaboration-principles.md`: 独立性の確保
-
 ---
 
 ## 例外対応: ルートで分割できない場合の機能的凝集
 
-単一リスト内で多様な要素を出し分けるケース（通知一覧など）では、ルート分割ができない。このような場合は`ts-pattern`を用いて、各ケースの処理を分離する。
+単一リスト内で多様な要素を出し分けるケースでは、ルート分割ができない。このような場合は`ts-pattern`を用いて、各ケースの処理を`.with()`ブロック内に閉じ込める。
 
 **根拠となる憲法**:
 - `module-cohesion-principles.md`: 原則5「分割できない場合の機能的凝集」
@@ -390,80 +268,21 @@ route.tsx（action）
 ### パターンマッチによる分離
 
 ```typescript
-// app/routes/notifications+/components/notification-item.tsx
 import { match } from "ts-pattern";
-import type { Notification } from "@/generated/zod-schemas";
 
-type Props = {
-  readonly notification: Notification;
-};
-
-export function NotificationItem({ notification }: Props) {
-  return match(notification)
-    .with({ type: "order_completed" }, (n) => <OrderNotification data={n} />)
-    .with({ type: "review_posted" }, (n) => <ReviewNotification data={n} />)
-    .with({ type: "stock_alert" }, (n) => <StockNotification data={n} />)
-    .exhaustive();
+export function {Feature}Item({ item }: Props) {
+  return match(item)
+    .with({ type: "{typeA}" }, (data) => <{TypeA}Component data={data} />)
+    .with({ type: "{typeB}" }, (data) => <{TypeB}Component data={data} />)
+    .with({ type: "{typeC}" }, (data) => <{TypeC}Component data={data} />)
+    .exhaustive();  // コンパイル時の網羅性チェック
 }
 ```
 
-### 効果
-
-- **処理の局所化**: 各通知タイプの処理が`.with()`ブロック内に閉じる
-- **網羅性の保証**: `.exhaustive()`によるコンパイル時の網羅性チェック
-- **型安全**: 新しい通知タイプが追加されると、コンパイルエラーで検出
-
-### 各タイプのコンポーネント
-
-```typescript
-// app/routes/notifications+/components/order-notification.tsx
-type Props = {
-  readonly data: OrderCompletedNotification;
-};
-
-export function OrderNotification({ data }: Props) {
-  return (
-    <div>
-      <span>注文完了</span>
-      <p>注文番号: {data.orderId}</p>
-    </div>
-  );
-}
-```
-
-### ディレクトリ構造
-
-```
-app/routes/notifications+/
-├── route.tsx
-└── components/
-    ├── notification-item.tsx       # パターンマッチで振り分け
-    ├── order-notification.tsx      # 注文完了
-    ├── review-notification.tsx     # レビュー投稿
-    └── stock-notification.tsx      # 在庫アラート
-```
-
-### Do / Don't
-
-**Do**: パターンマッチで各ケースを分離
-```typescript
-match(notification)
-  .with({ type: "order_completed" }, (n) => <OrderNotification data={n} />)
-  .with({ type: "review_posted" }, (n) => <ReviewNotification data={n} />)
-  .exhaustive();
-```
-
-**Don't**: if/elseの連鎖
-```typescript
-function NotificationItem({ notification }) {
-  if (notification.type === "order_completed") {
-    return <div>...</div>;
-  } else if (notification.type === "review_posted") {
-    return <div>...</div>;
-  }
-  // 新しいタイプを追加し忘れても気づかない
-}
-```
+**効果**:
+- 各タイプの処理が`.with()`ブロック内に閉じる
+- `.exhaustive()`によるコンパイル時の網羅性チェック
+- 新しいタイプ追加時に対応漏れを防止
 
 ## 関連ドキュメント
 

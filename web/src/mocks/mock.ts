@@ -1,4 +1,4 @@
-import { setupWorker, rest } from "msw";
+import { rest } from "msw";
 import urlJoin from "url-join";
 import { z } from "zod";
 import { config } from "../config";
@@ -616,6 +616,14 @@ const getHandlersByType = (type: string) => {
 };
 
 export const startMockServer = async () => {
+  // ブラウザ環境でのみ実行
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  // setupWorkerを動的インポート（SSRビルド時のエラーを回避）
+  const { setupWorker } = await import("msw");
+
   const response = getHandlersByType(config.mockType ?? "HAS_ALL");
 
   const worker = setupWorker(...response);

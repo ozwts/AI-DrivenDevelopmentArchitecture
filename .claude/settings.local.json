@@ -67,7 +67,8 @@
       "Bash(web/src/pages/LoginPage/LoginPage.ss.test.ts )",
       "Bash(web/src/pages/SignupPage/SignupPage.ss.test.ts )",
       "Bash(web/src/pages/ResetPasswordPage/ResetPasswordPage.ss.test.ts)",
-      "WebFetch(domain:mswjs.io)"
+      "WebFetch(domain:mswjs.io)",
+      "mcp__guardrails__review_route"
     ],
     "deny": [],
     "ask": []
