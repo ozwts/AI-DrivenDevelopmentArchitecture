@@ -1,14 +1,14 @@
 import { ReactNode, useEffect } from "react";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 
-interface ModalProps {
+type ModalProps = {
   isOpen: boolean;
   onClose: () => void;
   title: string;
   children: ReactNode;
   footer?: ReactNode;
   size?: "sm" | "md" | "lg" | "xl";
-}
+};
 
 const sizeClasses = {
   sm: "max-w-md",

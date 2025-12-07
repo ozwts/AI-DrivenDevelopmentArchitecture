@@ -2,7 +2,13 @@
   "$schema": "https://unpkg.com/knip@5/schema.json",
   "entry": ["src/main.tsx", "src/routes/**/*.tsx"],
   "project": ["src/**/*.{ts,tsx}"],
-  "ignore": ["src/generated/**", "playwright/**", "**/*.ct.test.tsx", "**/*.ss.test.ts", "**/*.dummy.ts"],
+  "ignore": [
+    "src/generated/**",
+    "playwright/**",
+    "**/*.ct.test.tsx",
+    "**/*.ss.test.ts",
+    "**/*.dummy.ts"
+  ],
   "playwright": false,
   "playwright-ct": false,
   "ignoreDependencies": [

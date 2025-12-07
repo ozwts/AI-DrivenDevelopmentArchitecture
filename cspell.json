@@ -16,7 +16,8 @@
     "tabnabbing",
     "todoid",
     "usecase",
-    "wordprocessingml"
+    "wordprocessingml",
+    "Zodios"
   ],
   "ignorePaths": [
     "node_modules/**",

@@ -1,11 +1,11 @@
 import { ReactNode } from "react";
 
-interface EmptyStateProps {
+type EmptyStateProps = {
   icon?: ReactNode;
   title: string;
   description?: string;
   action?: ReactNode;
-}
+};
 
 export const EmptyState = ({
   icon,

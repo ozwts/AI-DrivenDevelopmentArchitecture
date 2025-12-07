@@ -4,15 +4,15 @@ import {
   HomeIcon,
   FolderIcon,
   UserCircleIcon,
-  ArrowRightOnRectangleIcon,
+  ArrowRightStartOnRectangleIcon,
 } from "@heroicons/react/24/outline";
 import { useAuth } from "@/auth/AuthProvider";
 
-interface NavItem {
+type NavItem = {
   name: string;
   path: string;
   icon: typeof HomeIcon;
-}
+};
 
 const navItems: NavItem[] = [
   { name: "ホーム", path: "/", icon: HomeIcon },
@@ -83,7 +83,7 @@ export const Header = () => {
               className="flex items-center space-x-2 px-4 py-2 rounded-md text-text-primary hover:text-text-tertiary transition-colors duration-200"
               aria-label="ログアウト"
             >
-              <ArrowRightOnRectangleIcon className="h-5 w-5" />
+              <ArrowRightStartOnRectangleIcon className="h-5 w-5" />
               <span>ログアウト</span>
             </button>
           </div>

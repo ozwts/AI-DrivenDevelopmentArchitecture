@@ -9,7 +9,7 @@ type TodoResponse = z.infer<typeof schemas.TodoResponse>;
 type ProjectResponse = z.infer<typeof schemas.ProjectResponse>;
 type AttachmentResponse = z.infer<typeof schemas.AttachmentResponse>;
 
-interface TodoDetailProps {
+type TodoDetailProps = {
   todo: TodoResponse;
   project?: ProjectResponse;
   attachments?: AttachmentResponse[];
@@ -18,20 +18,26 @@ interface TodoDetailProps {
   onDelete?: (attachment: AttachmentResponse) => void;
   onUpload?: (file: File) => void;
   isUploading?: boolean;
-}
+};
 
 export const TodoDetail = ({
   todo,
   project,
   attachments,
   isLoadingAttachments = false,
-  onDownload = () => {},
-  onDelete = () => {},
-  onUpload = () => {},
+  onDownload = () => {
+    // デフォルトは何もしない
+  },
+  onDelete = () => {
+    // デフォルトは何もしない
+  },
+  onUpload = () => {
+    // デフォルトは何もしない
+  },
   isUploading = false,
 }: TodoDetailProps) => {
   // PropsでattachmentsFormが渡されていない場合は、todo.attachmentsを使用
-  const displayAttachments = attachments ?? todo.attachments ?? [];
+  const displayAttachments = attachments ?? todo.attachments;
   return (
     <div className="space-y-6">
       {/* TODO基本情報 */}

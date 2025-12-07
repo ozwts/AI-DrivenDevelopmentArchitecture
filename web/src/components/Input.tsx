@@ -1,15 +1,15 @@
 import { InputHTMLAttributes, forwardRef, useId } from "react";
 
-interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+type InputProps = {
   label?: string;
   error?: string;
   helperText?: string;
-}
+} & InputHTMLAttributes<HTMLInputElement>;
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ label, error, helperText, className = "", id, ...props }, ref) => {
     const generatedId = useId();
-    const inputId = id || generatedId;
+    const inputId = id ?? generatedId;
 
     return (
       <div className="w-full">

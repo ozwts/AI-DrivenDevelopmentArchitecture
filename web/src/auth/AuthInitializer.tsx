@@ -2,25 +2,23 @@ import { useEffect, useState, ReactNode } from "react";
 import { useAuth } from "./AuthProvider";
 import { apiClient } from "@/api/client";
 
-interface AuthInitializerProps {
+type AuthInitializerProps = {
   children: ReactNode;
-}
+};
 
 /**
  * 認証の初期化を行うコンポーネント
  * - API clientにtoken取得関数を注入
  * - 初回ログイン時のユーザー登録処理
  */
-export function AuthInitializer({
-  children,
-}: AuthInitializerProps): JSX.Element {
+export function AuthInitializer({ children }: AuthInitializerProps): ReactNode {
   const { getAccessToken, isAuthenticated } = useAuth();
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // API clientにtoken取得関数を注入
-    apiClient.setGetAccessToken(getAccessToken);
+    // API clientを初期化
+    apiClient.initialize({ getAccessToken });
   }, [getAccessToken]);
 
   useEffect(() => {
@@ -94,7 +92,9 @@ export function AuthInitializer({
           </div>
           <div className="mb-4 text-sm text-red-700">{error}</div>
           <button
-            onClick={() => window.location.reload()}
+            onClick={() => {
+              window.location.reload();
+            }}
             className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
           >
             再試行

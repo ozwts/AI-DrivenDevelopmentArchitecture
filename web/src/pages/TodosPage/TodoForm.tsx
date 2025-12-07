@@ -20,19 +20,19 @@ type RegisterTodoParams = z.infer<typeof schemas.RegisterTodoParams>;
 type UpdateTodoParams = z.infer<typeof schemas.UpdateTodoParams>;
 type TodoResponse = z.infer<typeof schemas.TodoResponse>;
 
-interface TodoFormProps {
+type TodoFormProps = {
   todo?: TodoResponse;
   onSubmit: (data: RegisterTodoParams, files: File[]) => void;
   onCancel: () => void;
   isLoading?: boolean;
-}
+};
 
-interface TodoFormPropsUpdate {
+type TodoFormPropsUpdate = {
   todo: TodoResponse;
   onSubmit: (data: UpdateTodoParams) => void;
   onCancel: () => void;
   isLoading?: boolean;
-}
+};
 
 const statusOptions = STATUS_VALUE_LABEL_PAIRS.map(([value, label]) => ({
   value,
@@ -64,14 +64,14 @@ export const TodoForm = ({
     defaultValues: todo
       ? {
           title: todo.title,
-          description: todo.description || "",
+          description: todo.description ?? "",
           status: todo.status,
           priority: todo.priority,
           dueDate: todo.dueDate
             ? new Date(todo.dueDate).toISOString().split("T")[0]
             : "",
-          projectId: todo.projectId || "",
-          assigneeUserId: todo.assigneeUserId || "",
+          projectId: todo.projectId,
+          assigneeUserId: todo.assigneeUserId,
         }
       : {
           title: "",
@@ -93,20 +93,20 @@ export const TodoForm = ({
     if (todo) {
       reset({
         title: todo.title,
-        description: todo.description || "",
+        description: todo.description ?? "",
         status: todo.status,
         priority: todo.priority,
         dueDate: todo.dueDate
           ? new Date(todo.dueDate).toISOString().split("T")[0]
           : "",
-        projectId: todo.projectId || "",
-        assigneeUserId: todo.assigneeUserId || "",
+        projectId: todo.projectId,
+        assigneeUserId: todo.assigneeUserId,
       });
     }
   }, [todo, reset]);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files || []);
+    const files = Array.from(event.target.files ?? []);
     if (files.length === 0) return;
 
     // ファイルサイズとタイプのバリデーション
@@ -152,7 +152,7 @@ export const TodoForm = ({
 
   const projectOptions = [
     { value: "", label: "プロジェクトなし" },
-    ...(projects || []).map((project) => ({
+    ...(projects ?? []).map((project) => ({
       value: project.id,
       label: project.name,
     })),
@@ -160,7 +160,7 @@ export const TodoForm = ({
 
   const assigneeOptions = [
     { value: "", label: "担当者なし（自分が担当者になります）" },
-    ...(users || []).map((user) => ({
+    ...(users ?? []).map((user) => ({
       value: user.id,
       label: user.name,
     })),

@@ -12,12 +12,12 @@ import { formatFileSize, formatDate } from "../../utils/formatter";
 
 type AttachmentResponse = z.infer<typeof schemas.AttachmentResponse>;
 
-interface AttachmentListProps {
+type AttachmentListProps = {
   attachments?: AttachmentResponse[];
   isLoading?: boolean;
   onDownload: (attachment: AttachmentResponse) => void;
   onDelete: (attachment: AttachmentResponse) => void;
-}
+};
 
 export const AttachmentList = ({
   attachments,
@@ -67,7 +67,9 @@ export const AttachmentList = ({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => onDownload(attachment)}
+              onClick={() => {
+                onDownload(attachment);
+              }}
               className="!p-2"
               aria-label={`${attachment.filename}をダウンロード`}
             >
@@ -76,7 +78,9 @@ export const AttachmentList = ({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => onDelete(attachment)}
+              onClick={() => {
+                onDelete(attachment);
+              }}
               className="!p-2 text-red-600 hover:text-red-700"
               aria-label={`${attachment.filename}を削除`}
             >

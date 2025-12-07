@@ -6,13 +6,13 @@ import { schemas } from "../../generated/zod-schemas";
 
 type ProjectResponse = z.infer<typeof schemas.ProjectResponse>;
 
-interface ProjectCardProps {
+type ProjectCardProps = {
   project: ProjectResponse;
   todoCount?: number;
   onEdit: (project: ProjectResponse) => void;
   onDelete: (project: ProjectResponse) => void;
   onClick: (project: ProjectResponse) => void;
-}
+};
 
 export const ProjectCard = ({
   project,
@@ -24,7 +24,9 @@ export const ProjectCard = ({
   return (
     <Card
       className="hover:shadow-md transition-shadow cursor-pointer"
-      onClick={() => onClick(project)}
+      onClick={() => {
+        onClick(project);
+      }}
     >
       <div className="space-y-4">
         {/* ヘッダー: プロジェクト色とタイトル */}

@@ -2,11 +2,11 @@ import { ReactNode } from "react";
 
 type BadgeVariant = "default" | "success" | "warning" | "danger" | "info";
 
-interface BadgeProps {
+type BadgeProps = {
   children: ReactNode;
   variant?: BadgeVariant;
   className?: string;
-}
+};
 
 const variantStyles: Record<BadgeVariant, string> = {
   default: "bg-gray-100 text-gray-800",

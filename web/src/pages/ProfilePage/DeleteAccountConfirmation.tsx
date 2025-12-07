@@ -9,12 +9,12 @@ import { schemas } from "../../generated/zod-schemas";
 
 type UserResponse = z.infer<typeof schemas.UserResponse>;
 
-interface DeleteAccountConfirmationProps {
+type DeleteAccountConfirmationProps = {
   user: UserResponse;
   onConfirm: () => void;
   onCancel: () => void;
   isDeleting: boolean;
-}
+};
 
 export const DeleteAccountConfirmation = ({
   user,

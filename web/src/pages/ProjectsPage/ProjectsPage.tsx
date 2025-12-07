@@ -116,7 +116,9 @@ export const ProjectsPage = () => {
           </div>
           <Button
             variant="primary"
-            onClick={() => setIsCreateModalOpen(true)}
+            onClick={() => {
+              setIsCreateModalOpen(true);
+            }}
             className="flex items-center gap-2"
             data-testid="create-project-button"
           >
@@ -148,7 +150,9 @@ export const ProjectsPage = () => {
           action={
             <Button
               variant="primary"
-              onClick={() => setIsCreateModalOpen(true)}
+              onClick={() => {
+                setIsCreateModalOpen(true);
+              }}
               data-testid="create-project-button"
             >
               <PlusIcon className="h-5 w-5 mr-2" />
@@ -161,13 +165,17 @@ export const ProjectsPage = () => {
       {/* 作成モーダル */}
       <Modal
         isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
+        onClose={() => {
+          setIsCreateModalOpen(false);
+        }}
         title="新規プロジェクト"
         size="lg"
       >
         <ProjectForm
           onSubmit={handleCreate}
-          onCancel={() => setIsCreateModalOpen(false)}
+          onCancel={() => {
+            setIsCreateModalOpen(false);
+          }}
           isLoading={createProject.isPending}
         />
       </Modal>
@@ -175,14 +183,18 @@ export const ProjectsPage = () => {
       {/* 編集モーダル */}
       <Modal
         isOpen={!!editingProject}
-        onClose={() => setEditingProject(undefined)}
+        onClose={() => {
+          setEditingProject(undefined);
+        }}
         title="プロジェクト編集"
         size="lg"
       >
         <ProjectForm
           project={editingProject}
           onSubmit={handleUpdate}
-          onCancel={() => setEditingProject(undefined)}
+          onCancel={() => {
+            setEditingProject(undefined);
+          }}
           isLoading={updateProject.isPending}
         />
       </Modal>
@@ -190,13 +202,17 @@ export const ProjectsPage = () => {
       {/* 削除確認モーダル */}
       <Modal
         isOpen={!!deletingProject}
-        onClose={() => setDeletingProject(undefined)}
+        onClose={() => {
+          setDeletingProject(undefined);
+        }}
         title="プロジェクトの削除"
         footer={
           <>
             <Button
               variant="ghost"
-              onClick={() => setDeletingProject(undefined)}
+              onClick={() => {
+                setDeletingProject(undefined);
+              }}
             >
               キャンセル
             </Button>

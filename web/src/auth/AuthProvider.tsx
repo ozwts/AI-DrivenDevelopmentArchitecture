@@ -1,10 +1,11 @@
-import React, {
+import {
   createContext,
   useContext,
   useState,
   useEffect,
   useCallback,
   useMemo,
+  ReactNode,
 } from "react";
 import {
   signIn,
@@ -19,7 +20,7 @@ import {
 import { configureAuth } from "./authConfig";
 import { config } from "@/config";
 
-export interface AuthContextType {
+export type AuthContextType = {
   user: AuthUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -37,13 +38,13 @@ export interface AuthContextType {
   logout: () => Promise<void>;
   getAccessToken: () => Promise<string | null>;
   clearError: () => void;
-}
+};
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-interface AuthProviderProps {
+type AuthProviderProps = {
   children: React.ReactNode;
-}
+};
 
 // モックモード用のダミーユーザー
 const MOCK_USER: AuthUser = {
@@ -51,7 +52,7 @@ const MOCK_USER: AuthUser = {
   userId: "mock-user-id",
 } as AuthUser;
 
-export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
+export function AuthProvider({ children }: AuthProviderProps): ReactNode {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);

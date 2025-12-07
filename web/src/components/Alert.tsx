@@ -8,12 +8,12 @@ import {
 
 type AlertVariant = "success" | "warning" | "error" | "info";
 
-interface AlertProps {
+type AlertProps = {
   variant: AlertVariant;
   title?: string;
   children: ReactNode;
   onClose?: () => void;
-}
+};
 
 const variantConfig: Record<
   AlertVariant,

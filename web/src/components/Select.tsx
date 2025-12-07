@@ -1,20 +1,20 @@
 import { SelectHTMLAttributes, forwardRef, useId } from "react";
 
-interface SelectOption {
+type SelectOption = {
   value: string;
   label: string;
-}
+};
 
-interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
+type SelectProps = {
   label?: string;
   error?: string;
   options: SelectOption[];
-}
+} & SelectHTMLAttributes<HTMLSelectElement>;
 
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(
   ({ label, error, options, className = "", id, ...props }, ref) => {
     const generatedId = useId();
-    const selectId = id || generatedId;
+    const selectId = id ?? generatedId;
 
     return (
       <div className="w-full">

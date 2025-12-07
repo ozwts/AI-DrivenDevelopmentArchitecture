@@ -9,12 +9,12 @@ import { Button, Input, Textarea } from "../../components";
 type ProjectResponse = z.infer<typeof schemas.ProjectResponse>;
 type CreateProjectParams = z.infer<typeof schemas.CreateProjectParams>;
 
-interface ProjectFormProps {
+type ProjectFormProps = {
   project?: ProjectResponse;
   onSubmit: (data: CreateProjectParams) => Promise<void>;
   onCancel: () => void;
   isLoading?: boolean;
-}
+};
 
 /**
  * ランダムなHEXカラーを生成
@@ -112,7 +112,9 @@ export const ProjectForm = ({
             <button
               key={`${color}-${index}`}
               type="button"
-              onClick={() => setValue("color", color)}
+              onClick={() => {
+                setValue("color", color);
+              }}
               className={`
                 h-12 rounded-md border-2 transition-all
                 ${

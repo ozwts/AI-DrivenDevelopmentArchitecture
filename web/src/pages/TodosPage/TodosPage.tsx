@@ -148,7 +148,7 @@ export const TodosPage = () => {
 
   const projectFilterOptions = [
     { value: "", label: "全てのプロジェクト" },
-    ...(projects || []).map((project) => ({
+    ...(projects ?? []).map((project) => ({
       value: project.id,
       label: project.name,
     })),
@@ -191,7 +191,9 @@ export const TodosPage = () => {
           </div>
           <Button
             variant="primary"
-            onClick={() => setIsCreateModalOpen(true)}
+            onClick={() => {
+              setIsCreateModalOpen(true);
+            }}
             className="flex items-center gap-2"
             data-testid="create-todo-button"
           >
@@ -206,7 +208,9 @@ export const TodosPage = () => {
             <Select
               options={statusFilterOptions}
               value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value as TodoStatus)}
+              onChange={(e) => {
+                setFilterStatus(e.target.value as TodoStatus);
+              }}
             />
           </div>
           <div className="w-48">
@@ -249,7 +253,9 @@ export const TodosPage = () => {
           action={
             <Button
               variant="primary"
-              onClick={() => setIsCreateModalOpen(true)}
+              onClick={() => {
+                setIsCreateModalOpen(true);
+              }}
               data-testid="create-todo-button"
             >
               <PlusIcon className="h-5 w-5 mr-2" />
@@ -262,7 +268,11 @@ export const TodosPage = () => {
       {/* Create Modal */}
       <Modal
         isOpen={isCreateModalOpen}
-        onClose={() => !isUploadingFiles && setIsCreateModalOpen(false)}
+        onClose={() => {
+          if (!isUploadingFiles) {
+            setIsCreateModalOpen(false);
+          }
+        }}
         title="新規TODO"
         size="lg"
       >
@@ -276,7 +286,9 @@ export const TodosPage = () => {
         ) : (
           <TodoForm
             onSubmit={handleCreate}
-            onCancel={() => setIsCreateModalOpen(false)}
+            onCancel={() => {
+              setIsCreateModalOpen(false);
+            }}
             isLoading={createTodo.isPending}
           />
         )}
@@ -285,14 +297,18 @@ export const TodosPage = () => {
       {/* Edit Modal */}
       <Modal
         isOpen={!!editingTodo}
-        onClose={() => setEditingTodo(undefined)}
+        onClose={() => {
+          setEditingTodo(undefined);
+        }}
         title="TODO編集"
         size="lg"
       >
         <TodoForm
           todo={editingTodo}
           onSubmit={handleUpdate}
-          onCancel={() => setEditingTodo(undefined)}
+          onCancel={() => {
+            setEditingTodo(undefined);
+          }}
           isLoading={updateTodo.isPending}
         />
       </Modal>
@@ -300,11 +316,18 @@ export const TodosPage = () => {
       {/* Delete Confirmation Modal */}
       <Modal
         isOpen={!!deletingTodo}
-        onClose={() => setDeletingTodo(undefined)}
+        onClose={() => {
+          setDeletingTodo(undefined);
+        }}
         title="TODOの削除"
         footer={
           <>
-            <Button variant="ghost" onClick={() => setDeletingTodo(undefined)}>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setDeletingTodo(undefined);
+              }}
+            >
               キャンセル
             </Button>
             <Button
@@ -327,7 +350,9 @@ export const TodosPage = () => {
       {/* Detail View Modal */}
       <Modal
         isOpen={!!viewingTodo}
-        onClose={() => setViewingTodo(undefined)}
+        onClose={() => {
+          setViewingTodo(undefined);
+        }}
         title="TODO詳細"
         size="lg"
       >

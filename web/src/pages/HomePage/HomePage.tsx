@@ -24,12 +24,12 @@ export function HomePage() {
   const toast = useToast();
 
   const todoCount =
-    todos?.filter((t: { status: string }) => t.status === "TODO").length || 0;
+    todos?.filter((t: { status: string }) => t.status === "TODO").length ?? 0;
   const inProgressCount =
     todos?.filter((t: { status: string }) => t.status === "IN_PROGRESS")
-      .length || 0;
+      .length ?? 0;
   const doneCount =
-    todos?.filter((t: { status: string }) => t.status === "COMPLETED").length ||
+    todos?.filter((t: { status: string }) => t.status === "COMPLETED").length ??
     0;
 
   // 最近追加されたタスク（5件）
@@ -40,22 +40,24 @@ export function HomePage() {
         (a: TodoResponse, b: TodoResponse) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
       )
-      .slice(0, 5) || [];
+      .slice(0, 5) ?? [];
 
   // 期限が近いタスク（3日以内、未完了のみ）
   const now = new Date();
   const threeDaysLater = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+  // dueDateが存在するTodoの型
+  type TodoWithDueDate = TodoResponse & { dueDate: string };
+
   const upcomingTodos =
     todos
-      ?.filter((t: TodoResponse) => {
-        if (t.status === "COMPLETED" || !t.dueDate) return false;
+      ?.filter((t: TodoResponse): t is TodoWithDueDate => {
+        if (t.status === "COMPLETED" || t.dueDate === undefined) return false;
         const dueDate = new Date(t.dueDate);
         return dueDate <= threeDaysLater;
       })
-      .sort(
-        (a: TodoResponse, b: TodoResponse) =>
-          new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime(),
-      ) || [];
+      .sort((a, b) => {
+        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+      }) ?? [];
 
   const handleUpdate = async (data: UpdateTodoParams) => {
     if (!editingTodo) return;
@@ -154,8 +156,8 @@ export function HomePage() {
                 </Link>
               </div>
               <div className="space-y-3">
-                {upcomingTodos.map((todo: TodoResponse) => {
-                  const dueDate = new Date(todo.dueDate!);
+                {upcomingTodos.map((todo) => {
+                  const dueDate = new Date(todo.dueDate);
                   const isOverdue = dueDate < now;
                   const daysUntilDue = Math.ceil(
                     (dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
@@ -164,7 +166,9 @@ export function HomePage() {
                   return (
                     <button
                       key={todo.id}
-                      onClick={() => setEditingTodo(todo)}
+                      onClick={() => {
+                        setEditingTodo(todo);
+                      }}
                       className="w-full text-left p-4 border border-border-light rounded-md hover:border-primary-600 hover:shadow-sm transition-all cursor-pointer"
                     >
                       <div className="flex items-start justify-between">
@@ -241,7 +245,9 @@ export function HomePage() {
                 {recentTodos.map((todo: TodoResponse) => (
                   <button
                     key={todo.id}
-                    onClick={() => setEditingTodo(todo)}
+                    onClick={() => {
+                      setEditingTodo(todo);
+                    }}
                     className="w-full text-left p-4 border border-border-light rounded-md hover:border-primary-600 hover:shadow-sm transition-all cursor-pointer"
                   >
                     <div className="flex items-start justify-between">
@@ -302,14 +308,18 @@ export function HomePage() {
       {/* Edit Modal */}
       <Modal
         isOpen={!!editingTodo}
-        onClose={() => setEditingTodo(undefined)}
+        onClose={() => {
+          setEditingTodo(undefined);
+        }}
         title="TODO編集"
         size="lg"
       >
         <TodoForm
           todo={editingTodo}
           onSubmit={handleUpdate}
-          onCancel={() => setEditingTodo(undefined)}
+          onCancel={() => {
+            setEditingTodo(undefined);
+          }}
           isLoading={updateTodo.isPending}
         />
       </Modal>

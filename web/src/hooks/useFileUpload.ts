@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { apiClient } from "../api/client";
 
-interface FileUploadResult {
+type FileUploadResult = {
   totalFiles: number;
   failedFiles: string[];
   successCount: number;
-}
+};
 
 export const useFileUpload = () => {
   const [isUploading, setIsUploading] = useState(false);

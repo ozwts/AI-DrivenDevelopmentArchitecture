@@ -4,10 +4,10 @@ import { Button } from "../../components/Button";
 import { Alert } from "../../components/Alert";
 import { MAX_FILE_SIZE, ALLOWED_FILE_TYPES } from "./constants";
 
-interface AttachmentUploadProps {
+type AttachmentUploadProps = {
   onUpload: (file: File) => void;
   isUploading?: boolean;
-}
+};
 
 export const AttachmentUpload = ({
   onUpload,
@@ -61,7 +61,9 @@ export const AttachmentUpload = ({
     const k = 1024;
     const sizes = ["Bytes", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
+    return (
+      String(Math.round((bytes / Math.pow(k, i)) * 100) / 100) + " " + sizes[i]
+    );
   };
 
   return (

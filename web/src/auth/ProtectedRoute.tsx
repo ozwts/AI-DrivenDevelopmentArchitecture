@@ -1,16 +1,16 @@
-import { useEffect } from "react";
+import { useEffect, ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthProvider";
 
-interface ProtectedRouteProps {
-  children: React.ReactNode;
-}
+type ProtectedRouteProps = {
+  children: ReactNode;
+};
 
 /**
  * 認証が必要なルートを保護するコンポーネント
  * 未認証の場合はログインページにリダイレクト
  */
-export function ProtectedRoute({ children }: ProtectedRouteProps): JSX.Element {
+export function ProtectedRoute({ children }: ProtectedRouteProps): ReactNode {
   const { isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
 

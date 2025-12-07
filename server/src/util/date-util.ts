@@ -19,4 +19,3 @@ export const dateToIsoString = (date: Date, format?: string): string =>
   format !== undefined && format !== ""
     ? dayjs(date).tz().format(format)
     : dayjs(date).tz().format("YYYY-MM-DDTHH:mm:ss.SSSZ");
-

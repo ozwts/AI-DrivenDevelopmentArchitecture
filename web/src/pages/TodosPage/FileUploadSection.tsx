@@ -5,12 +5,12 @@ import { Alert } from "../../components/Alert";
 import { formatFileSize } from "../../utils/formatter";
 import { ALLOWED_FILE_TYPES } from "./constants";
 
-interface FileUploadSectionProps {
+type FileUploadSectionProps = {
   selectedFiles: File[];
   onFileSelect: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onFileRemove: (index: number) => void;
   fileError: string;
-}
+};
 
 export const FileUploadSection = ({
   selectedFiles,
@@ -83,7 +83,9 @@ export const FileUploadSection = ({
                 type="button"
                 variant="ghost"
                 size="sm"
-                onClick={() => onFileRemove(index)}
+                onClick={() => {
+                  onFileRemove(index);
+                }}
                 className="!p-2 flex-shrink-0"
                 aria-label={`${file.name}を削除`}
               >

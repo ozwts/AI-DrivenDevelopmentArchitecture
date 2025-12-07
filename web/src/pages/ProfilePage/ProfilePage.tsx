@@ -106,7 +106,9 @@ export const ProfilePage = () => {
               <Button
                 variant="secondary"
                 size="sm"
-                onClick={() => setIsEditModalOpen(true)}
+                onClick={() => {
+                  setIsEditModalOpen(true);
+                }}
                 data-testid="edit-button"
                 aria-label="プロフィールを編集"
               >
@@ -187,7 +189,9 @@ export const ProfilePage = () => {
                   <Button
                     variant="danger"
                     size="md"
-                    onClick={() => setIsDeleteModalOpen(true)}
+                    onClick={() => {
+                      setIsDeleteModalOpen(true);
+                    }}
                     aria-label="アカウント削除確認ダイアログを開く"
                   >
                     <TrashIcon className="h-5 w-5 mr-2" aria-hidden="true" />
@@ -203,13 +207,17 @@ export const ProfilePage = () => {
       {/* Edit Modal */}
       <Modal
         isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
+        onClose={() => {
+          setIsEditModalOpen(false);
+        }}
         title="プロフィール編集"
       >
         <ProfileEditForm
           user={user}
           onSubmit={handleUpdate}
-          onCancel={() => setIsEditModalOpen(false)}
+          onCancel={() => {
+            setIsEditModalOpen(false);
+          }}
           isLoading={updateUser.isPending}
         />
       </Modal>
@@ -217,13 +225,17 @@ export const ProfilePage = () => {
       {/* Delete Confirmation Modal */}
       <Modal
         isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+        }}
         title="アカウント削除の確認"
       >
         <DeleteAccountConfirmation
           user={user}
           onConfirm={handleDelete}
-          onCancel={() => setIsDeleteModalOpen(false)}
+          onCancel={() => {
+            setIsDeleteModalOpen(false);
+          }}
           isDeleting={deleteUser.isPending}
         />
       </Modal>

@@ -2,14 +2,14 @@ import { Component, ReactNode, ErrorInfo } from "react";
 import { Alert } from "./Alert";
 import { Button } from "./Button";
 
-interface Props {
+type Props = {
   children: ReactNode;
-}
+};
 
-interface State {
+type State = {
   hasError: boolean;
   error?: Error;
-}
+};
 
 export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
@@ -52,7 +52,9 @@ export class ErrorBoundary extends Component<Props, State> {
                     再試行
                   </Button>
                   <Button
-                    onClick={() => window.location.reload()}
+                    onClick={() => {
+                      window.location.reload();
+                    }}
                     variant="secondary"
                   >
                     ページをリロード

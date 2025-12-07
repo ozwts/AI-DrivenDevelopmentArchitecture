@@ -20,7 +20,7 @@ type TodoPriority = z.infer<typeof schemas.TodoPriority>;
 type ProjectResponse = z.infer<typeof schemas.ProjectResponse>;
 type UserResponse = z.infer<typeof schemas.UserResponse>;
 
-interface TodoCardProps {
+type TodoCardProps = {
   todo: TodoResponse;
   project?: ProjectResponse;
   assignee?: UserResponse;
@@ -28,7 +28,7 @@ interface TodoCardProps {
   onDelete: (todo: TodoResponse) => void;
   onStatusChange: (todo: TodoResponse, status: TodoStatus) => void;
   onView?: (todo: TodoResponse) => void;
-}
+};
 
 const statusConfig: Record<
   TodoStatus,
@@ -143,7 +143,7 @@ export const TodoCard = ({
               期限: {new Date(todo.dueDate).toLocaleDateString("ja-JP")}
             </Badge>
           )}
-          {todo.attachments && todo.attachments.length > 0 && (
+          {todo.attachments.length > 0 && (
             <Badge variant="default">
               <PaperClipIcon className="h-3 w-3 mr-1 inline" />
               {todo.attachments.length}件
@@ -161,7 +161,9 @@ export const TodoCard = ({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => onView(todo)}
+                onClick={() => {
+                  onView(todo);
+                }}
                 data-testid="todo-detail-button"
               >
                 詳細を見る
@@ -177,7 +179,9 @@ export const TodoCard = ({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => onEdit(todo)}
+              onClick={() => {
+                onEdit(todo);
+              }}
               className="!p-2"
               aria-label="編集"
             >
@@ -186,7 +190,9 @@ export const TodoCard = ({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => onDelete(todo)}
+              onClick={() => {
+                onDelete(todo);
+              }}
               className="!p-2 text-red-600 hover:text-red-700"
               aria-label="削除"
             >

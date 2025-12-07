@@ -15,19 +15,19 @@ import {
 
 type ToastType = "success" | "error" | "warning" | "info";
 
-interface Toast {
+type Toast = {
   id: string;
   type: ToastType;
   message: string;
-}
+};
 
-interface ToastContextType {
+type ToastContextType = {
   showToast: (type: ToastType, message: string) => void;
   success: (message: string) => void;
   error: (message: string) => void;
   warning: (message: string) => void;
   info: (message: string) => void;
-}
+};
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
@@ -76,10 +76,18 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
   const contextValue: ToastContextType = {
     showToast,
-    success: (message) => showToast("success", message),
-    error: (message) => showToast("error", message),
-    warning: (message) => showToast("warning", message),
-    info: (message) => showToast("info", message),
+    success: (message) => {
+      showToast("success", message);
+    },
+    error: (message) => {
+      showToast("error", message);
+    },
+    warning: (message) => {
+      showToast("warning", message);
+    },
+    info: (message) => {
+      showToast("info", message);
+    },
   };
 
   return (
@@ -104,7 +112,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               <Icon className={`h-5 w-5 ${config.iconColor} flex-shrink-0`} />
               <p className="text-sm text-gray-800 flex-1">{toast.message}</p>
               <button
-                onClick={() => removeToast(toast.id)}
+                onClick={() => {
+                  removeToast(toast.id);
+                }}
                 className="text-gray-400 hover:text-gray-600"
               >
                 <XMarkIcon className="h-4 w-4" />

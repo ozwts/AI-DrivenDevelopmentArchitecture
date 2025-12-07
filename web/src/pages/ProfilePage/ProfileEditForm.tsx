@@ -8,12 +8,12 @@ import { schemas } from "../../generated/zod-schemas";
 type UserResponse = z.infer<typeof schemas.UserResponse>;
 type UpdateUserParams = z.infer<typeof schemas.UpdateUserParams>;
 
-interface ProfileEditFormProps {
+type ProfileEditFormProps = {
   user: UserResponse;
   onSubmit: (data: UpdateUserParams) => void;
   onCancel: () => void;
   isLoading?: boolean;
-}
+};
 
 export const ProfileEditForm = ({
   user,

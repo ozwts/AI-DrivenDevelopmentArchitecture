@@ -1,10 +1,10 @@
 import { HTMLAttributes, ReactNode } from "react";
 
-interface CardProps extends HTMLAttributes<HTMLDivElement> {
+type CardProps = {
   children: ReactNode;
   title?: string;
   actions?: ReactNode;
-}
+} & HTMLAttributes<HTMLDivElement>;
 
 export const Card = ({
   children,
@@ -22,7 +22,7 @@ export const Card = ({
       `}
       {...props}
     >
-      {(title || actions) && (
+      {(title !== undefined || actions !== undefined) && (
         <div className="px-6 py-4 border-b border-border-light flex items-center justify-between">
           {title && (
             <h3 className="text-lg font-semibold text-text-primary">{title}</h3>

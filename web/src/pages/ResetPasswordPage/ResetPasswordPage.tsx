@@ -1,9 +1,9 @@
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, ReactNode } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
 import { Button } from "@/components";
 
-export function ResetPasswordPage(): JSX.Element {
+export function ResetPasswordPage(): ReactNode {
   const [step, setStep] = useState<"request" | "confirm">("request");
   const [email, setEmail] = useState("");
   const [confirmationCode, setConfirmationCode] = useState("");
@@ -95,7 +95,9 @@ export function ResetPasswordPage(): JSX.Element {
                 id="email"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                }}
                 required
                 disabled={isLoading}
                 className="w-full px-4 py-2 border border-border rounded-md text-text-primary bg-white focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
@@ -152,7 +154,9 @@ export function ResetPasswordPage(): JSX.Element {
                 id="confirmationCode"
                 type="text"
                 value={confirmationCode}
-                onChange={(e) => setConfirmationCode(e.target.value)}
+                onChange={(e) => {
+                  setConfirmationCode(e.target.value);
+                }}
                 required
                 disabled={isLoading}
                 className="w-full px-4 py-2 border border-border rounded-md text-text-primary bg-white focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
@@ -176,7 +180,9 @@ export function ResetPasswordPage(): JSX.Element {
                 id="newPassword"
                 type="password"
                 value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
+                onChange={(e) => {
+                  setNewPassword(e.target.value);
+                }}
                 required
                 disabled={isLoading}
                 className="w-full px-4 py-2 border border-border rounded-md text-text-primary bg-white focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
@@ -199,7 +205,9 @@ export function ResetPasswordPage(): JSX.Element {
                 id="confirmPassword"
                 type="password"
                 value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                onChange={(e) => {
+                  setConfirmPassword(e.target.value);
+                }}
                 required
                 disabled={isLoading}
                 className="w-full px-4 py-2 border border-border rounded-md text-text-primary bg-white focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"

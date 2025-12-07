@@ -1,7 +1,7 @@
-interface LoadingSpinnerProps {
+type LoadingSpinnerProps = {
   size?: "sm" | "md" | "lg";
   className?: string;
-}
+};
 
 const sizeClasses = {
   sm: "h-4 w-4",

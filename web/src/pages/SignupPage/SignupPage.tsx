@@ -1,9 +1,9 @@
-import { useState, FormEvent, useEffect } from "react";
+import { useState, FormEvent, useEffect, ReactNode } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
 import { Button } from "@/components";
 
-export function SignupPage(): JSX.Element {
+export function SignupPage(): ReactNode {
   const location = useLocation();
   const locationState = location.state as {
     email?: string;
@@ -128,7 +128,9 @@ export function SignupPage(): JSX.Element {
                 id="email"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                }}
                 required
                 disabled={isLoading}
                 className="w-full px-4 py-2 border border-border rounded-md text-text-primary bg-white focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
@@ -148,7 +150,9 @@ export function SignupPage(): JSX.Element {
                 id="password"
                 type="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                }}
                 required
                 disabled={isLoading}
                 className="w-full px-4 py-2 border border-border rounded-md text-text-primary bg-white focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
@@ -172,7 +176,9 @@ export function SignupPage(): JSX.Element {
                 id="confirmPassword"
                 type="password"
                 value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                onChange={(e) => {
+                  setConfirmPassword(e.target.value);
+                }}
                 required
                 disabled={isLoading}
                 className="w-full px-4 py-2 border border-border rounded-md text-text-primary bg-white focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
@@ -230,7 +236,9 @@ export function SignupPage(): JSX.Element {
                 id="confirmationCode"
                 type="text"
                 value={confirmationCode}
-                onChange={(e) => setConfirmationCode(e.target.value)}
+                onChange={(e) => {
+                  setConfirmationCode(e.target.value);
+                }}
                 required
                 disabled={isLoading}
                 className="w-full px-4 py-2 border border-border rounded-md text-text-primary bg-white focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
