@@ -1,13 +1,12 @@
 import { Outlet, Navigate } from "react-router";
-import { useAuth } from "./hooks/useAuth";
-import { Header } from "./components/Header";
+import { useAuth, Header } from "@/app/features/auth";
 import { LoadingSpinner } from "@/app/lib/ui/LoadingSpinner";
 
 /**
  * 認証必須ルートのレイアウト
  * 未認証の場合はログインページにリダイレクト
  */
-export default function AppLayout() {
+export default function UserLayout() {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {

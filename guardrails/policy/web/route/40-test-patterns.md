@@ -225,7 +225,7 @@ await expect(page).toHaveScreenshot(); // スクロール領域が欠ける
 ## ファイル配置
 
 ```
-app/routes/{feature}+/
+app/routes/({role})/{feature}/
 ├── route.tsx             # ルートコンポーネント
 ├── route.ss.test.ts      # スナップショットテスト（route.tsxに対応）
 └── components/

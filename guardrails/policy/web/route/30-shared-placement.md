@@ -47,8 +47,8 @@ app/features/product/components/product-card.tsx
 ```typescript
 // 見た目が似ているだけのカード
 // → 意味的に異なるので共通化NG
-// app/routes/todos+/components/todo-card.tsx
-// app/routes/projects+/components/project-card.tsx
+// app/routes/(user)/todos/components/todo-card.tsx
+// app/routes/(user)/projects/components/project-card.tsx
 // ↑ 各ルートで別々に持つ
 ```
 
@@ -59,9 +59,9 @@ app/features/product/components/product-card.tsx
 ```
 使用箇所の関係
     ↓
-同一ルート内 → app/routes/{route}+/components/
+同一ルート内 → app/routes/({role})/{feature}/components/
     ↓
-親子ルート間 → app/routes/{parent}+/_shared/components/
+親子ルート間 → app/routes/({role})/{feature}/_shared/components/
     ↓
 複数機能横断（3+） → app/features/{feature}/
     ↓
@@ -73,24 +73,26 @@ app/features/product/components/product-card.tsx
 ```
 app/
 ├── routes/
-│   ├── products+/
-│   │   ├── _shared/                    # (親子) 親子ルート間で共通
-│   │   │   └── components/
-│   │   │       └── product-form.tsx
-│   │   ├── $productId+/
-│   │   │   ├── route.tsx
-│   │   │   └── components/             # (同一) ルート内で共通
-│   │   │       └── product-detail.tsx
-│   │   └── new+/
-│   │       └── route.tsx
-│   └── _shared/                        # 全ルート共通
-│       └── components/
-│           └── layout.tsx
-├── features/                           # (3+) 複数機能横断で共通
+│   └── (user)/
+│       ├── products/
+│       │   ├── _shared/                    # (親子) 親子ルート間で共通
+│       │   │   └── components/
+│       │   │       └── product-form.tsx
+│       │   ├── [productId]/
+│       │   │   ├── route.tsx
+│       │   │   └── components/             # (同一) ルート内で共通
+│       │   │       └── product-detail.tsx
+│       │   └── new/
+│       │       └── route.tsx
+│       └── todos/
+│           └── ...
+│
+├── features/                               # (3+) 複数機能横断で共通
 │   └── user/
 │       └── components/
 │           └── user-avatar.tsx
-└── lib/                                # 純粋ユーティリティ
+│
+└── lib/                                    # 純粋ユーティリティ
     ├── ui/
     │   └── button.tsx
     └── utils/
@@ -100,7 +102,7 @@ app/
 ## 依存の方向
 
 ```
-app/routes/ → app/routes/_shared/ → app/features/ → app/lib/
+app/routes/ → app/features/ → app/lib/
 ```
 
 **一方向のみ許可**。逆方向のインポートは禁止。
@@ -111,7 +113,7 @@ app/routes/ → app/routes/_shared/ → app/features/ → app/lib/
 ### Do
 
 ```typescript
-// app/routes/todos+/route.tsx
+// app/routes/(user)/todos/route.tsx
 import { UserAvatar } from "@/features/user";
 import { formatDate } from "@/lib/utils";
 import { Button } from "@/lib/ui";
@@ -121,17 +123,17 @@ import { Button } from "@/lib/ui";
 
 ```typescript
 // app/features/user/components/user-avatar.tsx
-import { TodoList } from "@/routes/todos+/components/todo-list"; // NG: 逆方向
+import { TodoList } from "@/routes/(user)/todos/components/todo-list"; // NG: 逆方向
 ```
 
 ## 共通化の昇格フロー
 
 ```
 1. 最初はルート内に配置
-   app/routes/todos+/components/status-badge.tsx
+   app/routes/(user)/todos/components/status-badge.tsx
 
 2. 2箇所目で使いたくなっても、まだ共通化しない
-   app/routes/projects+/components/status-badge.tsx（別で作る）
+   app/routes/(user)/projects/components/status-badge.tsx（別で作る）
 
 3. 3箇所目で共通化を検討
    → 意味的に同一か確認（同じAPI型を使っている？）

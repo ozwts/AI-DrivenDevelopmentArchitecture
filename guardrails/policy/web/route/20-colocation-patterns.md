@@ -11,7 +11,7 @@
 ## ルート内のファイル構成
 
 ```
-app/routes/{feature}+/
+app/routes/({role})/{feature}/
 ├── route.tsx            # ルートコンポーネント（エントリーポイント）
 ├── components/          # ルート固有コンポーネント
 │   ├── {Feature}List.tsx
@@ -36,7 +36,7 @@ app/routes/{feature}+/
 
 ## 実践パターン①: ロールによる分離
 
-レイアウトルート（`_{role}+/`）でユーザー体験を完全に分離する。各ルート内にはそのロールに必要な機能だけを実装する。
+ロールディレクトリ（`({role})/`）でユーザー体験を完全に分離する。各ルート内にはそのロールに必要な機能だけを実装する。
 
 **根拠となる憲法**:
 - `module-cohesion-principles.md`: 原則2「ロール・コンテキストによる構造的分離」
@@ -45,12 +45,14 @@ app/routes/{feature}+/
 
 ```
 app/routes/
-├── _{roleA}+/              # ロールAのルート
-│   └── {feature}+/
+├── ({roleA})/              # ロールAのルート
+│   ├── _layout.tsx         # ロールA用レイアウト
+│   └── {feature}/
 │       └── route.tsx       # ロールA向けのデータ取得・処理
 │
-└── _{roleB}+/              # ロールBのルート
-    └── {feature}+/
+└── ({roleB})/              # ロールBのルート
+    ├── _layout.tsx         # ロールB用レイアウト
+    └── {feature}/
         └── route.tsx       # ロールB向けのデータ取得・処理
 ```
 
@@ -59,13 +61,13 @@ app/routes/
 各ロールに必要な機能（データ取得/更新処理）だけを実装する。
 
 ```typescript
-// _{roleA}+/{feature}+/route.tsx
+// ({roleA})/{feature}/route.tsx
 // ロールA: 参照のみ（データ取得のみ）
 export function useRoleAFeature() {
   return useQuery({ /* ロールA向けのデータ取得 */ });
 }
 
-// _{roleB}+/{feature}+/route.tsx
+// ({roleB})/{feature}/route.tsx
 // ロールB: 参照 + 更新（データ取得 + 更新処理）
 export function useRoleBFeature() {
   return useQuery({ /* ロールB向けのデータ取得 */ });
@@ -80,14 +82,14 @@ export function useRoleBMutation() {
 **Do**: ロールは物理グループ化、各ロールに必要な機能のみ実装
 ```
 routes/
-├── _{roleA}+/{feature}+/route.tsx  # ロールA向け機能のみ
-└── _{roleB}+/{feature}+/route.tsx  # ロールB向け機能のみ
+├── ({roleA})/{feature}/route.tsx  # ロールA向け機能のみ
+└── ({roleB})/{feature}/route.tsx  # ロールB向け機能のみ
 ```
 
 **Don't**: 技術的条件で物理グループ化
 ```
 routes/
-├── _{technicalCondition}/          # 技術的条件はロールではない
+├── _authenticated/                 # ❌ 技術的条件はロールではない
 │   └── {feature}/
 ```
 
@@ -103,27 +105,27 @@ routes/
 ### ディレクトリ構造
 
 ```
-app/routes/{feature}+/
+app/routes/({role})/{feature}/
 ├── _shared/
 │   └── components/
 │       └── {Feature}Form.tsx   # ← 共通フォーム
 │
 ├── route.tsx                   # 一覧
-├── new+/
+├── new/
 │   └── route.tsx               # ← 新規作成
 │
-└── ${param}+/
+└── [param]/
     ├── route.tsx               # ← 親: データ取得 + Outlet
     ├── _index/
     │   └── route.tsx           # ← 子: 詳細表示
-    └── edit+/
+    └── edit/
         └── route.tsx           # ← 子: 編集フォーム
 ```
 
 ### 共通フォームコンポーネント
 
 ```typescript
-// app/routes/{feature}+/_shared/components/{Feature}Form.tsx
+// app/routes/({role})/{feature}/_shared/components/{Feature}Form.tsx
 type Props = {
   readonly defaultValues?: {Feature}Response;
   readonly onSubmit: (data: {Feature}FormData) => void;
@@ -140,10 +142,10 @@ export function {Feature}Form({ defaultValues, onSubmit, onCancel, isLoading }: 
 
 **Do**: 責務ごとにルートを分離、共通UIは`_shared/`に配置
 ```
-{feature}+/
+{feature}/
 ├── _shared/components/{Feature}Form.tsx  # 共通UI
-├── new+/route.tsx                         # 作成の責務
-└── ${param}+/edit+/route.tsx             # 編集の責務
+├── new/route.tsx                          # 作成の責務
+└── [param]/edit/route.tsx                 # 編集の責務
 ```
 
 **Don't**: 作成と編集を1つのルートで処理
@@ -165,13 +167,13 @@ function {Feature}FormPage({ mode }: { mode: "new" | "edit" }) {
 ### ディレクトリ構造
 
 ```
-app/routes/{feature}+/${param}+/
+app/routes/({role})/{feature}/[param]/
 ├── route.tsx              # 親ルート（共通データ取得 + 共通レイアウト + Outlet）
 ├── _index/
 │   └── route.tsx          # 詳細表示（デフォルト）
-├── {subFeatureA}+/
+├── {subFeatureA}/
 │   └── route.tsx          # サブ機能A
-└── edit+/
+└── edit/
     └── route.tsx          # 編集フォーム
 ```
 
@@ -180,7 +182,7 @@ app/routes/{feature}+/${param}+/
 親ルートで共通のヘッダーやナビゲーションを定義し、子ルートコンポーネントが`<Outlet />`にレンダリングされる。
 
 ```typescript
-// app/routes/{feature}+/${param}+/route.tsx
+// app/routes/({role})/{feature}/[param]/route.tsx
 export type {Feature}OutletContext = {
   {feature}: {Feature}Response;
 };
@@ -207,7 +209,7 @@ export default function {Feature}Layout() {
 子ルートは`useOutletContext`で親のデータを受け取り、自身の機能に集中する。
 
 ```typescript
-// app/routes/{feature}+/${param}+/_index/route.tsx
+// app/routes/({role})/{feature}/[param]/_index/route.tsx
 export default function {Feature}DetailRoute() {
   const { {feature} } = useOutletContext<{Feature}OutletContext>();
   return <{Feature}Detail data={{feature}} />;
@@ -246,7 +248,7 @@ const { data } = use{Feature}({param}); // 重複！
 route.tsx（データ取得）
     ↓ Outlet context
 _index/route.tsx（詳細表示）
-edit+/route.tsx（編集フォーム）
+edit/route.tsx（編集フォーム）
     ↓ mutation
 route.tsx（データ再取得 → 自動更新）
 ```

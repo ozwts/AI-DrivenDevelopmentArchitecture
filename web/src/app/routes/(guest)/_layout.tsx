@@ -1,5 +1,5 @@
 import { Outlet, Navigate } from "react-router";
-import { useAuth } from "./hooks/useAuth";
+import { useAuth } from "@/app/features/auth";
 import { LoadingSpinner } from "@/app/lib/ui/LoadingSpinner";
 
 /**
