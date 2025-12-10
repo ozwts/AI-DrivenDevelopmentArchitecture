@@ -68,6 +68,150 @@ app/features/product/components/product-card.tsx
 全アプリ共通（純粋） → app/lib/
 ```
 
+---
+
+## `_shared/` ディレクトリの使い方
+
+### 目的
+
+`_shared/` は**親子ルート間で共有するコード**を配置する場所。機能（feature）ディレクトリ直下に置き、その機能内の複数ルートから参照される。
+
+### 命名規則
+
+| 項目 | 規則 |
+|------|------|
+| プレフィックス | `_`（アンダースコア）で開始 |
+| 名前 | `shared` 固定 |
+| 意味 | 「このディレクトリはルートではない」ことを明示 |
+
+**根拠**: React Router v7 のファイルベースルーティングでは `_` プレフィックスで非ルートを示す慣習がある。本プロジェクトでは `routes.ts` で明示的にルート定義するが、視覚的な識別のために採用。
+
+### 配置基準
+
+| 条件 | `_shared/` に配置？ |
+|------|-------------------|
+| 親ルート（`route.tsx`）と子ルート（`new/`, `[param]/`）で共有 | ✅ Yes |
+| 同一ルート内の複数コンポーネントで共有 | ❌ No → `components/` |
+| 異なるルート（`todos/` と `projects/`）で共有 | ❌ No → `features/` |
+
+### ディレクトリ構造
+
+```
+app/routes/({role})/{feature}/
+├── _shared/                    # ← 親子ルート間で共通
+│   ├── components/
+│   │   └── {Feature}Form.tsx   # 作成・編集で共通のフォーム
+│   ├── hooks/
+│   │   └── use{Feature}Mutation.ts
+│   └── types.ts                # 共通の型定義
+│
+├── route.tsx                   # 一覧ルート
+├── new/
+│   └── route.tsx               # 新規作成（_shared/を参照）
+└── [param]/
+    ├── route.tsx               # 詳細
+    └── edit/
+        └── route.tsx           # 編集（_shared/を参照）
+```
+
+### 典型的なユースケース
+
+#### 1. 作成・編集で共通のフォーム
+
+```typescript
+// app/routes/(user)/todos/_shared/components/TodoForm.tsx
+type Props = {
+  readonly defaultValues?: TodoFormData;
+  readonly onSubmit: (data: TodoFormData) => void;
+  readonly isSubmitting?: boolean;
+};
+
+export function TodoForm({ defaultValues, onSubmit, isSubmitting }: Props) {
+  // フォームUIのみ（データ取得・更新は呼び出し元の責務）
+}
+```
+
+```typescript
+// app/routes/(user)/todos/new/route.tsx
+import { TodoForm } from "../_shared/components/TodoForm";
+
+export default function NewTodoRoute() {
+  const mutation = useCreateTodo();
+  return <TodoForm onSubmit={mutation.mutate} isSubmitting={mutation.isPending} />;
+}
+```
+
+```typescript
+// app/routes/(user)/todos/[todoId]/edit/route.tsx
+import { TodoForm } from "../../_shared/components/TodoForm";
+
+export default function EditTodoRoute() {
+  const { todo } = useOutletContext<TodoOutletContext>();
+  const mutation = useUpdateTodo();
+  return (
+    <TodoForm
+      defaultValues={todo}
+      onSubmit={mutation.mutate}
+      isSubmitting={mutation.isPending}
+    />
+  );
+}
+```
+
+#### 2. 共通のミューテーションフック
+
+```typescript
+// app/routes/(user)/todos/_shared/hooks/useTodoMutations.ts
+export function useCreateTodo() { ... }
+export function useUpdateTodo() { ... }
+export function useDeleteTodo() { ... }
+```
+
+### Do / Don't
+
+#### Do
+
+```
+todos/
+├── _shared/
+│   └── components/
+│       └── TodoForm.tsx        # ✅ new/ と edit/ で共通
+├── new/
+│   └── route.tsx
+└── [todoId]/
+    └── edit/
+        └── route.tsx
+```
+
+#### Don't
+
+```
+todos/
+├── _shared/
+│   └── components/
+│       └── Button.tsx          # ❌ 汎用UIは lib/ui/ へ
+│       └── UserAvatar.tsx      # ❌ 他ルートでも使うなら features/ へ
+```
+
+### `_shared/` を使わないケース
+
+| ケース | 理由 | 配置先 |
+|--------|------|--------|
+| 1つのルートでのみ使用 | 共有の必要がない | そのルートの `components/` |
+| 3+の異なるルートで使用 | ルート横断 | `app/features/` |
+| ビジネスロジックを含まない純粋UI | 汎用 | `app/lib/ui/` |
+
+### インポートパス
+
+```typescript
+// 相対パスで参照（機能内に閉じていることを明示）
+import { TodoForm } from "../_shared/components/TodoForm";
+import { TodoForm } from "../../_shared/components/TodoForm";
+
+// ❌ エイリアスは使わない（機能境界を曖昧にする）
+import { TodoForm } from "@/routes/(user)/todos/_shared/components/TodoForm";
+```
+
 ### 配置の具体例
 
 ```
