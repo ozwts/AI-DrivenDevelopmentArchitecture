@@ -42,7 +42,10 @@ export default function ProfileRoute() {
   const handleDelete = async () => {
     try {
       await deleteUser.mutateAsync();
-      // 削除成功後、useDeleteCurrentUser内でログインページにリダイレクト
+      // 削除成功後のログアウト処理
+      sessionStorage.clear();
+      localStorage.clear();
+      window.location.href = "/login";
     } catch (error) {
       console.error("ユーザー削除エラー:", error);
       toast.error("アカウントの削除に失敗しました");

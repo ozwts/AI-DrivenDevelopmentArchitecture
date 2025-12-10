@@ -45,6 +45,7 @@ export function useUpdateCurrentUser() {
 
 /**
  * 現在のユーザーを削除するフック
+ * 注意: 削除成功後のリダイレクトはコンポーネント側で処理すること
  */
 export function useDeleteCurrentUser() {
   const queryClient = useQueryClient();
@@ -54,10 +55,6 @@ export function useDeleteCurrentUser() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [CURRENT_USER_QUERY_KEY] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
-      // ユーザー削除後はログアウト処理が必要（ログインページへリダイレクト）
-      sessionStorage.clear();
-      localStorage.clear();
-      window.location.href = "/login";
     },
   });
 }

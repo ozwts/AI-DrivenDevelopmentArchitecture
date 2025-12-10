@@ -129,3 +129,4 @@ featureのテストは**ルートのスナップショットテスト**で間接
 - `../route/30-shared-placement.md`: 共通化の配置基準
 - `../route/40-test-patterns.md`: ルートテストパターン
 - `../lib/10-lib-overview.md`: 技術基盤設計概要
+- `../hooks/10-hooks-overview.md`: カスタムフック設計概要

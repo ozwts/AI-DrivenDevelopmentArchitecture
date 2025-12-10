@@ -62,8 +62,10 @@ export function useUpdateTodo() {
       todoId: string;
       data: UpdateTodoParams;
     }) => apiClient.updateTodo(todoId, data),
-    onSuccess: () => {
+    onSuccess: (_, { todoId }) => {
+      // 一覧と詳細の両方を無効化
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, todoId] });
     },
   });
 }
@@ -76,8 +78,10 @@ export function useDeleteTodo() {
 
   return useMutation({
     mutationFn: (todoId: string) => apiClient.deleteTodo(todoId),
-    onSuccess: () => {
+    onSuccess: (_, todoId) => {
+      // 一覧と詳細の両方を無効化
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, todoId] });
     },
   });
 }
