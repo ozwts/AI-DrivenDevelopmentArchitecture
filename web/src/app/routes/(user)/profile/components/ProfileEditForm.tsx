@@ -40,6 +40,7 @@ export const ProfileEditForm = ({
         {...register("name")}
         error={errors.name?.message}
         placeholder="例: 田中太郎"
+        data-testid="input-name"
       />
 
       {/* メールアドレスは読み取り専用（Cognito管理） */}

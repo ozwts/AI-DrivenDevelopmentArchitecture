@@ -1,6 +1,7 @@
 import { useEffect, useState, ReactNode } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { apiClient } from "@/app/lib/api";
+import { Button } from "@/app/lib/ui";
 
 type AuthInitializerProps = {
   readonly children: ReactNode;
@@ -91,14 +92,16 @@ export function AuthInitializer({ children }: AuthInitializerProps): ReactNode {
             エラーが発生しました
           </div>
           <div className="mb-4 text-sm text-red-700">{error}</div>
-          <button
+          <Button
+            variant="danger"
+            size="sm"
             onClick={() => {
               window.location.reload();
             }}
-            className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+            data-testid="retry-button"
           >
             再試行
-          </button>
+          </Button>
         </div>
       </div>
     );

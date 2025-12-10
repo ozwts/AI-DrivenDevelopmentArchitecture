@@ -34,3 +34,33 @@ export const getPriorityLabel = (priority: TodoPriority): string => {
   const pair = PRIORITY_VALUE_LABEL_PAIRS.find(([value]) => value === priority);
   return pair ? pair[1] : priority;
 };
+
+type BadgeVariant = "default" | "success" | "warning" | "info" | "danger";
+
+/**
+ * ステータスに対応するBadge variantを取得
+ */
+export const getStatusBadgeVariant = (status: TodoStatus): BadgeVariant => {
+  switch (status) {
+    case "IN_PROGRESS":
+      return "info";
+    case "COMPLETED":
+      return "success";
+    default:
+      return "default";
+  }
+};
+
+/**
+ * 優先度に対応するBadge variantを取得
+ */
+export const getPriorityBadgeVariant = (priority: TodoPriority): BadgeVariant => {
+  switch (priority) {
+    case "HIGH":
+      return "danger";
+    case "MEDIUM":
+      return "warning";
+    default:
+      return "default";
+  }
+};

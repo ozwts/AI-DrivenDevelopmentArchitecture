@@ -172,6 +172,7 @@ export const TodoForm = (props: TodoFormProps) => {
         error={errors.title?.message}
         placeholder="例: データベース設計を完了する"
         required
+        data-testid="input-title"
       />
 
       <Textarea
@@ -180,6 +181,7 @@ export const TodoForm = (props: TodoFormProps) => {
         error={errors.description?.message}
         placeholder="TODOの詳細を入力してください"
         rows={4}
+        data-testid="textarea-description"
       />
 
       <div className="grid grid-cols-2 gap-4">
@@ -188,6 +190,7 @@ export const TodoForm = (props: TodoFormProps) => {
           {...register("status")}
           options={statusOptions}
           error={errors.status?.message}
+          data-testid="select-status"
         />
 
         <Select
@@ -195,6 +198,7 @@ export const TodoForm = (props: TodoFormProps) => {
           {...register("priority")}
           options={priorityOptions}
           error={errors.priority?.message}
+          data-testid="select-priority"
         />
       </div>
 
@@ -204,6 +208,7 @@ export const TodoForm = (props: TodoFormProps) => {
           {...register("projectId")}
           options={projectOptions}
           error={errors.projectId?.message}
+          data-testid="select-project"
         />
 
         <Input
@@ -211,6 +216,7 @@ export const TodoForm = (props: TodoFormProps) => {
           label="期限日"
           {...register("dueDate")}
           error={errors.dueDate?.message}
+          data-testid="input-due-date"
         />
       </div>
 
@@ -219,6 +225,7 @@ export const TodoForm = (props: TodoFormProps) => {
         {...register("assigneeUserId")}
         options={assigneeOptions}
         error={errors.assigneeUserId?.message}
+        data-testid="select-assignee"
       />
 
       {/* ファイル添付（新規作成時のみ） */}

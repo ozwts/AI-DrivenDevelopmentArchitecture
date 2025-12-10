@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { PaperClipIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { Button, Alert } from "@/app/lib/ui";
+import { formatFileSize } from "@/app/lib/utils";
 import { MAX_FILE_SIZE, ALLOWED_FILE_TYPES } from "../constants";
 
 type AttachmentUploadProps = {
@@ -55,16 +56,6 @@ export const AttachmentUpload = ({
     }
   };
 
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return "0 Bytes";
-    const k = 1024;
-    const sizes = ["Bytes", "KB", "MB", "GB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return (
-      String(Math.round((bytes / Math.pow(k, i)) * 100) / 100) + " " + sizes[i]
-    );
-  };
-
   return (
     <div className="space-y-3" data-testid="attachment-upload">
       {/* ファイル選択ボタン */}
@@ -116,6 +107,7 @@ export const AttachmentUpload = ({
               size="sm"
               onClick={handleUpload}
               disabled={isUploading}
+              data-testid="upload-button"
             >
               {isUploading ? "アップロード中..." : "アップロード"}
             </Button>
@@ -125,6 +117,8 @@ export const AttachmentUpload = ({
               onClick={handleCancel}
               disabled={isUploading}
               className="!p-2"
+              data-testid="cancel-upload-button"
+              aria-label="キャンセル"
             >
               <XMarkIcon className="h-4 w-4" />
             </Button>

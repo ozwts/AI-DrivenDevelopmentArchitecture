@@ -10,6 +10,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { z } from "zod";
 import { Card, Badge, Button } from "@/app/lib/ui";
+import { isOverdue as checkOverdue } from "@/app/lib/utils";
 import { schemas } from "@/generated/zod-schemas";
 
 type TodoResponse = z.infer<typeof schemas.TodoResponse>;
@@ -75,16 +76,21 @@ export const TodoCard = ({
   const priorityCfg = priorityConfig[todo.priority];
   const StatusIcon = statusCfg.icon;
 
-  const isOverdue =
-    todo.dueDate &&
-    new Date(todo.dueDate) < new Date() &&
+  const overdueFlag =
+    todo.dueDate != null &&
+    checkOverdue(todo.dueDate) &&
     todo.status !== "COMPLETED";
 
+  const nextStatus: TodoStatus | null =
+    todo.status === "TODO"
+      ? "IN_PROGRESS"
+      : todo.status === "IN_PROGRESS"
+        ? "COMPLETED"
+        : null;
+
   const handleStatusClick = () => {
-    if (todo.status === "TODO") {
-      onStatusChange(todo, "IN_PROGRESS");
-    } else if (todo.status === "IN_PROGRESS") {
-      onStatusChange(todo, "COMPLETED");
+    if (nextStatus) {
+      onStatusChange(todo, nextStatus);
     }
   };
 
@@ -134,8 +140,8 @@ export const TodoCard = ({
             </span>
           )}
           {todo.dueDate && (
-            <Badge variant={isOverdue ? "danger" : "default"}>
-              {isOverdue && (
+            <Badge variant={overdueFlag ? "danger" : "default"}>
+              {overdueFlag && (
                 <ExclamationCircleIcon className="h-3 w-3 mr-1 inline" />
               )}
               期限: {new Date(todo.dueDate).toLocaleDateString("ja-JP")}
@@ -170,7 +176,12 @@ export const TodoCard = ({
           </div>
           <div className="flex gap-2">
             {todo.status !== "COMPLETED" && (
-              <Button variant="secondary" size="sm" onClick={handleStatusClick}>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleStatusClick}
+                data-testid="status-change-button"
+              >
                 {todo.status === "TODO" ? "開始" : "完了"}
               </Button>
             )}
@@ -181,6 +192,7 @@ export const TodoCard = ({
                 onEdit(todo);
               }}
               className="!p-2"
+              data-testid="edit-button"
               aria-label="編集"
             >
               <PencilIcon className="h-4 w-4" aria-hidden="true" />
@@ -192,6 +204,7 @@ export const TodoCard = ({
                 onDelete(todo);
               }}
               className="!p-2 text-red-600 hover:text-red-700"
+              data-testid="delete-button"
               aria-label="削除"
             >
               <TrashIcon className="h-4 w-4" aria-hidden="true" />

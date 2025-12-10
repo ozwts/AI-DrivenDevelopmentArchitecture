@@ -77,6 +77,7 @@ export const Header = () => {
             <button
               onClick={handleLogout}
               className="flex items-center space-x-2 px-4 py-2 rounded-md text-text-primary hover:text-text-tertiary transition-colors duration-200"
+              data-testid="logout-button"
               aria-label="ログアウト"
             >
               <ArrowRightStartOnRectangleIcon className="h-5 w-5" />

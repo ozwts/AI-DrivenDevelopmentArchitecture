@@ -2,6 +2,12 @@ import { Link } from "react-router";
 import { ClockIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
 import { z } from "zod";
 import { Card, Badge } from "@/app/lib/ui";
+import {
+  getStatusLabel,
+  getPriorityLabel,
+  getStatusBadgeVariant,
+  getPriorityBadgeVariant,
+} from "@/app/lib/utils";
 import { schemas } from "@/generated/zod-schemas";
 
 type TodoResponse = z.infer<typeof schemas.TodoResponse>;
@@ -39,6 +45,8 @@ export function RecentTodosList({ todos, onTodoClick }: Props) {
               onTodoClick(todo);
             }}
             className="w-full text-left p-4 border border-border-light rounded-md hover:border-primary-600 hover:shadow-sm transition-all cursor-pointer"
+            data-testid={`recent-todo-${todo.id}`}
+            aria-label={`タスク: ${todo.title}`}
           >
             <div className="flex items-start justify-between">
               <div className="flex-1">
@@ -46,29 +54,11 @@ export function RecentTodosList({ todos, onTodoClick }: Props) {
                   {todo.title}
                 </h4>
                 <div className="flex flex-wrap gap-2">
-                  <Badge
-                    variant={todo.status === "IN_PROGRESS" ? "info" : "default"}
-                  >
-                    {todo.status === "TODO"
-                      ? "未着手"
-                      : todo.status === "IN_PROGRESS"
-                        ? "進行中"
-                        : "完了"}
+                  <Badge variant={getStatusBadgeVariant(todo.status)}>
+                    {getStatusLabel(todo.status)}
                   </Badge>
-                  <Badge
-                    variant={
-                      todo.priority === "HIGH"
-                        ? "danger"
-                        : todo.priority === "MEDIUM"
-                          ? "warning"
-                          : "default"
-                    }
-                  >
-                    {todo.priority === "HIGH"
-                      ? "高"
-                      : todo.priority === "MEDIUM"
-                        ? "中"
-                        : "低"}
+                  <Badge variant={getPriorityBadgeVariant(todo.priority)}>
+                    {getPriorityLabel(todo.priority)}
                   </Badge>
                   {todo.dueDate && (
                     <Badge variant="default">

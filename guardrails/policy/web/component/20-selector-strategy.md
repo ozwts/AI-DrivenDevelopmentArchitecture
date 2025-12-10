@@ -74,54 +74,9 @@ await expect(errorAlert).toBeVisible();
 await expect(errorAlert).toContainText(/200.*文字/i);
 ```
 
-## UIプリミティブのtestId Props
+## UIプリミティブでのdata-testid
 
-`app/lib/ui/`のUIプリミティブには`testId`プロパティを用意し、使用側で指定できるようにする。
-
-### Button
-
-```typescript
-// app/lib/ui/button.tsx
-type ButtonProps = ComponentPropsWithoutRef<"button"> & {
-  readonly variant?: "primary" | "secondary" | "danger" | "ghost";
-  readonly testId?: string;  // テスト用ID
-};
-
-export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ variant = "primary", testId, ...props }, ref) => {
-    return (
-      <button
-        ref={ref}
-        data-testid={testId}
-        {...props}
-      />
-    );
-  }
-);
-```
-
-### Input
-
-```typescript
-// app/lib/ui/input.tsx
-type InputProps = ComponentPropsWithoutRef<"input"> & {
-  readonly error?: boolean;
-  readonly testId?: string;
-};
-
-export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ error, testId, ...props }, ref) => {
-    return (
-      <input
-        ref={ref}
-        data-testid={testId}
-        aria-invalid={error}
-        {...props}
-      />
-    );
-  }
-);
-```
+`app/lib/ui/`のUIプリミティブは`...props`スプレッドで標準HTML属性を受け取る。`data-testid`も同様に渡せる。
 
 ### 使用例
 
@@ -132,9 +87,9 @@ import { Button, Input } from "@/lib/ui";
 export function TodoForm() {
   return (
     <form>
-      <Input testId="input-title" {...register("title")} />
-      <Button testId="submit-button" type="submit">作成</Button>
-      <Button testId="cancel-button" type="button" variant="secondary">キャンセル</Button>
+      <Input data-testid="input-title" {...register("title")} />
+      <Button data-testid="submit-button" type="submit">作成</Button>
+      <Button data-testid="cancel-button" type="button" variant="secondary">キャンセル</Button>
     </form>
   );
 }

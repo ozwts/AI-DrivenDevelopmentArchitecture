@@ -5,6 +5,14 @@ import {
 } from "@heroicons/react/24/outline";
 import { z } from "zod";
 import { Card, Badge } from "@/app/lib/ui";
+import {
+  isOverdue,
+  getDueDateLabel,
+  getStatusLabel,
+  getPriorityLabel,
+  getStatusBadgeVariant,
+  getPriorityBadgeVariant,
+} from "@/app/lib/utils";
 import { schemas } from "@/generated/zod-schemas";
 
 type TodoResponse = z.infer<typeof schemas.TodoResponse>;
@@ -19,8 +27,6 @@ export function UpcomingTodosList({ todos, onTodoClick }: Props) {
   if (todos.length === 0) {
     return null;
   }
-
-  const now = new Date();
 
   return (
     <Card className="mt-6">
@@ -39,11 +45,8 @@ export function UpcomingTodosList({ todos, onTodoClick }: Props) {
       </div>
       <div className="space-y-3">
         {todos.map((todo) => {
-          const dueDate = new Date(todo.dueDate);
-          const isOverdue = dueDate < now;
-          const daysUntilDue = Math.ceil(
-            (dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
-          );
+          const overdueFlag = isOverdue(todo.dueDate);
+          const dueDateLabel = getDueDateLabel(todo.dueDate);
 
           return (
             <button
@@ -52,6 +55,8 @@ export function UpcomingTodosList({ todos, onTodoClick }: Props) {
                 onTodoClick(todo);
               }}
               className="w-full text-left p-4 border border-border-light rounded-md hover:border-primary-600 hover:shadow-sm transition-all cursor-pointer"
+              data-testid={`upcoming-todo-${todo.id}`}
+              aria-label={`タスク: ${todo.title}、${dueDateLabel}`}
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1">
@@ -59,41 +64,17 @@ export function UpcomingTodosList({ todos, onTodoClick }: Props) {
                     {todo.title}
                   </h4>
                   <div className="flex flex-wrap gap-2">
-                    <Badge
-                      variant={
-                        todo.status === "IN_PROGRESS" ? "info" : "default"
-                      }
-                    >
-                      {todo.status === "TODO"
-                        ? "未着手"
-                        : todo.status === "IN_PROGRESS"
-                          ? "進行中"
-                          : "完了"}
+                    <Badge variant={getStatusBadgeVariant(todo.status)}>
+                      {getStatusLabel(todo.status)}
                     </Badge>
-                    <Badge
-                      variant={
-                        todo.priority === "HIGH"
-                          ? "danger"
-                          : todo.priority === "MEDIUM"
-                            ? "warning"
-                            : "default"
-                      }
-                    >
-                      {todo.priority === "HIGH"
-                        ? "高"
-                        : todo.priority === "MEDIUM"
-                          ? "中"
-                          : "低"}
+                    <Badge variant={getPriorityBadgeVariant(todo.priority)}>
+                      {getPriorityLabel(todo.priority)}
                     </Badge>
-                    <Badge variant={isOverdue ? "danger" : "warning"}>
-                      {isOverdue && (
+                    <Badge variant={overdueFlag ? "danger" : "warning"}>
+                      {overdueFlag && (
                         <ExclamationCircleIcon className="h-3 w-3 mr-1 inline" />
                       )}
-                      {isOverdue
-                        ? "期限超過"
-                        : daysUntilDue === 0
-                          ? "今日が期限"
-                          : `残り${daysUntilDue}日`}
+                      {dueDateLabel}
                     </Badge>
                   </div>
                 </div>

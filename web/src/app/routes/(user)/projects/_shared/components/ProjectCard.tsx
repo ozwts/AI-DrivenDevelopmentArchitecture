@@ -68,6 +68,8 @@ export const ProjectCard = ({
                 onEdit(project);
               }}
               className="!p-2"
+              data-testid="edit-button"
+              aria-label="編集"
             >
               <PencilIcon className="h-4 w-4" />
             </Button>
@@ -79,6 +81,8 @@ export const ProjectCard = ({
                 onDelete(project);
               }}
               className="!p-2 text-red-600 hover:text-red-700"
+              data-testid="delete-button"
+              aria-label="削除"
             >
               <TrashIcon className="h-4 w-4" />
             </Button>

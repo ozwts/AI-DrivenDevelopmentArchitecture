@@ -1,0 +1,5 @@
+{
+  "label": "フック",
+  "description": "TanStack Query基盤のカスタムフック設計・実装パターン",
+  "dependencies": ["lib"]
+}

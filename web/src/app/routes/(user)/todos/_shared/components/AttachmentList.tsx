@@ -69,6 +69,7 @@ export const AttachmentList = ({
                 onDownload(attachment);
               }}
               className="!p-2"
+              data-testid="download-button"
               aria-label={`${attachment.filename}をダウンロード`}
             >
               <ArrowDownTrayIcon className="h-4 w-4" aria-hidden="true" />
@@ -80,6 +81,7 @@ export const AttachmentList = ({
                 onDelete(attachment);
               }}
               className="!p-2 text-red-600 hover:text-red-700"
+              data-testid="delete-button"
               aria-label={`${attachment.filename}を削除`}
             >
               <TrashIcon className="h-4 w-4" aria-hidden="true" />
