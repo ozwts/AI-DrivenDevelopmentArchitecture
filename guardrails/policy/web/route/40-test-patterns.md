@@ -59,21 +59,22 @@ await page.addInitScript(() => {
 
 **目的**: APIレスポンスを制御（データあり/なし）
 
-### 3. ランダム値固定
+### 3. ランダム要素の処理
+
+ランダムに生成される要素（カラーパレット等）は、**マスク機能**で比較対象から除外する。
 
 ```typescript
-await page.addInitScript(() => {
-  let counter = 0;
-  const fixedRandomValues = [0.12345, 0.23456, 0.34567, 0.45678, 0.56789, 0.6789];
-  Math.random = () => {
-    const value = fixedRandomValues[counter % fixedRandomValues.length];
-    counter++;
-    return value;
-  };
-});
+// カラーパレットなどランダム要素をマスク
+const colorOptions = await page.locator('[data-testid^="color-option-"]').all();
+await expect(page).toHaveScreenshot({ fullPage: true, mask: colorOptions });
 ```
 
-**目的**: ランダムな色選択などを固定
+**目的**: プロダクションコードを変更せずにテストを安定化
+
+**マスクの利点**:
+- プロダクションの動作（ランダム生成）を維持
+- テストコードに閉じた対応
+- `Math.random`モックのタイミング問題を回避
 
 ### 4. 非同期処理の安定化
 
