@@ -183,6 +183,26 @@ test("isLoading=trueの時、ボタンがローディング状態になる", asy
 });
 ```
 
+## セレクタのstrict mode対策
+
+Playwrightはstrict modeがデフォルトで有効であり、複数の要素にマッチするセレクタはエラーになる。
+
+### 対策パターン
+
+```typescript
+// ✅ Good: exactオプションで完全一致
+await expect(component.getByRole("link", { name: "TODO", exact: true })).toBeVisible();
+
+// ✅ Good: getByRoleでheadingを指定して一意に
+await expect(component.getByRole("heading", { name: "タイトル" })).toBeVisible();
+
+// ✅ Good: first()で最初の要素を取得
+await expect(component.getByText("高").first()).toBeVisible();
+
+// ❌ Bad: 複数要素にマッチする可能性
+await expect(component.getByText("TODO")).toBeVisible(); // "TODO App"にもマッチ
+```
+
 ## バリデーションテストの網羅性
 
 | 条件           | テスト内容               | 例                                   |
@@ -204,44 +224,69 @@ app/routes/todos+/
 
 **命名規則**: `{component}.ct.test.tsx`
 
-## 外部サービス依存コンポーネントの例外
+## 外部サービス依存コンポーネントのテスト戦略
 
-外部サービス（AWS Cognito、Firebase Auth等）に直接依存するHookを使用するコンポーネントは、Playwright CTでのモック化が困難な場合がある。
+外部サービス（AWS Cognito、Firebase Auth等）に依存するコンポーネントは、以下の優先順位でテスト方法を選択する。
 
-### 例外条件
+### 優先順位
 
-以下の条件を**すべて**満たす場合、CTテストをスキップしてE2Eテストでカバーすることを許可する：
+1. **Context/Providerのモック化（推奨）**
+2. **SSテスト + eslint-disable（最終手段）**
 
-1. コンポーネントが外部認証サービスに依存するHook（例: `useAuth`）を直接使用している
-2. 該当Hookが外部SDKの初期化・設定に依存しており、テスト環境での分離が困難
+### 1. Context/Providerのモック化（推奨）
+
+`playwright/index.tsx`でContextをモック化し、CTテストを実行する。
+
+```typescript
+// playwright/index.tsx
+import { AuthContext, AuthContextType } from "@/app/features/auth";
+
+const mockAuthContext: AuthContextType = {
+  user: { username: "test-user", userId: "test-id" },
+  isAuthenticated: true,
+  isLoading: false,
+  error: null,
+  login: async () => {},
+  logout: async () => {},
+  // ...
+};
+
+beforeMount(async ({ App }) => {
+  return (
+    <AuthContext.Provider value={mockAuthContext}>
+      <MemoryRouter>
+        <App />
+      </MemoryRouter>
+    </AuthContext.Provider>
+  );
+});
+```
+
+**適用可能なケース:**
+- `useAuth`のみを使用するコンポーネント（Header、ナビゲーション等）
+- Context経由でデータを受け取るだけのコンポーネント
+
+### 2. SSテストでカバー（最終手段）
+
+以下の条件を**すべて**満たす場合のみ、CTテストを作成せずSSテスト（ルートテスト）でカバーする：
+
+1. コンポーネントが外部サービスへのAPI呼び出しを直接行う
+2. 複雑な非同期初期化処理がある
+3. Contextモックだけでは再現できない副作用がある
+
+**例:** AuthInitializer（認証状態に応じてAPIを呼び出し、ユーザー登録処理を行う）
 
 ### 例外適用時の対応
 
-1. **CTテストファイルは削除せず、`test.skip`で残す**
-   - ESLintルール（`require-component-test`）がテストファイルの存在を要求するため
-   - スキップ理由をコメントで明記する
-
-2. **コンポーネントファイルにもコメントで記載**
+1. **コンポーネントファイル先頭で`eslint-disable`コメントを追加**
 
 ```typescript
 // ComponentName.tsx
-/**
- * 外部サービス依存（useAuth: AWS Cognito）のため、CTテストなし
- * E2Eテストでカバー
- */
+/* eslint-disable local-rules/component/require-component-test -- 外部サービス依存（useAuth + apiClient）のため、SSテストでカバー */
 ```
 
-```typescript
-// ComponentName.ct.test.tsx
-test.describe("ComponentName", () => {
-  // 外部サービス依存（useAuth）のため、E2Eテストでカバー
-  // 参照: *.e2e.test.ts
-
-  test.skip("機能テスト", async ({ mount }) => {
-    // E2Eテストでカバー
-  });
-});
-```
+2. **SSテスト（*.ss.test.ts）で暗黙的にカバー**
+   - ルートテストでページ全体をレンダリングする際に、該当コンポーネントも含めてテストされる
 
 ## 関連ドキュメント
 

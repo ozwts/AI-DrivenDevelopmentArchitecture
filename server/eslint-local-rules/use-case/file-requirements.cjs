@@ -23,7 +23,7 @@ module.exports = {
     schema: [],
     messages: {
       missingTestFile:
-        "UseCase must have a Small Test file '{{expectedTestFile}}'. See: 30-testing-overview.md",
+        "UseCase must have a Small Test file '{{expectedTestFile}}'. See: guardrails/policy/server/use-case/30-testing-overview.md",
     },
   },
 

@@ -25,9 +25,9 @@ module.exports = {
     schema: [],
     messages: {
       missingTestFile:
-        "{{type}} '{{className}}' must have test file: {{expectedFile}}. See: 50-test-overview.md",
+        "{{type}} '{{className}}' must have test file: {{expectedFile}}. See: guardrails/policy/server/domain-model/50-test-overview.md",
       missingDummyFile:
-        "{{type}} '{{className}}' must have dummy file: {{expectedFile}}. See: 50-test-overview.md",
+        "{{type}} '{{className}}' must have dummy file: {{expectedFile}}. See: guardrails/policy/server/domain-model/22-entity-implementation.md",
     },
   },
 

@@ -1,3 +1,4 @@
+/* eslint-disable local-rules/component/require-component-test -- 外部サービス依存（useAuth + apiClient）のため、E2Eテストでカバー。 */
 import { useEffect, useState, ReactNode } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { apiClient } from "@/app/lib/api";

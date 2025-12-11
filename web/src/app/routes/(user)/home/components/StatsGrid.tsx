@@ -14,25 +14,33 @@ type Props = {
 export function StatsGrid({ todoCount, inProgressCount, doneCount }: Props) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-      <Card className="bg-background-surface">
+      <Card className="bg-background-surface" data-testid="stats-todo">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-text-secondary mb-1">
               未着手のTODO
             </p>
-            <p className="text-3xl font-bold text-text-primary">{todoCount}</p>
+            <p
+              className="text-3xl font-bold text-text-primary"
+              data-testid="stats-todo-count"
+            >
+              {todoCount}
+            </p>
           </div>
           <ListBulletIcon className="h-12 w-12 text-text-tertiary" />
         </div>
       </Card>
 
-      <Card className="bg-background-surface">
+      <Card className="bg-background-surface" data-testid="stats-in-progress">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-text-secondary mb-1">
               進行中のTODO
             </p>
-            <p className="text-3xl font-bold text-primary-600">
+            <p
+              className="text-3xl font-bold text-primary-600"
+              data-testid="stats-in-progress-count"
+            >
               {inProgressCount}
             </p>
           </div>
@@ -40,13 +48,18 @@ export function StatsGrid({ todoCount, inProgressCount, doneCount }: Props) {
         </div>
       </Card>
 
-      <Card className="bg-background-surface">
+      <Card className="bg-background-surface" data-testid="stats-done">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-text-secondary mb-1">
               完了したTODO
             </p>
-            <p className="text-3xl font-bold text-text-primary">{doneCount}</p>
+            <p
+              className="text-3xl font-bold text-text-primary"
+              data-testid="stats-done-count"
+            >
+              {doneCount}
+            </p>
           </div>
           <CheckCircleIcon className="h-12 w-12 text-text-tertiary" />
         </div>

@@ -40,7 +40,9 @@ export type AuthContextType = {
   clearError: () => void;
 };
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(
+  undefined,
+);
 
 type AuthProviderProps = {
   readonly children: React.ReactNode;

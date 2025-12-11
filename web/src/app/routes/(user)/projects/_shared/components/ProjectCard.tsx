@@ -51,12 +51,12 @@ export const ProjectCard = ({
         {/* TODO数 */}
         <div className="flex items-center gap-2 text-sm text-text-secondary">
           <FolderIcon className="h-4 w-4" />
-          <span>{todoCount}件のTODO</span>
+          <span data-testid="todo-count">{todoCount}件のTODO</span>
         </div>
 
         {/* フッター: アクションボタン */}
         <div className="flex items-center justify-between pt-3 border-t border-border-light">
-          <div className="text-xs text-text-tertiary">
+          <div className="text-xs text-text-tertiary" data-testid="created-at">
             作成: {new Date(project.createdAt).toLocaleDateString("ja-JP")}
           </div>
           <div className="flex gap-2">

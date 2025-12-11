@@ -45,7 +45,9 @@ export const Header = () => {
             className="flex items-center space-x-2 text-text-primary hover:text-primary-600 transition-colors"
           >
             <ListBulletIcon className="h-8 w-8" />
-            <span className="text-xl font-bold">TODO App</span>
+            <span className="text-xl font-bold" data-testid="app-logo">
+              TODO App
+            </span>
           </Link>
 
           {/* Navigation and Logout */}

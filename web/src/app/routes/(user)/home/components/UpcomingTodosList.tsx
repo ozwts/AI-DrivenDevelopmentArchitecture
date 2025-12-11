@@ -38,6 +38,7 @@ export function UpcomingTodosList({ todos, onTodoClick }: Props) {
         <Link
           to="/todos"
           className="text-primary-600 hover:text-primary-700 flex items-center gap-1 text-sm font-medium"
+          data-testid="upcoming-todos-view-all"
         >
           すべて表示
           <ArrowRightIcon className="h-4 w-4" />
@@ -70,7 +71,14 @@ export function UpcomingTodosList({ todos, onTodoClick }: Props) {
                     <Badge variant={getPriorityBadgeVariant(todo.priority)}>
                       {getPriorityLabel(todo.priority)}
                     </Badge>
-                    <Badge variant={overdueFlag ? "danger" : "warning"}>
+                    <Badge
+                      variant={overdueFlag ? "danger" : "warning"}
+                      data-testid={
+                        overdueFlag
+                          ? `overdue-badge-${todo.id}`
+                          : `due-badge-${todo.id}`
+                      }
+                    >
                       {overdueFlag && (
                         <ExclamationCircleIcon className="h-3 w-3 mr-1 inline" />
                       )}

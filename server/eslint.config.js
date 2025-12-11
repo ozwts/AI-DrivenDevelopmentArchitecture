@@ -103,6 +103,9 @@ export default defineConfig(
       // local-rules（ハンドラー層用）
       "local-rules/handler/container-get-restriction": "error",
       "local-rules/handler/single-usecase-call": "error",
+
+      // local-rules（リポジトリ用）
+      "local-rules/repository/file-requirements": "warn",
     },
   },
 );

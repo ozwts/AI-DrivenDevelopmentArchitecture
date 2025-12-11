@@ -69,7 +69,8 @@
       "Bash(web/src/pages/ResetPasswordPage/ResetPasswordPage.ss.test.ts)",
       "WebFetch(domain:mswjs.io)",
       "mcp__guardrails__review_route",
-      "mcp__guardrails__review_component"
+      "mcp__guardrails__review_component",
+      "Bash(npx playwright test:*)"
     ],
     "deny": [],
     "ask": []

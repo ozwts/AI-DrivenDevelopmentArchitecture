@@ -9,11 +9,13 @@
  * - use-case/: ユースケース層用ルール
  * - di-container/: DIコンテナ用ルール
  * - handler/: ハンドラー層用ルール
+ * - repository/: リポジトリ用ルール
  *
  * 参照: guardrails/policy/server/domain-model/
  *       guardrails/policy/server/use-case/
  *       guardrails/policy/server/di-container/
  *       guardrails/policy/server/handler/
+ *       guardrails/policy/server/repository/
  */
 
 "use strict";
@@ -23,6 +25,7 @@ const domainModelRules = require("./eslint-local-rules/domain-model/index.cjs");
 const useCaseRules = require("./eslint-local-rules/use-case/index.cjs");
 const diContainerRules = require("./eslint-local-rules/di-container/index.cjs");
 const handlerRules = require("./eslint-local-rules/handler/index.cjs");
+const repositoryRules = require("./eslint-local-rules/repository/index.cjs");
 
 module.exports = {
   // 共通ルール（プレフィックス: common/）
@@ -49,4 +52,7 @@ module.exports = {
   // ハンドラー層用ルール（プレフィックス: handler/）
   "handler/container-get-restriction": handlerRules["container-get-restriction"],
   "handler/single-usecase-call": handlerRules["single-usecase-call"],
+
+  // リポジトリ用ルール（プレフィックス: repository/）
+  "repository/file-requirements": repositoryRules["file-requirements"],
 };

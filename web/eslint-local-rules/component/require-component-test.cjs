@@ -6,6 +6,9 @@
  *
  * 参照: guardrails/policy/web/component/30-test-patterns.md
  *       - ファイル配置: {component}.ct.test.tsx
+ *
+ * 例外: 外部サービス依存コンポーネントはeslint-disableコメントで除外
+ *   /* eslint-disable local-rules/component/require-component-test -- 理由 *\/
  */
 
 "use strict";
@@ -25,7 +28,7 @@ module.exports = {
     schema: [],
     messages: {
       missingTest:
-        "Component '{{componentName}}' is missing test file '{{expectedTestFile}}'. See: component/30-test-patterns.md",
+        "Component '{{componentName}}' is missing test file '{{expectedTestFile}}'. See: guardrails/policy/web/component/30-test-patterns.md",
     },
   },
 

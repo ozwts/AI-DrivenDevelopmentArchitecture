@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ComponentPropsWithoutRef, ReactNode } from "react";
 
 type BadgeVariant = "default" | "success" | "warning" | "danger" | "info";
 
@@ -6,7 +6,7 @@ type BadgeProps = {
   readonly children: ReactNode;
   readonly variant?: BadgeVariant;
   readonly className?: string;
-};
+} & Omit<ComponentPropsWithoutRef<"span">, "children" | "className">;
 
 const variantStyles: Record<BadgeVariant, string> = {
   default: "bg-gray-100 text-gray-800",
@@ -20,6 +20,7 @@ export const Badge = ({
   children,
   variant = "default",
   className = "",
+  ...props
 }: BadgeProps) => {
   return (
     <span
@@ -29,6 +30,7 @@ export const Badge = ({
         ${variantStyles[variant]}
         ${className}
       `}
+      {...props}
     >
       {children}
     </span>
