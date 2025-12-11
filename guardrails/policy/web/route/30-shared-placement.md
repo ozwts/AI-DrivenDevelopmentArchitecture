@@ -91,6 +91,7 @@ app/features/product/components/product-card.tsx
 | 条件 | `_shared/` に配置？ |
 |------|-------------------|
 | 親ルート（`route.tsx`）と子ルート（`new/`, `[param]/`）で共有 | ✅ Yes |
+| レイアウト（`_layout.tsx`）専用コンポーネント | ✅ Yes |
 | 同一ルート内の複数コンポーネントで共有 | ❌ No → `components/` |
 | 異なるルート（`todos/` と `projects/`）で共有 | ❌ No → `features/` |
 
