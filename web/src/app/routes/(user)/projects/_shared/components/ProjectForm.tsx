@@ -5,7 +5,7 @@ import { ArrowPathIcon } from "@heroicons/react/24/outline";
 import { z } from "zod";
 import { schemas } from "@/generated/zod-schemas";
 import { Button, Input, Textarea } from "@/app/lib/ui";
-import { generateColorPalette } from "@/app/lib/utils";
+import { generateColorPalette } from "../utils/color";
 
 type ProjectResponse = z.infer<typeof schemas.ProjectResponse>;
 type CreateProjectParams = z.infer<typeof schemas.CreateProjectParams>;

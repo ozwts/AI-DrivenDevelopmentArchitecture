@@ -2,4 +2,3 @@
 export { AuthProvider, useAuth } from "./contexts/AuthProvider";
 export type { AuthContextType } from "./contexts/AuthProvider";
 export { AuthInitializer } from "./components/AuthInitializer";
-export { Header } from "./components/Header";

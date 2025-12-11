@@ -28,6 +28,7 @@ module.exports = {
 
   // コンポーネント設計用ルール（プレフィックス: component/）
   "component/props-readonly": componentRules["props-readonly"],
+  "component/require-component-test": componentRules["require-component-test"],
 
   // Feature設計用ルール（プレフィックス: feature/）
   "feature/no-cross-feature-import": featureRules["no-cross-feature-import"],

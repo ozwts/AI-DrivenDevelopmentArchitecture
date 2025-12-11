@@ -158,6 +158,9 @@ export default defineConfig(
       // コンポーネント設計: Props型のreadonly修飾子
       "local-rules/component/props-readonly": "warn",
 
+      // コンポーネント設計: コンポーネントテスト必須
+      "local-rules/component/require-component-test": "warn",
+
       // Feature設計: Feature間直接インポート禁止
       "local-rules/feature/no-cross-feature-import": "error",
 

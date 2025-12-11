@@ -6,7 +6,8 @@ import {
   UserCircleIcon,
   ArrowRightStartOnRectangleIcon,
 } from "@heroicons/react/24/outline";
-import { useAuth } from "../hooks/useAuth";
+import { useAuth } from "@/app/features/auth";
+import { Button } from "@/app/lib/ui";
 
 type NavItem = {
   readonly name: string;
@@ -74,15 +75,15 @@ export const Header = () => {
             </nav>
 
             {/* Logout Button */}
-            <button
+            <Button
+              variant="ghost"
               onClick={handleLogout}
-              className="flex items-center space-x-2 px-4 py-2 rounded-md text-text-primary hover:text-text-tertiary transition-colors duration-200"
               data-testid="logout-button"
               aria-label="ログアウト"
             >
               <ArrowRightStartOnRectangleIcon className="h-5 w-5" />
               <span>ログアウト</span>
-            </button>
+            </Button>
           </div>
         </div>
       </div>

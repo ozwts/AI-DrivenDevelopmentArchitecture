@@ -15,4 +15,3 @@ export {
   getStatusBadgeVariant,
   getPriorityBadgeVariant,
 } from "./label-util";
-export { getRandomColor, generateColorPalette } from "./color";

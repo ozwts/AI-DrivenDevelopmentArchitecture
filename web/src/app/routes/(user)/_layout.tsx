@@ -1,6 +1,7 @@
 import { Outlet, Navigate } from "react-router";
-import { useAuth, Header } from "@/app/features/auth";
+import { useAuth } from "@/app/features/auth";
 import { LoadingSpinner } from "@/app/lib/ui/LoadingSpinner";
+import { Header } from "./_shared/components/Header";
 
 /**
  * 認証必須ルートのレイアウト

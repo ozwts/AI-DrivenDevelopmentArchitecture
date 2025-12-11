@@ -14,7 +14,7 @@
 1. **forwardRefで参照転送**: 親コンポーネントからのref制御を可能に
 2. **アクセシビリティ属性**: `aria-*`属性で状態を通知
 3. **バリアント/サイズのProps**: 一貫したスタイルバリエーション
-4. **testId Props**: テスト用の`data-testid`を使用側で指定可能に
+4. **data-testid**: 使用側で直接`data-testid`属性を指定
 5. **Public API経由のエクスポート**: `index.ts`からのみ公開
 
 ## Button実装例
@@ -27,15 +27,13 @@ type ButtonProps = ComponentPropsWithoutRef<"button"> & {
   readonly variant?: "primary" | "secondary" | "danger" | "ghost";
   readonly size?: "sm" | "md" | "lg";
   readonly isLoading?: boolean;
-  readonly testId?: string;
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ variant = "primary", size = "md", isLoading, disabled, testId, children, ...props }, ref) => {
+  ({ variant = "primary", size = "md", isLoading, disabled, children, ...props }, ref) => {
     return (
       <button
         ref={ref}
-        data-testid={testId}
         disabled={disabled || isLoading}
         aria-busy={isLoading}
         aria-disabled={disabled || isLoading}
@@ -57,15 +55,13 @@ import { forwardRef, type ComponentPropsWithoutRef } from "react";
 
 type InputProps = ComponentPropsWithoutRef<"input"> & {
   readonly error?: boolean;
-  readonly testId?: string;
 };
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ error, testId, className, ...props }, ref) => {
+  ({ error, className, ...props }, ref) => {
     return (
       <input
         ref={ref}
-        data-testid={testId}
         aria-invalid={error}
         className={`${error ? "border-red-500" : "border-gray-300"} ${className ?? ""}`}
         {...props}
@@ -85,9 +81,9 @@ import { Button, Input } from "@/lib/ui";
 export function TodoForm() {
   return (
     <form>
-      <Input testId="input-title" {...register("title")} />
-      <Button testId="submit-button" type="submit">作成</Button>
-      <Button testId="cancel-button" type="button" variant="secondary">キャンセル</Button>
+      <Input data-testid="input-title" {...register("title")} />
+      <Button data-testid="submit-button" type="submit">作成</Button>
+      <Button data-testid="cancel-button" type="button" variant="secondary">キャンセル</Button>
     </form>
   );
 }
