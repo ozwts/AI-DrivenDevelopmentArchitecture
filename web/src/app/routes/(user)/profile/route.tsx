@@ -6,6 +6,7 @@ import {
   ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
 import { Card, Button, Modal, Alert } from "@/app/lib/ui";
+import { buildLogger } from "@/app/lib/logger";
 import { useToast } from "@/app/features/toast";
 import {
   useCurrentUser,
@@ -16,6 +17,8 @@ import { z } from "zod";
 import { schemas } from "@/generated/zod-schemas";
 import { ProfileEditForm } from "./components/ProfileEditForm";
 import { DeleteAccountConfirmation } from "./components/DeleteAccountConfirmation";
+
+const logger = buildLogger("ProfileRoute");
 
 type UpdateUserParams = z.infer<typeof schemas.UpdateUserParams>;
 
@@ -29,25 +32,29 @@ export default function ProfileRoute() {
   const toast = useToast();
 
   const handleUpdate = async (data: UpdateUserParams) => {
+    logger.info("プロフィール更新開始", { displayName: data.displayName });
     try {
       await updateUser.mutateAsync(data);
+      logger.info("プロフィール更新成功");
       setIsEditModalOpen(false);
       toast.success("プロフィールを更新しました");
     } catch (error) {
-      console.error("プロフィール更新エラー:", error);
+      logger.error("プロフィール更新失敗", error instanceof Error ? error : { message: String(error) });
       toast.error("プロフィールの更新に失敗しました");
     }
   };
 
   const handleDelete = async () => {
+    logger.info("アカウント削除開始");
     try {
       await deleteUser.mutateAsync();
+      logger.info("アカウント削除成功");
       // 削除成功後のログアウト処理
       sessionStorage.clear();
       localStorage.clear();
       window.location.href = "/login";
     } catch (error) {
-      console.error("ユーザー削除エラー:", error);
+      logger.error("アカウント削除失敗", error instanceof Error ? error : { message: String(error) });
       toast.error("アカウントの削除に失敗しました");
       setIsDeleteModalOpen(false);
     }

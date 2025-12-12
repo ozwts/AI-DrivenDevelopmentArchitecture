@@ -3,9 +3,12 @@ import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { z } from "zod";
 import { schemas } from "@/generated/zod-schemas";
 import { Button, Card, LoadingPage, Alert } from "@/app/lib/ui";
+import { buildLogger } from "@/app/lib/logger";
 import { useToast } from "@/app/features/toast";
 import { useProject, useUpdateProject } from "@/app/features/project";
 import { ProjectForm } from "../../_shared";
+
+const logger = buildLogger("EditProjectRoute");
 
 type CreateProjectParams = z.infer<typeof schemas.CreateProjectParams>;
 
@@ -22,14 +25,17 @@ export default function EditProjectRoute() {
   const updateProject = useUpdateProject();
 
   const handleSubmit = async (data: CreateProjectParams) => {
+    logger.info("プロジェクト更新開始", { projectId, name: data.name });
     try {
       await updateProject.mutateAsync({
         projectId: projectId ?? "",
         data,
       });
+      logger.info("プロジェクト更新成功", { projectId });
       toast.success("プロジェクトを更新しました");
       navigate(`/projects/${projectId}`);
-    } catch {
+    } catch (error) {
+      logger.error("プロジェクト更新失敗", error instanceof Error ? error : { projectId });
       toast.error("プロジェクトの更新に失敗しました");
     }
   };

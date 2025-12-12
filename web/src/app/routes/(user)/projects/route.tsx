@@ -2,12 +2,15 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import { PlusIcon, FolderIcon } from "@heroicons/react/24/outline";
 import { Button, Modal, LoadingPage, Alert, EmptyState } from "@/app/lib/ui";
+import { buildLogger } from "@/app/lib/logger";
 import { useToast } from "@/app/features/toast";
 import { useTodos } from "@/app/features/todo";
 import { useProjects, useDeleteProject } from "@/app/features/project";
 import { z } from "zod";
 import { schemas } from "@/generated/zod-schemas";
 import { ProjectCard } from "./_shared";
+
+const logger = buildLogger("ProjectsIndexRoute");
 
 type ProjectResponse = z.infer<typeof schemas.ProjectResponse>;
 
@@ -29,11 +32,14 @@ export default function ProjectsIndexRoute() {
 
   const handleDelete = async () => {
     if (!deletingProject) return;
+    logger.info("プロジェクト削除開始", { projectId: deletingProject.id, name: deletingProject.name });
     try {
       await deleteProject.mutateAsync(deletingProject.id);
+      logger.info("プロジェクト削除成功", { projectId: deletingProject.id });
       setDeletingProject(undefined);
       toast.success("プロジェクトを削除しました");
-    } catch {
+    } catch (error) {
+      logger.error("プロジェクト削除失敗", error instanceof Error ? error : { projectId: deletingProject.id });
       toast.error("プロジェクトの削除に失敗しました");
     }
   };

@@ -70,7 +70,8 @@
       "WebFetch(domain:mswjs.io)",
       "mcp__guardrails__review_route",
       "mcp__guardrails__review_component",
-      "Bash(npx playwright test:*)"
+      "Bash(npx playwright test:*)",
+      "WebFetch(domain:discuss.hashicorp.com)"
     ],
     "deny": [],
     "ask": []

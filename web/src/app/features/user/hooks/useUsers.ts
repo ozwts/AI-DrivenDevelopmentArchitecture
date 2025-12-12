@@ -1,10 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { apiClient } from "@/app/lib/api";
+import { buildLogger } from "@/app/lib/logger";
 import { schemas } from "@/generated/zod-schemas";
 
 type UpdateUserParams = z.infer<typeof schemas.UpdateUserParams>;
 
+const logger = buildLogger("useUsers");
 const QUERY_KEY = "users";
 const CURRENT_USER_QUERY_KEY = "currentUser";
 
@@ -35,10 +37,17 @@ export function useUpdateCurrentUser() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: UpdateUserParams) => apiClient.updateCurrentUser(data),
+    mutationFn: (data: UpdateUserParams) => {
+      logger.info("ユーザー情報更新開始", { displayName: data.displayName });
+      return apiClient.updateCurrentUser(data);
+    },
     onSuccess: () => {
+      logger.info("ユーザー情報更新成功");
       queryClient.invalidateQueries({ queryKey: [CURRENT_USER_QUERY_KEY] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+    },
+    onError: (error) => {
+      logger.error("ユーザー情報更新失敗", error);
     },
   });
 }
@@ -51,10 +60,17 @@ export function useDeleteCurrentUser() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => apiClient.deleteCurrentUser(),
+    mutationFn: () => {
+      logger.info("アカウント削除開始");
+      return apiClient.deleteCurrentUser();
+    },
     onSuccess: () => {
+      logger.info("アカウント削除成功");
       queryClient.invalidateQueries({ queryKey: [CURRENT_USER_QUERY_KEY] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+    },
+    onError: (error) => {
+      logger.error("アカウント削除失敗", error);
     },
   });
 }

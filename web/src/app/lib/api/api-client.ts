@@ -85,6 +85,7 @@ const executeFetch = async (
       });
     }
 
+    apiLogger.response({ url, method, status: response.status });
     return response;
   } catch (error) {
     apiLogger.fetchError({ url, method, error });

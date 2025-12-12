@@ -33,7 +33,7 @@ locals {
   api_url         = module.server.api_endpoint
 
   # ビルド成果物ディレクトリ
-  web_build_dir    = "${path.module}/../../../../web/build/client"
+  web_build_dir = "${path.module}/../../../../web/build/client"
   api_build_dir = "${path.module}/../../../../server/dist/api"
 
   # アプリケーション共通環境変数

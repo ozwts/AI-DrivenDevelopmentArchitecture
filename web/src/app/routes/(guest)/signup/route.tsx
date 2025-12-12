@@ -1,7 +1,10 @@
 import { useState, FormEvent, ReactNode } from "react";
 import { useNavigate, Link } from "react-router";
 import { useAuth } from "@/app/features/auth";
+import { buildLogger } from "@/app/lib/logger";
 import { Button } from "@/app/lib/ui";
+
+const logger = buildLogger("SignupRoute");
 
 /**
  * サインアップページ
@@ -23,15 +26,21 @@ export default function SignupRoute(): ReactNode {
     setIsLoading(true);
 
     if (password !== confirmPassword) {
+      logger.warn("パスワード不一致");
       setErrorMessage("パスワードが一致しません");
       setIsLoading(false);
       return;
     }
 
+    logger.info("サインアップ開始", { email });
+
     try {
       await signUp(email, password);
+      logger.info("サインアップ成功", { email });
       navigate("/signup/confirm", { state: { email, password } });
     } catch (error) {
+      logger.error("サインアップ失敗", error instanceof Error ? error : { message: String(error) });
+
       if (error instanceof Error) {
         if (error.name === "UsernameExistsException") {
           setErrorMessage(

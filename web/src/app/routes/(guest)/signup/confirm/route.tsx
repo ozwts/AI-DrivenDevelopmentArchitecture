@@ -1,7 +1,10 @@
 import { useState, FormEvent, useEffect, ReactNode } from "react";
 import { useNavigate, useLocation, Link } from "react-router";
 import { useAuth } from "@/app/features/auth";
+import { buildLogger } from "@/app/lib/logger";
 import { Button } from "@/app/lib/ui";
+
+const logger = buildLogger("SignupConfirmRoute");
 
 type LocationState = {
   email?: string;
@@ -48,11 +51,15 @@ export default function SignupConfirmRoute(): ReactNode {
     setSuccessMessage(null);
     setIsLoading(true);
 
+    logger.info("メール確認開始", { email });
+
     try {
       await confirmSignUp(email, confirmationCode);
+      logger.info("メール確認成功", { email });
 
       if (password) {
         await login(email, password);
+        logger.info("自動ログイン成功", { email });
         setSuccessMessage("メール確認が完了しました。");
         setTimeout(() => {
           navigate("/", { replace: true });
@@ -66,6 +73,7 @@ export default function SignupConfirmRoute(): ReactNode {
         }, 2000);
       }
     } catch (error) {
+      logger.error("メール確認失敗", error instanceof Error ? error : { message: String(error) });
       if (error instanceof Error) {
         setErrorMessage(error.message);
       } else {
@@ -80,10 +88,15 @@ export default function SignupConfirmRoute(): ReactNode {
     setErrorMessage(null);
     setSuccessMessage(null);
     setIsLoading(true);
+
+    logger.info("確認コード再送信開始", { email });
+
     try {
       await resendConfirmationCode(email);
+      logger.info("確認コード再送信成功", { email });
       setSuccessMessage("確認コードを再送信しました。");
     } catch (error) {
+      logger.error("確認コード再送信失敗", error instanceof Error ? error : { message: String(error) });
       if (error instanceof Error) {
         setErrorMessage(error.message);
       }

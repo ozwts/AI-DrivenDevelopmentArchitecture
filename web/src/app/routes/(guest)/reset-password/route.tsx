@@ -1,7 +1,10 @@
 import { useState, FormEvent, ReactNode } from "react";
 import { useNavigate, Link } from "react-router";
 import { useAuth } from "@/app/features/auth";
+import { buildLogger } from "@/app/lib/logger";
 import { Button } from "@/app/lib/ui";
+
+const logger = buildLogger("ResetPasswordRoute");
 
 export default function ResetPasswordRoute(): ReactNode {
   const [step, setStep] = useState<"request" | "confirm">("request");
@@ -24,13 +27,17 @@ export default function ResetPasswordRoute(): ReactNode {
     setSuccessMessage(null);
     setIsLoading(true);
 
+    logger.info("パスワードリセット確認コード送信開始", { email });
+
     try {
       await resetPassword(email);
+      logger.info("パスワードリセット確認コード送信成功", { email });
       setSuccessMessage(
         "確認コードをメールで送信しました。メールをご確認ください。",
       );
       setStep("confirm");
     } catch (error) {
+      logger.error("パスワードリセット確認コード送信失敗", error instanceof Error ? error : { message: String(error) });
       if (error instanceof Error) {
         setErrorMessage(error.message);
       } else {
@@ -50,21 +57,27 @@ export default function ResetPasswordRoute(): ReactNode {
     setIsLoading(true);
 
     if (newPassword !== confirmPassword) {
+      logger.warn("パスワード不一致");
       setErrorMessage("パスワードが一致しません");
       setIsLoading(false);
       return;
     }
 
+    logger.info("パスワードリセット開始", { email });
+
     try {
       await confirmResetPassword(email, confirmationCode, newPassword);
+      logger.info("パスワードリセット成功", { email });
 
       // パスワードリセット完了後、自動ログイン
       await login(email, newPassword);
+      logger.info("自動ログイン成功", { email });
       setSuccessMessage("パスワードがリセットされました。");
       setTimeout(() => {
         navigate("/", { replace: true });
       }, 1000);
     } catch (error) {
+      logger.error("パスワードリセット失敗", error instanceof Error ? error : { message: String(error) });
       if (error instanceof Error) {
         setErrorMessage(error.message);
       } else {
@@ -242,10 +255,13 @@ export default function ResetPasswordRoute(): ReactNode {
                   setErrorMessage(null);
                   setSuccessMessage(null);
                   setIsLoading(true);
+                  logger.info("確認コード再送信開始", { email });
                   try {
                     await resetPassword(email);
+                    logger.info("確認コード再送信成功", { email });
                     setSuccessMessage("確認コードを再送信しました。");
                   } catch (error) {
+                    logger.error("確認コード再送信失敗", error instanceof Error ? error : { message: String(error) });
                     if (error instanceof Error) {
                       setErrorMessage(error.message);
                     }

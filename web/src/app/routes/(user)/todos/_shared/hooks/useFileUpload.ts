@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { apiClient } from "@/app/lib/api";
+import { buildLogger } from "@/app/lib/logger";
+
+const logger = buildLogger("useFileUpload");
 
 type FileUploadResult = {
   totalFiles: number;
@@ -18,12 +21,15 @@ export const useFileUpload = () => {
       return { totalFiles: 0, failedFiles: [], successCount: 0 };
     }
 
+    logger.info("ファイルアップロード開始", { todoId, fileCount: files.length });
     setIsUploading(true);
     const failedFiles: string[] = [];
 
     try {
       for (const file of files) {
         try {
+          logger.debug("ファイル処理開始", { filename: file.name, size: file.size });
+
           // 1. アップロード準備（uploadUrlとattachmentを取得）
           const { uploadUrl, attachment } = await apiClient.prepareAttachment(
             todoId,
@@ -41,17 +47,22 @@ export const useFileUpload = () => {
           await apiClient.updateAttachment(todoId, attachment.id, {
             status: "UPLOADED",
           });
+
+          logger.debug("ファイル処理完了", { filename: file.name, attachmentId: attachment.id });
         } catch (error) {
-          console.error(`ファイルアップロードエラー (${file.name}):`, error);
+          logger.error("ファイルアップロードエラー", { filename: file.name, error });
           failedFiles.push(file.name);
         }
       }
 
-      return {
+      const result = {
         totalFiles: files.length,
         failedFiles,
         successCount: files.length - failedFiles.length,
       };
+
+      logger.info("ファイルアップロード完了", result);
+      return result;
     } finally {
       setIsUploading(false);
     }

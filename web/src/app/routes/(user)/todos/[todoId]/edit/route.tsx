@@ -1,11 +1,14 @@
 import { useParams, useNavigate } from "react-router";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { Button, Card, LoadingPage, Alert } from "@/app/lib/ui";
+import { buildLogger } from "@/app/lib/logger";
 import { useToast } from "@/app/features/toast";
 import { useTodo, useUpdateTodo } from "@/app/features/todo";
 import { z } from "zod";
 import { schemas } from "@/generated/zod-schemas";
 import { TodoForm } from "../../_shared/components";
+
+const logger = buildLogger("TodoEditRoute");
 
 type UpdateTodoParams = z.infer<typeof schemas.UpdateTodoParams>;
 
@@ -22,14 +25,17 @@ export default function TodoEditRoute() {
   const updateTodo = useUpdateTodo();
 
   const handleUpdate = async (data: UpdateTodoParams) => {
+    logger.info("TODO更新開始", { todoId, title: data.title });
     try {
       await updateTodo.mutateAsync({
         todoId: todoId ?? "",
         data,
       });
+      logger.info("TODO更新成功", { todoId });
       toast.success("TODOを更新しました");
       navigate(`/todos/${todoId}`);
-    } catch {
+    } catch (error) {
+      logger.error("TODO更新失敗", error instanceof Error ? error : { todoId });
       toast.error("TODOの更新に失敗しました");
     }
   };

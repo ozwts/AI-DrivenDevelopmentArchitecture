@@ -1,12 +1,21 @@
 /**
- * APIリクエスト/レスポンスのログ出力
- * 開発環境でのみ出力される
+ * API通信用ロガー
+ * buildLoggerをラップし、API固有のログ形式を提供
  */
+import { buildLogger } from "@/app/lib/logger";
+
+const logger = buildLogger("ApiClient");
 
 type RequestLogParams = {
   url: string;
   method: string;
   body?: BodyInit | null;
+};
+
+type ResponseLogParams = {
+  url: string;
+  method: string;
+  status: number;
 };
 
 type ErrorLogParams = {
@@ -29,28 +38,49 @@ type FetchErrorLogParams = {
   error: unknown;
 };
 
-const isDev = import.meta.env.DEV;
-
 export const apiLogger = {
   request(params: RequestLogParams): void {
-    if (isDev) {
-      console.log("APIリクエスト:", params);
-    }
+    logger.debug("リクエスト開始", {
+      method: params.method,
+      url: params.url,
+      hasBody: params.body !== undefined && params.body !== null,
+    });
+  },
+
+  response(params: ResponseLogParams): void {
+    logger.info("リクエスト成功", {
+      method: params.method,
+      url: params.url,
+      status: params.status,
+    });
   },
 
   error(params: ErrorLogParams): void {
-    console.error("APIリクエスト失敗:", params);
+    logger.error("リクエスト失敗", {
+      method: params.method,
+      url: params.url,
+      status: params.status,
+      statusText: params.statusText,
+      errorText: params.errorText,
+    });
   },
 
   validationError(params: ValidationErrorLogParams): void {
-    console.error("APIレスポンスのバリデーション失敗:", params);
+    logger.error("レスポンスバリデーション失敗", {
+      endpoint: params.endpoint,
+      errors: params.errors,
+    });
   },
 
   fetchError(params: FetchErrorLogParams): void {
-    console.error("通信エラー:", params);
-  },
-
-  warn(message: string): void {
-    console.warn(message);
+    const errorData =
+      params.error instanceof Error
+        ? params.error
+        : { message: String(params.error) };
+    logger.error("通信エラー", {
+      method: params.method,
+      url: params.url,
+      error: errorData,
+    });
   },
 };

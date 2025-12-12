@@ -1,6 +1,7 @@
 import { Link, useSearchParams, useNavigate } from "react-router";
 import { PlusIcon, ListBulletIcon } from "@heroicons/react/24/outline";
 import { Button, LoadingPage, Alert, EmptyState, Select } from "@/app/lib/ui";
+import { buildLogger } from "@/app/lib/logger";
 import { useToast } from "@/app/features/toast";
 import { useTodos, useUpdateTodo, useDeleteTodo } from "@/app/features/todo";
 import { useUsers } from "@/app/features/user";
@@ -8,6 +9,8 @@ import { useProjects } from "@/app/features/project";
 import { z } from "zod";
 import { schemas } from "@/generated/zod-schemas";
 import { TodoCard } from "./_shared/components";
+
+const logger = buildLogger("TodosIndexRoute");
 
 type TodoResponse = z.infer<typeof schemas.TodoResponse>;
 type TodoStatus = z.infer<typeof schemas.TodoStatus>;
@@ -60,13 +63,16 @@ export default function TodosIndexRoute() {
   const deleteTodo = useDeleteTodo();
 
   const handleStatusChange = async (todo: TodoResponse, status: TodoStatus) => {
+    logger.info("TODOステータス変更開始", { todoId: todo.id, title: todo.title, newStatus: status });
     try {
       await updateTodo.mutateAsync({
         todoId: todo.id,
         data: { ...todo, status },
       });
+      logger.info("TODOステータス変更成功", { todoId: todo.id });
       toast.success("ステータスを更新しました");
-    } catch {
+    } catch (error) {
+      logger.error("TODOステータス変更失敗", error instanceof Error ? error : { todoId: todo.id });
       toast.error("ステータスの更新に失敗しました");
     }
   };
@@ -75,10 +81,13 @@ export default function TodosIndexRoute() {
     if (!confirm(`TODO「${todo.title}」を削除してもよろしいですか？`)) {
       return;
     }
+    logger.info("TODO削除開始", { todoId: todo.id, title: todo.title });
     try {
       await deleteTodo.mutateAsync(todo.id);
+      logger.info("TODO削除成功", { todoId: todo.id });
       toast.success("TODOを削除しました");
-    } catch {
+    } catch (error) {
+      logger.error("TODO削除失敗", error instanceof Error ? error : { todoId: todo.id });
       toast.error("TODOの削除に失敗しました");
     }
   };

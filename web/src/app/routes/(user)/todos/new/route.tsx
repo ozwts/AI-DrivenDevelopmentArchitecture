@@ -1,12 +1,15 @@
 import { useNavigate } from "react-router";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { Button, Card } from "@/app/lib/ui";
+import { buildLogger } from "@/app/lib/logger";
 import { useToast } from "@/app/features/toast";
 import { useCreateTodo } from "@/app/features/todo";
 import { z } from "zod";
 import { schemas } from "@/generated/zod-schemas";
 import { useFileUpload } from "../_shared/hooks";
 import { TodoForm } from "../_shared/components";
+
+const logger = buildLogger("TodoNewRoute");
 
 type RegisterTodoParams = z.infer<typeof schemas.RegisterTodoParams>;
 
@@ -21,8 +24,10 @@ export default function TodoNewRoute() {
   const { uploadFiles, isUploading } = useFileUpload();
 
   const handleCreate = async (data: RegisterTodoParams, files: File[]) => {
+    logger.info("TODO作成開始", { title: data.title, fileCount: files.length });
     try {
       const newTodo = await createTodo.mutateAsync(data);
+      logger.info("TODO作成成功", { todoId: newTodo.id });
 
       // ファイルアップロード処理
       if (files.length > 0) {
@@ -47,7 +52,8 @@ export default function TodoNewRoute() {
         toast.success("TODOを作成しました");
         navigate("/todos");
       }
-    } catch {
+    } catch (error) {
+      logger.error("TODO作成失敗", error instanceof Error ? error : { message: String(error) });
       toast.error("TODOの作成に失敗しました");
     }
   };

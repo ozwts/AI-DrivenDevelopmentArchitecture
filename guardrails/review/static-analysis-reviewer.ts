@@ -140,7 +140,7 @@ export const executeStaticAnalysis = async (
       const output = stdoutValue !== "" ? stdoutValue : stderrValue;
 
       // tsc のエラー出力をパース
-      // 形式: "path/to/file.ts(line,col): error TSxxxx: message"
+      // 形式: "path/to/file.ts(line,col): error TS1234: message"
       const allIssues: TypeCheckIssue[] = [];
       const lines = output.split("\n");
 

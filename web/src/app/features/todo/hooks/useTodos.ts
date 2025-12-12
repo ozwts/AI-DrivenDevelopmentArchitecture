@@ -1,12 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { apiClient } from "@/app/lib/api";
+import { buildLogger } from "@/app/lib/logger";
 import { schemas } from "@/generated/zod-schemas";
 
 type RegisterTodoParams = z.infer<typeof schemas.RegisterTodoParams>;
 type UpdateTodoParams = z.infer<typeof schemas.UpdateTodoParams>;
 type TodoStatus = z.infer<typeof schemas.TodoStatus>;
 
+const logger = buildLogger("useTodos");
 const QUERY_KEY = "todos";
 
 /**
@@ -41,9 +43,16 @@ export function useCreateTodo() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: RegisterTodoParams) => apiClient.createTodo(data),
+    mutationFn: (data: RegisterTodoParams) => {
+      logger.info("TODO作成開始", { title: data.title, projectId: data.projectId });
+      return apiClient.createTodo(data);
+    },
     onSuccess: () => {
+      logger.info("TODO作成成功");
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+    },
+    onError: (error) => {
+      logger.error("TODO作成失敗", error);
     },
   });
 }
@@ -61,11 +70,17 @@ export function useUpdateTodo() {
     }: {
       todoId: string;
       data: UpdateTodoParams;
-    }) => apiClient.updateTodo(todoId, data),
+    }) => {
+      logger.info("TODO更新開始", { todoId, status: data.status });
+      return apiClient.updateTodo(todoId, data);
+    },
     onSuccess: (_, { todoId }) => {
-      // 一覧と詳細の両方を無効化
+      logger.info("TODO更新成功", { todoId });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY, todoId] });
+    },
+    onError: (error, { todoId }) => {
+      logger.error("TODO更新失敗", { todoId, error });
     },
   });
 }
@@ -77,11 +92,17 @@ export function useDeleteTodo() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (todoId: string) => apiClient.deleteTodo(todoId),
+    mutationFn: (todoId: string) => {
+      logger.info("TODO削除開始", { todoId });
+      return apiClient.deleteTodo(todoId);
+    },
     onSuccess: (_, todoId) => {
-      // 一覧と詳細の両方を無効化
+      logger.info("TODO削除成功", { todoId });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY, todoId] });
+    },
+    onError: (error, todoId) => {
+      logger.error("TODO削除失敗", { todoId, error });
     },
   });
 }

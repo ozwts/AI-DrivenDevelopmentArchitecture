@@ -1,7 +1,10 @@
 import { useState, FormEvent, ReactNode } from "react";
 import { useNavigate, Link } from "react-router";
 import { useAuth } from "@/app/features/auth";
+import { buildLogger } from "@/app/lib/logger";
 import { Button } from "@/app/lib/ui";
+
+const logger = buildLogger("LoginRoute");
 
 export default function LoginRoute(): ReactNode {
   const [email, setEmail] = useState("");
@@ -17,12 +20,14 @@ export default function LoginRoute(): ReactNode {
     setErrorMessage(null);
     setIsLoading(true);
 
+    logger.info("ログイン開始", { email });
+
     try {
       await login(email, password);
+      logger.info("ログイン成功", { email });
       navigate("/", { replace: true });
     } catch (error) {
-      // エラーの詳細をログ出力（デバッグ用）
-      console.error("Login error in LoginRoute:", error);
+      logger.error("ログイン失敗", error instanceof Error ? error : { message: String(error) });
 
       if (error instanceof Error) {
         // Amplify v6では error.name または error.code が "UserNotConfirmedException" になる
@@ -35,7 +40,7 @@ export default function LoginRoute(): ReactNode {
           errorCode === "UserNotConfirmedException";
 
         if (isUserNotConfirmed) {
-          // エラーではないので、メッセージを表示せずに直接確認画面に遷移
+          logger.info("メール確認が必要", { email });
           navigate("/signup/confirm", {
             state: { email, needsConfirmation: true },
           });
