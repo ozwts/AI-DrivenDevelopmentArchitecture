@@ -168,7 +168,6 @@ export const TodoCard = ({
                 onClick={() => {
                   onView(todo);
                 }}
-                data-testid="todo-detail-button"
               >
                 詳細を見る
               </Button>
@@ -176,12 +175,7 @@ export const TodoCard = ({
           </div>
           <div className="flex gap-2">
             {todo.status !== "COMPLETED" && (
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={handleStatusClick}
-                data-testid="status-change-button"
-              >
+              <Button variant="secondary" size="sm" onClick={handleStatusClick}>
                 {todo.status === "TODO" ? "開始" : "完了"}
               </Button>
             )}
@@ -192,7 +186,6 @@ export const TodoCard = ({
                 onEdit(todo);
               }}
               className="!p-2"
-              data-testid="edit-button"
               aria-label="編集"
             >
               <PencilIcon className="h-4 w-4" aria-hidden="true" />
@@ -204,7 +197,6 @@ export const TodoCard = ({
                 onDelete(todo);
               }}
               className="!p-2 text-red-600 hover:text-red-700"
-              data-testid="delete-button"
               aria-label="削除"
             >
               <TrashIcon className="h-4 w-4" aria-hidden="true" />

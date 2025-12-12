@@ -7,8 +7,9 @@ test.describe("StatsGrid", () => {
       <StatsGrid todoCount={5} inProgressCount={3} doneCount={10} />,
     );
 
-    const todoCard = component.getByTestId("stats-todo");
-    await expect(todoCard).toBeVisible();
+    // セクションラベルが表示される
+    await expect(component.getByText("未着手のTODO")).toBeVisible();
+    // カウント値が表示される
     await expect(component.getByTestId("stats-todo-count")).toHaveText("5");
   });
 
@@ -17,8 +18,9 @@ test.describe("StatsGrid", () => {
       <StatsGrid todoCount={5} inProgressCount={3} doneCount={10} />,
     );
 
-    const inProgressCard = component.getByTestId("stats-in-progress");
-    await expect(inProgressCard).toBeVisible();
+    // セクションラベルが表示される
+    await expect(component.getByText("進行中のTODO")).toBeVisible();
+    // カウント値が表示される
     await expect(component.getByTestId("stats-in-progress-count")).toHaveText(
       "3",
     );
@@ -29,8 +31,9 @@ test.describe("StatsGrid", () => {
       <StatsGrid todoCount={5} inProgressCount={3} doneCount={10} />,
     );
 
-    const doneCard = component.getByTestId("stats-done");
-    await expect(doneCard).toBeVisible();
+    // セクションラベルが表示される
+    await expect(component.getByText("完了したTODO")).toBeVisible();
+    // カウント値が表示される
     await expect(component.getByTestId("stats-done-count")).toHaveText("10");
   });
 

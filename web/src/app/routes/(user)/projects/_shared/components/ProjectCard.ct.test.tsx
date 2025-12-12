@@ -125,7 +125,8 @@ test.describe("ProjectCard", () => {
       />,
     );
 
-    await component.getByTestId("edit-button").click();
+    // getByRole で編集ボタンをクリック（暗黙的a11y検証）
+    await component.getByRole("button", { name: "編集" }).click();
     expect(editedProject).toEqual(testProject);
   });
 
@@ -143,7 +144,8 @@ test.describe("ProjectCard", () => {
       />,
     );
 
-    await component.getByTestId("delete-button").click();
+    // getByRole で削除ボタンをクリック（暗黙的a11y検証）
+    await component.getByRole("button", { name: "削除" }).click();
     expect(deletedProject).toEqual(testProject);
   });
 
@@ -168,7 +170,7 @@ test.describe("ProjectCard", () => {
     expect(clickedProject).toEqual(testProject);
   });
 
-  test("編集ボタンにaria-labelがある", async ({ mount }) => {
+  test("編集ボタンがアクセシブル", async ({ mount }) => {
     const component = await mount(
       <ProjectCard
         project={testProject}
@@ -178,11 +180,13 @@ test.describe("ProjectCard", () => {
       />,
     );
 
-    const editButton = component.getByTestId("edit-button");
-    await expect(editButton).toHaveAttribute("aria-label", "編集");
+    // getByRole で取得可能 = aria-label が正しく設定されている（暗黙的a11y検証）
+    await expect(
+      component.getByRole("button", { name: "編集" }),
+    ).toBeVisible();
   });
 
-  test("削除ボタンにaria-labelがある", async ({ mount }) => {
+  test("削除ボタンがアクセシブル", async ({ mount }) => {
     const component = await mount(
       <ProjectCard
         project={testProject}
@@ -192,7 +196,9 @@ test.describe("ProjectCard", () => {
       />,
     );
 
-    const deleteButton = component.getByTestId("delete-button");
-    await expect(deleteButton).toHaveAttribute("aria-label", "削除");
+    // getByRole で取得可能 = aria-label が正しく設定されている（暗黙的a11y検証）
+    await expect(
+      component.getByRole("button", { name: "削除" }),
+    ).toBeVisible();
   });
 });

@@ -38,7 +38,6 @@ export function UpcomingTodosList({ todos, onTodoClick }: Props) {
         <Link
           to="/todos"
           className="text-primary-600 hover:text-primary-700 flex items-center gap-1 text-sm font-medium"
-          data-testid="upcoming-todos-view-all"
         >
           すべて表示
           <ArrowRightIcon className="h-4 w-4" />
@@ -56,7 +55,6 @@ export function UpcomingTodosList({ todos, onTodoClick }: Props) {
                 onTodoClick(todo);
               }}
               className="w-full text-left p-4 border border-border-light rounded-md hover:border-primary-600 hover:shadow-sm transition-all cursor-pointer"
-              data-testid={`upcoming-todo-${todo.id}`}
               aria-label={`タスク: ${todo.title}、${dueDateLabel}`}
             >
               <div className="flex items-start justify-between">

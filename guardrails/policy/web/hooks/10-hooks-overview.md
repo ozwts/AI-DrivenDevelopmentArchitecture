@@ -45,10 +45,10 @@
 
 | 使用スコープ | 配置先 | 例 |
 |-------------|--------|-----|
-| 同一ルート内 | `routes/({role})/{feature}/hooks/` | ルート固有のデータ操作 |
-| 親子ルート間 | `routes/({role})/{feature}/_shared/hooks/` | 作成・編集で共通のミューテーション |
-| 3+ルート横断 | `features/{feature}/hooks/` | useTodos, useProjects |
-| 全アプリ共通（純粋） | `lib/hooks/` | useDebounce, useLocalStorage |
+| 同一ルート内 | `app/routes/({role})/{feature}/hooks/` | ルート固有のデータ操作 |
+| 親子ルート間 | `app/routes/({role})/{feature}/_shared/hooks/` | 作成・編集で共通のミューテーション |
+| 3+ルート横断 | `app/features/{feature}/hooks/` | useTodos, useProjects |
+| 全アプリ共通（純粋） | `app/lib/hooks/` | useDebounce, useLocalStorage |
 
 ### 分類
 

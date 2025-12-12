@@ -39,6 +39,7 @@ app/routes/({role})/{feature}/
 ```typescript
 // app/routes/(user)/todos/components/TodoItem.tsx
 import type { TodoResponse } from "@/generated/zod-schemas";
+import { Button } from "@/lib/ui";
 
 type Props = {
   readonly todo: TodoResponse;
@@ -50,8 +51,8 @@ export function TodoItem({ todo, onComplete, onDelete }: Props) {
   return (
     <div>
       <span>{todo.title}</span>
-      <button onClick={() => onComplete(todo.id)}>完了</button>
-      <button onClick={() => onDelete(todo.id)}>削除</button>
+      <Button onClick={() => onComplete(todo.id)}>完了</Button>
+      <Button onClick={() => onDelete(todo.id)}>削除</Button>
     </div>
   );
 }

@@ -14,7 +14,7 @@ type Props = {
 export function StatsGrid({ todoCount, inProgressCount, doneCount }: Props) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-      <Card className="bg-background-surface" data-testid="stats-todo">
+      <Card className="bg-background-surface">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-text-secondary mb-1">
@@ -31,7 +31,7 @@ export function StatsGrid({ todoCount, inProgressCount, doneCount }: Props) {
         </div>
       </Card>
 
-      <Card className="bg-background-surface" data-testid="stats-in-progress">
+      <Card className="bg-background-surface">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-text-secondary mb-1">
@@ -48,7 +48,7 @@ export function StatsGrid({ todoCount, inProgressCount, doneCount }: Props) {
         </div>
       </Card>
 
-      <Card className="bg-background-surface" data-testid="stats-done">
+      <Card className="bg-background-surface">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-text-secondary mb-1">

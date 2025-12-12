@@ -74,7 +74,6 @@ export default function SignupRoute(): ReactNode {
               disabled={isLoading}
               className="w-full px-4 py-2 border border-border rounded-md text-text-primary bg-white focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
               placeholder="user@example.com"
-              data-testid="email-input"
             />
           </div>
 
@@ -97,7 +96,6 @@ export default function SignupRoute(): ReactNode {
               className="w-full px-4 py-2 border border-border rounded-md text-text-primary bg-white focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
               placeholder="••••••••"
               minLength={8}
-              data-testid="password-input"
             />
             <p className="mt-1 text-xs text-text-tertiary">
               8文字以上、大文字・小文字・数字・記号を含む
@@ -123,7 +121,6 @@ export default function SignupRoute(): ReactNode {
               className="w-full px-4 py-2 border border-border rounded-md text-text-primary bg-white focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
               placeholder="••••••••"
               minLength={8}
-              data-testid="confirm-password-input"
             />
           </div>
 
@@ -139,7 +136,6 @@ export default function SignupRoute(): ReactNode {
             size="lg"
             isLoading={isLoading}
             className="w-full"
-            data-testid="submit-button"
           >
             サインアップ
           </Button>

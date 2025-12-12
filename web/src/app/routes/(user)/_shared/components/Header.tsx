@@ -45,9 +45,7 @@ export const Header = () => {
             className="flex items-center space-x-2 text-text-primary hover:text-primary-600 transition-colors"
           >
             <ListBulletIcon className="h-8 w-8" />
-            <span className="text-xl font-bold" data-testid="app-logo">
-              TODO App
-            </span>
+            <span className="text-xl font-bold">TODO App</span>
           </Link>
 
           {/* Navigation and Logout */}
@@ -77,12 +75,7 @@ export const Header = () => {
             </nav>
 
             {/* Logout Button */}
-            <Button
-              variant="ghost"
-              onClick={handleLogout}
-              data-testid="logout-button"
-              aria-label="ログアウト"
-            >
+            <Button variant="ghost" onClick={handleLogout}>
               <ArrowRightStartOnRectangleIcon className="h-5 w-5" />
               <span>ログアウト</span>
             </Button>

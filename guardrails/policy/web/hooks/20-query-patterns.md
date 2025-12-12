@@ -47,6 +47,8 @@ queryKey: [QUERY_KEY, todoId]
 ### 一覧取得
 
 ```typescript
+// app/features/todo/hooks/useTodos.ts
+// ※ 3+ルート横断で使用されるため features/ に配置
 export function useTodos(filters?: { status?: TodoStatus; projectId?: string }) {
   return useQuery({
     queryKey: [QUERY_KEY, filters],
@@ -102,6 +104,8 @@ export function useTodoWithProject(todoId: string) {
 ### 基本的な作成・更新・削除
 
 ```typescript
+// app/features/todo/hooks/useTodos.ts
+// ※ 3+ルート横断で使用されるため features/ に配置
 export function useCreateTodo() {
   const queryClient = useQueryClient();
 

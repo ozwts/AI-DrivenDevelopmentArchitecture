@@ -5,7 +5,8 @@ test.describe("Header", () => {
   test("ロゴが表示される", async ({ mount }) => {
     const component = await mount(<Header />);
 
-    await expect(component.getByTestId("app-logo")).toHaveText("TODO App");
+    // 動的コンテンツのためgetByTextを使用
+    await expect(component.getByText("TODO App")).toBeVisible();
   });
 
   test("ホームリンクが表示される", async ({ mount }) => {
@@ -41,15 +42,9 @@ test.describe("Header", () => {
   test("ログアウトボタンが表示される", async ({ mount }) => {
     const component = await mount(<Header />);
 
-    const logoutButton = component.getByTestId("logout-button");
+    // getByRole: 暗黙的a11y検証
+    const logoutButton = component.getByRole("button", { name: "ログアウト" });
     await expect(logoutButton).toBeVisible();
-  });
-
-  test("ログアウトボタンにaria-labelがある", async ({ mount }) => {
-    const component = await mount(<Header />);
-
-    const logoutButton = component.getByTestId("logout-button");
-    await expect(logoutButton).toHaveAttribute("aria-label", "ログアウト");
   });
 
   test("ナビゲーションリンクが正しいパスを持つ", async ({ mount }) => {

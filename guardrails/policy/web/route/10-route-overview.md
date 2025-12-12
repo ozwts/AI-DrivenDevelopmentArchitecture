@@ -211,4 +211,4 @@ app/
 
 - `20-colocation-patterns.md`: コロケーションの実装パターン
 - `30-shared-placement.md`: 共通化の配置基準
-- `40-test-patterns.md`: ルートテスト（スナップショット）
+- `40-test-patterns.md`: ルートテスト（SS）

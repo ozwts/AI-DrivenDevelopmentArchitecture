@@ -107,7 +107,6 @@ export const AttachmentUpload = ({
               size="sm"
               onClick={handleUpload}
               disabled={isUploading}
-              data-testid="upload-button"
             >
               {isUploading ? "アップロード中..." : "アップロード"}
             </Button>
@@ -117,7 +116,6 @@ export const AttachmentUpload = ({
               onClick={handleCancel}
               disabled={isUploading}
               className="!p-2"
-              data-testid="cancel-upload-button"
               aria-label="キャンセル"
             >
               <XMarkIcon className="h-4 w-4" />

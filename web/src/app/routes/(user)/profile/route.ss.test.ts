@@ -42,8 +42,8 @@ test("[SS]プロフィールページ（編集モーダル）が表示される"
   await page.goto("/profile");
   await page.waitForLoadState("networkidle");
 
-  // 編集ボタンをクリック
-  await page.getByTestId("edit-button").click();
+  // 編集ボタンをクリック（getByRole: 暗黙的a11y検証）
+  await page.getByRole("button", { name: "編集" }).click();
 
   // モーダルのレンダリング完了を待機
   await page.waitForLoadState("networkidle");

@@ -63,7 +63,8 @@ test.describe("RecentTodosList", () => {
       <RecentTodosList todos={mockTodos} onTodoClick={() => {}} />,
     );
 
-    const viewAllLink = component.getByTestId("recent-todos-view-all");
+    // getByRole: 暗黙的a11y検証
+    const viewAllLink = component.getByRole("link", { name: "すべて表示" });
     await expect(viewAllLink).toBeVisible();
     await expect(viewAllLink).toHaveAttribute("href", "/todos");
   });
@@ -80,20 +81,22 @@ test.describe("RecentTodosList", () => {
       />,
     );
 
-    await component.getByTestId("recent-todo-recent-1").click();
+    // getByRole: aria-labelを活用した暗黙的a11y検証
+    await component
+      .getByRole("button", { name: "タスク: 最近追加されたタスク1" })
+      .click();
     expect(clickedTodo).not.toBeNull();
     expect(clickedTodo?.id).toBe("recent-1");
   });
 
-  test("TODOボタンに適切なaria-labelがある", async ({ mount }) => {
+  test("TODOボタンにアクセシブルな名前がある", async ({ mount }) => {
     const component = await mount(
       <RecentTodosList todos={mockTodos} onTodoClick={() => {}} />,
     );
 
-    const button = component.getByTestId("recent-todo-recent-1");
-    await expect(button).toHaveAttribute(
-      "aria-label",
-      "タスク: 最近追加されたタスク1",
-    );
+    // getByRole で取得可能 = aria-label が正しく設定されている（暗黙的a11y検証）
+    await expect(
+      component.getByRole("button", { name: "タスク: 最近追加されたタスク1" }),
+    ).toBeVisible();
   });
 });

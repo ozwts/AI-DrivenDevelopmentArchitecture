@@ -24,10 +24,9 @@ test.describe("TodoForm", () => {
     const prioritySelect = component.getByLabel("優先度");
     await expect(prioritySelect).toHaveValue("MEDIUM");
 
-    // 作成ボタンが表示される（data-testid + アクセシビリティ検証）
-    const submitButton = component.getByTestId("submit-button");
+    // 作成ボタンが表示される（getByRole: 暗黙的a11y検証）
+    const submitButton = component.getByRole("button", { name: "作成" });
     await expect(submitButton).toBeVisible();
-    await expect(submitButton).toHaveRole("button");
     await expect(submitButton).toHaveAttribute("type", "submit");
   });
 
@@ -61,10 +60,9 @@ test.describe("TodoForm", () => {
     const dueDateInput = component.getByLabel("期限日");
     await expect(dueDateInput).toHaveValue("2025-12-31");
 
-    // 更新ボタンが表示される（data-testid + アクセシビリティ検証）
-    const submitButton = component.getByTestId("submit-button");
+    // 更新ボタンが表示される（getByRole: 暗黙的a11y検証）
+    const submitButton = component.getByRole("button", { name: "更新" });
     await expect(submitButton).toBeVisible();
-    await expect(submitButton).toHaveRole("button");
     await expect(submitButton).toHaveAttribute("type", "submit");
   });
 
@@ -132,13 +130,8 @@ test.describe("TodoForm", () => {
       />,
     );
 
-    // キャンセルボタンのアクセシビリティ検証（data-testid + getByRole）
-    const cancelButton = component.getByTestId("cancel-button");
-    await expect(cancelButton).toHaveRole("button");
-    await expect(cancelButton).toHaveAttribute("type", "button");
-
-    // クリック操作
-    await cancelButton.click();
+    // キャンセルボタンをクリック（getByRole: 暗黙的a11y検証）
+    await component.getByRole("button", { name: "キャンセル" }).click();
     expect(cancelCalled).toBe(true);
   });
 

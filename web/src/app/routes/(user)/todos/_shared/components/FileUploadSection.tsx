@@ -86,7 +86,6 @@ export const FileUploadSection = ({
                   onFileRemove(index);
                 }}
                 className="!p-2 flex-shrink-0"
-                data-testid="remove-file-button"
                 aria-label={`${file.name}を削除`}
               >
                 <XMarkIcon className="h-4 w-4" />

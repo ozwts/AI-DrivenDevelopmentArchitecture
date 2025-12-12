@@ -96,7 +96,8 @@ export class ApiError extends Error {
 ### useQuery（データ取得）
 
 ```typescript
-// app/routes/(user)/todos/hooks/useTodos.ts
+// app/features/todo/hooks/useTodos.ts
+// ※ 3+ルート横断で使用されるため features/ に配置
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api";
 import type { TodoResponse } from "@/generated/zod-schemas";
@@ -112,7 +113,8 @@ export function useTodos() {
 ### useMutation（データ更新）
 
 ```typescript
-// app/routes/(user)/todos/hooks/useCreateTodo.ts
+// app/features/todo/hooks/useTodos.ts
+// ※ 3+ルート横断で使用されるため features/ に配置
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api";
 import type { CreateTodoRequest, TodoResponse } from "@/generated/zod-schemas";

@@ -321,7 +321,7 @@ test("詳細を見るボタンをクリックするとonViewが呼ばれる", as
     />,
   );
 
-  await component.getByTestId("todo-detail-button").click();
+  await component.getByRole("button", { name: "詳細を見る" }).click();
   expect(viewedTodo).toEqual(mockTodo);
 });
 

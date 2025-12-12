@@ -40,7 +40,6 @@ export const ProfileEditForm = ({
         {...register("name")}
         error={errors.name?.message}
         placeholder="例: 田中太郎"
-        data-testid="input-name"
       />
 
       {/* メールアドレスは読み取り専用（Cognito管理） */}
@@ -64,17 +63,11 @@ export const ProfileEditForm = ({
           type="button"
           variant="ghost"
           onClick={onCancel}
-          data-testid="cancel-button"
           disabled={isLoading}
         >
           キャンセル
         </Button>
-        <Button
-          type="submit"
-          variant="primary"
-          isLoading={isLoading}
-          data-testid="submit-button"
-        >
+        <Button type="submit" variant="primary" isLoading={isLoading}>
           更新
         </Button>
       </div>

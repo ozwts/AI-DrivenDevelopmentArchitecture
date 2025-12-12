@@ -64,7 +64,6 @@ export const ProjectForm = ({
         {...register("name")}
         error={errors.name?.message}
         placeholder="システム刷新プロジェクト"
-        data-testid="input-name"
       />
 
       {/* 説明 */}
@@ -74,7 +73,6 @@ export const ProjectForm = ({
         error={errors.description?.message}
         placeholder="プロジェクトの詳細を入力してください"
         rows={3}
-        data-testid="textarea-description"
       />
 
       {/* カラー選択 */}
@@ -87,7 +85,6 @@ export const ProjectForm = ({
             type="button"
             onClick={handleRegenerateColors}
             className="flex items-center gap-2 px-3 py-1.5 text-sm text-text-secondary hover:text-text-primary transition-colors rounded-md hover:bg-background-surface group"
-            data-testid="regenerate-colors-button"
             aria-label="ランダムなカラーを生成"
           >
             <ArrowPathIcon className="h-4 w-4 group-hover:rotate-180 transition-transform duration-300" />
@@ -124,20 +121,10 @@ export const ProjectForm = ({
 
       {/* フォームフッター */}
       <div className="flex justify-end gap-3 pt-4">
-        <Button
-          variant="ghost"
-          onClick={onCancel}
-          type="button"
-          data-testid="cancel-button"
-        >
+        <Button variant="ghost" onClick={onCancel} type="button">
           キャンセル
         </Button>
-        <Button
-          variant="primary"
-          type="submit"
-          isLoading={isLoading}
-          data-testid="submit-button"
-        >
+        <Button variant="primary" type="submit" isLoading={isLoading}>
           {project ? "更新" : "作成"}
         </Button>
       </div>

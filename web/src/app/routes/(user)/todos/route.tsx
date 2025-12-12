@@ -137,7 +137,6 @@ export default function TodosIndexRoute() {
             <Button
               variant="primary"
               className="flex items-center gap-2"
-              data-testid="create-todo-button"
             >
               <PlusIcon className="h-5 w-5" />
               新規TODO
@@ -195,7 +194,7 @@ export default function TodosIndexRoute() {
           description="新しいTODOを作成して始めましょう"
           action={
             <Link to="/todos/new">
-              <Button variant="primary" data-testid="create-todo-button">
+              <Button variant="primary">
                 <PlusIcon className="h-5 w-5 mr-2" />
                 新規TODO
               </Button>

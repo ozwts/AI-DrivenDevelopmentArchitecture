@@ -1,4 +1,4 @@
-# コンポーネントテスト（\*.ct.test.tsx）
+# コンポーネントテスト（*.ct.test.tsx）
 
 ## 核心原則
 
@@ -33,6 +33,24 @@ test("フォームが動作する", async ({ mount }) => {
 });
 ```
 
+## セレクタ戦略
+
+**`getByRole`/`getByLabel`を優先**し、`data-testid`は複数要素の区別が必要な場合のみ使用する。
+
+詳細は `20-selector-strategy.md` を参照。
+
+```typescript
+// 推奨: getByRole（暗黙的a11y検証）
+await component.getByRole("button", { name: "送信" }).click();
+
+// 推奨: getByLabel（暗黙的a11y検証）
+const titleInput = component.getByLabel("タイトル");
+
+// 複数要素の区別が必要な場合のみ data-testid
+const todoCard = component.getByTestId("todo-card-123");
+await todoCard.getByRole("button", { name: "編集" }).click();
+```
+
 ## テストパターン
 
 ### 1. 初期表示テスト
@@ -41,12 +59,13 @@ test("フォームが動作する", async ({ mount }) => {
 test("新規作成モード: 初期値が正しく表示される", async ({ mount }) => {
   const component = await mount(<TodoForm onSubmit={() => {}} onCancel={() => {}} />);
 
+  // getByLabel で入力要素を取得（暗黙的a11y検証）
   const titleInput = component.getByLabel("タイトル");
   await expect(titleInput).toHaveValue("");
 
-  const submitButton = component.getByTestId("submit-button");
+  // getByRole でボタンを検証（暗黙的a11y検証）
+  const submitButton = component.getByRole("button", { name: "作成" });
   await expect(submitButton).toBeVisible();
-  await expect(submitButton).toHaveRole("button");
   await expect(submitButton).toHaveAttribute("type", "submit");
 });
 ```
@@ -127,9 +146,8 @@ test("キャンセルボタンをクリックするとonCancelが呼ばれる", 
     />
   );
 
-  const cancelButton = component.getByTestId("cancel-button");
-  await expect(cancelButton).toHaveRole("button");
-  await cancelButton.click();
+  // getByRole で操作（暗黙的a11y検証）
+  await component.getByRole("button", { name: "キャンセル" }).click();
   expect(cancelCalled).toBe(true);
 });
 
@@ -171,15 +189,42 @@ test("ステータスが「完了」の場合、ステータス変更ボタン�
 
 ### 7. ローディング状態テスト
 
+**注意**: Buttonコンポーネントは`isLoading=true`の時、アクセシブル名が「処理中...」に変わる。
+そのため、ローディング状態のボタンを取得する際は正規表現マッチを使用する。
+
 ```typescript
 test("isLoading=trueの時、ボタンがローディング状態になる", async ({ mount }) => {
   const component = await mount(
     <ProfileEditForm user={mockUser} onSubmit={() => {}} onCancel={() => {}} isLoading={true} />
   );
 
-  const submitButton = component.getByTestId("submit-button");
+  // ❌ Bad: isLoading=trueではボタンテキストが「処理中...」に変わるため失敗
+  // const submitButton = component.getByRole("button", { name: "保存" });
+
+  // ✅ Good: 正規表現で「処理中」を含むボタンを取得
+  const submitButton = component.getByRole("button", { name: /処理中/ });
   await expect(submitButton).toBeDisabled();
-  await expect(component.getByRole("status")).toBeVisible();
+});
+```
+
+### 8. 複数要素がある場合（data-testid使用）
+
+```typescript
+test("特定のTODOカードの編集ボタンをクリックする", async ({ mount }) => {
+  let editedTodo = null;
+  const component = await mount(
+    <TodoList
+      todos={[mockTodo1, mockTodo2, mockTodo3]}
+      onEdit={(todo) => { editedTodo = todo; }}
+      onDelete={() => {}}
+    />
+  );
+
+  // 複数カードがあるため data-testid でスコープ限定
+  const targetCard = component.getByTestId(`todo-card-${mockTodo2.id}`);
+  await targetCard.getByRole("button", { name: "編集" }).click();
+
+  expect(editedTodo).toEqual(mockTodo2);
 });
 ```
 
@@ -193,11 +238,12 @@ Playwrightはstrict modeがデフォルトで有効であり、複数の要素�
 // ✅ Good: exactオプションで完全一致
 await expect(component.getByRole("link", { name: "TODO", exact: true })).toBeVisible();
 
+// ✅ Good: data-testidでスコープ限定してからgetByRole
+const card = component.getByTestId("todo-card-123");
+await card.getByRole("button", { name: "編集" }).click();
+
 // ✅ Good: getByRoleでheadingを指定して一意に
 await expect(component.getByRole("heading", { name: "タイトル" })).toBeVisible();
-
-// ✅ Good: first()で最初の要素を取得
-await expect(component.getByText("高").first()).toBeVisible();
 
 // ❌ Bad: 複数要素にマッチする可能性
 await expect(component.getByText("TODO")).toBeVisible(); // "TODO App"にもマッチ

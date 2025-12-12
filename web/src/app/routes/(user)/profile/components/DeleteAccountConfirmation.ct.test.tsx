@@ -54,9 +54,9 @@ test.describe("DeleteAccountConfirmation", () => {
       />,
     );
 
-    const cancelButton = component.getByTestId("cancel-button");
+    // getByRole: 暗黙的a11y検証
+    const cancelButton = component.getByRole("button", { name: "キャンセル" });
     await expect(cancelButton).toBeVisible();
-    await expect(cancelButton).toHaveRole("button");
     await expect(cancelButton).toHaveAttribute("type", "button");
   });
 
@@ -75,8 +75,8 @@ test.describe("DeleteAccountConfirmation", () => {
       />,
     );
 
-    const cancelButton = component.getByTestId("cancel-button");
-    await cancelButton.click();
+    // getByRole: 暗黙的a11y検証
+    await component.getByRole("button", { name: "キャンセル" }).click();
 
     expect(cancelCalled).toBe(true);
   });
@@ -93,14 +93,12 @@ test.describe("DeleteAccountConfirmation", () => {
       />,
     );
 
-    const deleteButton = component.getByTestId("delete-button");
+    // getByRole: 暗黙的a11y検証
+    const deleteButton = component.getByRole("button", {
+      name: "完全に削除する",
+    });
     await expect(deleteButton).toBeVisible();
-    await expect(deleteButton).toHaveRole("button");
     await expect(deleteButton).toHaveAttribute("type", "button");
-    await expect(deleteButton).toHaveAttribute(
-      "aria-label",
-      "アカウントを完全に削除する",
-    );
   });
 
   test("削除ボタンをクリックするとonConfirmが呼ばれる", async ({ mount }) => {
@@ -116,8 +114,8 @@ test.describe("DeleteAccountConfirmation", () => {
       />,
     );
 
-    const deleteButton = component.getByTestId("delete-button");
-    await deleteButton.click();
+    // getByRole: 暗黙的a11y検証
+    await component.getByRole("button", { name: "完全に削除する" }).click();
 
     expect(confirmCalled).toBe(true);
   });
@@ -134,7 +132,8 @@ test.describe("DeleteAccountConfirmation", () => {
       />,
     );
 
-    const cancelButton = component.getByTestId("cancel-button");
+    // getByRole: 暗黙的a11y検証
+    const cancelButton = component.getByRole("button", { name: "キャンセル" });
     await expect(cancelButton).toBeDisabled();
   });
 

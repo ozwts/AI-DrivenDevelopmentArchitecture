@@ -84,7 +84,8 @@ test.describe("UpcomingTodosList", () => {
       <UpcomingTodosList todos={mockTodos} onTodoClick={() => {}} />,
     );
 
-    const viewAllLink = component.getByTestId("upcoming-todos-view-all");
+    // getByRole: 暗黙的a11y検証
+    const viewAllLink = component.getByRole("link", { name: "すべて表示" });
     await expect(viewAllLink).toBeVisible();
     await expect(viewAllLink).toHaveAttribute("href", "/todos");
   });
@@ -101,7 +102,10 @@ test.describe("UpcomingTodosList", () => {
       />,
     );
 
-    await component.getByTestId("upcoming-todo-upcoming-1").click();
+    // getByRole: aria-labelを活用した暗黙的a11y検証
+    await component
+      .getByRole("button", { name: /タスク: 期限が近いタスク1/ })
+      .click();
     expect(clickedTodo).not.toBeNull();
     expect(clickedTodo?.id).toBe("upcoming-1");
   });
@@ -115,15 +119,14 @@ test.describe("UpcomingTodosList", () => {
     await expect(overdueBadge).toBeVisible();
   });
 
-  test("TODOボタンに適切なaria-labelがある", async ({ mount }) => {
+  test("TODOボタンにアクセシブルな名前がある", async ({ mount }) => {
     const component = await mount(
       <UpcomingTodosList todos={mockTodos} onTodoClick={() => {}} />,
     );
 
-    const button = component.getByTestId("upcoming-todo-upcoming-1");
-    await expect(button).toHaveAttribute(
-      "aria-label",
-      /タスク:.*期限が近いタスク1/,
-    );
+    // getByRole で取得可能 = aria-label が正しく設定されている（暗黙的a11y検証）
+    await expect(
+      component.getByRole("button", { name: /タスク: 期限が近いタスク1/ }),
+    ).toBeVisible();
   });
 });

@@ -77,7 +77,6 @@ export const DeleteAccountConfirmation = ({
           variant="secondary"
           onClick={onCancel}
           disabled={isDeleting}
-          data-testid="cancel-button"
         >
           キャンセル
         </Button>
@@ -86,8 +85,6 @@ export const DeleteAccountConfirmation = ({
           variant="danger"
           onClick={onConfirm}
           isLoading={isDeleting}
-          data-testid="delete-button"
-          aria-label="アカウントを完全に削除する"
         >
           <TrashIcon className="h-5 w-5 mr-2" aria-hidden="true" />
           完全に削除する

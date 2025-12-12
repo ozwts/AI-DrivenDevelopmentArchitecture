@@ -8,7 +8,7 @@ test.describe("ProjectForm", () => {
       <ProjectForm onSubmit={async () => {}} onCancel={() => {}} />,
     );
 
-    const nameInput = component.getByTestId("input-name");
+    const nameInput = component.getByLabel("プロジェクト名");
     await expect(nameInput).toHaveValue("");
   });
 
@@ -21,10 +21,10 @@ test.describe("ProjectForm", () => {
       />,
     );
 
-    const nameInput = component.getByTestId("input-name");
+    const nameInput = component.getByLabel("プロジェクト名");
     await expect(nameInput).toHaveValue("既存プロジェクト");
 
-    const descriptionTextarea = component.getByTestId("textarea-description");
+    const descriptionTextarea = component.getByLabel("説明");
     await expect(descriptionTextarea).toHaveValue("既存プロジェクトの説明");
   });
 
@@ -33,7 +33,7 @@ test.describe("ProjectForm", () => {
       <ProjectForm onSubmit={async () => {}} onCancel={() => {}} />,
     );
 
-    const nameInput = component.getByTestId("input-name");
+    const nameInput = component.getByLabel("プロジェクト名");
     await nameInput.fill("新しいプロジェクト");
     await expect(nameInput).toHaveValue("新しいプロジェクト");
   });
@@ -43,7 +43,7 @@ test.describe("ProjectForm", () => {
       <ProjectForm onSubmit={async () => {}} onCancel={() => {}} />,
     );
 
-    const descriptionTextarea = component.getByTestId("textarea-description");
+    const descriptionTextarea = component.getByLabel("説明");
     await descriptionTextarea.fill("プロジェクトの説明");
     await expect(descriptionTextarea).toHaveValue("プロジェクトの説明");
   });
@@ -84,8 +84,10 @@ test.describe("ProjectForm", () => {
       (el) => (el as HTMLElement).style.backgroundColor,
     );
 
-    // ランダム生成ボタンをクリック
-    await component.getByTestId("regenerate-colors-button").click();
+    // ランダム生成ボタンをクリック（getByRole: 暗黙的a11y検証）
+    await component
+      .getByRole("button", { name: "ランダムなカラーを生成" })
+      .click();
 
     // カラーが変更されたことを確認（変更されない可能性があるので、ボタンが動作することを確認）
     await expect(firstColorOption).toBeVisible();
@@ -106,7 +108,8 @@ test.describe("ProjectForm", () => {
       />,
     );
 
-    await component.getByTestId("cancel-button").click();
+    // キャンセルボタンをクリック（getByRole: 暗黙的a11y検証）
+    await component.getByRole("button", { name: "キャンセル" }).click();
     expect(cancelCalled).toBe(true);
   });
 
@@ -115,7 +118,10 @@ test.describe("ProjectForm", () => {
       <ProjectForm onSubmit={async () => {}} onCancel={() => {}} />,
     );
 
-    await expect(component.getByTestId("submit-button")).toHaveText("作成");
+    // getByRole で作成ボタンを検証（暗黙的a11y検証）
+    await expect(
+      component.getByRole("button", { name: "作成" }),
+    ).toBeVisible();
   });
 
   test("編集時、送信ボタンのテキストは「更新」", async ({ mount }) => {
@@ -127,7 +133,10 @@ test.describe("ProjectForm", () => {
       />,
     );
 
-    await expect(component.getByTestId("submit-button")).toHaveText("更新");
+    // getByRole で更新ボタンを検証（暗黙的a11y検証）
+    await expect(
+      component.getByRole("button", { name: "更新" }),
+    ).toBeVisible();
   });
 
   test("isLoading=trueの時、送信ボタンがローディング状態になる", async ({
@@ -141,7 +150,8 @@ test.describe("ProjectForm", () => {
       />,
     );
 
-    const submitButton = component.getByTestId("submit-button");
+    // 送信ボタンがローディング状態になる（テキストが「処理中...」に変わる）
+    const submitButton = component.getByRole("button", { name: /処理中/ });
     await expect(submitButton).toBeDisabled();
 
     // ローディングスピナーが表示される
@@ -153,7 +163,8 @@ test.describe("ProjectForm", () => {
       <ProjectForm onSubmit={async () => {}} onCancel={() => {}} />,
     );
 
-    const submitButton = component.getByTestId("submit-button");
+    // getByRole で作成ボタンを取得（暗黙的a11y検証）
+    const submitButton = component.getByRole("button", { name: "作成" });
     await expect(submitButton).toHaveAttribute("type", "submit");
   });
 
@@ -162,19 +173,19 @@ test.describe("ProjectForm", () => {
       <ProjectForm onSubmit={async () => {}} onCancel={() => {}} />,
     );
 
-    const cancelButton = component.getByTestId("cancel-button");
+    // getByRole でキャンセルボタンを取得（暗黙的a11y検証）
+    const cancelButton = component.getByRole("button", { name: "キャンセル" });
     await expect(cancelButton).toHaveAttribute("type", "button");
   });
 
-  test("ランダム生成ボタンにaria-labelがある", async ({ mount }) => {
+  test("ランダム生成ボタンがアクセシブル", async ({ mount }) => {
     const component = await mount(
       <ProjectForm onSubmit={async () => {}} onCancel={() => {}} />,
     );
 
-    const regenerateButton = component.getByTestId("regenerate-colors-button");
-    await expect(regenerateButton).toHaveAttribute(
-      "aria-label",
-      "ランダムなカラーを生成",
-    );
+    // getByRole で取得可能 = aria-label が正しく設定されている（暗黙的a11y検証）
+    await expect(
+      component.getByRole("button", { name: "ランダムなカラーを生成" }),
+    ).toBeVisible();
   });
 });

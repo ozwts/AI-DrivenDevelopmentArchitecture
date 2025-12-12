@@ -109,8 +109,6 @@ export default function ProfileRoute() {
                 onClick={() => {
                   setIsEditModalOpen(true);
                 }}
-                data-testid="edit-button"
-                aria-label="プロフィールを編集"
               >
                 <PencilIcon className="h-4 w-4 mr-1" aria-hidden="true" />
                 編集

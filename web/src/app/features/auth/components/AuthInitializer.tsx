@@ -99,7 +99,6 @@ export function AuthInitializer({ children }: AuthInitializerProps): ReactNode {
             onClick={() => {
               window.location.reload();
             }}
-            data-testid="retry-button"
           >
             再試行
           </Button>

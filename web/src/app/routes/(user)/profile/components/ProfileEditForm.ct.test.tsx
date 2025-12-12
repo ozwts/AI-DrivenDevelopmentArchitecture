@@ -39,13 +39,8 @@ test.describe("ProfileEditForm", () => {
       />,
     );
 
-    // キャンセルボタンのアクセシビリティ検証（data-testid + getByRole）
-    const cancelButton = component.getByTestId("cancel-button");
-    await expect(cancelButton).toHaveRole("button");
-    await expect(cancelButton).toHaveAttribute("type", "button");
-
-    // クリック操作
-    await cancelButton.click();
+    // キャンセルボタンをクリック（getByRole: 暗黙的a11y検証）
+    await component.getByRole("button", { name: "キャンセル" }).click();
 
     // onCancelが呼ばれたことを確認
     expect(cancelCalled).toBe(true);
@@ -60,10 +55,9 @@ test.describe("ProfileEditForm", () => {
       />,
     );
 
-    // 更新ボタンが表示される（data-testid + アクセシビリティ検証）
-    const submitButton = component.getByTestId("submit-button");
+    // 更新ボタンが表示される（getByRole: 暗黙的a11y検証）
+    const submitButton = component.getByRole("button", { name: "更新" });
     await expect(submitButton).toBeVisible();
-    await expect(submitButton).toHaveRole("button");
     await expect(submitButton).toHaveAttribute("type", "submit");
   });
 
@@ -99,8 +93,8 @@ test.describe("ProfileEditForm", () => {
     const nameInput = component.getByLabel("ユーザー名");
     await nameInput.fill("新しい名前");
 
-    // フォームを送信
-    await component.getByTestId("submit-button").click();
+    // フォームを送信（getByRole: 暗黙的a11y検証）
+    await component.getByRole("button", { name: "更新" }).click();
 
     // onSubmitが正しいデータで呼ばれたことを確認
     expect(submittedData).toEqual({ name: "新しい名前" });
@@ -121,8 +115,8 @@ test.describe("ProfileEditForm", () => {
     const nameInput = component.getByLabel("ユーザー名");
     await nameInput.fill("");
 
-    // フォームを送信
-    await component.getByTestId("submit-button").click();
+    // フォームを送信（getByRole: 暗黙的a11y検証）
+    await component.getByRole("button", { name: "更新" }).click();
 
     // バリデーションエラーが表示されることを確認（getByRole: アクセシビリティ検証）
     const errorAlert = component.getByRole("alert");
@@ -146,8 +140,8 @@ test.describe("ProfileEditForm", () => {
     const longName = "あ".repeat(101);
     await nameInput.fill(longName);
 
-    // フォームを送信
-    await component.getByTestId("submit-button").click();
+    // フォームを送信（getByRole: 暗黙的a11y検証）
+    await component.getByRole("button", { name: "更新" }).click();
 
     // バリデーションエラーが表示されることを確認（getByRole: アクセシビリティ検証）
     const errorAlert = component.getByRole("alert");
@@ -232,12 +226,12 @@ test.describe("ProfileEditForm", () => {
       />,
     );
 
-    // キャンセルボタンが無効化される
-    const cancelButton = component.getByTestId("cancel-button");
+    // キャンセルボタンが無効化される（getByRole: 暗黙的a11y検証）
+    const cancelButton = component.getByRole("button", { name: "キャンセル" });
     await expect(cancelButton).toBeDisabled();
 
-    // 送信ボタンがローディング状態になる
-    const submitButton = component.getByTestId("submit-button");
+    // 送信ボタンがローディング状態になる（テキストが「処理中...」に変わる）
+    const submitButton = component.getByRole("button", { name: /処理中/ });
     await expect(submitButton).toBeDisabled();
 
     // ローディングスピナーが表示される

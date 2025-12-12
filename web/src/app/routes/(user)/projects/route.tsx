@@ -82,7 +82,6 @@ export default function ProjectsIndexRoute() {
             variant="primary"
             onClick={() => navigate("/projects/new")}
             className="flex items-center gap-2"
-            data-testid="create-project-button"
           >
             <PlusIcon className="h-5 w-5" />
             新規プロジェクト
@@ -113,8 +112,7 @@ export default function ProjectsIndexRoute() {
             <Button
               variant="primary"
               onClick={() => navigate("/projects/new")}
-              data-testid="create-project-button"
-            >
+              >
               <PlusIcon className="h-5 w-5 mr-2" />
               新規プロジェクト
             </Button>
