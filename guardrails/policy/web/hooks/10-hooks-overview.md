@@ -15,6 +15,7 @@
 2. **単一責務の維持**: 1フック = 1つの明確なデータ操作
 3. **配置場所の適切な選択**: 使用スコープに応じてroutes/features/libに配置
 4. **型安全な実装**: Zod生成型を直接使用
+5. **ログ出力の実施**: ビジネスロジックの実行をLoggerで記録（`../logger/10-logger-overview.md`）
 
 ## 実施しないこと
 
@@ -297,3 +298,4 @@ routes/hooks/ → features/hooks/ → lib/hooks/
 - `../route/20-colocation-patterns.md`: コロケーション
 - `../feature/10-feature-overview.md`: Feature設計概要
 - `../lib/10-lib-overview.md`: 技術基盤設計概要
+- `../logger/10-logger-overview.md`: ログ出力基盤（Hooksでのログ実装必須）

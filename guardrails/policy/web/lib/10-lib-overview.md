@@ -46,9 +46,12 @@ app/
 │   │   ├── labelUtil.ts
 │   │   └── index.ts
 │   │
-│   └── api/                   # APIクライアント基盤
-│       ├── apiClient.ts
-│       ├── errorHandler.ts
+│   ├── api/                   # APIクライアント基盤
+│   │   ├── apiClient.ts
+│   │   ├── errorHandler.ts
+│   │   └── index.ts
+│   │
+│   └── logger/                # ログ出力基盤（詳細は ../logger/）
 │       └── index.ts
 │
 ├── features/                  # ビジネスロジックあり
@@ -205,3 +208,4 @@ export function formatAndLog(value: string): string {
 - `30-api-patterns.md`: API通信パターン
 - `../feature/10-feature-overview.md`: Feature設計概要
 - `../hooks/10-hooks-overview.md`: カスタムフック設計概要
+- `../logger/10-logger-overview.md`: ログ出力基盤（API層でのログ実装必須）
