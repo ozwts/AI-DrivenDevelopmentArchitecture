@@ -4,7 +4,7 @@ terraform {
   backend "s3" {
     bucket = "sandbox-dev-secrets"
     key    = "terraform/dev.tfstate"
-    region = "ap-northeast-1"
+    region = "ap-southeast-2"
   }
 
   required_providers {

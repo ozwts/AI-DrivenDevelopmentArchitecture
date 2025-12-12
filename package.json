@@ -9,8 +9,8 @@
   ],
   "scripts": {
     "sort": "sort-package-json",
-    "dev": "npm run dev -w web",
-    "dev:local": "npm run dev:local -w web",
+    "dev": "concurrently -n api,web -c blue,green \"npm run dev -w server\" \"npm run dev:local -w web\"",
+    "dev:mock": "npm run dev:mock -w web",
     "fix": "npm run fix -w web -w server -w infra",
     "fix:format": "npm run fix:format -w web -w server -w infra",
     "validate": "npm run validate -w web -w server -w infra && npm run validate:cspell",
@@ -27,6 +27,7 @@
   },
   "devDependencies": {
     "@tsconfig/strictest": "2.0.5",
+    "concurrently": "^9.1.2",
     "@typescript-eslint/eslint-plugin": "8.0.1",
     "@typescript-eslint/parser": "8.0.1",
     "cspell": "8.13.2",

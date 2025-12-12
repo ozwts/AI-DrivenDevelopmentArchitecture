@@ -55,3 +55,9 @@ output "cognito_user_pool_endpoint" {
   description = "Cognito User Pool endpoint"
   value       = module.auth.user_pool_endpoint
 }
+
+# SSM Parameter Store Outputs
+output "ssm_parameter_path" {
+  description = "SSM Parameter Store path prefix for local development"
+  value       = module.shared_parameters.parameter_path_prefix
+}

@@ -1,12 +1,4 @@
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useCallback,
-  useMemo,
-  ReactNode,
-} from "react";
+import { useState, useEffect, useCallback, useMemo, ReactNode } from "react";
 import {
   signIn,
   signOut,
@@ -17,32 +9,9 @@ import {
   fetchAuthSession,
   AuthUser,
 } from "aws-amplify/auth";
-import { configureAuth } from "../authConfig";
+import { configureAuth } from "./authConfig";
 import { config } from "@/config";
-
-export type AuthContextType = {
-  user: AuthUser | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  error: Error | null;
-  login: (username: string, password: string) => Promise<void>;
-  signUp: (username: string, password: string) => Promise<void>;
-  confirmSignUp: (username: string, confirmationCode: string) => Promise<void>;
-  resendConfirmationCode: (username: string) => Promise<void>;
-  resetPassword: (username: string) => Promise<void>;
-  confirmResetPassword: (
-    username: string,
-    confirmationCode: string,
-    newPassword: string,
-  ) => Promise<void>;
-  logout: () => Promise<void>;
-  getAccessToken: () => Promise<string | null>;
-  clearError: () => void;
-};
-
-export const AuthContext = createContext<AuthContextType | undefined>(
-  undefined,
-);
+import { AuthContext, AuthContextType } from "./AuthContext";
 
 type AuthProviderProps = {
   readonly children: React.ReactNode;
@@ -396,17 +365,4 @@ export function AuthProvider({ children }: AuthProviderProps): ReactNode {
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
-
-/**
- * useAuthフック
- * AuthProviderの配下でのみ使用可能
- */
-// eslint-disable-next-line react-refresh/only-export-components
-export function useAuth(): AuthContextType {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
 }

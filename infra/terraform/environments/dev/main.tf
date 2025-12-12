@@ -33,13 +33,57 @@ locals {
   api_url         = module.server.api_endpoint
 
   # ビルド成果物ディレクトリ
-  web_build_dir    = "${path.module}/../../../../web/dist"
-  server_build_dir = "${path.module}/../../../../server/dist/api"
+  web_build_dir    = "${path.module}/../../../../web/build/client"
+  api_build_dir = "${path.module}/../../../../server/dist/api"
+
+  # アプリケーション共通環境変数
+  # Lambda環境変数とSSM Parameter Store（ローカル開発用）で使いまわす
+  app_env_vars = merge(
+    # DynamoDBテーブル名
+    module.db.app_env_vars,
+    # Cognito設定
+    {
+      COGNITO_USER_POOL_ID = module.auth.user_pool_id
+      COGNITO_CLIENT_ID    = module.auth.app_client_id
+    },
+    # S3設定
+    {
+      ATTACHMENTS_BUCKET_NAME = module.attachments_bucket.bucket_name
+    },
+    # CORS設定
+    {
+      ALLOWED_ORIGINS = join(",", [
+        local.static_site_url,
+        "http://localhost:5173",
+        "http://localhost:3000",
+      ])
+    }
+  )
 }
 
 ##################################################
 # Modules
 ##################################################
+
+# ローカル開発用パラメータ（SSM Parameter Store）
+# ローカルから `npm run dev` で AWS リソースに接続するための設定
+module "shared_parameters" {
+  source = "../../modules/aws/parameter"
+
+  parameter_path_prefix = var.aws_project_prefix
+
+  parameters = {
+    for key, value in local.app_env_vars : key => {
+      value       = value
+      description = "App environment variable: ${key}"
+      secure      = false
+    }
+  }
+
+  tags = {
+    Service = "local-dev-parameters"
+  }
+}
 
 # 静的サイトホスティング（S3 + CloudFront）
 module "static_site" {
@@ -167,25 +211,15 @@ module "server" {
   timeout     = 30
 
   # デプロイ設定
-  source_dir = local.server_build_dir
+  source_dir = local.api_build_dir
 
-  # 環境変数
+  # 環境変数（local.app_env_varsを使いまわし + Lambda専用の設定を追加）
   environment_variables = merge(
+    local.app_env_vars,
     {
       NODE_ENV        = var.environment
       STATIC_SITE_URL = local.static_site_url
-      # Cognito設定
-      COGNITO_USER_POOL_ID = module.auth.user_pool_id
-      COGNITO_CLIENT_ID    = module.auth.app_client_id
-      # S3設定
-      ATTACHMENTS_BUCKET_NAME = module.attachments_bucket.bucket_name
-      # CORS設定
-      ALLOWED_ORIGINS = join(",", [
-        local.static_site_url,
-        "http://localhost:5173",
-      ])
-    },
-    module.db.app_env_vars # DBモジュールから自動的にテーブル環境変数を取得
+    }
   )
 
   # DynamoDBテーブルへのアクセス権限（すべてのテーブルに自動付与）
