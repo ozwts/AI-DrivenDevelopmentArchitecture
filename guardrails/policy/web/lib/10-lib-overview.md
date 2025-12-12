@@ -30,25 +30,25 @@ libは**ビジネスロジックを持たない技術基盤**を配置する場�
 app/
 ├── lib/
 │   ├── ui/                    # UIプリミティブ
-│   │   ├── button.tsx
-│   │   ├── input.tsx
-│   │   ├── select.tsx
-│   │   ├── modal.tsx
+│   │   ├── Button.tsx
+│   │   ├── Input.tsx
+│   │   ├── Select.tsx
+│   │   ├── Modal.tsx
 │   │   └── index.ts
 │   │
 │   ├── hooks/                 # 汎用Hook
-│   │   ├── use-debounce.ts
-│   │   ├── use-local-storage.ts
+│   │   ├── useDebounce.ts
+│   │   ├── useLocalStorage.ts
 │   │   └── index.ts
 │   │
 │   ├── utils/                 # 純粋関数
 │   │   ├── formatter.ts
-│   │   ├── label-util.ts
+│   │   ├── labelUtil.ts
 │   │   └── index.ts
 │   │
 │   └── api/                   # APIクライアント基盤
-│       ├── api-client.ts
-│       ├── error-handler.ts
+│       ├── apiClient.ts
+│       ├── errorHandler.ts
 │       └── index.ts
 │
 ├── features/                  # ビジネスロジックあり
@@ -96,7 +96,7 @@ app/routes/ → app/features/ → app/lib/
 ビジネスロジックを持たない汎用UIコンポーネント。
 
 ```typescript
-// app/lib/ui/button.tsx
+// app/lib/ui/Button.tsx
 type ButtonProps = {
   readonly variant?: "primary" | "secondary" | "danger";
   readonly size?: "sm" | "md" | "lg";
@@ -115,7 +115,7 @@ export function Button({ variant = "primary", size = "md", ...props }: ButtonPro
 ビジネスロジックを持たない汎用的なHook。
 
 ```typescript
-// app/lib/hooks/use-debounce.ts
+// app/lib/hooks/useDebounce.ts
 export function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState(value);
   // ...
@@ -143,7 +143,7 @@ export function formatDate(dateString: string): string {
 HTTP通信の基盤。エラーハンドリング、認証ヘッダーの付与など。
 
 ```typescript
-// app/lib/api/api-client.ts
+// app/lib/api/apiClient.ts
 export const apiClient = {
   async get<T>(url: string): Promise<T> {
     const response = await fetch(url);

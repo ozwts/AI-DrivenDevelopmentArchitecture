@@ -20,7 +20,7 @@
 ## Button実装例
 
 ```typescript
-// app/lib/ui/button.tsx
+// app/lib/ui/Button.tsx
 import { forwardRef, type ComponentPropsWithoutRef } from "react";
 
 type ButtonProps = ComponentPropsWithoutRef<"button"> & {
@@ -50,7 +50,7 @@ Button.displayName = "Button";
 ## Input実装例
 
 ```typescript
-// app/lib/ui/input.tsx
+// app/lib/ui/Input.tsx
 import { forwardRef, type ComponentPropsWithoutRef } from "react";
 
 type InputProps = ComponentPropsWithoutRef<"input"> & {
@@ -75,7 +75,7 @@ Input.displayName = "Input";
 ## 使用例
 
 ```typescript
-// app/routes/todos+/components/todo-form.tsx
+// app/routes/(user)/todos/components/TodoForm.tsx
 import { Button, Input } from "@/lib/ui";
 
 export function TodoForm() {
@@ -93,9 +93,9 @@ export function TodoForm() {
 
 ```typescript
 // app/lib/ui/index.ts
-export { Button } from "./button";
-export { Input } from "./input";
-export { Select } from "./select";
+export { Button } from "./Button";
+export { Input } from "./Input";
+export { Select } from "./Select";
 ```
 
 ## 関連ドキュメント

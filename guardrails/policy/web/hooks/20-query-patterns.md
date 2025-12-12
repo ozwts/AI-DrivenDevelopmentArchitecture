@@ -230,7 +230,7 @@ export function useDeleteProject() {
 ### グローバルエラーハンドリング
 
 ```typescript
-// lib/api/query-client.ts
+// app/lib/api/queryClient.ts
 import { QueryClient } from "@tanstack/react-query";
 import { toast } from "@/features/toast";
 
@@ -321,7 +321,7 @@ export function useTodos() {
 TanStack Query v5では`queryOptions`でクエリ設定を共有できる：
 
 ```typescript
-// features/todo/hooks/todoQueries.ts
+// app/features/todo/hooks/todoQueries.ts
 import { queryOptions } from "@tanstack/react-query";
 
 export const todoQueries = {

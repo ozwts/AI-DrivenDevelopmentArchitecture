@@ -39,7 +39,7 @@
 ```typescript
 // 同じAPI型（ProductResponse）を表示するコンポーネント
 // → 意味的に同一なので共通化OK
-app/features/product/components/product-card.tsx
+app/features/product/components/ProductCard.tsx
 ```
 
 ### Don't
@@ -47,8 +47,8 @@ app/features/product/components/product-card.tsx
 ```typescript
 // 見た目が似ているだけのカード
 // → 意味的に異なるので共通化NG
-// app/routes/(user)/todos/components/todo-card.tsx
-// app/routes/(user)/projects/components/project-card.tsx
+// app/routes/(user)/todos/components/TodoCard.tsx
+// app/routes/(user)/projects/components/ProjectCard.tsx
 // ↑ 各ルートで別々に持つ
 ```
 
@@ -222,11 +222,11 @@ app/
 │       ├── products/
 │       │   ├── _shared/                    # (親子) 親子ルート間で共通
 │       │   │   └── components/
-│       │   │       └── product-form.tsx
+│       │   │       └── ProductForm.tsx
 │       │   ├── [productId]/
 │       │   │   ├── route.tsx
 │       │   │   └── components/             # (同一) ルート内で共通
-│       │   │       └── product-detail.tsx
+│       │   │       └── ProductDetail.tsx
 │       │   └── new/
 │       │       └── route.tsx
 │       └── todos/
@@ -235,13 +235,13 @@ app/
 ├── features/                               # (3+) 複数機能横断で共通
 │   └── user/
 │       └── components/
-│           └── user-avatar.tsx
+│           └── UserAvatar.tsx
 │
 └── lib/                                    # 純粋ユーティリティ
     ├── ui/
-    │   └── button.tsx
+    │   └── Button.tsx
     └── utils/
-        └── format-date.ts
+        └── formatDate.ts
 ```
 
 ## 依存の方向
@@ -267,23 +267,23 @@ import { Button } from "@/lib/ui";
 ### Don't
 
 ```typescript
-// app/features/user/components/user-avatar.tsx
-import { TodoList } from "@/routes/(user)/todos/components/todo-list"; // NG: 逆方向
+// app/features/user/components/UserAvatar.tsx
+import { TodoList } from "@/routes/(user)/todos/components/TodoList"; // NG: 逆方向
 ```
 
 ## 共通化の昇格フロー
 
 ```
 1. 最初はルート内に配置
-   app/routes/(user)/todos/components/status-badge.tsx
+   app/routes/(user)/todos/components/StatusBadge.tsx
 
 2. 2箇所目で使いたくなっても、まだ共通化しない
-   app/routes/(user)/projects/components/status-badge.tsx（別で作る）
+   app/routes/(user)/projects/components/StatusBadge.tsx（別で作る）
 
 3. 3箇所目で共通化を検討
    → 意味的に同一か確認（同じAPI型を使っている？）
    → 最も近い共通の親に配置
-   app/features/todo/components/status-badge.tsx
+   app/features/todo/components/StatusBadge.tsx
 ```
 
 **根拠となる憲法**:

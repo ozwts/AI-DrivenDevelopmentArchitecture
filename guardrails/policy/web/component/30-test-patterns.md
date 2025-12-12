@@ -215,14 +215,14 @@ await expect(component.getByText("TODO")).toBeVisible(); // "TODO App"にもマ�
 ## ファイル配置
 
 ```
-app/routes/todos+/
+app/routes/(user)/todos/
 ├── components/
-│   ├── todo-form.tsx
-│   └── todo-form.ct.test.tsx    # Component Test
+│   ├── TodoForm.tsx
+│   └── TodoForm.ct.test.tsx    # Component Test
 └── route.tsx
 ```
 
-**命名規則**: `{component}.ct.test.tsx`
+**命名規則**: `{Component}.ct.test.tsx`
 
 ## 外部サービス依存コンポーネントのテスト戦略
 

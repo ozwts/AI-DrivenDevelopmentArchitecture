@@ -81,7 +81,7 @@ await expect(errorAlert).toContainText(/200.*文字/i);
 ### 使用例
 
 ```typescript
-// app/routes/todos+/components/todo-form.tsx
+// app/routes/(user)/todos/components/TodoForm.tsx
 import { Button, Input } from "@/lib/ui";
 
 export function TodoForm() {

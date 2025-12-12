@@ -36,7 +36,7 @@ TanStack Queryで対応できない複雑なUI状態を管理するパターン�
 ### 実装
 
 ```typescript
-// routes/(user)/todos/_shared/hooks/useFileUpload.ts
+// app/routes/(user)/todos/_shared/hooks/useFileUpload.ts
 import { useState } from "react";
 import { apiClient } from "@/lib/api";
 
@@ -104,7 +104,7 @@ export function useFileUpload() {
 ### 実装（useReducer使用）
 
 ```typescript
-// routes/(user)/onboarding/hooks/useOnboardingWizard.ts
+// app/routes/(user)/onboarding/hooks/useOnboardingWizard.ts
 import { useReducer, useCallback } from "react";
 
 type Step = "profile" | "preferences" | "confirmation";
@@ -205,7 +205,7 @@ export function useOnboardingWizard() {
 ### 実装（useState + Set）
 
 ```typescript
-// routes/(user)/todos/hooks/useTodoSelection.ts
+// app/routes/(user)/todos/hooks/useTodoSelection.ts
 import { useState, useCallback, useMemo } from "react";
 
 export function useTodoSelection(todoIds: string[]) {

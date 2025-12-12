@@ -19,11 +19,11 @@
 ```
 app/features/{feature}/
 ├── components/
-│   └── {feature}-provider.tsx   # Provider
+│   └── {Feature}Provider.tsx    # Provider
 ├── hooks/
-│   └── use-{feature}.ts         # Hook
+│   └── use{Feature}.ts          # Hook
 ├── contexts/
-│   └── {feature}-context.tsx    # Context
+│   └── {Feature}Context.tsx     # Context
 └── index.ts                     # Public API
 ```
 
@@ -34,7 +34,7 @@ app/features/{feature}/
 ### Context定義
 
 ```typescript
-// app/features/auth/contexts/auth-context.tsx
+// app/features/auth/contexts/AuthContext.tsx
 import { createContext } from "react";
 import type { UserResponse } from "@/generated/zod-schemas";
 
@@ -52,9 +52,9 @@ export const AuthContext = createContext<AuthContextValue | null>(null);
 ### Hook
 
 ```typescript
-// app/features/auth/hooks/use-auth.ts
+// app/features/auth/hooks/useAuth.ts
 import { useContext } from "react";
-import { AuthContext } from "../contexts/auth-context";
+import { AuthContext } from "../contexts/AuthContext";
 
 export function useAuth() {
   const context = useContext(AuthContext);
@@ -68,9 +68,9 @@ export function useAuth() {
 ### ProtectedRoute
 
 ```typescript
-// app/features/auth/components/protected-route.tsx
+// app/features/auth/components/ProtectedRoute.tsx
 import { Navigate, Outlet } from "react-router";
-import { useAuth } from "../hooks/use-auth";
+import { useAuth } from "../hooks/useAuth";
 
 export function ProtectedRoute() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -91,10 +91,10 @@ export function ProtectedRoute() {
 
 ```typescript
 // app/features/auth/index.ts
-export { AuthProvider } from "./components/auth-provider";
-export { ProtectedRoute } from "./components/protected-route";
-export { useAuth } from "./hooks/use-auth";
-export type { AuthContextValue } from "./contexts/auth-context";
+export { AuthProvider } from "./components/AuthProvider";
+export { ProtectedRoute } from "./components/ProtectedRoute";
+export { useAuth } from "./hooks/useAuth";
+export type { AuthContextValue } from "./contexts/AuthContext";
 ```
 
 ---
@@ -104,7 +104,7 @@ export type { AuthContextValue } from "./contexts/auth-context";
 ### Context定義
 
 ```typescript
-// app/features/toast/contexts/toast-context.tsx
+// app/features/toast/contexts/ToastContext.tsx
 import { createContext } from "react";
 
 export type ToastType = "success" | "error" | "warning" | "info";
@@ -123,9 +123,9 @@ export const ToastContext = createContext<ToastContextValue | null>(null);
 ### Hook
 
 ```typescript
-// app/features/toast/hooks/use-toast.ts
+// app/features/toast/hooks/useToast.ts
 import { useContext } from "react";
-import { ToastContext } from "../contexts/toast-context";
+import { ToastContext } from "../contexts/ToastContext";
 
 export function useToast() {
   const context = useContext(ToastContext);
@@ -139,7 +139,7 @@ export function useToast() {
 ### 使用例
 
 ```typescript
-// app/routes/todos+/components/todo-actions.tsx
+// app/routes/(user)/todos/components/TodoActions.tsx
 import { useToast } from "@/features/toast";
 
 export function TodoActions() {
@@ -173,7 +173,7 @@ export function TodoActions() {
 ### Hook実装
 
 ```typescript
-// app/features/file-upload/hooks/use-file-upload.ts
+// app/features/file-upload/hooks/useFileUpload.ts
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api";
@@ -222,7 +222,7 @@ export function useFileUpload() {
 ### 使用例
 
 ```typescript
-// app/routes/todos+/$todoId+/edit+/components/attachment-form.tsx
+// app/routes/(user)/todos/[todoId]/edit/components/AttachmentForm.tsx
 import { useFileUpload } from "@/features/file-upload";
 
 export function AttachmentForm() {

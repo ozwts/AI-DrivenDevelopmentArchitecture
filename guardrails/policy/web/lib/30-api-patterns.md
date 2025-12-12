@@ -11,8 +11,8 @@
 ## apiClient基盤
 
 ```typescript
-// app/lib/api/api-client.ts
-import { ApiError } from "./error-handler";
+// app/lib/api/apiClient.ts
+import { ApiError } from "./errorHandler";
 
 type RequestOptions = {
   readonly headers?: Record<string, string>;
@@ -63,7 +63,7 @@ export const apiClient = {
 ## ApiError
 
 ```typescript
-// app/lib/api/error-handler.ts
+// app/lib/api/errorHandler.ts
 export class ApiError extends Error {
   constructor(
     public readonly status: number,
@@ -96,7 +96,7 @@ export class ApiError extends Error {
 ### useQuery（データ取得）
 
 ```typescript
-// app/routes/todos+/hooks/use-todos.ts
+// app/routes/(user)/todos/hooks/useTodos.ts
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api";
 import type { TodoResponse } from "@/generated/zod-schemas";
@@ -112,7 +112,7 @@ export function useTodos() {
 ### useMutation（データ更新）
 
 ```typescript
-// app/routes/todos+/hooks/use-create-todo.ts
+// app/routes/(user)/todos/hooks/useCreateTodo.ts
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api";
 import type { CreateTodoRequest, TodoResponse } from "@/generated/zod-schemas";
@@ -147,8 +147,8 @@ onSuccess: (_, variables) => {
 ## エラーハンドリング
 
 ```typescript
-// app/routes/todos+/components/todo-actions.tsx
-import { useCreateTodo } from "../hooks/use-create-todo";
+// app/routes/(user)/todos/components/TodoActions.tsx
+import { useCreateTodo } from "../hooks/useCreateTodo";
 import { useToast } from "@/features/toast";
 
 export function TodoActions() {

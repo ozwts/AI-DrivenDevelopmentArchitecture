@@ -10,7 +10,7 @@
 ## パターン
 
 ```typescript
-// app/routes/products+/new+/components/product-form.tsx
+// app/routes/(user)/products/new/components/ProductForm.tsx
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";

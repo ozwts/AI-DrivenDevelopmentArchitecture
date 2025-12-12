@@ -24,7 +24,7 @@
 ## 基本パターン
 
 ```typescript
-// app/routes/todos+/new+/components/todo-form.tsx
+// app/routes/(user)/todos/new/components/TodoForm.tsx
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { schemas } from "@/generated/zod-schemas";

@@ -29,26 +29,26 @@ app/
 ├── features/
 │   ├── auth/                  # 認証・認可（Provider必要）
 │   │   ├── components/
-│   │   │   ├── auth-provider.tsx
-│   │   │   └── protected-route.tsx
+│   │   │   ├── AuthProvider.tsx
+│   │   │   └── ProtectedRoute.tsx
 │   │   ├── hooks/
-│   │   │   └── use-auth.ts
+│   │   │   └── useAuth.ts
 │   │   ├── contexts/
-│   │   │   └── auth-context.tsx
+│   │   │   └── AuthContext.tsx
 │   │   └── index.ts           # Public API
 │   │
 │   ├── toast/                 # トースト通知（Provider必要）
 │   │   ├── components/
-│   │   │   └── toast-provider.tsx
+│   │   │   └── ToastProvider.tsx
 │   │   ├── hooks/
-│   │   │   └── use-toast.ts
+│   │   │   └── useToast.ts
 │   │   └── index.ts
 │   │
 │   └── user/                  # ユーザー機能（3+ルートで使用）
 │       ├── components/
-│       │   └── user-avatar.tsx
+│       │   └── UserAvatar.tsx
 │       ├── hooks/
-│       │   └── use-users.ts
+│       │   └── useUsers.ts
 │       └── index.ts
 │
 ├── lib/                       # 技術基盤（ビジネスロジックなし）
@@ -94,7 +94,7 @@ app/features/auth/ → app/features/toast/  ← NG（feature間禁止）
 ### Do
 
 ```typescript
-// app/routes/todos+/route.tsx
+// app/routes/(user)/todos/route.tsx
 import { useAuth } from "@/features/auth";
 import { useToast } from "@/features/toast";
 import { Button } from "@/lib/ui";
@@ -103,10 +103,10 @@ import { Button } from "@/lib/ui";
 ### Don't
 
 ```typescript
-// app/features/auth/components/auth-provider.tsx
-import { TodoList } from "@/routes/todos+/components/todo-list"; // NG: 逆方向
+// app/features/auth/components/AuthProvider.tsx
+import { TodoList } from "@/routes/(user)/todos/components/TodoList"; // NG: 逆方向
 
-// app/features/auth/hooks/use-auth.ts
+// app/features/auth/hooks/useAuth.ts
 import { useToast } from "@/features/toast"; // NG: feature間インポート
 ```
 

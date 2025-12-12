@@ -77,7 +77,7 @@ TanStack Queryは以下を提供する：
 ### データ取得フックの基本形
 
 ```typescript
-// features/todo/hooks/useTodos.ts
+// app/features/todo/hooks/useTodos.ts
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api";
 import type { TodoStatus } from "@/generated/zod-schemas";
@@ -108,7 +108,7 @@ export function useTodo(todoId: string) {
 ### ミューテーションフックの基本形
 
 ```typescript
-// features/todo/hooks/useTodos.ts
+// app/features/todo/hooks/useTodos.ts
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api";
 import type { RegisterTodoParams } from "@/generated/zod-schemas";
@@ -181,7 +181,7 @@ TanStack Queryで対応できない以下のケースのみ：
 ### UIステートフックの基本形
 
 ```typescript
-// routes/(user)/todos/_shared/hooks/useFileUpload.ts
+// app/routes/(user)/todos/_shared/hooks/useFileUpload.ts
 import { useState } from "react";
 import { apiClient } from "@/lib/api";
 
@@ -239,7 +239,7 @@ export function useFileUpload() {
 ### 例
 
 ```typescript
-// lib/hooks/useDebounce.ts
+// app/lib/hooks/useDebounce.ts
 import { useState, useEffect } from "react";
 
 export function useDebounce<T>(value: T, delay: number): T {
@@ -255,7 +255,7 @@ export function useDebounce<T>(value: T, delay: number): T {
 ```
 
 ```typescript
-// lib/hooks/useLocalStorage.ts
+// app/lib/hooks/useLocalStorage.ts
 import { useState, useEffect } from "react";
 
 export function useLocalStorage<T>(key: string, initialValue: T) {

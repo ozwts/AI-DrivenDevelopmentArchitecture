@@ -13,12 +13,13 @@
 ```
 app/routes/({role})/{feature}/
 ├── route.tsx            # ルートコンポーネント（エントリーポイント）
+├── route.ss.test.ts     # スナップショットテスト（route.tsxに対応）
 ├── components/          # ルート固有コンポーネント
 │   ├── {Feature}List.tsx
+│   ├── {Feature}List.ct.test.tsx  # コンポーネントテスト
 │   └── {Feature}Item.tsx
-├── hooks/               # ルート固有フック
-│   └── use{Feature}.ts
-└── {Feature}.ss.test.ts # スナップショットテスト
+└── hooks/               # ルート固有フック
+    └── use{Feature}.ts
 ```
 
 ## コロケーションの判断基準

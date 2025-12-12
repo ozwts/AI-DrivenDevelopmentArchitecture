@@ -11,14 +11,14 @@
 ## 配置先
 
 ```
-app/routes/{route}+/
+app/routes/({role})/{feature}/
 ├── route.tsx
 ├── components/           # ルート固有コンポーネント
-│   ├── todo-list.tsx
-│   ├── todo-item.tsx
-│   └── todo-filter.tsx
+│   ├── TodoList.tsx
+│   ├── TodoItem.tsx
+│   └── TodoFilter.tsx
 └── hooks/
-    └── use-todo-filter.ts
+    └── useTodoFilter.ts
 ```
 
 ## 実施すること
@@ -37,7 +37,7 @@ app/routes/{route}+/
 ## Props設計
 
 ```typescript
-// app/routes/todos+/components/todo-item.tsx
+// app/routes/(user)/todos/components/TodoItem.tsx
 import type { TodoResponse } from "@/generated/zod-schemas";
 
 type Props = {
@@ -66,8 +66,8 @@ export function TodoItem({ todo, onComplete, onDelete }: Props) {
 
 | 使用箇所 | 配置先 |
 |---------|--------|
-| 同一ルート内のみ | `routes/{route}+/components/` |
-| 親子ルート間 | `routes/{parent}+/_shared/components/` |
+| 同一ルート内のみ | `routes/({role})/{feature}/components/` |
+| 親子ルート間 | `routes/({role})/{feature}/_shared/components/` |
 | 3+ルート横断 | `app/features/{feature}/components/` |
 
 ## 関連ドキュメント
