@@ -7,7 +7,7 @@ import {
   StaticAnalysisType,
   executeStaticAnalysis,
   StaticAnalysisResult,
-} from "./static-analysis-reviewer";
+} from "./reviewer";
 import { formatStaticAnalysisResults } from "./formatter";
 
 /**

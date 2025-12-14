@@ -6,7 +6,7 @@ import * as path from "path";
 import {
   executeUnusedExportsCheck,
   UnusedExportsResult,
-} from "./unused-exports-reviewer";
+} from "./reviewer";
 import { formatUnusedExportsResults } from "./formatter";
 
 /**

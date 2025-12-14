@@ -1,33 +1,11 @@
 /**
- * 汎用レビューハンドラー
+ * 定性的レビューハンドラー
  */
 
 import * as path from "path";
-import { z } from "zod";
-import { executeReview, ReviewResult } from "./qualitative-reviewer";
+import { executeReview, ReviewResult } from "./reviewer";
 import { formatQualitativeReviewResults } from "./formatter";
-
-/**
- * レビュー責務定義
- */
-export type ReviewResponsibility = {
-  /** 責務ID（ツール名に使用） */
-  id: string;
-  /** レビュータイトル */
-  title: string;
-  /** ポリシーディレクトリ（guardrailsRoot からの相対パス） */
-  policyDir: string;
-  /** レビュー責務（例: "ドメインモデル (Domain Model)"） */
-  responsibility: string;
-  /** ツール説明 */
-  toolDescription: string;
-  /** 入力スキーマ */
-  inputSchema: {
-    targetDirectories: z.ZodArray<z.ZodString>;
-  };
-  /** 依存ポリシーID一覧（オプション） */
-  dependencies?: string[];
-};
+import { ReviewResponsibility } from "./responsibilities";
 
 /**
  * レビューハンドラー入力

@@ -12,14 +12,15 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import * as path from "path";
 import { fileURLToPath } from "url";
-import { createReviewHandler } from "./review/review-handler";
 import {
   buildReviewResponsibilities,
+  createReviewHandler,
   STATIC_ANALYSIS_RESPONSIBILITIES,
+  createStaticAnalysisHandler,
   UNUSED_EXPORTS_RESPONSIBILITIES,
-} from "./review/responsibilities";
-import { createStaticAnalysisHandler } from "./review/static-analysis-handler";
-import { createUnusedExportsHandler } from "./review/unused-exports-handler";
+  createUnusedExportsHandler,
+} from "./review";
+import { DEV_SERVER_RESPONSIBILITIES } from "./procedure";
 
 // ESMで__dirnameを取得
 const __filename = fileURLToPath(import.meta.url);
@@ -187,9 +188,45 @@ const main = async (): Promise<void> => {
   // ========================================
   // Procedure (行政): ポリシーに従った手順実行
   // ========================================
-  // TODO: 将来実装予定
-  // ポリシーに定義された手順を自動実行するツールを登録
-  // 例: execute_migration_procedure, execute_deployment_procedure, etc.
+
+  // プロジェクトルートディレクトリ（guardrailsの親）
+  const PROJECT_ROOT = path.dirname(GUARDRAILS_ROOT);
+
+  // ----- 開発サーバー管理 (Dev Server Management) -----
+  // 開発サーバーの起動・停止・状態確認・ログ取得
+  for (const responsibility of DEV_SERVER_RESPONSIBILITIES) {
+    server.registerTool(
+      responsibility.id,
+      {
+        description: responsibility.toolDescription,
+        inputSchema: responsibility.inputSchema,
+      },
+      async (input: Record<string, unknown>) => {
+        try {
+          const result = await responsibility.handler(input, PROJECT_ROOT);
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: result,
+              },
+            ],
+          };
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : String(error);
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `エラー: ${msg}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+      },
+    );
+  }
 
   // Stdio経由で通信
   const transport = new StdioServerTransport();
