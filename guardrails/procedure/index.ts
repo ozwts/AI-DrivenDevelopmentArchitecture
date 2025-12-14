@@ -11,4 +11,4 @@
 export {
   DEV_SERVER_RESPONSIBILITIES,
   type ProcedureResponsibility,
-} from "./develop";
+} from "./dev";
