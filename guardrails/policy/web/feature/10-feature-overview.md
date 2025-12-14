@@ -58,11 +58,13 @@ features/A → features/B ← NG（feature間禁止）
 ```
 features/{feature}/
 ├── api/                    # 機能固有のAPIエンドポイント
-├── components/             # 機能固有のコンポーネント
-├── hooks/                  # 機能固有のカスタムフック
-├── contexts/               # 機能固有のContext（必要な場合）
+├── components/             # 機能固有のUIコンポーネント
+├── contexts/               # Context + Provider + Hook（同一ファイル）
+├── hooks/                  # Context以外のカスタムフック（必要な場合）
 └── index.ts                # Public API
 ```
+
+**注意**: Provider は `components/` ではなく `contexts/` に配置する。詳細は `20-provider-context-pattern.md` を参照。
 
 ## Do / Don't
 
@@ -71,7 +73,7 @@ features/{feature}/
 ```typescript
 // routes/から features/と lib/をインポート
 import { useAuth } from "@/app/features/auth";
-import { useToast } from "@/app/lib/hooks";
+import { useToast } from "@/app/lib/contexts/ToastContext";
 import { Button } from "@/app/lib/ui";
 ```
 

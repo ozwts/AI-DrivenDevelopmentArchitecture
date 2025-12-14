@@ -37,12 +37,14 @@ routes/ → features/ → lib/
 ```
 lib/
 ├── api/           # HTTP通信インフラ（エンドポイント定義は含まない）
-├── contexts/      # 汎用Context/Provider（Toast等）
-├── hooks/         # 汎用カスタムフック
+├── contexts/      # Context + Provider + Hook（同一ファイル）
+├── hooks/         # Context以外の汎用カスタムフック
 ├── logger/        # ログ出力インフラ
 ├── ui/            # UIプリミティブ
 └── utils/         # 純粋関数ユーティリティ
 ```
+
+**注意**: Context に紐づく Hook（useToast 等）は `hooks/` ではなく `contexts/` 内の同一ファイルに配置する。
 
 ## 実施すること
 
@@ -67,7 +69,8 @@ export function formatDate(dateString: string): string { ... }
 export function request<T>(endpoint: string, schema: ZodType<T>): Promise<T> { ... }
 export function buildLogger(component: string): Logger { ... }
 
-// Provider/Contextも汎用ならOK
+// Provider/Context/Hookも汎用ならOK（同一ファイルに配置）
+// contexts/ToastContext.tsx
 export function ToastProvider({ children }: Props) { ... }
 export function useToast() { return useContext(ToastContext); }
 ```

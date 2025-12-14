@@ -40,6 +40,8 @@
 
 **注意**: 「認証されたユーザーのデータ取得」はHTTPリクエストなのでTanStack Queryで管理する。Context/Providerは「認証状態そのもの」の管理に限定すること。
 
+**配置**: Context/Provider を使う場合、**Context + Provider + Hook は同一ファイル（`contexts/`ディレクトリ）に配置**する。`hooks/` ディレクトリには配置しない。詳細は `../feature/20-provider-context-pattern.md` を参照。
+
 ## フックの分類と配置
 
 ### 配置基準

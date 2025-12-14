@@ -27,6 +27,7 @@ app/routes/({role})/{feature}/
 2. **単一責務**: 1コンポーネント = 1つの明確な役割
 3. **Props型の明示**: `readonly`修飾子で不変性を表現
 4. **UIプリミティブの利用**: `app/lib/ui/`のButton, Input等を活用
+5. **余白・配置の制御**: UIプリミティブの余白は呼び出し側で制御（詳細は`../lib/20-ui-primitives.md`）
 
 ## 実施しないこと
 

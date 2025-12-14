@@ -79,7 +79,17 @@
       "mcp__playwright__browser_select_option",
       "Bash(git -C /Users/toshiaki_ozawa/Documents/workspace/AI-DrivenDevelopmentArchitecture diff guardrails/policy/web/)",
       "Bash(git -C /Users/toshiaki_ozawa/Documents/workspace/AI-DrivenDevelopmentArchitecture diff guardrails/policy/web/feature/10-feature-overview.md)",
-      "Bash(git -C /Users/toshiaki_ozawa/Documents/workspace/AI-DrivenDevelopmentArchitecture diff --cached guardrails/policy/web/)"
+      "Bash(git -C /Users/toshiaki_ozawa/Documents/workspace/AI-DrivenDevelopmentArchitecture diff --cached guardrails/policy/web/)",
+      "mcp__guardrails__review_web_route",
+      "mcp__guardrails__review_web_feature",
+      "mcp__guardrails__review_web_hooks",
+      "mcp__guardrails__review_web_lib",
+      "mcp__guardrails__review_web_component",
+      "mcp__guardrails__review_web_logger",
+      "mcp__guardrails__review_web_design",
+      "mcp__guardrails__review_static_analysis",
+      "Bash(mv:*)",
+      "WebFetch(domain:zenn.dev)"
     ],
     "deny": [],
     "ask": []

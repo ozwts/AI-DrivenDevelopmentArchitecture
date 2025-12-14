@@ -254,7 +254,7 @@ export const queryClient = new QueryClient({
 ```typescript
 export function useCreateTodo() {
   const queryClient = useQueryClient();
-  const toast = useToast();  // lib/hooks からインポート
+  const toast = useToast();  // lib/contexts/ToastContext からインポート
 
   return useMutation({
     mutationFn: (data: RegisterTodoParams) => apiClient.createTodo(data),

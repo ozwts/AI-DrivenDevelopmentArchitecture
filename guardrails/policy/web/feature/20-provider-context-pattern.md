@@ -21,41 +21,35 @@ Provider/Contextを用いた状態共有の実装パターン。**配置先は�
 
 ## ディレクトリ構造
 
-### features/の場合（固有の概念あり）
+Context と Provider は密結合しているため、**同一ファイル（`contexts/`）に配置**する。消費側の Hook も同一ファイルに含める。
 
 ```
 app/features/{feature}/
-├── components/
-│   └── {Feature}Provider.tsx    # Provider
-├── hooks/
-│   └── use{Feature}.ts          # Hook
 ├── contexts/
-│   └── {Feature}Context.tsx     # Context
+│   └── {Feature}Context.tsx     # Context + Provider + useHook（同一ファイル）
+├── components/                  # UI コンポーネント（Provider は含まない）
 └── index.ts                     # Public API
 ```
 
-### lib/の場合（固有の概念なし）
-
-```
-app/lib/
-├── contexts/
-│   └── {Feature}Context.tsx     # Context + Provider（同一ファイル可）
-├── hooks/
-│   └── use{Feature}.ts          # Hook
-└── index.ts                     # 各ディレクトリのPublic API
-```
+**理由：**
+- Provider は UI を描画せず、Context に状態を提供するラッパー
+- Provider は Context なしに存在できない（密結合）
+- 消費側の Hook（useAuth 等）も Context と密結合
+- 凝集度を高め、関連するものを同じ場所に配置
+- 1機能 = 1ファイルで見通しが良い
 
 ---
 
 ## 例1: 認証（Auth）
 
-### Context定義
+### Context + Provider + Hook（同一ファイル）
 
 ```typescript
 // app/features/auth/contexts/AuthContext.tsx
-import { createContext } from "react";
+import { createContext, useContext, useState, useCallback, ReactNode } from "react";
 import type { UserResponse } from "@/generated/zod-schemas";
 
+// --- Context ---
 export type AuthContextValue = {
   readonly user: UserResponse | null;
   readonly isLoading: boolean;
@@ -64,16 +58,9 @@ export type AuthContextValue = {
   readonly signOut: () => Promise<void>;
 };
 
-export const AuthContext = createContext<AuthContextValue | null>(null);
-```
+const AuthContext = createContext<AuthContextValue | null>(null);
 
-### Hook
-
-```typescript
-// app/features/auth/hooks/useAuth.ts
-import { useContext } from "react";
-import { AuthContext } from "../contexts/AuthContext";
-
+// --- Hook ---
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
@@ -81,14 +68,40 @@ export function useAuth() {
   }
   return context;
 }
+
+// --- Provider ---
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<UserResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const signIn = useCallback(async (email: string, password: string) => {
+    // 実装...
+  }, []);
+
+  const signOut = useCallback(async () => {
+    // 実装...
+  }, []);
+
+  return (
+    <AuthContext value={{
+      user,
+      isLoading,
+      isAuthenticated: !!user,
+      signIn,
+      signOut,
+    }}>
+      {children}
+    </AuthContext>
+  );
+}
 ```
 
-### ProtectedRoute
+### ProtectedRoute（UIコンポーネント）
 
 ```typescript
 // app/features/auth/components/ProtectedRoute.tsx
 import { Navigate, Outlet } from "react-router";
-import { useAuth } from "../hooks/useAuth";
+import { useAuth } from "../contexts/AuthContext";
 
 export function ProtectedRoute() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -109,10 +122,9 @@ export function ProtectedRoute() {
 
 ```typescript
 // app/features/auth/index.ts
-export { AuthProvider } from "./components/AuthProvider";
-export { ProtectedRoute } from "./components/ProtectedRoute";
-export { useAuth } from "./hooks/useAuth";
+export { AuthProvider, useAuth } from "./contexts/AuthContext";
 export type { AuthContextValue } from "./contexts/AuthContext";
+export { ProtectedRoute } from "./components/ProtectedRoute";
 ```
 
 ---
@@ -121,11 +133,11 @@ export type { AuthContextValue } from "./contexts/AuthContext";
 
 Toastはアプリケーション固有の概念を知らない汎用通知機能のため、`lib/`に配置する。
 
-### Context + Provider（同一ファイル）
+### Context + Provider + Hook（同一ファイル）
 
 ```typescript
 // app/lib/contexts/ToastContext.tsx
-import { createContext, useState, useCallback, ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, ReactNode } from "react";
 
 export type ToastType = "success" | "error" | "warning" | "info";
 
@@ -135,20 +147,9 @@ export type ToastContextValue = {
   readonly error: (message: string) => void;
 };
 
-export const ToastContext = createContext<ToastContextValue | undefined>(undefined);
+const ToastContext = createContext<ToastContextValue | undefined>(undefined);
 
-export function ToastProvider({ children }: { children: ReactNode }) {
-  // 実装...
-}
-```
-
-### Hook
-
-```typescript
-// app/lib/hooks/useToast.ts
-import { useContext } from "react";
-import { ToastContext } from "@/app/lib/contexts/ToastContext";
-
+// --- Hook ---
 export function useToast() {
   const context = useContext(ToastContext);
   if (!context) {
@@ -156,13 +157,31 @@ export function useToast() {
   }
   return context;
 }
+
+// --- Provider ---
+export function ToastProvider({ children }: { children: ReactNode }) {
+  const [toasts, setToasts] = useState<Array<{ type: ToastType; message: string }>>([]);
+
+  const showToast = useCallback((type: ToastType, message: string) => {
+    // 実装...
+  }, []);
+
+  const success = useCallback((message: string) => showToast("success", message), [showToast]);
+  const error = useCallback((message: string) => showToast("error", message), [showToast]);
+
+  return (
+    <ToastContext value={{ showToast, success, error }}>
+      {children}
+    </ToastContext>
+  );
+}
 ```
 
 ### 使用例
 
 ```typescript
 // routes/内のコンポーネント
-import { useToast } from "@/app/lib/hooks";
+import { useToast } from "@/app/lib/contexts/ToastContext";
 
 export function SomeComponent() {
   const toast = useToast();

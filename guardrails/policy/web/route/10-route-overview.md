@@ -34,8 +34,8 @@
 app/
 ├── features/                    # 3+ルートで横断的に使用（固有概念あり）
 │   └── auth/
-│       ├── hooks/
-│       │   └── useAuth.ts
+│       ├── contexts/
+│       │   └── AuthContext.tsx  # Context + Provider + useAuth
 │       └── index.ts
 │
 ├── routes/
@@ -166,7 +166,7 @@ app/routes/ → app/features/ → app/lib/
 app/
 ├── features/
 │   └── auth/
-│       └── hooks/useAuth.ts     # 3+ルートで共通
+│       └── contexts/AuthContext.tsx  # Context + Provider + useAuth
 │
 ├── routes/
 │   ├── (guest)/
