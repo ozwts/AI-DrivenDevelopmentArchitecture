@@ -7,7 +7,10 @@ import {
   ArrowRightStartOnRectangleIcon,
 } from "@heroicons/react/24/outline";
 import { useAuth } from "@/app/features/auth";
+import { buildLogger } from "@/app/lib/logger";
 import { Button } from "@/app/lib/ui";
+
+const logger = buildLogger("Header");
 
 type NavItem = {
   readonly name: string;
@@ -31,7 +34,10 @@ export const Header = () => {
       await logout();
       navigate("/login", { replace: true });
     } catch (error) {
-      console.error("ログアウトに失敗しました:", error);
+      logger.error(
+        "ログアウトに失敗しました",
+        error instanceof Error ? error : new Error(String(error))
+      );
     }
   };
 

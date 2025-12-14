@@ -29,10 +29,6 @@
       "Bash(npx eslint:*)",
       "Bash(git add:*)",
       "Bash(git rm:*)",
-      "mcp__guardrails__review_contract_openapi",
-      "mcp__guardrails__review_server_domain_models",
-      "mcp__guardrails__review_static_analysis",
-      "mcp__guardrails__review_server_use_cases",
       "Bash(for file in project/*.ts todo/*.ts user/*.ts)",
       "Bash(do if [[ ! \"$file\" =~ .test.ts$ ]])",
       "Bash([[ \"$file\" != \"interfaces.ts\" ]])",
@@ -68,13 +64,9 @@
       "Bash(web/src/pages/SignupPage/SignupPage.ss.test.ts )",
       "Bash(web/src/pages/ResetPasswordPage/ResetPasswordPage.ss.test.ts)",
       "WebFetch(domain:mswjs.io)",
-      "mcp__guardrails__review_route",
-      "mcp__guardrails__review_component",
+      "mcp__guardrails__*",
       "Bash(npx playwright test:*)",
-      "WebFetch(domain:discuss.hashicorp.com)",
-      "mcp__guardrails__review_hooks",
-      "mcp__guardrails__review_lib",
-      "Bash(pkill:*)"
+      "WebFetch(domain:discuss.hashicorp.com)"
     ],
     "deny": [],
     "ask": []
