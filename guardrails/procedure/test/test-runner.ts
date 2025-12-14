@@ -27,6 +27,23 @@ export type TestFilter = {
 };
 
 /**
+ * 正規表現の特殊文字をエスケープ
+ * Playwright/vitestはファイルパスを正規表現パターンとして解釈するため
+ */
+const escapeRegexSpecialChars = (str: string): string =>
+  str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/**
+ * シェル用にファイルパスをエスケープ
+ * 1. 正規表現の特殊文字をエスケープ（Playwright/vitest用）
+ * 2. シングルクォートで囲む（シェル用）
+ */
+const escapeFilePath = (filePath: string): string => {
+  const regexEscaped = escapeRegexSpecialChars(filePath);
+  return `'${regexEscaped.replace(/'/g, "'\\''")}'`;
+};
+
+/**
  * コマンドを実行して結果を返す
  */
 const runCommand = (
@@ -89,7 +106,7 @@ class TestRunner {
     const args: string[] = [];
 
     if (filter?.file !== undefined && filter.file !== "") {
-      args.push(filter.file);
+      args.push(escapeFilePath(filter.file));
     }
     if (filter?.testName !== undefined && filter.testName !== "") {
       args.push(`-t "${filter.testName}"`);
@@ -123,7 +140,7 @@ class TestRunner {
     const args: string[] = [];
 
     if (filter?.file !== undefined && filter.file !== "") {
-      args.push(filter.file);
+      args.push(escapeFilePath(filter.file));
     }
     if (filter?.testName !== undefined && filter.testName !== "") {
       args.push(`--grep "${filter.testName}"`);
@@ -157,7 +174,7 @@ class TestRunner {
     const args: string[] = [];
 
     if (filter?.file !== undefined && filter.file !== "") {
-      args.push(filter.file);
+      args.push(escapeFilePath(filter.file));
     }
     if (filter?.testName !== undefined && filter.testName !== "") {
       args.push(`--grep "${filter.testName}"`);
@@ -239,7 +256,7 @@ class TestRunner {
     const args: string[] = [];
 
     if (filter?.file !== undefined && filter.file !== "") {
-      args.push(filter.file);
+      args.push(escapeFilePath(filter.file));
     }
     if (filter?.testName !== undefined && filter.testName !== "") {
       args.push(`--grep "${filter.testName}"`);

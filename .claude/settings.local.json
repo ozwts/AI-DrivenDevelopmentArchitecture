@@ -92,7 +92,16 @@
       "WebFetch(domain:zenn.dev)",
       "mcp__guardrails__review_web_form",
       "WebFetch(domain:www.robinwieruch.de)",
-      "mcp__guardrails__review_web_mock"
+      "mcp__guardrails__review_web_mock",
+      "mcp__guardrails__procedure_dev_status",
+      "mcp__guardrails__procedure_dev_start",
+      "mcp__guardrails__procedure_dev_logs",
+      "mcp__guardrails__procedure_dev_restart",
+      "mcp__guardrails__procedure_test_server",
+      "mcp__guardrails__procedure_test_web_component",
+      "mcp__guardrails__procedure_test_web_snapshot",
+      "mcp__guardrails__procedure_test_web",
+      "mcp__guardrails__procedure_test_update_snapshots"
     ],
     "deny": [],
     "ask": []

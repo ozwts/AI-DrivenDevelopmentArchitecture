@@ -20,7 +20,7 @@ import {
   UNUSED_EXPORTS_RESPONSIBILITIES,
   createUnusedExportsHandler,
 } from "./review";
-import { DEV_SERVER_RESPONSIBILITIES } from "./procedure";
+import { DEV_SERVER_RESPONSIBILITIES, TEST_RESPONSIBILITIES } from "./procedure";
 
 // ESMで__dirnameを取得
 const __filename = fileURLToPath(import.meta.url);
@@ -195,6 +195,42 @@ const main = async (): Promise<void> => {
   // ----- 開発サーバー管理 (Dev Server Management) -----
   // 開発サーバーの起動・停止・状態確認・ログ取得
   for (const responsibility of DEV_SERVER_RESPONSIBILITIES) {
+    server.registerTool(
+      responsibility.id,
+      {
+        description: responsibility.toolDescription,
+        inputSchema: responsibility.inputSchema,
+      },
+      async (input: Record<string, unknown>) => {
+        try {
+          const result = await responsibility.handler(input, PROJECT_ROOT);
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: result,
+              },
+            ],
+          };
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : String(error);
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `エラー: ${msg}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+      },
+    );
+  }
+
+  // ----- テスト実行管理 (Test Runner Management) -----
+  // テストの実行・結果取得
+  for (const responsibility of TEST_RESPONSIBILITIES) {
     server.registerTool(
       responsibility.id,
       {
