@@ -53,7 +53,10 @@ export default function TodoNewRoute() {
         navigate("/todos");
       }
     } catch (error) {
-      logger.error("TODO作成失敗", error instanceof Error ? error : { message: String(error) });
+      logger.error(
+        "TODO作成失敗",
+        error instanceof Error ? error : { message: String(error) },
+      );
       toast.error("TODOの作成に失敗しました");
     }
   };

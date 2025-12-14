@@ -32,14 +32,20 @@ export default function ProjectsIndexRoute() {
 
   const handleDelete = async () => {
     if (!deletingProject) return;
-    logger.info("プロジェクト削除開始", { projectId: deletingProject.id, name: deletingProject.name });
+    logger.info("プロジェクト削除開始", {
+      projectId: deletingProject.id,
+      name: deletingProject.name,
+    });
     try {
       await deleteProject.mutateAsync(deletingProject.id);
       logger.info("プロジェクト削除成功", { projectId: deletingProject.id });
       setDeletingProject(undefined);
       toast.success("プロジェクトを削除しました");
     } catch (error) {
-      logger.error("プロジェクト削除失敗", error instanceof Error ? error : { projectId: deletingProject.id });
+      logger.error(
+        "プロジェクト削除失敗",
+        error instanceof Error ? error : { projectId: deletingProject.id },
+      );
       toast.error("プロジェクトの削除に失敗しました");
     }
   };
@@ -115,10 +121,7 @@ export default function ProjectsIndexRoute() {
           title="プロジェクトがありません"
           description="新しいプロジェクトを作成して始めましょう"
           action={
-            <Button
-              variant="primary"
-              onClick={() => navigate("/projects/new")}
-              >
+            <Button variant="primary" onClick={() => navigate("/projects/new")}>
               <PlusIcon className="h-5 w-5 mr-2" />
               新規プロジェクト
             </Button>

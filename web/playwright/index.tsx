@@ -21,7 +21,10 @@ z.setErrorMap(makeZodI18nMap({ t: i18next.t }));
 
 // Mock auth context for components that use useAuth
 const mockAuthContext: AuthContextType = {
-  user: { username: "test-user", userId: "test-user-id" } as AuthContextType["user"],
+  user: {
+    username: "test-user",
+    userId: "test-user-id",
+  } as AuthContextType["user"],
   isAuthenticated: true,
   isLoading: false,
   error: null,

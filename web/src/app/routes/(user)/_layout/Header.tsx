@@ -36,7 +36,7 @@ export const Header = () => {
     } catch (error) {
       logger.error(
         "ログアウトに失敗しました",
-        error instanceof Error ? error : new Error(String(error))
+        error instanceof Error ? error : new Error(String(error)),
       );
     }
   };

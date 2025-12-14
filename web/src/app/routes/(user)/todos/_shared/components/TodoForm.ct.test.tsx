@@ -381,9 +381,7 @@ test.describe("TodoForm", () => {
     await expect(component.getByText(/Bytes • text\/plain/)).toBeVisible();
 
     // 選択個数が表示される（getByText）
-    await expect(
-      component.getByText("1個のファイルを選択中"),
-    ).toBeVisible();
+    await expect(component.getByText("1個のファイルを選択中")).toBeVisible();
   });
 
   test("複数のファイルを選択できる", async ({ mount }) => {
@@ -410,9 +408,7 @@ test.describe("TodoForm", () => {
     await expect(component.getByText("file2.txt")).toBeVisible();
 
     // 選択個数が表示される（getByText）
-    await expect(
-      component.getByText("2個のファイルを選択中"),
-    ).toBeVisible();
+    await expect(component.getByText("2個のファイルを選択中")).toBeVisible();
   });
 
   test("選択したファイルを削除できる", async ({ mount }) => {
@@ -430,17 +426,13 @@ test.describe("TodoForm", () => {
 
     // ファイルが表示されることを確認
     await expect(component.getByText("test.txt")).toBeVisible();
-    await expect(
-      component.getByText("1個のファイルを選択中"),
-    ).toBeVisible();
+    await expect(component.getByText("1個のファイルを選択中")).toBeVisible();
 
     // aria-labelで削除ボタンを特定してクリック（getByRole: アクセシビリティ検証）
     await component.getByRole("button", { name: "test.txtを削除" }).click();
 
     // ファイルが削除されることを確認
     await expect(component.getByText("test.txt")).not.toBeVisible();
-    await expect(
-      component.getByText(/個のファイルを選択中/),
-    ).not.toBeVisible();
+    await expect(component.getByText(/個のファイルを選択中/)).not.toBeVisible();
   });
 });

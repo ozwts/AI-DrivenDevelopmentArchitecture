@@ -1,9 +1,6 @@
 import "reflect-metadata";
 import { serve } from "@hono/node-server";
-import {
-  SSMClient,
-  GetParametersByPathCommand,
-} from "@aws-sdk/client-ssm";
+import { SSMClient, GetParametersByPathCommand } from "@aws-sdk/client-ssm";
 import { buildApp } from "./hono-handler/client-side-app";
 import { initHandler } from "./init-handler";
 import { unwrapEnv } from "@/di-container/env-util";

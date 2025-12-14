@@ -19,6 +19,8 @@ test("[SS]プロジェクト作成ページが表示される", async ({ page })
   await page.waitForLoadState("networkidle");
 
   // カラーパレットはランダム生成のためマスクする
-  const colorOptions = await page.locator('[data-testid^="color-option-"]').all();
+  const colorOptions = await page
+    .locator('[data-testid^="color-option-"]')
+    .all();
   await expect(page).toHaveScreenshot({ fullPage: true, mask: colorOptions });
 });

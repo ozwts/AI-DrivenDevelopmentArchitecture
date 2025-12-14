@@ -42,7 +42,10 @@ export function AuthInitializer({ children }: AuthInitializerProps): ReactNode {
         logger.info("ユーザー登録済み", { userId: user.id });
         setIsInitialized(true);
       } catch (error) {
-        logger.debug("ユーザー取得エラー", error instanceof Error ? error : { error });
+        logger.debug(
+          "ユーザー取得エラー",
+          error instanceof Error ? error : { error },
+        );
 
         // 404エラー（ユーザー未登録）の場合は自動的にユーザー登録
         if (
@@ -59,7 +62,9 @@ export function AuthInitializer({ children }: AuthInitializerProps): ReactNode {
           } catch (registerError) {
             logger.error(
               "ユーザー登録失敗",
-              registerError instanceof Error ? registerError : { registerError },
+              registerError instanceof Error
+                ? registerError
+                : { registerError },
             );
             setError(
               registerError instanceof Error
@@ -68,7 +73,10 @@ export function AuthInitializer({ children }: AuthInitializerProps): ReactNode {
             );
           }
         } else {
-          logger.error("予期しないエラー", error instanceof Error ? error : { error });
+          logger.error(
+            "予期しないエラー",
+            error instanceof Error ? error : { error },
+          );
           setError(
             error instanceof Error
               ? error.message

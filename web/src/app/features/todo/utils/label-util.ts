@@ -54,7 +54,9 @@ export const getStatusBadgeVariant = (status: TodoStatus): BadgeVariant => {
 /**
  * 優先度に対応するBadge variantを取得
  */
-export const getPriorityBadgeVariant = (priority: TodoPriority): BadgeVariant => {
+export const getPriorityBadgeVariant = (
+  priority: TodoPriority,
+): BadgeVariant => {
   switch (priority) {
     case "HIGH":
       return "danger";

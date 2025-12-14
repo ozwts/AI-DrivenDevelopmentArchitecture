@@ -13,7 +13,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     const errorId = `${inputId}-error`;
     const helperId = `${inputId}-helper`;
     const hasError = error !== undefined && error !== "";
-    const hasHelper = helperText !== undefined && helperText !== "" && !hasError;
+    const hasHelper =
+      helperText !== undefined && helperText !== "" && !hasError;
 
     // aria-describedby: エラーまたはヘルパーテキストのIDを設定
     const describedBy = hasError ? errorId : hasHelper ? helperId : undefined;

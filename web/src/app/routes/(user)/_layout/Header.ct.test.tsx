@@ -50,10 +50,9 @@ test.describe("Header", () => {
   test("ナビゲーションリンクが正しいパスを持つ", async ({ mount }) => {
     const component = await mount(<Header />);
 
-    await expect(component.getByRole("link", { name: "ホーム" })).toHaveAttribute(
-      "href",
-      "/",
-    );
+    await expect(
+      component.getByRole("link", { name: "ホーム" }),
+    ).toHaveAttribute("href", "/");
     await expect(
       component.getByRole("link", { name: "TODO", exact: true }),
     ).toHaveAttribute("href", "/todos");

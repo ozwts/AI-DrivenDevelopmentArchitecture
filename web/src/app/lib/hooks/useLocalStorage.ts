@@ -16,7 +16,7 @@ const logger = buildLogger("useLocalStorage");
  */
 export function useLocalStorage<T>(
   key: string,
-  initialValue: T
+  initialValue: T,
 ): readonly [T, (value: T | ((prev: T) => T)) => void, () => void] {
   // 初期値の取得（SSR対応のため関数で初期化）
   const [storedValue, setStoredValue] = useState<T>(() => {
@@ -49,7 +49,7 @@ export function useLocalStorage<T>(
         logger.warn("localStorage書き込みエラー", { key, error });
       }
     },
-    [key, storedValue]
+    [key, storedValue],
   );
 
   // localStorageからの削除

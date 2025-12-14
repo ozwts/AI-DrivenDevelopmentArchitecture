@@ -29,7 +29,10 @@ export default function NewProjectRoute() {
       toast.success("プロジェクトを作成しました");
       navigate("/projects");
     } catch (error) {
-      logger.error("プロジェクト作成失敗", error instanceof Error ? error : { message: String(error) });
+      logger.error(
+        "プロジェクト作成失敗",
+        error instanceof Error ? error : { message: String(error) },
+      );
       toast.error("プロジェクトの作成に失敗しました");
     }
   };

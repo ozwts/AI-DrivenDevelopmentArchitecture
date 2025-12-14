@@ -29,7 +29,11 @@ export default function ProjectDetailRoute() {
   // ページ表示ログ
   useEffect(() => {
     if (!isLoading && project) {
-      logger.info("プロジェクト詳細ページ表示", { projectId: project.id, name: project.name, todoCount });
+      logger.info("プロジェクト詳細ページ表示", {
+        projectId: project.id,
+        name: project.name,
+        todoCount,
+      });
     }
   }, [isLoading, project, todoCount]);
 

@@ -63,7 +63,11 @@ export default function TodosIndexRoute() {
   const deleteTodo = useDeleteTodo();
 
   const handleStatusChange = async (todo: TodoResponse, status: TodoStatus) => {
-    logger.info("TODOステータス変更開始", { todoId: todo.id, title: todo.title, newStatus: status });
+    logger.info("TODOステータス変更開始", {
+      todoId: todo.id,
+      title: todo.title,
+      newStatus: status,
+    });
     try {
       await updateTodo.mutateAsync({
         todoId: todo.id,
@@ -72,7 +76,10 @@ export default function TodosIndexRoute() {
       logger.info("TODOステータス変更成功", { todoId: todo.id });
       toast.success("ステータスを更新しました");
     } catch (error) {
-      logger.error("TODOステータス変更失敗", error instanceof Error ? error : { todoId: todo.id });
+      logger.error(
+        "TODOステータス変更失敗",
+        error instanceof Error ? error : { todoId: todo.id },
+      );
       toast.error("ステータスの更新に失敗しました");
     }
   };
@@ -87,7 +94,10 @@ export default function TodosIndexRoute() {
       logger.info("TODO削除成功", { todoId: todo.id });
       toast.success("TODOを削除しました");
     } catch (error) {
-      logger.error("TODO削除失敗", error instanceof Error ? error : { todoId: todo.id });
+      logger.error(
+        "TODO削除失敗",
+        error instanceof Error ? error : { todoId: todo.id },
+      );
       toast.error("TODOの削除に失敗しました");
     }
   };
@@ -143,10 +153,7 @@ export default function TodosIndexRoute() {
             </p>
           </div>
           <Link to="/todos/new">
-            <Button
-              variant="primary"
-              className="flex items-center gap-2"
-            >
+            <Button variant="primary" className="flex items-center gap-2">
               <PlusIcon className="h-5 w-5" />
               新規TODO
             </Button>

@@ -25,7 +25,10 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    logger.error("未捕捉エラーを検知", { error, componentStack: errorInfo.componentStack });
+    logger.error("未捕捉エラーを検知", {
+      error,
+      componentStack: errorInfo.componentStack,
+    });
   }
 
   handleReset = () => {

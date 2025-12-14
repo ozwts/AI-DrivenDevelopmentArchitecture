@@ -49,7 +49,11 @@ export default function HomeRoute() {
   // ページ表示ログ
   useEffect(() => {
     if (!isLoading && todos) {
-      logger.info("ホームページ表示", { todoCount, inProgressCount, doneCount });
+      logger.info("ホームページ表示", {
+        todoCount,
+        inProgressCount,
+        doneCount,
+      });
     }
   }, [isLoading, todos, todoCount, inProgressCount, doneCount]);
 

@@ -44,7 +44,10 @@ export function useCreateTodo() {
 
   return useMutation({
     mutationFn: (data: RegisterTodoParams) => {
-      logger.info("TODO作成開始", { title: data.title, projectId: data.projectId });
+      logger.info("TODO作成開始", {
+        title: data.title,
+        projectId: data.projectId,
+      });
       return todoApi.createTodo(data);
     },
     onSuccess: () => {

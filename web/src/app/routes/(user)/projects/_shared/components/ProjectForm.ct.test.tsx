@@ -119,9 +119,7 @@ test.describe("ProjectForm", () => {
     );
 
     // getByRole で作成ボタンを検証（暗黙的a11y検証）
-    await expect(
-      component.getByRole("button", { name: "作成" }),
-    ).toBeVisible();
+    await expect(component.getByRole("button", { name: "作成" })).toBeVisible();
   });
 
   test("編集時、送信ボタンのテキストは「更新」", async ({ mount }) => {
@@ -134,9 +132,7 @@ test.describe("ProjectForm", () => {
     );
 
     // getByRole で更新ボタンを検証（暗黙的a11y検証）
-    await expect(
-      component.getByRole("button", { name: "更新" }),
-    ).toBeVisible();
+    await expect(component.getByRole("button", { name: "更新" })).toBeVisible();
   });
 
   test("isLoading=trueの時、送信ボタンがローディング状態になる", async ({

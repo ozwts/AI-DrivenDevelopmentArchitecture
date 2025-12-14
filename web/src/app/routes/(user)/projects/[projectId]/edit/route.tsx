@@ -35,7 +35,10 @@ export default function EditProjectRoute() {
       toast.success("プロジェクトを更新しました");
       navigate(`/projects/${projectId}`);
     } catch (error) {
-      logger.error("プロジェクト更新失敗", error instanceof Error ? error : { projectId });
+      logger.error(
+        "プロジェクト更新失敗",
+        error instanceof Error ? error : { projectId },
+      );
       toast.error("プロジェクトの更新に失敗しました");
     }
   };

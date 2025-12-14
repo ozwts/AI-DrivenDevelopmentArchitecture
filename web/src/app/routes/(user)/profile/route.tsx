@@ -39,7 +39,10 @@ export default function ProfileRoute() {
       setIsEditModalOpen(false);
       toast.success("プロフィールを更新しました");
     } catch (error) {
-      logger.error("プロフィール更新失敗", error instanceof Error ? error : { message: String(error) });
+      logger.error(
+        "プロフィール更新失敗",
+        error instanceof Error ? error : { message: String(error) },
+      );
       toast.error("プロフィールの更新に失敗しました");
     }
   };
@@ -54,7 +57,10 @@ export default function ProfileRoute() {
       localStorage.clear();
       window.location.href = "/login";
     } catch (error) {
-      logger.error("アカウント削除失敗", error instanceof Error ? error : { message: String(error) });
+      logger.error(
+        "アカウント削除失敗",
+        error instanceof Error ? error : { message: String(error) },
+      );
       toast.error("アカウントの削除に失敗しました");
       setIsDeleteModalOpen(false);
     }

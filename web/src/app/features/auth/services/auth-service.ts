@@ -47,10 +47,7 @@ export const authService = {
   /**
    * ログイン
    */
-  signIn: async (
-    username: string,
-    password: string,
-  ): Promise<SignInResult> => {
+  signIn: async (username: string, password: string): Promise<SignInResult> => {
     const result = await amplifySignIn({ username, password });
     return {
       needsConfirmation: result.nextStep.signInStep === "CONFIRM_SIGN_UP",

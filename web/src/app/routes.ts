@@ -22,7 +22,10 @@ export default [
     // Projects
     route("projects", "routes/(user)/projects/route.tsx"),
     route("projects/new", "routes/(user)/projects/new/route.tsx"),
-    route("projects/:projectId", "routes/(user)/projects/[projectId]/route.tsx"),
+    route(
+      "projects/:projectId",
+      "routes/(user)/projects/[projectId]/route.tsx",
+    ),
     route(
       "projects/:projectId/edit",
       "routes/(user)/projects/[projectId]/edit/route.tsx",

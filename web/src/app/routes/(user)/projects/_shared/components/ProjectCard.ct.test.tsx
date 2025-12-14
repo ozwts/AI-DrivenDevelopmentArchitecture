@@ -181,9 +181,7 @@ test.describe("ProjectCard", () => {
     );
 
     // getByRole で取得可能 = aria-label が正しく設定されている（暗黙的a11y検証）
-    await expect(
-      component.getByRole("button", { name: "編集" }),
-    ).toBeVisible();
+    await expect(component.getByRole("button", { name: "編集" })).toBeVisible();
   });
 
   test("削除ボタンがアクセシブル", async ({ mount }) => {
@@ -197,8 +195,6 @@ test.describe("ProjectCard", () => {
     );
 
     // getByRole で取得可能 = aria-label が正しく設定されている（暗黙的a11y検証）
-    await expect(
-      component.getByRole("button", { name: "削除" }),
-    ).toBeVisible();
+    await expect(component.getByRole("button", { name: "削除" })).toBeVisible();
   });
 });

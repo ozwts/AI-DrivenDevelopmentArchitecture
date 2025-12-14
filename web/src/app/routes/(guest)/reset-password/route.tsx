@@ -73,7 +73,9 @@ export default function ResetPasswordRoute(): ReactNode {
 
     try {
       await resetPassword(data.email);
-      logger.info("パスワードリセット確認コード送信成功", { email: data.email });
+      logger.info("パスワードリセット確認コード送信成功", {
+        email: data.email,
+      });
       setEmail(data.email);
       setSuccessMessage(
         "確認コードをメールで送信しました。メールをご確認ください。",
@@ -99,7 +101,11 @@ export default function ResetPasswordRoute(): ReactNode {
     logger.info("パスワードリセット開始", { email });
 
     try {
-      await confirmResetPassword(email, data.confirmationCode, data.newPassword);
+      await confirmResetPassword(
+        email,
+        data.confirmationCode,
+        data.newPassword,
+      );
       logger.info("パスワードリセット成功", { email });
 
       // パスワードリセット完了後、自動ログイン
