@@ -21,11 +21,18 @@ export type PolicyMeta = {
 };
 
 /**
+ * ポリシーカテゴリ
+ */
+export type PolicyCategory = "server" | "web" | "contract";
+
+/**
  * スキャン結果
  */
 export type ScannedPolicy = {
   /** ポリシーID（ディレクトリ名） */
   id: string;
+  /** ポリシーカテゴリ */
+  category: PolicyCategory;
   /** ポリシーディレクトリの相対パス（guardrails/からの相対） */
   policyDir: string;
   /** ポリシーディレクトリの絶対パス */
@@ -39,48 +46,48 @@ export type ScannedPolicy = {
  *
  * @param basePath スキャン対象のベースパス（例: guardrails/policy/server）
  * @param relativeTo 相対パスの起点（例: guardrails/）
+ * @param category ポリシーカテゴリ
  * @returns スキャンされたポリシー一覧
  */
 export const scanPolicies = (
   basePath: string,
-  relativeTo: string
+  relativeTo: string,
+  category: PolicyCategory,
 ): ScannedPolicy[] => {
-  const policies: ScannedPolicy[] = [];
-
   if (!fs.existsSync(basePath)) {
-    return policies;
+    return [];
   }
 
   const entries = fs.readdirSync(basePath, { withFileTypes: true });
 
-  for (const entry of entries) {
-    if (!entry.isDirectory()) {
-      continue;
-    }
+  return entries
+    .filter((entry) => entry.isDirectory())
+    .flatMap((entry) => {
+      const dirPath = path.join(basePath, entry.name);
+      const metaPath = path.join(dirPath, "meta.json");
 
-    const dirPath = path.join(basePath, entry.name);
-    const metaPath = path.join(dirPath, "meta.json");
+      if (!fs.existsSync(metaPath)) {
+        return [];
+      }
 
-    if (!fs.existsSync(metaPath)) {
-      continue;
-    }
+      try {
+        const metaContent = fs.readFileSync(metaPath, "utf-8");
+        const meta: PolicyMeta = JSON.parse(metaContent);
 
-    try {
-      const metaContent = fs.readFileSync(metaPath, "utf-8");
-      const meta: PolicyMeta = JSON.parse(metaContent);
-
-      policies.push({
-        id: entry.name,
-        policyDir: path.relative(relativeTo, dirPath),
-        absolutePath: dirPath,
-        meta,
-      });
-    } catch (error) {
-      console.warn(`Failed to parse meta.json at ${metaPath}:`, error);
-    }
-  }
-
-  return policies;
+        return [
+          {
+            id: entry.name,
+            category,
+            policyDir: path.relative(relativeTo, dirPath),
+            absolutePath: dirPath,
+            meta,
+          },
+        ];
+      } catch {
+        // meta.jsonのパースに失敗した場合はスキップ
+        return [];
+      }
+    });
 };
 
 /**
@@ -89,11 +96,9 @@ export const scanPolicies = (
  * @param guardrailsRoot guardrailsディレクトリのルートパス
  * @returns スキャンされたポリシー一覧
  */
-export const scanServerPolicies = (
-  guardrailsRoot: string
-): ScannedPolicy[] => {
+export const scanServerPolicies = (guardrailsRoot: string): ScannedPolicy[] => {
   const serverPolicyPath = path.join(guardrailsRoot, "policy", "server");
-  return scanPolicies(serverPolicyPath, guardrailsRoot);
+  return scanPolicies(serverPolicyPath, guardrailsRoot, "server");
 };
 
 /**
@@ -104,7 +109,7 @@ export const scanServerPolicies = (
  */
 export const scanWebPolicies = (guardrailsRoot: string): ScannedPolicy[] => {
   const webPolicyPath = path.join(guardrailsRoot, "policy", "web");
-  return scanPolicies(webPolicyPath, guardrailsRoot);
+  return scanPolicies(webPolicyPath, guardrailsRoot, "web");
 };
 
 /**
@@ -114,10 +119,10 @@ export const scanWebPolicies = (guardrailsRoot: string): ScannedPolicy[] => {
  * @returns スキャンされたポリシー一覧
  */
 export const scanContractPolicies = (
-  guardrailsRoot: string
+  guardrailsRoot: string,
 ): ScannedPolicy[] => {
   const contractPolicyPath = path.join(guardrailsRoot, "policy", "contract");
-  return scanPolicies(contractPolicyPath, guardrailsRoot);
+  return scanPolicies(contractPolicyPath, guardrailsRoot, "contract");
 };
 
 /**
@@ -127,15 +132,13 @@ export const scanContractPolicies = (
  * @returns カテゴリ別のスキャンされたポリシー
  */
 export const scanAllPolicies = (
-  guardrailsRoot: string
+  guardrailsRoot: string,
 ): {
   server: ScannedPolicy[];
   web: ScannedPolicy[];
   contract: ScannedPolicy[];
-} => {
-  return {
-    server: scanServerPolicies(guardrailsRoot),
-    web: scanWebPolicies(guardrailsRoot),
-    contract: scanContractPolicies(guardrailsRoot),
-  };
-};
+} => ({
+  server: scanServerPolicies(guardrailsRoot),
+  web: scanWebPolicies(guardrailsRoot),
+  contract: scanContractPolicies(guardrailsRoot),
+});

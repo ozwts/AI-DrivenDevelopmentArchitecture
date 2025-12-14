@@ -47,10 +47,10 @@ export type UnusedExportsResponsibility = {
 const toReviewResponsibility = (
   policy: ScannedPolicy,
 ): ReviewResponsibility => ({
-  id: `review_${policy.id.replace(/-/g, "_")}`,
+  id: `review_${policy.category}_${policy.id.replace(/-/g, "_")}`,
   title: `${policy.meta.label}レビュー`,
   policyDir: policy.policyDir,
-  responsibility: `${policy.meta.label} (${policy.id})`,
+  responsibility: `${policy.meta.label} (${policy.category}/${policy.id})`,
   toolDescription: `指定したディレクトリ配下のファイルが${policy.meta.label}ポリシーに準拠しているかを審査します。${policy.meta.description}`,
   inputSchema: {
     targetDirectories: z
