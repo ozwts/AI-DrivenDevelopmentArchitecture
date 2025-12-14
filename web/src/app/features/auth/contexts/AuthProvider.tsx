@@ -300,10 +300,6 @@ export function AuthProvider({ children }: AuthProviderProps): ReactNode {
    * アクセストークンを取得
    */
   const getAccessToken = useCallback(async (): Promise<string | null> => {
-    if (user === null) {
-      return null;
-    }
-
     if (config.mockedApi) {
       // モックモードではダミートークンを返す
       return "mock-access-token";
@@ -322,7 +318,7 @@ export function AuthProvider({ children }: AuthProviderProps): ReactNode {
       logger.error("アクセストークン取得失敗", err instanceof Error ? err : { err });
       return null;
     }
-  }, [user]);
+  }, []);
 
   /**
    * エラーをクリア
