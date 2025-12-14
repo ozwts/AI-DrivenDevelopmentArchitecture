@@ -2,7 +2,12 @@
 
 ## 概要
 
-`app/features/`に配置するProvider/Context機能の実装パターン。認証、トースト通知など、アプリ全体で共有する状態を管理する。
+Provider/Contextを用いた状態共有の実装パターン。**配置先はコードの形態ではなく「アプリケーション固有の概念を知っているか」で決まる**。
+
+| 固有の概念 | 配置先 | 例 |
+|-----------|--------|-----|
+| 知っている | `app/features/` | AuthProvider（認証という固有概念） |
+| 知らない | `app/lib/` | ToastProvider（汎用通知機能） |
 
 **根拠となる憲法**:
 - `module-cohesion-principles.md`: 機能的凝集
@@ -12,9 +17,11 @@
 
 1. **Context + Provider + Hook**の3層構造
 2. **Public API（index.ts）**による内部実装の隠蔽
-3. **feature間の直接インポート禁止**
+3. **feature間の直接インポート禁止**（features/内の場合）
 
 ## ディレクトリ構造
+
+### features/の場合（固有の概念あり）
 
 ```
 app/features/{feature}/
@@ -25,6 +32,17 @@ app/features/{feature}/
 ├── contexts/
 │   └── {Feature}Context.tsx     # Context
 └── index.ts                     # Public API
+```
+
+### lib/の場合（固有の概念なし）
+
+```
+app/lib/
+├── contexts/
+│   └── {Feature}Context.tsx     # Context + Provider（同一ファイル可）
+├── hooks/
+│   └── use{Feature}.ts          # Hook
+└── index.ts                     # 各ディレクトリのPublic API
 ```
 
 ---
@@ -99,13 +117,15 @@ export type { AuthContextValue } from "./contexts/AuthContext";
 
 ---
 
-## 例2: トースト通知（Toast）
+## 例2: トースト通知（Toast）- lib/配置
 
-### Context定義
+Toastはアプリケーション固有の概念を知らない汎用通知機能のため、`lib/`に配置する。
+
+### Context + Provider（同一ファイル）
 
 ```typescript
-// app/features/toast/contexts/ToastContext.tsx
-import { createContext } from "react";
+// app/lib/contexts/ToastContext.tsx
+import { createContext, useState, useCallback, ReactNode } from "react";
 
 export type ToastType = "success" | "error" | "warning" | "info";
 
@@ -113,19 +133,21 @@ export type ToastContextValue = {
   readonly showToast: (type: ToastType, message: string) => void;
   readonly success: (message: string) => void;
   readonly error: (message: string) => void;
-  readonly warning: (message: string) => void;
-  readonly info: (message: string) => void;
 };
 
-export const ToastContext = createContext<ToastContextValue | null>(null);
+export const ToastContext = createContext<ToastContextValue | undefined>(undefined);
+
+export function ToastProvider({ children }: { children: ReactNode }) {
+  // 実装...
+}
 ```
 
 ### Hook
 
 ```typescript
-// app/features/toast/hooks/useToast.ts
+// app/lib/hooks/useToast.ts
 import { useContext } from "react";
-import { ToastContext } from "../contexts/ToastContext";
+import { ToastContext } from "@/app/lib/contexts/ToastContext";
 
 export function useToast() {
   const context = useContext(ToastContext);
@@ -139,18 +161,18 @@ export function useToast() {
 ### 使用例
 
 ```typescript
-// app/routes/(user)/todos/components/TodoActions.tsx
-import { useToast } from "@/features/toast";
+// routes/内のコンポーネント
+import { useToast } from "@/app/lib/hooks";
 
-export function TodoActions() {
+export function SomeComponent() {
   const toast = useToast();
 
-  const handleCreate = async () => {
+  const handleAction = async () => {
     try {
-      await createTodo(data);
-      toast.success("TODOを作成しました");
+      await doSomething();
+      toast.success("成功しました");
     } catch {
-      toast.error("TODOの作成に失敗しました");
+      toast.error("失敗しました");
     }
   };
 }
@@ -158,25 +180,26 @@ export function TodoActions() {
 
 ---
 
-## 例3: ファイルアップロード
+## 例3: ファイルアップロード（routes/_shared/配置）
+
+ファイルアップロードは todos の親子ルート間（new/, [todoId]/edit/）で共有されるため、`routes/(user)/todos/_shared/` に配置する。
 
 ### 3ステップ構成
 
 ```
-1. プリサインドURL取得（POST /api/files/presigned-url）
+1. プリサインドURL取得（POST /api/attachments/presigned-url）
        ↓
 2. S3へ直接アップロード（PUT presignedUrl）
        ↓
-3. 完了通知（POST /api/files/complete）
+3. 完了通知（POST /api/attachments/complete）
 ```
 
 ### Hook実装
 
 ```typescript
-// app/features/file-upload/hooks/useFileUpload.ts
+// app/routes/(user)/todos/_shared/hooks/useFileUpload.ts
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { apiClient } from "@/lib/api";
 
 type UploadStep = "idle" | "getting-url" | "uploading" | "completing" | "done" | "error";
 
@@ -184,30 +207,7 @@ export function useFileUpload() {
   const [step, setStep] = useState<UploadStep>("idle");
   const [progress, setProgress] = useState(0);
 
-  const uploadMutation = useMutation({
-    mutationFn: async (file: File) => {
-      // Step 1: プリサインドURL取得
-      setStep("getting-url");
-      const { uploadUrl, fileKey } = await apiClient.post<PresignedUrlResponse>(
-        "/api/files/presigned-url",
-        { fileName: file.name, contentType: file.type }
-      );
-
-      // Step 2: S3へ直接アップロード
-      setStep("uploading");
-      await uploadToS3(uploadUrl, file, setProgress);
-
-      // Step 3: 完了通知
-      setStep("completing");
-      await apiClient.post("/api/files/complete", { fileKey });
-
-      setStep("done");
-      return { fileKey };
-    },
-    onError: () => {
-      setStep("error");
-    },
-  });
+  // 実装...
 
   return {
     upload: uploadMutation.mutate,
@@ -222,29 +222,17 @@ export function useFileUpload() {
 ### 使用例
 
 ```typescript
-// app/routes/(user)/todos/[todoId]/edit/components/AttachmentForm.tsx
-import { useFileUpload } from "@/features/file-upload";
+// app/routes/(user)/todos/[todoId]/edit/route.tsx
+import { useFileUpload } from "../_shared/hooks";
 
-export function AttachmentForm() {
+export default function EditTodoRoute() {
   const { upload, step, progress, isUploading } = useFileUpload();
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      upload(file);
-    }
-  };
-
-  return (
-    <div>
-      <input type="file" onChange={handleFileSelect} disabled={isUploading} />
-      {isUploading && <span>{step === "uploading" ? `${progress}%` : step}</span>}
-    </div>
-  );
+  // ...
 }
 ```
 
 ## 関連ドキュメント
 
 - `10-feature-overview.md`: Feature設計概要
-- `../lib/30-api-patterns.md`: API通信パターン
+- `../api/10-api-overview.md`: API通信基盤

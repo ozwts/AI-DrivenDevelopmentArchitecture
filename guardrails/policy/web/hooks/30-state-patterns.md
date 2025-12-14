@@ -38,7 +38,7 @@ TanStack Queryで対応できない複雑なUI状態を管理するパターン�
 ```typescript
 // app/routes/(user)/todos/_shared/hooks/useFileUpload.ts
 import { useState } from "react";
-import { apiClient } from "@/lib/api";
+import { apiClient } from "@/app/lib/api";
 
 type FileUploadResult = {
   totalFiles: number;

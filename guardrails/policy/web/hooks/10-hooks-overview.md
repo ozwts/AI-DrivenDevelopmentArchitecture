@@ -80,7 +80,7 @@ TanStack Queryは以下を提供する：
 ```typescript
 // app/features/todo/hooks/useTodos.ts
 import { useQuery } from "@tanstack/react-query";
-import { apiClient } from "@/lib/api";
+import { apiClient } from "@/app/lib/api";
 import type { TodoStatus } from "@/generated/zod-schemas";
 
 const QUERY_KEY = "todos";
@@ -111,7 +111,7 @@ export function useTodo(todoId: string) {
 ```typescript
 // app/features/todo/hooks/useTodos.ts
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiClient } from "@/lib/api";
+import { apiClient } from "@/app/lib/api";
 import type { RegisterTodoParams } from "@/generated/zod-schemas";
 
 export function useCreateTodo() {
@@ -184,7 +184,7 @@ TanStack Queryで対応できない以下のケースのみ：
 ```typescript
 // app/routes/(user)/todos/_shared/hooks/useFileUpload.ts
 import { useState } from "react";
-import { apiClient } from "@/lib/api";
+import { apiClient } from "@/app/lib/api";
 
 type FileUploadResult = {
   totalFiles: number;

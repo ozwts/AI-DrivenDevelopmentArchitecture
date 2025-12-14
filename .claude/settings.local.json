@@ -76,7 +76,10 @@
       "mcp__playwright__browser_navigate",
       "WebFetch(domain:slack.engineering)",
       "mcp__playwright__browser_fill_form",
-      "mcp__playwright__browser_select_option"
+      "mcp__playwright__browser_select_option",
+      "Bash(git -C /Users/toshiaki_ozawa/Documents/workspace/AI-DrivenDevelopmentArchitecture diff guardrails/policy/web/)",
+      "Bash(git -C /Users/toshiaki_ozawa/Documents/workspace/AI-DrivenDevelopmentArchitecture diff guardrails/policy/web/feature/10-feature-overview.md)",
+      "Bash(git -C /Users/toshiaki_ozawa/Documents/workspace/AI-DrivenDevelopmentArchitecture diff --cached guardrails/policy/web/)"
     ],
     "deny": [],
     "ask": []

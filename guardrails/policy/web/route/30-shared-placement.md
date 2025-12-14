@@ -324,9 +324,9 @@ app/routes/ → app/features/ → app/lib/
 
 ```typescript
 // app/routes/(user)/todos/route.tsx
-import { UserAvatar } from "@/features/user";
-import { formatDate } from "@/lib/utils";
-import { Button } from "@/lib/ui";
+import { UserAvatar } from "@/app/features/user";
+import { formatDate } from "@/app/lib/utils";
+import { Button } from "@/app/lib/ui";
 ```
 
 ### Don't

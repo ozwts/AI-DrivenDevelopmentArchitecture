@@ -39,7 +39,7 @@ app/routes/({role})/{feature}/
 ```typescript
 // app/routes/(user)/todos/components/TodoItem.tsx
 import type { TodoResponse } from "@/generated/zod-schemas";
-import { Button } from "@/lib/ui";
+import { Button } from "@/app/lib/ui";
 
 type Props = {
   readonly todo: TodoResponse;

@@ -32,12 +32,11 @@
 
 ```
 app/
-├── features/                    # 3+ルートで横断的に使用
-│   ├── auth/
-│   │   ├── hooks/
-│   │   │   └── useAuth.ts
-│   │   └── index.ts
-│   └── toast/
+├── features/                    # 3+ルートで横断的に使用（固有概念あり）
+│   └── auth/
+│       ├── hooks/
+│       │   └── useAuth.ts
+│       └── index.ts
 │
 ├── routes/
 │   ├── ({role})/                # ロールによる物理グループ化
@@ -156,8 +155,8 @@ app/routes/ → app/features/ → app/lib/
 | 同一ルート内 | `routes/({role})/{feature}/components/` | ルート固有UI |
 | 親子ルート間 | `routes/({role})/{feature}/_shared/` | 共通フォーム |
 | レイアウト専用 | `routes/({role})/_layout/` | Header, Sidebar |
-| 3+ルート横断 | `app/features/` | useAuth, Toast |
-| 全アプリ共通（純粋） | `app/lib/` | formatDate, Button |
+| 3+ルート横断（固有概念あり） | `app/features/` | useAuth |
+| 全アプリ共通（固有概念なし） | `app/lib/` | Toast, Button, formatDate |
 
 ## Do / Don't
 

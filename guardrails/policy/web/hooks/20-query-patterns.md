@@ -234,9 +234,8 @@ export function useDeleteProject() {
 ### グローバルエラーハンドリング
 
 ```typescript
-// app/lib/api/queryClient.ts
+// app/root.tsx または Provider内でQueryClientを設定
 import { QueryClient } from "@tanstack/react-query";
-import { toast } from "@/features/toast";
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -244,31 +243,24 @@ export const queryClient = new QueryClient({
       retry: 1,
       staleTime: 1000 * 60 * 5,  // 5分
     },
-    mutations: {
-      onError: (error) => {
-        // 全ミューテーションのエラーをトースト表示
-        if (error instanceof ApiError) {
-          toast.error(error.message);
-        } else {
-          toast.error("エラーが発生しました");
-        }
-      },
-    },
   },
 });
 ```
+
+**注意**: グローバルエラーハンドリングでToastを使用する場合は、React Component内で設定するか、個別のmutationでonErrorを定義する。
 
 ### 個別エラーハンドリング
 
 ```typescript
 export function useCreateTodo() {
   const queryClient = useQueryClient();
+  const toast = useToast();  // lib/hooks からインポート
 
   return useMutation({
     mutationFn: (data: RegisterTodoParams) => apiClient.createTodo(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
-      toast.success("TODOを作成しました");
+      toast.success("作成しました");
     },
     onError: (error) => {
       // 特定のエラーに対するカスタム処理
@@ -361,7 +353,7 @@ const { data } = useSuspenseQuery(todoQueries.all());
 
 - `10-hooks-overview.md`: カスタムフック設計概要
 - `30-state-patterns.md`: 複雑な状態管理パターン
-- `../lib/30-api-patterns.md`: API通信パターン
+- `../api/10-api-overview.md`: API通信基盤
 
 ## 参考
 

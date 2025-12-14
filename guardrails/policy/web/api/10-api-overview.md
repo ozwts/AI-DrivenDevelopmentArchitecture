@@ -16,8 +16,8 @@ APIは3層に分かれ、使用範囲に応じてコロケーションする：
 | 層 | 配置先 | 役割 | 判断基準 |
 |----|--------|------|---------|
 | インフラ基盤 | `lib/api/` | HTTP通信の共通処理 | 全アプリで使用 |
-| Feature API | `features/*/api/` | ドメイン別エンドポイント | 3+ルートで使用 |
-| Route API | `routes/*/_shared/api/` | ルート固有エンドポイント | 1-2ルートで使用 |
+| Feature API | `features/{feature}/api/` | 機能別エンドポイント | 3+ルートで使用 |
+| Route API | `routes/({role})/{feature}/_shared/api/` | 親子ルート間で共有 | 機能内の親子ルートで使用 |
 
 ```
 app/
@@ -43,12 +43,10 @@ app/
 エンドポイントを追加する
     ↓
 3つ以上のルートで使用される？
-    ├─ Yes → features/*/api/ に配置
-    └─ No  → routes/*/_shared/api/ に配置
-               ↓
-           将来3+ルートで使用されそう？
-               ├─ Yes → features/*/api/ に配置
-               └─ No  → routes/*/_shared/api/ に維持
+    ├─ Yes → features/{feature}/api/ に配置
+    └─ No  → 親子ルート間で共有する？
+               ├─ Yes → routes/({role})/{feature}/_shared/api/ に配置
+               └─ No  → そのルート内に配置（または将来の共通化を見越してfeatures/に）
 ```
 
 ## インフラ基盤の責務

@@ -76,7 +76,7 @@ Input.displayName = "Input";
 
 ```typescript
 // app/routes/(user)/todos/components/TodoForm.tsx
-import { Button, Input } from "@/lib/ui";
+import { Button, Input } from "@/app/lib/ui";
 
 export function TodoForm() {
   return (

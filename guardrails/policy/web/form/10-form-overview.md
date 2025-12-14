@@ -29,7 +29,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { schemas } from "@/generated/zod-schemas";
 import type { z } from "zod";
-import { Button, Input } from "@/lib/ui";
+import { Button, Input } from "@/app/lib/ui";
 
 const todoFormSchema = schemas.CreateTodoRequest;
 type TodoFormData = z.infer<typeof todoFormSchema>;
