@@ -2,4 +2,4 @@
  * Context / Provider
  */
 
-export { ToastProvider } from "./ToastContext";
+export { ToastProvider, useToast } from "./ToastContext";

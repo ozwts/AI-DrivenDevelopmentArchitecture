@@ -327,21 +327,21 @@ test.describe("TodoForm", () => {
       <TodoForm mode="create" onSubmit={() => {}} onCancel={() => {}} />,
     );
 
-    // ファイル添付セクション全体の確認（data-testid）
+    // ファイル添付セクション全体の確認（セクション識別用のdata-testid）
     const fileSection = component.getByTestId("file-upload-section");
     await expect(fileSection).toBeVisible();
 
-    // ファイル入力の確認とアクセシビリティ検証（data-testid）
-    const fileInput = component.getByTestId("file-input");
+    // ファイル入力の確認とアクセシビリティ検証（idで取得）
+    const fileInput = component.locator("#file-upload-todo-form");
     await expect(fileInput).toHaveAttribute("type", "file");
     await expect(fileInput).toHaveAttribute("multiple");
 
-    // ファイル選択ラベルの確認（data-testid）
-    const fileLabel = component.getByTestId("file-select-label");
+    // ファイル選択ラベルの確認（getByText）
+    const fileLabel = component.getByText("ファイルを選択");
     await expect(fileLabel).toBeVisible();
     await expect(fileLabel).toHaveAttribute("for", "file-upload-todo-form");
 
-    // ヘルプテキストが表示される（セクション内で検索）
+    // ヘルプテキストが表示される
     await expect(fileSection.getByText(/対応形式/)).toBeVisible();
   });
 
@@ -357,7 +357,7 @@ test.describe("TodoForm", () => {
       />,
     );
 
-    // ファイル添付セクションが表示されない（data-testid）
+    // ファイル添付セクションが表示されない（セクション識別用のdata-testid）
     await expect(
       component.getByTestId("file-upload-section"),
     ).not.toBeVisible();
@@ -368,22 +368,22 @@ test.describe("TodoForm", () => {
       <TodoForm mode="create" onSubmit={() => {}} onCancel={() => {}} />,
     );
 
-    // ファイルを選択（data-testid）
-    const fileInput = component.getByTestId("file-input");
+    // ファイルを選択（idで取得）
+    const fileInput = component.locator("#file-upload-todo-form");
     await fileInput.setInputFiles({
       name: "test.txt",
       mimeType: "text/plain",
       buffer: Buffer.from("test content"),
     });
 
-    // 選択されたファイルが表示される（ファイル名・サイズは動的コンテンツのためgetByTextを使用）
+    // 選択されたファイルが表示される
     await expect(component.getByText("test.txt")).toBeVisible();
     await expect(component.getByText(/Bytes • text\/plain/)).toBeVisible();
 
-    // 選択個数が表示される（data-testid）
-    await expect(component.getByTestId("file-count")).toHaveText(
-      "1個のファイルを選択中",
-    );
+    // 選択個数が表示される（getByText）
+    await expect(
+      component.getByText("1個のファイルを選択中"),
+    ).toBeVisible();
   });
 
   test("複数のファイルを選択できる", async ({ mount }) => {
@@ -391,7 +391,7 @@ test.describe("TodoForm", () => {
       <TodoForm mode="create" onSubmit={() => {}} onCancel={() => {}} />,
     );
 
-    const fileInput = component.getByTestId("file-input");
+    const fileInput = component.locator("#file-upload-todo-form");
     await fileInput.setInputFiles([
       {
         name: "file1.txt",
@@ -405,14 +405,14 @@ test.describe("TodoForm", () => {
       },
     ]);
 
-    // 両方のファイルが表示される（ファイル名は動的コンテンツのためgetByTextを使用）
+    // 両方のファイルが表示される
     await expect(component.getByText("file1.txt")).toBeVisible();
     await expect(component.getByText("file2.txt")).toBeVisible();
 
-    // 選択個数が表示される（data-testid）
-    await expect(component.getByTestId("file-count")).toHaveText(
-      "2個のファイルを選択中",
-    );
+    // 選択個数が表示される（getByText）
+    await expect(
+      component.getByText("2個のファイルを選択中"),
+    ).toBeVisible();
   });
 
   test("選択したファイルを削除できる", async ({ mount }) => {
@@ -420,23 +420,27 @@ test.describe("TodoForm", () => {
       <TodoForm mode="create" onSubmit={() => {}} onCancel={() => {}} />,
     );
 
-    // ファイルを選択（data-testid）
-    const fileInput = component.getByTestId("file-input");
+    // ファイルを選択（idで取得）
+    const fileInput = component.locator("#file-upload-todo-form");
     await fileInput.setInputFiles({
       name: "test.txt",
       mimeType: "text/plain",
       buffer: Buffer.from("test content"),
     });
 
-    // ファイルが表示されることを確認（ファイル名は動的コンテンツのためgetByTextを使用）
+    // ファイルが表示されることを確認
     await expect(component.getByText("test.txt")).toBeVisible();
-    await expect(component.getByTestId("file-count")).toBeVisible();
+    await expect(
+      component.getByText("1個のファイルを選択中"),
+    ).toBeVisible();
 
     // aria-labelで削除ボタンを特定してクリック（getByRole: アクセシビリティ検証）
     await component.getByRole("button", { name: "test.txtを削除" }).click();
 
-    // ファイルが削除されることを確認（ファイル名は動的コンテンツのためgetByTextを使用）
+    // ファイルが削除されることを確認
     await expect(component.getByText("test.txt")).not.toBeVisible();
-    await expect(component.getByTestId("file-count")).not.toBeVisible();
+    await expect(
+      component.getByText(/個のファイルを選択中/),
+    ).not.toBeVisible();
   });
 });

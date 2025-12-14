@@ -4,16 +4,13 @@ import { AttachmentUpload } from "./AttachmentUpload";
 test("ファイル選択ボタンが表示される", async ({ mount }) => {
   const component = await mount(<AttachmentUpload onUpload={() => {}} />);
 
-  // ファイル選択labelが表示される
-  await expect(component.getByTestId("attachment-upload-label")).toBeVisible();
-  // ボタンテキストは動的コンテンツのためgetByTextを使用
+  // ファイル選択ボタンが表示される
   await expect(component.getByText("ファイルを選択")).toBeVisible();
 });
 
 test("ヘルプテキストが表示される", async ({ mount }) => {
   const component = await mount(<AttachmentUpload onUpload={() => {}} />);
 
-  // ヘルプテキストは動的コンテンツのためgetByTextを使用
   await expect(
     component.getByText(
       "対応形式: PNG, JPEG, GIF, PDF, Word, Excel, テキスト（最大10MB）",
@@ -24,7 +21,8 @@ test("ヘルプテキストが表示される", async ({ mount }) => {
 test("ファイル選択labelがアクセシブル", async ({ mount }) => {
   const component = await mount(<AttachmentUpload onUpload={() => {}} />);
 
-  const label = component.getByTestId("attachment-upload-label");
+  // labelがテキストで取得できる
+  const label = component.getByText("ファイルを選択");
   await expect(label).toBeVisible();
   // labelがinput要素と正しく関連付けられている
   await expect(label).toHaveAttribute("for", "attachment-upload-input");
@@ -35,7 +33,8 @@ test("ファイル選択labelがアクセシブル", async ({ mount }) => {
 test("ファイル入力要素が存在する", async ({ mount }) => {
   const component = await mount(<AttachmentUpload onUpload={() => {}} />);
 
-  const input = component.getByTestId("attachment-upload-input");
+  // labelに関連付けられたinput要素を取得
+  const input = component.locator("#attachment-upload-input");
   await expect(input).toBeAttached();
   await expect(input).toHaveAttribute("type", "file");
 });

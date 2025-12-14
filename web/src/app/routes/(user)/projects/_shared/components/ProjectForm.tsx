@@ -107,6 +107,7 @@ export const ProjectForm = ({
                     : "border-border-light hover:border-text-secondary"
                 }
               `}
+              // style属性: カラーピッカー選択肢の動的カラー（Tailwindトークン化不可）
               style={{ backgroundColor: color }}
               data-testid={`color-option-${index}`}
               aria-label={`カラー ${color} を選択`}

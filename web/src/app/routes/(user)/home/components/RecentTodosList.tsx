@@ -23,7 +23,7 @@ export function RecentTodosList({ todos, onTodoClick }: Props) {
   }
 
   return (
-    <Card className="mt-6">
+    <Card className="mt-6 p-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-text-primary flex items-center gap-2">
           <ClockIcon className="h-6 w-6 text-primary-600" />

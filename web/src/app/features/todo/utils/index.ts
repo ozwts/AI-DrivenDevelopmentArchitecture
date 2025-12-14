@@ -6,3 +6,5 @@ export {
   getStatusBadgeVariant,
   getPriorityBadgeVariant,
 } from "./label-util";
+
+export { isOverdue, getDaysUntilDue, getDueDateLabel } from "./due-date-util";

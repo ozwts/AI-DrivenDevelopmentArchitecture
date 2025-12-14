@@ -42,7 +42,7 @@ export class ErrorBoundary extends Component<Props, State> {
                     <summary className="cursor-pointer font-medium">
                       エラー詳細
                     </summary>
-                    <pre className="mt-2 p-2 bg-gray-100 rounded overflow-auto">
+                    <pre className="mt-2 p-2 bg-neutral-100 rounded overflow-auto">
                       {this.state.error.message}
                     </pre>
                   </details>

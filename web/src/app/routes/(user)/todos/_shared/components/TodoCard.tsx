@@ -10,7 +10,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { z } from "zod";
 import { Card, Badge, Button } from "@/app/lib/ui";
-import { isOverdue as checkOverdue } from "@/app/lib/utils/formatter";
+import { isOverdue as checkOverdue } from "@/app/features/todo";
 import { schemas } from "@/generated/zod-schemas";
 
 type TodoResponse = z.infer<typeof schemas.TodoResponse>;
@@ -95,7 +95,7 @@ export const TodoCard = ({
   };
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card className="hover:shadow-md transition-shadow p-6">
       <div className="space-y-3">
         {/* Header */}
         <div className="flex items-start justify-between">
@@ -126,6 +126,7 @@ export const TodoCard = ({
               {assignee.name}
             </Badge>
           )}
+          {/* style属性: ユーザー選択の動的カラー（Tailwindトークン化不可） */}
           {project && (
             <span
               className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md border"
@@ -196,7 +197,7 @@ export const TodoCard = ({
               onClick={() => {
                 onDelete(todo);
               }}
-              className="!p-2 text-red-600 hover:text-red-700"
+              className="!p-2 text-error-600 hover:text-error-700"
               aria-label="削除"
             >
               <TrashIcon className="h-4 w-4" aria-hidden="true" />

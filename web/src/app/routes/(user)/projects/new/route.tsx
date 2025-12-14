@@ -4,7 +4,7 @@ import { z } from "zod";
 import { schemas } from "@/generated/zod-schemas";
 import { Button, Card } from "@/app/lib/ui";
 import { buildLogger } from "@/app/lib/logger";
-import { useToast } from "@/app/lib/hooks";
+import { useToast } from "@/app/lib/contexts";
 import { useCreateProject } from "@/app/features/project";
 import { ProjectForm } from "../_shared";
 
@@ -59,7 +59,7 @@ export default function NewProjectRoute() {
       </div>
 
       {/* フォーム */}
-      <Card>
+      <Card className="p-6">
         <ProjectForm
           onSubmit={handleSubmit}
           onCancel={handleCancel}

@@ -7,7 +7,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { Card, Button, Modal, Alert } from "@/app/lib/ui";
 import { buildLogger } from "@/app/lib/logger";
-import { useToast } from "@/app/lib/hooks";
+import { useToast } from "@/app/lib/contexts";
 import {
   useCurrentUser,
   useUpdateCurrentUser,
@@ -95,7 +95,7 @@ export default function ProfileRoute() {
       </div>
 
       {/* Profile Card */}
-      <Card>
+      <Card className="p-6">
         <div className="space-y-6">
           {/* User Icon and Name */}
           <div className="flex items-center gap-4">
@@ -162,31 +162,31 @@ export default function ProfileRoute() {
       </Card>
 
       {/* Danger Zone */}
-      <Card>
-        <div className="border-2 border-red-200 rounded-lg bg-red-50 p-6">
+      <Card className="p-6">
+        <div className="border-2 border-error-200 rounded-lg bg-error-50 p-6">
           <div className="space-y-4">
             {/* Header */}
             <div className="flex items-start gap-3">
               <ExclamationTriangleIcon
-                className="h-6 w-6 text-red-600 flex-shrink-0 mt-0.5"
+                className="h-6 w-6 text-error-600 flex-shrink-0 mt-0.5"
                 aria-hidden="true"
               />
               <div className="flex-1">
-                <h3 className="text-lg font-bold text-red-900">危険な操作</h3>
-                <p className="mt-1 text-sm text-red-700">
+                <h3 className="text-lg font-bold text-error-900">危険な操作</h3>
+                <p className="mt-1 text-sm text-error-700">
                   この操作を実行すると、アカウントとすべてのデータが完全に削除されます。
                 </p>
               </div>
             </div>
 
             {/* Delete Account Section */}
-            <div className="border-t border-red-200 pt-4">
+            <div className="border-t border-error-200 pt-4">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
-                  <h4 className="font-semibold text-red-900">
+                  <h4 className="font-semibold text-error-900">
                     アカウントの削除
                   </h4>
-                  <p className="mt-1 text-sm text-red-700">
+                  <p className="mt-1 text-sm text-error-700">
                     アカウントを削除すると、すべてのプロフィール情報、TODO、プロジェクトが完全に削除されます。この操作は取り消せません。
                   </p>
                 </div>

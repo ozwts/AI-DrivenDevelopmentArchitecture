@@ -163,8 +163,7 @@ test.describe("DeleteAccountConfirmation", () => {
       />,
     );
 
-    // Alertコンポーネントにはroleがないのでテキストでチェック
-    const errorAlert = component.locator(".bg-red-50").first();
+    const errorAlert = component.getByRole("alert");
     await expect(errorAlert).toBeVisible();
   });
 

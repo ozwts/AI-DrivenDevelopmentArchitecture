@@ -2,7 +2,7 @@ import { Link, useSearchParams, useNavigate } from "react-router";
 import { PlusIcon, ListBulletIcon } from "@heroicons/react/24/outline";
 import { Button, LoadingPage, Alert, EmptyState, Select } from "@/app/lib/ui";
 import { buildLogger } from "@/app/lib/logger";
-import { useToast } from "@/app/lib/hooks";
+import { useToast } from "@/app/lib/contexts";
 import { useTodos, useUpdateTodo, useDeleteTodo } from "@/app/features/todo";
 import { useUsers } from "@/app/features/user";
 import { useProjects } from "@/app/features/project";
@@ -198,7 +198,7 @@ export default function TodosIndexRoute() {
         </div>
       ) : (
         <EmptyState
-          icon={<ListBulletIcon className="h-16 w-16 text-gray-400" />}
+          icon={<ListBulletIcon className="h-16 w-16 text-neutral-400" />}
           title="TODOがありません"
           description="新しいTODOを作成して始めましょう"
           action={

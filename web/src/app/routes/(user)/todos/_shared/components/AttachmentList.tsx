@@ -34,7 +34,7 @@ export const AttachmentList = ({
   if (!attachments || attachments.length === 0) {
     return (
       <EmptyState
-        icon={<PaperClipIcon className="h-16 w-16 text-gray-400" />}
+        icon={<PaperClipIcon className="h-16 w-16 text-neutral-400" />}
         title="添付ファイルなし"
         description="このTODOにはまだファイルが添付されていません"
       />
@@ -79,7 +79,7 @@ export const AttachmentList = ({
               onClick={() => {
                 onDelete(attachment);
               }}
-              className="!p-2 text-red-600 hover:text-red-700"
+              className="!p-2 text-error-600 hover:text-error-700"
               aria-label={`${attachment.filename}を削除`}
             >
               <TrashIcon className="h-4 w-4" aria-hidden="true" />

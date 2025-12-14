@@ -89,11 +89,11 @@ export function AuthInitializer({ children }: AuthInitializerProps): ReactNode {
   if (error) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
-          <div className="mb-4 text-lg font-semibold text-red-900">
+        <div className="rounded-lg border border-error-200 bg-error-50 p-6 text-center">
+          <div className="mb-4 text-lg font-semibold text-error-900">
             エラーが発生しました
           </div>
-          <div className="mb-4 text-sm text-red-700">{error}</div>
+          <div className="mb-4 text-sm text-error-700">{error}</div>
           <Button
             variant="danger"
             size="sm"

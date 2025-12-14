@@ -2,7 +2,7 @@ import { useParams, useNavigate } from "react-router";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { Button, Card, LoadingPage, Alert } from "@/app/lib/ui";
 import { buildLogger } from "@/app/lib/logger";
-import { useToast } from "@/app/lib/hooks";
+import { useToast } from "@/app/lib/contexts";
 import { useTodo, useUpdateTodo } from "@/app/features/todo";
 import { z } from "zod";
 import { schemas } from "@/generated/zod-schemas";
@@ -79,7 +79,7 @@ export default function TodoEditRoute() {
       </div>
 
       {/* Form */}
-      <Card>
+      <Card className="p-6">
         <TodoForm
           mode="edit"
           todo={todo}

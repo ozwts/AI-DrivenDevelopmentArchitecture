@@ -21,23 +21,23 @@ const variantConfig: Record<
 > = {
   success: {
     icon: CheckCircleIcon,
-    bgColor: "bg-green-50 border-green-200",
-    iconColor: "text-green-600",
+    bgColor: "bg-success-50 border-success-200",
+    iconColor: "text-success-600",
   },
   warning: {
     icon: ExclamationTriangleIcon,
-    bgColor: "bg-yellow-50 border-yellow-200",
-    iconColor: "text-yellow-600",
+    bgColor: "bg-warning-50 border-warning-200",
+    iconColor: "text-warning-600",
   },
   error: {
     icon: XCircleIcon,
-    bgColor: "bg-red-50 border-red-200",
-    iconColor: "text-red-600",
+    bgColor: "bg-error-50 border-error-200",
+    iconColor: "text-error-600",
   },
   info: {
     icon: InformationCircleIcon,
-    bgColor: "bg-blue-50 border-blue-200",
-    iconColor: "text-blue-600",
+    bgColor: "bg-info-50 border-info-200",
+    iconColor: "text-info-600",
   },
 };
 
@@ -49,22 +49,22 @@ export const Alert = ({ variant, title, children, onClose }: AlertProps) => {
     <div
       role="alert"
       className={`
-        rounded-lg border p-4
+        rounded-lg border
         ${config.bgColor}
       `}
     >
       <div className="flex items-start">
-        <Icon className={`h-5 w-5 ${config.iconColor} mt-0.5`} />
-        <div className="ml-3 flex-1">
+        <Icon className={`h-5 w-5 ${config.iconColor}`} />
+        <div className="flex-1">
           {title && (
-            <h3 className="text-sm font-medium text-gray-900">{title}</h3>
+            <h3 className="text-sm font-medium text-neutral-900">{title}</h3>
           )}
-          <div className="text-sm text-gray-700 mt-1">{children}</div>
+          <div className="text-sm text-neutral-700">{children}</div>
         </div>
         {onClose && (
           <button
             onClick={onClose}
-            className="ml-3 text-gray-400 hover:text-gray-600"
+            className="text-neutral-400 hover:text-neutral-600"
           >
             <XCircleIcon className="h-5 w-5" />
           </button>

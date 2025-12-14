@@ -14,7 +14,7 @@ type Props = {
 export function StatsGrid({ todoCount, inProgressCount, doneCount }: Props) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-      <Card className="bg-background-surface">
+      <Card className="bg-background-surface p-6">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-text-secondary mb-1">
@@ -22,7 +22,8 @@ export function StatsGrid({ todoCount, inProgressCount, doneCount }: Props) {
             </p>
             <p
               className="text-3xl font-bold text-text-primary"
-              data-testid="stats-todo-count"
+              role="status"
+              aria-label="未着手のTODO数"
             >
               {todoCount}
             </p>
@@ -31,7 +32,7 @@ export function StatsGrid({ todoCount, inProgressCount, doneCount }: Props) {
         </div>
       </Card>
 
-      <Card className="bg-background-surface">
+      <Card className="bg-background-surface p-6">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-text-secondary mb-1">
@@ -39,7 +40,8 @@ export function StatsGrid({ todoCount, inProgressCount, doneCount }: Props) {
             </p>
             <p
               className="text-3xl font-bold text-primary-600"
-              data-testid="stats-in-progress-count"
+              role="status"
+              aria-label="進行中のTODO数"
             >
               {inProgressCount}
             </p>
@@ -48,7 +50,7 @@ export function StatsGrid({ todoCount, inProgressCount, doneCount }: Props) {
         </div>
       </Card>
 
-      <Card className="bg-background-surface">
+      <Card className="bg-background-surface p-6">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-text-secondary mb-1">
@@ -56,7 +58,8 @@ export function StatsGrid({ todoCount, inProgressCount, doneCount }: Props) {
             </p>
             <p
               className="text-3xl font-bold text-text-primary"
-              data-testid="stats-done-count"
+              role="status"
+              aria-label="完了したTODO数"
             >
               {doneCount}
             </p>

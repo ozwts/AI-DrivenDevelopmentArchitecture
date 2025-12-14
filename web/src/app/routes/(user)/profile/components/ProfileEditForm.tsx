@@ -46,14 +46,14 @@ export const ProfileEditForm = ({
       <div>
         <label
           htmlFor="email-readonly"
-          className="text-sm font-medium text-text-dark"
+          className="text-sm font-medium text-text-primary"
         >
           メールアドレス
         </label>
         <p id="email-readonly" className="mt-1 text-text-secondary">
           {user.email}
         </p>
-        <p className="mt-1 text-xs text-text-light">
+        <p className="mt-1 text-xs text-text-tertiary">
           メールアドレスはCognito認証で管理されているため、ここでは変更できません。
         </p>
       </div>

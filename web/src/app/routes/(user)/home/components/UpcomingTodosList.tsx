@@ -5,8 +5,9 @@ import {
 } from "@heroicons/react/24/outline";
 import { z } from "zod";
 import { Card, Badge } from "@/app/lib/ui";
-import { isOverdue, getDueDateLabel } from "@/app/lib/utils/formatter";
 import {
+  isOverdue,
+  getDueDateLabel,
   getStatusLabel,
   getPriorityLabel,
   getStatusBadgeVariant,
@@ -28,10 +29,10 @@ export function UpcomingTodosList({ todos, onTodoClick }: Props) {
   }
 
   return (
-    <Card className="mt-6">
+    <Card className="mt-6 p-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-text-primary flex items-center gap-2">
-          <ExclamationCircleIcon className="h-6 w-6 text-orange-500" />
+          <ExclamationCircleIcon className="h-6 w-6 text-warning-600" />
           期限が近いタスク（3日以内）
         </h2>
         <Link

@@ -22,13 +22,14 @@ export const ProjectCard = ({
 }: ProjectCardProps) => {
   return (
     <Card
-      className="hover:shadow-md transition-shadow cursor-pointer"
+      className="hover:shadow-md transition-shadow cursor-pointer p-6"
       onClick={() => {
         onClick(project);
       }}
     >
       <div className="space-y-4">
         {/* ヘッダー: プロジェクト色とタイトル */}
+        {/* style属性: ユーザー選択の動的カラー（Tailwindトークン化不可） */}
         <div className="flex items-start gap-4">
           <div
             className="flex-shrink-0 w-12 h-12 rounded-md flex items-center justify-center"
@@ -79,7 +80,7 @@ export const ProjectCard = ({
                 e.stopPropagation();
                 onDelete(project);
               }}
-              className="!p-2 text-red-600 hover:text-red-700"
+              className="!p-2 text-error-600 hover:text-error-700"
               aria-label="削除"
             >
               <TrashIcon className="h-4 w-4" />

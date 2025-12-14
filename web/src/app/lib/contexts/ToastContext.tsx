@@ -2,6 +2,7 @@ import {
   createContext,
   useState,
   useCallback,
+  useContext,
   ReactNode,
 } from "react";
 import {
@@ -39,29 +40,38 @@ const toastConfig: Record<
 > = {
   success: {
     icon: CheckCircleIcon,
-    bgColor: "bg-green-50 border-green-200",
-    iconColor: "text-green-600",
+    bgColor: "bg-success-50 border-success-200",
+    iconColor: "text-success-600",
   },
   error: {
     icon: XCircleIcon,
-    bgColor: "bg-red-50 border-red-200",
-    iconColor: "text-red-600",
+    bgColor: "bg-error-50 border-error-200",
+    iconColor: "text-error-600",
   },
   warning: {
     icon: ExclamationCircleIcon,
-    bgColor: "bg-yellow-50 border-yellow-200",
-    iconColor: "text-yellow-600",
+    bgColor: "bg-warning-50 border-warning-200",
+    iconColor: "text-warning-600",
   },
   info: {
     icon: InformationCircleIcon,
-    bgColor: "bg-blue-50 border-blue-200",
-    iconColor: "text-blue-600",
+    bgColor: "bg-info-50 border-info-200",
+    iconColor: "text-info-600",
   },
 };
 
 type ToastProviderProps = {
   readonly children: ReactNode;
 };
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function useToast() {
+  const context = useContext(ToastContext);
+  if (!context) {
+    throw new Error("useToast must be used within a ToastProvider");
+  }
+  return context;
+}
 
 export function ToastProvider({ children }: ToastProviderProps) {
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -116,12 +126,12 @@ export function ToastProvider({ children }: ToastProviderProps) {
               `}
             >
               <Icon className={`h-5 w-5 ${config.iconColor} flex-shrink-0`} />
-              <p className="text-sm text-gray-800 flex-1">{toast.message}</p>
+              <p className="text-sm text-neutral-800 flex-1">{toast.message}</p>
               <button
                 onClick={() => {
                   removeToast(toast.id);
                 }}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-neutral-400 hover:text-neutral-600"
               >
                 <XMarkIcon className="h-4 w-4" />
               </button>

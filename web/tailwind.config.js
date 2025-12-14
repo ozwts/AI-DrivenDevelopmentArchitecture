@@ -37,11 +37,55 @@ export default {
           secondary: "#333333", // セカンダリテキスト（本文）
           tertiary: "#7d6e5a", // ターシャリテキスト（補足、非活性）
         },
-        // System colors
-        success: "#4CAF50",
-        warning: "#FFA726",
-        error: "#E53935",
-        info: "#29B6F6",
+        // System colors (セマンティックトークン)
+        success: {
+          50: "#f0fdf4",
+          100: "#dcfce7",
+          200: "#bbf7d0",
+          DEFAULT: "#4CAF50",
+          600: "#16a34a",
+          700: "#15803d",
+          800: "#166534",
+        },
+        warning: {
+          50: "#fffbeb",
+          100: "#fef3c7",
+          200: "#fde68a",
+          DEFAULT: "#FFA726",
+          600: "#d97706",
+          700: "#b45309",
+          800: "#92400e",
+          900: "#78350f",
+        },
+        error: {
+          50: "#fef2f2",
+          100: "#fee2e2",
+          200: "#fecaca",
+          DEFAULT: "#E53935",
+          600: "#dc2626",
+          700: "#b91c1c",
+          800: "#991b1b",
+          900: "#7f1d1d",
+        },
+        info: {
+          50: "#eff6ff",
+          100: "#dbeafe",
+          200: "#bfdbfe",
+          DEFAULT: "#29B6F6",
+          600: "#2563eb",
+          700: "#1d4ed8",
+          800: "#1e40af",
+        },
+        // Neutral colors
+        neutral: {
+          100: "#f3f4f6",
+          200: "#e5e7eb",
+          400: "#9ca3af",
+          600: "#4b5563",
+          700: "#374151",
+          800: "#1f2937",
+          900: "#111827",
+        },
         // Border
         border: {
           DEFAULT: "#CCCCCC",

@@ -13,11 +13,11 @@ const variantStyles: Record<ButtonVariant, string> = {
   primary:
     "bg-secondary-600 text-white hover:bg-secondary-700 focus:ring-secondary-500 disabled:bg-secondary-300 disabled:text-white",
   secondary:
-    "bg-white text-secondary-600 border-2 border-secondary-600 hover:bg-secondary-50 focus:ring-secondary-400 disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-300",
+    "bg-white text-secondary-600 border-2 border-secondary-600 hover:bg-secondary-50 focus:ring-secondary-400 disabled:bg-neutral-100 disabled:text-neutral-400 disabled:border-neutral-200",
   danger:
-    "bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 disabled:bg-red-300 disabled:text-white",
+    "bg-error-600 text-white hover:bg-error-700 focus:ring-error-600 disabled:bg-error-200 disabled:text-white",
   ghost:
-    "bg-transparent text-secondary-600 hover:bg-secondary-50 hover:text-secondary-700 focus:ring-secondary-400 disabled:text-gray-400",
+    "bg-transparent text-secondary-600 hover:bg-secondary-50 hover:text-secondary-700 focus:ring-secondary-400 disabled:text-neutral-400",
 };
 
 const sizeStyles: Record<ButtonSize, string> = {

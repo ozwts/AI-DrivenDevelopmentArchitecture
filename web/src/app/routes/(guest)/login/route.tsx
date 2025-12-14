@@ -79,7 +79,7 @@ export default function LoginRoute(): ReactNode {
               }}
               required
               disabled={isLoading}
-              className="w-full px-4 py-2 border border-border rounded-md text-text-primary bg-white focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+              className="w-full px-4 py-2 border border-border rounded-md text-text-primary bg-white focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:border-transparent disabled:bg-neutral-100 disabled:cursor-not-allowed"
               placeholder="user@example.com"
             />
           </div>
@@ -100,7 +100,7 @@ export default function LoginRoute(): ReactNode {
               }}
               required
               disabled={isLoading}
-              className="w-full px-4 py-2 border border-border rounded-md text-text-primary bg-white focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+              className="w-full px-4 py-2 border border-border rounded-md text-text-primary bg-white focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:border-transparent disabled:bg-neutral-100 disabled:cursor-not-allowed"
               placeholder="••••••••"
             />
             <div className="mt-2 text-right">
@@ -114,7 +114,7 @@ export default function LoginRoute(): ReactNode {
           </div>
 
           {errorMessage !== null && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-md text-error text-sm">
+            <div className="p-3 bg-error-50 border border-error-200 rounded-md text-error text-sm">
               {errorMessage}
             </div>
           )}

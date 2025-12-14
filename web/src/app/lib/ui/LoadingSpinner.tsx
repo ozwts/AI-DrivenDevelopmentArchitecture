@@ -23,7 +23,7 @@ export const LoadingSpinner = ({
       <div
         className={`
           animate-spin rounded-full
-          border-4 border-gray-200
+          border-4 border-neutral-200
           border-t-secondary-600
           ${sizeClasses[size]}
         `}
@@ -37,7 +37,7 @@ export const LoadingPage = () => {
     <div className="flex items-center justify-center min-h-screen">
       <div className="text-center">
         <LoadingSpinner size="lg" />
-        <p className="mt-4 text-gray-600">読み込み中...</p>
+        <p className="mt-4 text-neutral-600">読み込み中...</p>
       </div>
     </div>
   );

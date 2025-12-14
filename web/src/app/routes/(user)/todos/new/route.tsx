@@ -2,7 +2,7 @@ import { useNavigate } from "react-router";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { Button, Card } from "@/app/lib/ui";
 import { buildLogger } from "@/app/lib/logger";
-import { useToast } from "@/app/lib/hooks";
+import { useToast } from "@/app/lib/contexts";
 import { useCreateTodo } from "@/app/features/todo";
 import { z } from "zod";
 import { schemas } from "@/generated/zod-schemas";
@@ -65,7 +65,7 @@ export default function TodoNewRoute() {
   if (isUploading) {
     return (
       <div className="max-w-2xl mx-auto">
-        <Card>
+        <Card className="p-6">
           <div className="flex flex-col items-center justify-center py-8 space-y-4">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
             <p className="text-text-secondary">
@@ -90,7 +90,7 @@ export default function TodoNewRoute() {
       </div>
 
       {/* Form */}
-      <Card>
+      <Card className="p-6">
         <TodoForm
           mode="create"
           onSubmit={handleCreate}

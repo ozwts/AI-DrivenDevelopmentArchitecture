@@ -40,20 +40,20 @@ export const DeleteAccountConfirmation = ({
       </Alert>
 
       {/* Account Information */}
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4 space-y-3">
+      <div className="bg-error-50 border border-error-200 rounded-lg p-4 space-y-3">
         <div>
-          <p className="text-sm font-medium text-red-900">
+          <p className="text-sm font-medium text-error-900">
             削除されるアカウント
           </p>
-          <p className="mt-1 text-base font-bold text-red-900">
+          <p className="mt-1 text-base font-bold text-error-900">
             {user.name} ({user.email})
           </p>
         </div>
-        <div className="border-t border-red-200 pt-3">
-          <p className="text-sm font-medium text-red-900 mb-2">
+        <div className="border-t border-error-200 pt-3">
+          <p className="text-sm font-medium text-error-900 mb-2">
             削除されるデータ:
           </p>
-          <ul className="text-sm text-red-800 space-y-1 list-disc list-inside">
+          <ul className="text-sm text-error-800 space-y-1 list-disc list-inside">
             <li>プロフィール情報</li>
             <li>作成したTODO</li>
             <li>参加しているプロジェクト</li>
@@ -63,8 +63,8 @@ export const DeleteAccountConfirmation = ({
       </div>
 
       {/* Warning Text */}
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-        <p className="text-sm text-yellow-900">
+      <div className="bg-warning-50 border border-warning-200 rounded-lg p-4">
+        <p className="text-sm text-warning-900">
           <strong>注意:</strong>{" "}
           削除後は自動的にログアウトされ、このアカウントでの再ログインはできなくなります。
         </p>

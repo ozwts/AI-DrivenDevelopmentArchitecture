@@ -49,6 +49,7 @@ export default function ProjectDetailRoute() {
           プロジェクト一覧に戻る
         </Button>
         <div className="flex items-center justify-between">
+          {/* style属性: ユーザー選択の動的カラー（Tailwindトークン化不可） */}
           <div className="flex items-center gap-4">
             <div
               className="w-12 h-12 rounded-md flex items-center justify-center"
@@ -74,7 +75,7 @@ export default function ProjectDetailRoute() {
       </div>
 
       {/* 詳細情報 */}
-      <Card>
+      <Card className="p-6">
         <div className="space-y-6">
           <div>
             <h2 className="text-sm font-medium text-text-secondary mb-2">
@@ -89,6 +90,7 @@ export default function ProjectDetailRoute() {
             <h2 className="text-sm font-medium text-text-secondary mb-2">
               プロジェクトカラー
             </h2>
+            {/* style属性: ユーザー選択の動的カラー（Tailwindトークン化不可） */}
             <div className="flex items-center gap-3">
               <div
                 className="w-8 h-8 rounded-md"

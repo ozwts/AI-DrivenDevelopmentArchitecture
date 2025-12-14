@@ -15,7 +15,7 @@
 2. **HTML標準属性の継承**: `ComponentPropsWithoutRef<"button">`等で標準属性を受け入れる
 3. **アクセシビリティ属性**: `aria-*`属性で状態を通知
 4. **バリアント/サイズのProps**: 一貫したスタイルバリエーション
-5. **余白・配置は呼び出し側の責務**: UIプリミティブは見た目のみを担当
+5. **余白・配置の責務分離**: コンテナは呼び出し側、インタラクティブはサイズバリアントで定義
 6. **用途限定で具体化**: 抽象的すぎるpropsを避け、明確な用途に特化
 7. **data-testid**: 使用側で直接`data-testid`属性を指定
 8. **Public API経由のエクスポート**: `index.ts`からのみ公開
@@ -152,40 +152,65 @@ export function TodoForm() {
 
 ## 余白・配置の責務分離
 
-UIプリミティブは**視覚的表現（色、枠線、角丸）のみ**を担当する。以下は呼び出し側の責務：
+UIプリミティブの余白責務は**コンポーネント種別**によって異なる。
 
+### コンテナコンポーネント（Card, Modal, Alert, EmptyState等）
+
+**内部余白は呼び出し側の責務**。文脈によって必要な余白が変わるため、固定しない。
+
+以下は呼び出し側の責務：
 - **外部余白（margin）**: `mt-8`, `mb-4` 等
 - **内部余白（padding）**: `p-6`, `px-4` 等
 - **配置・レイアウト**: `flex`, `grid`, `gap` 等
 - **子要素間の余白**: `space-y-3` 等
 
-### Do
-
 ```tsx
-// 余白・padding は呼び出し側で決定
+// Do: 余白・padding は呼び出し側で決定
 <Card className="p-6 space-y-3">
   <h3>タイトル</h3>
   <p>本文</p>
 </Card>
 
-// 親コンポーネントのレイアウトで制御
+// Do: 親コンポーネントのレイアウトで制御
 <div className="grid grid-cols-2 gap-4">
   <Card className="p-4">カード1</Card>
   <Card className="p-6">カード2</Card>  {/* 異なる padding も可能 */}
 </div>
-```
 
-### Don't
-
-```tsx
-// UIプリミティブ内に余白・padding を固定（NG）
+// Don't: コンテナ内に余白・padding を固定
 export const Card = ({ children }) => (
   <div className="p-6 mt-8 ...">  {/* NG: 文脈依存 */}
     {children}
   </div>
 );
+```
 
-// ネスト要素のスタイルを固定（NG）
+### インタラクティブコンポーネント（Button, Input, Select, Badge等）
+
+**サイズバリアントの一部として内部paddingを持つことを許容**。理由：
+- ユーザー操作の対象となり、一貫したタッチターゲットサイズが必要
+- 毎回呼び出し側でpaddingを指定するのは非実用的
+- サイズバリアント（sm/md/lg）としてpaddingを含めることで一貫性を担保
+
+```tsx
+// Do: サイズバリアントとして内部paddingを定義
+const sizeStyles = {
+  sm: "px-3 py-1.5 text-sm",
+  md: "px-4 py-2 text-base",
+  lg: "px-6 py-3 text-lg",
+};
+
+// Do: Input/Selectにもデフォルトpaddingを持つ
+className={twMerge(
+  "border rounded px-3 py-2",  // OK: インタラクティブコンポーネント
+  className
+)}
+```
+
+### 共通禁止事項
+
+```tsx
+// Don't: ネスト要素のスタイルを固定
 export const Card = ({ children }) => (
   <div className={twMerge(
     "rounded-md bg-white",
@@ -196,17 +221,23 @@ export const Card = ({ children }) => (
   </div>
 );
 
-// 呼び出し側で内部スタイルを上書き（NG）
+// Don't: 呼び出し側で内部スタイルを上書き
 <Button className="bg-red-500">  {/* NG: 内部の variant を壊す */}
 ```
 
 ### UIプリミティブが担当すべきスタイル
 
 ```tsx
-// Card の例: 視覚的表現のみ
+// コンテナの例: 視覚的表現のみ
 const base = "rounded-md bg-white";
 const elevation = tone === "elevated" ? "shadow-md" : "shadow-none";
 // padding, margin, 子要素スタイルは含めない
+
+// インタラクティブの例: サイズバリアントにpaddingを含む
+const sizeStyles = {
+  sm: "px-3 py-1.5 text-sm",
+  md: "px-4 py-2 text-base",
+};
 ```
 
 ## className の扱い
