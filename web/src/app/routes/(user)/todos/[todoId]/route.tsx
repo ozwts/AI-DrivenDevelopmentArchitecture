@@ -1,9 +1,13 @@
+import { useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router";
 import { ArrowLeftIcon, PencilIcon } from "@heroicons/react/24/outline";
 import { Button, Card, LoadingPage, Alert } from "@/app/lib/ui";
 import { useTodo } from "@/app/features/todo";
 import { useProjects } from "@/app/features/project";
 import { TodoDetail } from "../_shared/components";
+import { buildLogger } from "@/app/lib/logger";
+
+const logger = buildLogger("TodoDetailRoute");
 
 /**
  * TODO詳細ページ
@@ -15,6 +19,13 @@ export default function TodoDetailRoute() {
 
   const { data: todo, isLoading, error } = useTodo(todoId ?? "");
   const { data: projects } = useProjects();
+
+  // ページ表示ログ
+  useEffect(() => {
+    if (!isLoading && todo) {
+      logger.info("TODO詳細ページ表示", { todoId: todo.id, title: todo.title });
+    }
+  }, [isLoading, todo]);
 
   const getProjectById = (projectId?: string) => {
     if (!projectId || !projects) return undefined;

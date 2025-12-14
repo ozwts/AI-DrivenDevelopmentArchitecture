@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useParams, useNavigate } from "react-router";
 import {
   ArrowLeftIcon,
@@ -7,6 +8,9 @@ import {
 import { Button, Card, LoadingPage, Alert } from "@/app/lib/ui";
 import { useTodos } from "@/app/features/todo";
 import { useProject } from "@/app/features/project";
+import { buildLogger } from "@/app/lib/logger";
+
+const logger = buildLogger("ProjectDetailRoute");
 
 /**
  * プロジェクト詳細ページ
@@ -21,6 +25,13 @@ export default function ProjectDetailRoute() {
 
   const todoCount =
     allTodos?.filter((todo) => todo.projectId === projectId).length ?? 0;
+
+  // ページ表示ログ
+  useEffect(() => {
+    if (!isLoading && project) {
+      logger.info("プロジェクト詳細ページ表示", { projectId: project.id, name: project.name, todoCount });
+    }
+  }, [isLoading, project, todoCount]);
 
   if (isLoading) {
     return <LoadingPage />;

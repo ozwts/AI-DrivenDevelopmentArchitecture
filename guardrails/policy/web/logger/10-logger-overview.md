@@ -78,11 +78,16 @@ export type Logger = {
 | Routes | ○ | ユーザー操作、ページ遷移 |
 | Hooks (features) | ○ | ビジネスロジックの実行 |
 | API Client (lib) | ○ | 通信の開始・成功・失敗 |
+| Hooks (lib) | ○ | エラー発生時のみ（インフラ操作） |
 | UI Components (lib) | × | ログ出力しない |
-| Utils (lib) | × | ログ出力しない |
+| Utils (lib) | × | ログ出力しない（純粋関数） |
+
+**補足**:
+- `Hooks (lib)`: ブラウザAPI操作（localStorage等）を行う汎用フック。副作用を伴うためエラーログは必須
+- `Utils (lib)`: 純粋関数のみ。副作用なし・catch節なしのため、ログ出力不要
 
 **根拠となる憲法**:
-- `observability-principles.md`: レイヤー別責務
+- `observability-principles.md`: レイヤー別責務、「エラー発生（すべてのcatch節）」
 
 ## 使用例
 

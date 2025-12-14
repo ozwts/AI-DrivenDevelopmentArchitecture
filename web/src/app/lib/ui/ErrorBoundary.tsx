@@ -1,6 +1,9 @@
 import { Component, ReactNode, ErrorInfo } from "react";
 import { Alert } from "./Alert";
 import { Button } from "./Button";
+import { buildLogger } from "@/app/lib/logger";
+
+const logger = buildLogger("ErrorBoundary");
 
 type Props = {
   readonly children: ReactNode;
@@ -22,7 +25,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error("ErrorBoundary caught an error:", error, errorInfo);
+    logger.error("未捕捉エラーを検知", { error, componentStack: errorInfo.componentStack });
   }
 
   handleReset = () => {

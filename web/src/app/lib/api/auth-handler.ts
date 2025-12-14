@@ -1,3 +1,7 @@
+import { buildLogger } from "@/app/lib/logger";
+
+const logger = buildLogger("AuthHandler");
+
 /**
  * 認証関連の処理
  */
@@ -7,7 +11,7 @@
  * セッションをクリアしてログインページへリダイレクト
  */
 export const handleUnauthorized = (): void => {
-  console.warn("認証が切れました。ログインページにリダイレクトします。");
+  logger.warn("認証切れ、ログインページへリダイレクト");
   sessionStorage.clear();
   localStorage.clear();
   window.location.href = "/login";

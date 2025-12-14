@@ -91,7 +91,8 @@
       "Bash(mv:*)",
       "WebFetch(domain:zenn.dev)",
       "mcp__guardrails__review_web_form",
-      "WebFetch(domain:www.robinwieruch.de)"
+      "WebFetch(domain:www.robinwieruch.de)",
+      "mcp__guardrails__review_web_mock"
     ],
     "deny": [],
     "ask": []

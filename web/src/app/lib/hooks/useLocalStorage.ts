@@ -1,4 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
+import { buildLogger } from "@/app/lib/logger";
+
+const logger = buildLogger("useLocalStorage");
 
 /**
  * localStorage と同期する汎用フック
@@ -25,7 +28,7 @@ export function useLocalStorage<T>(
       const item = window.localStorage.getItem(key);
       return item !== null ? (JSON.parse(item) as T) : initialValue;
     } catch (error) {
-      console.warn(`Error reading localStorage key "${key}":`, error);
+      logger.warn("localStorage読み取りエラー", { key, error });
       return initialValue;
     }
   });
@@ -43,7 +46,7 @@ export function useLocalStorage<T>(
           window.localStorage.setItem(key, JSON.stringify(valueToStore));
         }
       } catch (error) {
-        console.warn(`Error setting localStorage key "${key}":`, error);
+        logger.warn("localStorage書き込みエラー", { key, error });
       }
     },
     [key, storedValue]
@@ -57,7 +60,7 @@ export function useLocalStorage<T>(
         window.localStorage.removeItem(key);
       }
     } catch (error) {
-      console.warn(`Error removing localStorage key "${key}":`, error);
+      logger.warn("localStorage削除エラー", { key, error });
     }
   }, [key, initialValue]);
 
@@ -68,7 +71,7 @@ export function useLocalStorage<T>(
         try {
           setStoredValue(JSON.parse(event.newValue) as T);
         } catch (error) {
-          console.warn(`Error parsing localStorage change for "${key}":`, error);
+          logger.warn("localStorage同期エラー", { key, error });
         }
       }
     };

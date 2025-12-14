@@ -4,6 +4,9 @@ import { useAuth } from "../contexts/AuthContext";
 import { initialize } from "@/app/lib/api";
 import { authUserApi } from "../api";
 import { Button } from "@/app/lib/ui";
+import { buildLogger } from "@/app/lib/logger";
+
+const logger = buildLogger("AuthInitializer");
 
 type AuthInitializerProps = {
   readonly children: ReactNode;
@@ -31,15 +34,15 @@ export function AuthInitializer({ children }: AuthInitializerProps): ReactNode {
         return;
       }
 
-      console.log("[AuthInitializer] Starting user initialization...");
+      logger.debug("ユーザー初期化開始");
 
       try {
         // ユーザー情報を取得
         const user = await authUserApi.getCurrentUser();
-        console.log("[AuthInitializer] User already registered:", user);
+        logger.info("ユーザー登録済み", { userId: user.id });
         setIsInitialized(true);
       } catch (error) {
-        console.log("[AuthInitializer] Error fetching current user:", error);
+        logger.debug("ユーザー取得エラー", error instanceof Error ? error : { error });
 
         // 404エラー（ユーザー未登録）の場合は自動的にユーザー登録
         if (
@@ -48,20 +51,15 @@ export function AuthInitializer({ children }: AuthInitializerProps): ReactNode {
             error.message.includes("Not Found") ||
             error.message.includes("NotFoundError"))
         ) {
-          console.log(
-            "[AuthInitializer] User not found (404). Registering new user...",
-          );
+          logger.info("ユーザー未登録(404)、新規登録開始");
           try {
             const newUser = await authUserApi.registerUser();
-            console.log(
-              "[AuthInitializer] User registered successfully:",
-              newUser,
-            );
+            logger.info("ユーザー登録成功", { userId: newUser.id });
             setIsInitialized(true);
           } catch (registerError) {
-            console.error(
-              "[AuthInitializer] Failed to register user:",
-              registerError,
+            logger.error(
+              "ユーザー登録失敗",
+              registerError instanceof Error ? registerError : { registerError },
             );
             setError(
               registerError instanceof Error
@@ -70,7 +68,7 @@ export function AuthInitializer({ children }: AuthInitializerProps): ReactNode {
             );
           }
         } else {
-          console.error("[AuthInitializer] Unexpected error:", error);
+          logger.error("予期しないエラー", error instanceof Error ? error : { error });
           setError(
             error instanceof Error
               ? error.message
