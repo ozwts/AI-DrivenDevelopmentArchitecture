@@ -5,20 +5,32 @@
 export type AdditionalData = Error | Record<string, unknown>;
 
 /**
- * vite-plugin-terminalのインスタンス
- * クライアントサイドで非同期に初期化される
+ * vite-plugin-terminalの型定義
+ * virtual:terminalへの型依存を排除するため明示的に定義
  */
-let terminal: typeof import("virtual:terminal").default | null = null;
+type Terminal = {
+  log(...args: unknown[]): void;
+  info(...args: unknown[]): void;
+  warn(...args: unknown[]): void;
+  error(...args: unknown[]): void;
+  debug(...args: unknown[]): void;
+};
 
-// クライアントサイドでのみ非同期初期化
-// 本番ビルド時はvite-plugin-terminalのstrip機能で削除される
+/**
+ * vite-plugin-terminalのインスタンス
+ * 開発環境でのみ非同期に初期化される
+ */
+let terminal: Terminal | null = null;
+
+// 開発環境でのみ非同期初期化
+// 本番/テスト環境ではモジュールが存在しないため何もしない
 if (typeof window !== "undefined") {
   import("virtual:terminal")
     .then((m) => {
       terminal = m.default;
     })
     .catch(() => {
-      // 本番環境などでモジュールが存在しない場合は無視
+      // 本番/テスト環境などでモジュールが存在しない場合は無視
     });
 }
 

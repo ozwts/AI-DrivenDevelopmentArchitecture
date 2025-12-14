@@ -42,6 +42,12 @@ export default defineConfig({
         },
         dedupe: ["@tanstack/react-query", "react", "react-dom"],
       },
+      build: {
+        rollupOptions: {
+          // vite-plugin-terminalは開発専用のため、CTビルドでは外部化
+          external: ["virtual:terminal"],
+        },
+      },
     },
   },
 

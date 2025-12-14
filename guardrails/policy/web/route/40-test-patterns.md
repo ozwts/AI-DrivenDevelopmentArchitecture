@@ -59,7 +59,63 @@ await page.addInitScript(() => {
 
 **目的**: APIレスポンスを制御（データあり/なし）
 
-### 3. ランダム要素の処理
+### 3. 特定エンドポイントのオーバーライド（推奨）
+
+**特定の条件のレスポンスが必要な場合は、`worker.use()`で固定データを返す**。ダミーデータ（`mock-data.ts`）への依存を減らし、テストの安定性を高める。
+
+```typescript
+// テストファイル内で固定データを定義
+const fixedUserData = {
+  id: "user-1",
+  name: "田中太郎",
+  email: "tanaka@example.com",
+  createdAt: "2024-10-17T03:00:00.000Z", // 固定日時
+  updatedAt: "2025-01-05T03:00:00.000Z",
+};
+
+await page.addInitScript((userData) => {
+  const checkMswAndSetHandlers = () => {
+    const msw = (window as any).msw;
+    if (!msw) {
+      setTimeout(checkMswAndSetHandlers, 50);
+      return;
+    }
+    msw.setHandlers("HAS_ALL");
+    // 特定エンドポイントを固定データでオーバーライド
+    msw.worker.use(
+      msw.rest.get("*/users/me", (_req: any, res: any, ctx: any) => {
+        return res(ctx.json(userData), ctx.status(200));
+      }),
+    );
+  };
+  checkMswAndSetHandlers();
+}, fixedUserData); // 第2引数でブラウザに渡す
+```
+
+**利点**:
+- ダミーデータ（`Date.now()`等の動的計算）に依存しない
+- テスト条件がテストファイル内で完結し、可読性が高い
+- `mock-data.ts`の変更でテストが壊れにくい
+
+**複数エンドポイントのオーバーライド**:
+
+```typescript
+msw.worker.use(
+  msw.rest.get("*/users/me", (_req: any, res: any, ctx: any) => {
+    return res(ctx.json(fixedUser), ctx.status(200));
+  }),
+  msw.rest.get("*/todos", (_req: any, res: any, ctx: any) => {
+    return res(ctx.json(fixedTodos), ctx.status(200)); // 配列も可
+  }),
+);
+```
+
+**使用すべきケース**:
+- 日時表示があり、秒単位のズレがスナップショットに影響する場合
+- 特定のステータスや条件のデータが必要な場合
+- テストの再現性を確実に保証したい場合
+
+### 5. ランダム要素の処理
 
 ランダムに生成される要素（カラーパレット等）は、**マスク機能**で比較対象から除外する。
 
@@ -76,7 +132,7 @@ await expect(page).toHaveScreenshot({ fullPage: true, mask: colorOptions });
 - テストコードに閉じた対応
 - `Math.random`モックのタイミング問題を回避
 
-### 4. 非同期処理の安定化
+### 6. 非同期処理の安定化
 
 ```typescript
 await page.goto("/todos");

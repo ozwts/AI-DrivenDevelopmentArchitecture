@@ -73,7 +73,8 @@
       "Bash(npx playwright test:*)",
       "WebFetch(domain:discuss.hashicorp.com)",
       "mcp__guardrails__review_hooks",
-      "mcp__guardrails__review_lib"
+      "mcp__guardrails__review_lib",
+      "Bash(pkill:*)"
     ],
     "deny": [],
     "ask": []

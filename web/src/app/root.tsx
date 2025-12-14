@@ -3,29 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ToastProvider } from "@/app/features/toast";
 import { ErrorBoundary } from "@/app/lib/ui";
 import { AuthProvider, AuthInitializer } from "@/app/features/auth";
-import { config } from "@/config";
-import { startMockServer } from "@/mocks/mock";
-import { z } from "zod";
-import { makeZodI18nMap } from "zod-i18n-map";
-import translation from "zod-i18n-map/locales/ja/zod.json";
-import i18next from "i18next";
 import "./app.css";
-
-// Initialize i18next for Zod
-i18next.init({
-  lng: "ja",
-  resources: {
-    ja: { zod: translation },
-  },
-});
-
-// Set Zod error map to Japanese
-z.setErrorMap(makeZodI18nMap({ t: i18next.t }));
-
-// Start mock server if configured
-if (config.mockedApi) {
-  startMockServer();
-}
 
 const queryClient = new QueryClient({
   defaultOptions: {
