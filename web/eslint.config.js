@@ -171,4 +171,12 @@ export default defineConfig(
       "local-rules/design/no-arbitrary-values": "error",
     },
   },
+
+  // Contextファイル: Context + Provider + Hook を同一ファイルに配置するパターンを許容
+  {
+    files: ["src/**/contexts/**/*.tsx"],
+    rules: {
+      "react-refresh/only-export-components": "off",
+    },
+  },
 );

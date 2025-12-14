@@ -89,7 +89,9 @@
       "mcp__guardrails__review_web_design",
       "mcp__guardrails__review_static_analysis",
       "Bash(mv:*)",
-      "WebFetch(domain:zenn.dev)"
+      "WebFetch(domain:zenn.dev)",
+      "mcp__guardrails__review_web_form",
+      "WebFetch(domain:www.robinwieruch.de)"
     ],
     "deny": [],
     "ask": []

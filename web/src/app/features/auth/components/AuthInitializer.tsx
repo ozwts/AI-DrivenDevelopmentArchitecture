@@ -1,6 +1,6 @@
 /* eslint-disable local-rules/component/require-component-test -- 外部サービス依存（useAuth + userApi）のため、E2Eテストでカバー。 */
 import { useEffect, useState, ReactNode } from "react";
-import { useAuth } from "../hooks/useAuth";
+import { useAuth } from "../contexts/AuthContext";
 import { initialize } from "@/app/lib/api";
 import { authUserApi } from "../api";
 import { Button } from "@/app/lib/ui";

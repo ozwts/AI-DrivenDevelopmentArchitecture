@@ -29,7 +29,6 @@ export type ToastContextType = {
   info: (message: string) => void;
 };
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const ToastContext = createContext<ToastContextType | undefined>(
   undefined,
 );
@@ -64,7 +63,6 @@ type ToastProviderProps = {
   readonly children: ReactNode;
 };
 
-// eslint-disable-next-line react-refresh/only-export-components
 export function useToast() {
   const context = useContext(ToastContext);
   if (!context) {

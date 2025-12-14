@@ -1,9 +1,13 @@
+import { useEffect } from "react";
 import { useNavigate } from "react-router";
 import { z } from "zod";
 import { LoadingSpinner } from "@/app/lib/ui";
+import { buildLogger } from "@/app/lib/logger";
 import { schemas } from "@/generated/zod-schemas";
 import { useTodos } from "@/app/features/todo";
 import { StatsGrid, UpcomingTodosList, RecentTodosList } from "./components";
+
+const logger = buildLogger("HomeRoute");
 
 type TodoResponse = z.infer<typeof schemas.TodoResponse>;
 type TodoWithDueDate = TodoResponse & { dueDate: string };
@@ -42,7 +46,15 @@ export default function HomeRoute() {
         return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
       }) ?? [];
 
+  // ページ表示ログ
+  useEffect(() => {
+    if (!isLoading && todos) {
+      logger.info("ホームページ表示", { todoCount, inProgressCount, doneCount });
+    }
+  }, [isLoading, todos, todoCount, inProgressCount, doneCount]);
+
   const handleTodoClick = (todo: TodoResponse) => {
+    logger.info("TODO詳細遷移", { todoId: todo.id, todoTitle: todo.title });
     navigate(`/todos/${todo.id}`);
   };
 

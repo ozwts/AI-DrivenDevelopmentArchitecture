@@ -40,11 +40,29 @@ lib/
 ├── contexts/      # Context + Provider + Hook（同一ファイル）
 ├── hooks/         # Context以外の汎用カスタムフック
 ├── logger/        # ログ出力インフラ
+├── services/      # 外部SDK連携の汎用抽象化（Facade Pattern）
 ├── ui/            # UIプリミティブ
 └── utils/         # 純粋関数ユーティリティ
 ```
 
-**注意**: Context に紐づく Hook（useToast 等）は `hooks/` ではなく `contexts/` 内の同一ファイルに配置する。
+**注意**:
+- Context に紐づく Hook（useToast 等）は `hooks/` ではなく `contexts/` 内の同一ファイルに配置する
+- Feature固有のSDK連携は `features/{feature}/services/` に配置する
+
+## services/ と hooks/ の使い分け
+
+| フォルダ | 用途 | React依存 |
+|---------|------|-----------|
+| `services/` | 外部SDK連携の純粋関数（Amplify, S3, Stripe等） | なし |
+| `hooks/` | React Hookを使用するカスタムフック | あり |
+
+**判断基準**: コード内で `useState`, `useEffect`, `useContext` 等のReact Hookを使用しているか？
+- **使用している** → `hooks/`
+- **使用していない**（純粋なasync関数等） → `services/`
+
+**lib/services/ vs features/{feature}/services/**:
+- `lib/services/`: アプリケーション固有の概念を知らない汎用抽象化
+- `features/{feature}/services/`: Feature固有のSDK利用（設定、ビジネスロジックを含む）
 
 ## 実施すること
 
@@ -73,6 +91,18 @@ export function buildLogger(component: string): Logger { ... }
 // contexts/ToastContext.tsx
 export function ToastProvider({ children }: Props) { ... }
 export function useToast() { return useContext(ToastContext); }
+
+// lib/services/: 汎用SDK抽象化（固有概念を知らない）
+export const storageService = {
+  upload: async (key: string, file: File): Promise<string> => { ... },
+  download: async (key: string): Promise<Blob> => { ... },
+};
+
+// features/auth/services/: Feature固有のSDK利用
+export const authService = {
+  signIn: async (email: string, password: string): Promise<void> => { ... },
+  signOut: async (): Promise<void> => { ... },
+};
 ```
 
 ### Don't

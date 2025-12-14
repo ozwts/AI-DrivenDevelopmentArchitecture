@@ -1,45 +1,71 @@
-import { useState, FormEvent, ReactNode } from "react";
+import { useState, ReactNode } from "react";
 import { useNavigate, Link } from "react-router";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { useAuth } from "@/app/features/auth";
 import { buildLogger } from "@/app/lib/logger";
-import { Button } from "@/app/lib/ui";
+import { Button, Input } from "@/app/lib/ui";
 
 const logger = buildLogger("SignupRoute");
+
+const signupSchema = z
+  .object({
+    email: z
+      .string()
+      .min(1, "メールアドレスを入力してください")
+      .email("有効なメールアドレスを入力してください"),
+    password: z
+      .string()
+      .min(8, "パスワードは8文字以上で入力してください")
+      .regex(/[A-Z]/, "大文字を含めてください")
+      .regex(/[a-z]/, "小文字を含めてください")
+      .regex(/[0-9]/, "数字を含めてください")
+      .regex(/[^A-Za-z0-9]/, "記号を含めてください"),
+    confirmPassword: z.string().min(1, "パスワード（確認）を入力してください"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "パスワードが一致しません",
+    path: ["confirmPassword"],
+  });
+
+type SignupFormData = z.infer<typeof signupSchema>;
 
 /**
  * サインアップページ
  * 責務: 新規ユーザー登録フォームの表示と処理
  */
 export default function SignupRoute(): ReactNode {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
   const { signUp } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
-    e.preventDefault();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<SignupFormData>({
+    resolver: zodResolver(signupSchema),
+    mode: "onBlur",
+    reValidateMode: "onChange",
+  });
+
+  const onSubmit = async (data: SignupFormData): Promise<void> => {
     setErrorMessage(null);
-    setIsLoading(true);
 
-    if (password !== confirmPassword) {
-      logger.warn("パスワード不一致");
-      setErrorMessage("パスワードが一致しません");
-      setIsLoading(false);
-      return;
-    }
-
-    logger.info("サインアップ開始", { email });
+    logger.info("サインアップ開始", { email: data.email });
 
     try {
-      await signUp(email, password);
-      logger.info("サインアップ成功", { email });
-      navigate("/signup/confirm", { state: { email, password } });
+      await signUp(data.email, data.password);
+      logger.info("サインアップ成功", { email: data.email });
+      navigate("/signup/confirm", {
+        state: { email: data.email, password: data.password },
+      });
     } catch (error) {
-      logger.error("サインアップ失敗", error instanceof Error ? error : { message: String(error) });
+      logger.error(
+        "サインアップ失敗",
+        error instanceof Error ? error : { message: String(error) },
+      );
 
       if (error instanceof Error) {
         if (error.name === "UsernameExistsException") {
@@ -52,8 +78,6 @@ export default function SignupRoute(): ReactNode {
       } else {
         setErrorMessage("サインアップに失敗しました");
       }
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -64,77 +88,44 @@ export default function SignupRoute(): ReactNode {
           サインアップ
         </h1>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-text-secondary mb-2"
-            >
-              メールアドレス
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-              }}
-              required
-              disabled={isLoading}
-              className="w-full px-4 py-2 border border-border rounded-md text-text-primary bg-white focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:border-transparent disabled:bg-neutral-100 disabled:cursor-not-allowed"
-              placeholder="user@example.com"
-            />
-          </div>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <Input
+            label="メールアドレス"
+            type="email"
+            {...register("email")}
+            error={errors.email?.message}
+            disabled={isSubmitting}
+            placeholder="user@example.com"
+          />
 
           <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-text-secondary mb-2"
-            >
-              パスワード
-            </label>
-            <input
-              id="password"
+            <Input
+              label="パスワード"
               type="password"
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-              }}
-              required
-              disabled={isLoading}
-              className="w-full px-4 py-2 border border-border rounded-md text-text-primary bg-white focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:border-transparent disabled:bg-neutral-100 disabled:cursor-not-allowed"
+              {...register("password")}
+              error={errors.password?.message}
+              disabled={isSubmitting}
               placeholder="••••••••"
-              minLength={8}
             />
             <p className="mt-1 text-xs text-text-tertiary">
               8文字以上、大文字・小文字・数字・記号を含む
             </p>
           </div>
 
-          <div>
-            <label
-              htmlFor="confirmPassword"
-              className="block text-sm font-medium text-text-secondary mb-2"
-            >
-              パスワード（確認）
-            </label>
-            <input
-              id="confirmPassword"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => {
-                setConfirmPassword(e.target.value);
-              }}
-              required
-              disabled={isLoading}
-              className="w-full px-4 py-2 border border-border rounded-md text-text-primary bg-white focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:border-transparent disabled:bg-neutral-100 disabled:cursor-not-allowed"
-              placeholder="••••••••"
-              minLength={8}
-            />
-          </div>
+          <Input
+            label="パスワード（確認）"
+            type="password"
+            {...register("confirmPassword")}
+            error={errors.confirmPassword?.message}
+            disabled={isSubmitting}
+            placeholder="••••••••"
+          />
 
           {errorMessage !== null && (
-            <div className="p-3 bg-error-50 border border-error-200 rounded-md text-error text-sm">
+            <div
+              role="alert"
+              className="p-3 bg-error-50 border border-error-200 rounded-md text-error text-sm"
+            >
               {errorMessage}
             </div>
           )}
@@ -143,7 +134,7 @@ export default function SignupRoute(): ReactNode {
             type="submit"
             variant="primary"
             size="lg"
-            isLoading={isLoading}
+            isLoading={isSubmitting}
             className="w-full"
           >
             サインアップ

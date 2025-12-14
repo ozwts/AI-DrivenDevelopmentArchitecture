@@ -1,10 +1,22 @@
-import { useState, FormEvent, useEffect, ReactNode } from "react";
+import { useState, useEffect, ReactNode } from "react";
 import { useNavigate, useLocation, Link } from "react-router";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { useAuth } from "@/app/features/auth";
 import { buildLogger } from "@/app/lib/logger";
-import { Button } from "@/app/lib/ui";
+import { Button, Input } from "@/app/lib/ui";
 
 const logger = buildLogger("SignupConfirmRoute");
+
+const confirmSchema = z.object({
+  confirmationCode: z
+    .string()
+    .min(1, "確認コードを入力してください")
+    .length(6, "確認コードは6桁です"),
+});
+
+type ConfirmFormData = z.infer<typeof confirmSchema>;
 
 type LocationState = {
   email?: string;
@@ -22,13 +34,22 @@ export default function SignupConfirmRoute(): ReactNode {
 
   const [email] = useState(locationState?.email ?? "");
   const [password] = useState(locationState?.password ?? "");
-  const [confirmationCode, setConfirmationCode] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isResending, setIsResending] = useState(false);
 
   const { confirmSignUp, resendConfirmationCode, login } = useAuth();
   const navigate = useNavigate();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<ConfirmFormData>({
+    resolver: zodResolver(confirmSchema),
+    mode: "onBlur",
+    reValidateMode: "onChange",
+  });
 
   useEffect(() => {
     if (locationState?.needsConfirmation === true) {
@@ -45,16 +66,14 @@ export default function SignupConfirmRoute(): ReactNode {
     }
   }, [email, navigate]);
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
-    e.preventDefault();
+  const onSubmit = async (data: ConfirmFormData): Promise<void> => {
     setErrorMessage(null);
     setSuccessMessage(null);
-    setIsLoading(true);
 
     logger.info("メール確認開始", { email });
 
     try {
-      await confirmSignUp(email, confirmationCode);
+      await confirmSignUp(email, data.confirmationCode);
       logger.info("メール確認成功", { email });
 
       if (password) {
@@ -73,21 +92,22 @@ export default function SignupConfirmRoute(): ReactNode {
         }, 2000);
       }
     } catch (error) {
-      logger.error("メール確認失敗", error instanceof Error ? error : { message: String(error) });
+      logger.error(
+        "メール確認失敗",
+        error instanceof Error ? error : { message: String(error) },
+      );
       if (error instanceof Error) {
         setErrorMessage(error.message);
       } else {
         setErrorMessage("確認コードの検証に失敗しました");
       }
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const handleResendCode = async (): Promise<void> => {
     setErrorMessage(null);
     setSuccessMessage(null);
-    setIsLoading(true);
+    setIsResending(true);
 
     logger.info("確認コード再送信開始", { email });
 
@@ -96,18 +116,23 @@ export default function SignupConfirmRoute(): ReactNode {
       logger.info("確認コード再送信成功", { email });
       setSuccessMessage("確認コードを再送信しました。");
     } catch (error) {
-      logger.error("確認コード再送信失敗", error instanceof Error ? error : { message: String(error) });
+      logger.error(
+        "確認コード再送信失敗",
+        error instanceof Error ? error : { message: String(error) },
+      );
       if (error instanceof Error) {
         setErrorMessage(error.message);
       }
     } finally {
-      setIsLoading(false);
+      setIsResending(false);
     }
   };
 
   if (!email) {
     return null;
   }
+
+  const isLoading = isSubmitting || isResending;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
@@ -116,24 +141,14 @@ export default function SignupConfirmRoute(): ReactNode {
           メール確認
         </h1>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div>
-            <label
-              htmlFor="confirmationCode"
-              className="block text-sm font-medium text-text-secondary mb-2"
-            >
-              確認コード
-            </label>
-            <input
-              id="confirmationCode"
+            <Input
+              label="確認コード"
               type="text"
-              value={confirmationCode}
-              onChange={(e) => {
-                setConfirmationCode(e.target.value);
-              }}
-              required
+              {...register("confirmationCode")}
+              error={errors.confirmationCode?.message}
               disabled={isLoading}
-              className="w-full px-4 py-2 border border-border rounded-md text-text-primary bg-white focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:border-transparent disabled:bg-neutral-100 disabled:cursor-not-allowed"
               placeholder="123456"
               maxLength={6}
             />
@@ -143,13 +158,19 @@ export default function SignupConfirmRoute(): ReactNode {
           </div>
 
           {errorMessage !== null && (
-            <div className="p-3 bg-error-50 border border-error-200 rounded-md text-error text-sm">
+            <div
+              role="alert"
+              className="p-3 bg-error-50 border border-error-200 rounded-md text-error text-sm"
+            >
               {errorMessage}
             </div>
           )}
 
           {successMessage !== null && (
-            <div className="p-3 bg-success-50 border border-success-200 rounded-md text-success text-sm">
+            <div
+              role="status"
+              className="p-3 bg-success-50 border border-success-200 rounded-md text-success text-sm"
+            >
               {successMessage}
             </div>
           )}
@@ -158,7 +179,7 @@ export default function SignupConfirmRoute(): ReactNode {
             type="submit"
             variant="primary"
             size="lg"
-            isLoading={isLoading}
+            isLoading={isSubmitting}
             className="w-full"
           >
             確認

@@ -1,33 +1,53 @@
-import { useState, FormEvent, ReactNode } from "react";
+import { useState, ReactNode } from "react";
 import { useNavigate, Link } from "react-router";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { useAuth } from "@/app/features/auth";
 import { buildLogger } from "@/app/lib/logger";
-import { Button } from "@/app/lib/ui";
+import { Button, Input } from "@/app/lib/ui";
 
 const logger = buildLogger("LoginRoute");
 
-export default function LoginRoute(): ReactNode {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+const loginSchema = z.object({
+  email: z
+    .string()
+    .min(1, "メールアドレスを入力してください")
+    .email("有効なメールアドレスを入力してください"),
+  password: z.string().min(1, "パスワードを入力してください"),
+});
 
+type LoginFormData = z.infer<typeof loginSchema>;
+
+export default function LoginRoute(): ReactNode {
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
-    e.preventDefault();
-    setErrorMessage(null);
-    setIsLoading(true);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    mode: "onBlur",
+    reValidateMode: "onChange",
+  });
 
-    logger.info("ログイン開始", { email });
+  const onSubmit = async (data: LoginFormData): Promise<void> => {
+    setErrorMessage(null);
+
+    logger.info("ログイン開始", { email: data.email });
 
     try {
-      await login(email, password);
-      logger.info("ログイン成功", { email });
+      await login(data.email, data.password);
+      logger.info("ログイン成功", { email: data.email });
       navigate("/", { replace: true });
     } catch (error) {
-      logger.error("ログイン失敗", error instanceof Error ? error : { message: String(error) });
+      logger.error(
+        "ログイン失敗",
+        error instanceof Error ? error : { message: String(error) },
+      );
 
       if (error instanceof Error) {
         // Amplify v6では error.name または error.code が "UserNotConfirmedException" になる
@@ -40,9 +60,9 @@ export default function LoginRoute(): ReactNode {
           errorCode === "UserNotConfirmedException";
 
         if (isUserNotConfirmed) {
-          logger.info("メール確認が必要", { email });
+          logger.info("メール確認が必要", { email: data.email });
           navigate("/signup/confirm", {
-            state: { email, needsConfirmation: true },
+            state: { email: data.email, needsConfirmation: true },
           });
         } else {
           setErrorMessage(error.message);
@@ -50,8 +70,6 @@ export default function LoginRoute(): ReactNode {
       } else {
         setErrorMessage("ログインに失敗しました");
       }
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -62,45 +80,23 @@ export default function LoginRoute(): ReactNode {
           ログイン
         </h1>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-text-secondary mb-2"
-            >
-              メールアドレス
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-              }}
-              required
-              disabled={isLoading}
-              className="w-full px-4 py-2 border border-border rounded-md text-text-primary bg-white focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:border-transparent disabled:bg-neutral-100 disabled:cursor-not-allowed"
-              placeholder="user@example.com"
-            />
-          </div>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <Input
+            label="メールアドレス"
+            type="email"
+            {...register("email")}
+            error={errors.email?.message}
+            disabled={isSubmitting}
+            placeholder="user@example.com"
+          />
 
           <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-text-secondary mb-2"
-            >
-              パスワード
-            </label>
-            <input
-              id="password"
+            <Input
+              label="パスワード"
               type="password"
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-              }}
-              required
-              disabled={isLoading}
-              className="w-full px-4 py-2 border border-border rounded-md text-text-primary bg-white focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:border-transparent disabled:bg-neutral-100 disabled:cursor-not-allowed"
+              {...register("password")}
+              error={errors.password?.message}
+              disabled={isSubmitting}
               placeholder="••••••••"
             />
             <div className="mt-2 text-right">
@@ -114,7 +110,10 @@ export default function LoginRoute(): ReactNode {
           </div>
 
           {errorMessage !== null && (
-            <div className="p-3 bg-error-50 border border-error-200 rounded-md text-error text-sm">
+            <div
+              role="alert"
+              className="p-3 bg-error-50 border border-error-200 rounded-md text-error text-sm"
+            >
               {errorMessage}
             </div>
           )}
@@ -123,7 +122,7 @@ export default function LoginRoute(): ReactNode {
             type="submit"
             variant="primary"
             size="lg"
-            isLoading={isLoading}
+            isLoading={isSubmitting}
             className="w-full"
           >
             ログイン

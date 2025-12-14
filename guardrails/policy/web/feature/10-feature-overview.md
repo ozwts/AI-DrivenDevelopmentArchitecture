@@ -61,10 +61,14 @@ features/{feature}/
 ├── components/             # 機能固有のUIコンポーネント
 ├── contexts/               # Context + Provider + Hook（同一ファイル）
 ├── hooks/                  # Context以外のカスタムフック（必要な場合）
+├── services/               # 外部SDK連携（Amplify, S3等の純粋関数）
 └── index.ts                # Public API
 ```
 
-**注意**: Provider は `components/` ではなく `contexts/` に配置する。詳細は `20-provider-context-pattern.md` を参照。
+**注意**:
+- Provider は `components/` ではなく `contexts/` に配置する。詳細は `20-provider-context-pattern.md` を参照
+- `services/` と `hooks/` の使い分けは `../lib/10-lib-overview.md` を参照
+- `lib/services/`（汎用抽象化）と `features/{feature}/services/`（Feature固有）の使い分けも同様
 
 ## Do / Don't
 
