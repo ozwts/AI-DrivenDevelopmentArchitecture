@@ -56,13 +56,21 @@ export const apiLogger = {
   },
 
   error(params: ErrorLogParams): void {
-    logger.error("リクエスト失敗", {
+    const data = {
       method: params.method,
       url: params.url,
       status: params.status,
       statusText: params.statusText,
       errorText: params.errorText,
-    });
+    };
+
+    // 5xx: サーバーエラー → ERROR（監視対象）
+    // 4xx: クライアントエラー → WARN（ユーザー操作起因）
+    if (params.status >= 500) {
+      logger.error("リクエスト失敗（サーバーエラー）", data);
+    } else {
+      logger.warn("リクエスト失敗（クライアントエラー）", data);
+    }
   },
 
   validationError(params: ValidationErrorLogParams): void {

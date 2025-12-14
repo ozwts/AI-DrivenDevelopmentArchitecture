@@ -12,6 +12,9 @@ import {
 import { configureAuth } from "./authConfig";
 import { config } from "@/config";
 import { AuthContext, AuthContextType } from "./AuthContext";
+import { buildLogger } from "@/app/lib/logger";
+
+const logger = buildLogger("AuthProvider");
 
 type AuthProviderProps = {
   readonly children: React.ReactNode;
@@ -86,12 +89,8 @@ export function AuthProvider({ children }: AuthProviderProps): ReactNode {
           await checkUser();
         }
       } catch (error) {
-        // エラーの詳細をログ出力（デバッグ用）
-        console.error("Login error:", error);
-        if (error instanceof Error) {
-          console.error("Error name:", error.name);
-          console.error("Error message:", error.message);
-        }
+        // ログイン失敗はユーザー操作起因のためWARN
+        logger.warn("ログイン失敗", error instanceof Error ? error : { error });
 
         const err =
           error instanceof Error ? error : new Error("ログインに失敗しました");
@@ -320,7 +319,7 @@ export function AuthProvider({ children }: AuthProviderProps): ReactNode {
 
       return accessToken.toString();
     } catch (err) {
-      console.error("Failed to get access token:", err);
+      logger.error("アクセストークン取得失敗", err instanceof Error ? err : { err });
       return null;
     }
   }, [user]);

@@ -39,10 +39,14 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref,
   ) => {
+    const isDisabled = (disabled ?? false) || isLoading;
+
     return (
       <button
         ref={ref}
-        disabled={(disabled ?? false) || isLoading}
+        disabled={isDisabled}
+        aria-busy={isLoading}
+        aria-disabled={isDisabled}
         className={`
           inline-flex items-center justify-center
           font-medium rounded-lg

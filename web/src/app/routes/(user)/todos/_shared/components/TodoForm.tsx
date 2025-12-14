@@ -6,7 +6,7 @@ import { Button, Input, Textarea, Select } from "@/app/lib/ui";
 import {
   STATUS_VALUE_LABEL_PAIRS,
   PRIORITY_VALUE_LABEL_PAIRS,
-} from "@/app/lib/utils";
+} from "@/app/features/todo";
 import { schemas } from "@/generated/zod-schemas";
 import { useUsers } from "@/app/features/user";
 import { useProjects } from "@/app/features/project";

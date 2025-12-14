@@ -5,14 +5,13 @@ import {
 } from "@heroicons/react/24/outline";
 import { z } from "zod";
 import { Card, Badge } from "@/app/lib/ui";
+import { isOverdue, getDueDateLabel } from "@/app/lib/utils";
 import {
-  isOverdue,
-  getDueDateLabel,
   getStatusLabel,
   getPriorityLabel,
   getStatusBadgeVariant,
   getPriorityBadgeVariant,
-} from "@/app/lib/utils";
+} from "@/app/features/todo";
 import { schemas } from "@/generated/zod-schemas";
 
 type TodoResponse = z.infer<typeof schemas.TodoResponse>;

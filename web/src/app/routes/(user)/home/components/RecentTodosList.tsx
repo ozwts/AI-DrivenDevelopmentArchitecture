@@ -7,7 +7,7 @@ import {
   getPriorityLabel,
   getStatusBadgeVariant,
   getPriorityBadgeVariant,
-} from "@/app/lib/utils";
+} from "@/app/features/todo";
 import { schemas } from "@/generated/zod-schemas";
 
 type TodoResponse = z.infer<typeof schemas.TodoResponse>;

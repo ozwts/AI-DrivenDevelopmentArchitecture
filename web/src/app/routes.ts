@@ -7,7 +7,7 @@ import {
 
 export default [
   // ゲストロール（未認証ユーザー）
-  layout("routes/(guest)/_layout.tsx", [
+  layout("routes/(guest)/_layout/index.tsx", [
     route("login", "routes/(guest)/login/route.tsx"),
     route("signup", "routes/(guest)/signup/route.tsx"),
     route("signup/confirm", "routes/(guest)/signup/confirm/route.tsx"),
@@ -15,7 +15,7 @@ export default [
   ]),
 
   // ユーザーロール（認証済みユーザー）
-  layout("routes/(user)/_layout.tsx", [
+  layout("routes/(user)/_layout/index.tsx", [
     index("routes/(user)/home/route.tsx"),
     route("profile", "routes/(user)/profile/route.tsx"),
 

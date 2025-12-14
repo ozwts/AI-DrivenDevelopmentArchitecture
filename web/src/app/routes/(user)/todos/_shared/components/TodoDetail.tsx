@@ -2,11 +2,8 @@ import { z } from "zod";
 import { schemas } from "@/generated/zod-schemas";
 import { AttachmentUpload } from "./AttachmentUpload";
 import { AttachmentList } from "./AttachmentList";
-import {
-  getStatusLabel,
-  getPriorityLabel,
-  formatDateShort,
-} from "@/app/lib/utils";
+import { formatDateShort } from "@/app/lib/utils";
+import { getStatusLabel, getPriorityLabel } from "@/app/features/todo";
 
 type TodoResponse = z.infer<typeof schemas.TodoResponse>;
 type ProjectResponse = z.infer<typeof schemas.ProjectResponse>;

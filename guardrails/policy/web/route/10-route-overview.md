@@ -41,7 +41,9 @@ app/
 │
 ├── routes/
 │   ├── ({role})/                # ロールによる物理グループ化
-│   │   ├── _layout.tsx          # ロール専用レイアウト（コロケーション）
+│   │   ├── _layout/             # レイアウト + 専用コンポーネント
+│   │   │   ├── index.tsx        # レイアウト本体
+│   │   │   └── Header.tsx       # レイアウト専用コンポーネント
 │   │   └── {feature}/
 │   │       ├── _shared/         # 親子ルート間で共通
 │   │       ├── route.tsx
@@ -62,7 +64,7 @@ app/
 | **機能** | `{feature}/` | `todos/`, `projects/` | シンプルな名前 |
 | **動的セグメント** | `[param]/` | `[todoId]/` | Next.js 風、広く認知 |
 | **共通（非ルート）** | `_shared/` | `_shared/components/` | `_` で非ルートを明示 |
-| **レイアウト** | `_layout.tsx` | `(user)/_layout.tsx` | ロール直下に配置 |
+| **レイアウト** | `_layout/index.tsx` | `(user)/_layout/index.tsx` | ディレクトリで専用コンポーネントをコロケーション |
 
 ## ロール設計
 
@@ -91,11 +93,13 @@ TODOアプリのように**ロールが実質1種類**の場合でも、`(guest)
 ```
 routes/
 ├── (guest)/                    # 未認証
-│   ├── _layout.tsx
+│   ├── _layout/
+│   │   └── index.tsx
 │   └── login/
 │
 └── (user)/                     # 認証済み
-    ├── _layout.tsx
+    ├── _layout/
+    │   └── index.tsx
     ├── home/
     └── todos/
 ```
@@ -104,12 +108,14 @@ routes/
 
 ### 考え方
 
-**レイアウトはロールディレクトリ内に配置**する。コロケーションの原則に従い、そのロールに関連するコードは同じ場所にまとめる。
+**レイアウトはロールディレクトリ内の `_layout/` ディレクトリに配置**する。レイアウト本体（`index.tsx`）と専用コンポーネント（Header等）をコロケーションする。
 
-| 配置場所 | ファイル | 理由 |
-|----------|----------|------|
-| `routes/(guest)/_layout.tsx` | GuestLayout | ゲストロールのルート群と一緒 |
-| `routes/(user)/_layout.tsx` | UserLayout | ユーザーロールのルート群と一緒 |
+| 配置場所 | 内容 | 理由 |
+|----------|------|------|
+| `routes/(guest)/_layout/index.tsx` | GuestLayout本体 | レイアウトと専用コンポーネントをコロケーション |
+| `routes/(guest)/_layout/Header.tsx` | ゲスト用Header | レイアウトからのみ使用 |
+| `routes/(user)/_layout/index.tsx` | UserLayout本体 | レイアウトと専用コンポーネントをコロケーション |
+| `routes/(user)/_layout/Sidebar.tsx` | ユーザー用Sidebar | レイアウトからのみ使用 |
 
 ### routes.ts での定義
 
@@ -118,13 +124,13 @@ import { type RouteConfig, route, index, layout } from "@react-router/dev/routes
 
 export default [
   // ゲストロール
-  layout("routes/(guest)/_layout.tsx", [
+  layout("routes/(guest)/_layout/index.tsx", [
     route("login", "routes/(guest)/login/route.tsx"),
     route("signup", "routes/(guest)/signup/route.tsx"),
   ]),
 
   // ユーザーロール
-  layout("routes/(user)/_layout.tsx", [
+  layout("routes/(user)/_layout/index.tsx", [
     index("routes/(user)/home/route.tsx"),
     route("profile", "routes/(user)/profile/route.tsx"),
     route("todos", "routes/(user)/todos/route.tsx"),
@@ -149,6 +155,7 @@ app/routes/ → app/features/ → app/lib/
 |-------------|--------|-----|
 | 同一ルート内 | `routes/({role})/{feature}/components/` | ルート固有UI |
 | 親子ルート間 | `routes/({role})/{feature}/_shared/` | 共通フォーム |
+| レイアウト専用 | `routes/({role})/_layout/` | Header, Sidebar |
 | 3+ルート横断 | `app/features/` | useAuth, Toast |
 | 全アプリ共通（純粋） | `app/lib/` | formatDate, Button |
 
@@ -164,7 +171,9 @@ app/
 │
 ├── routes/
 │   ├── (guest)/
-│   │   ├── _layout.tsx          # ゲスト用レイアウト
+│   │   ├── _layout/
+│   │   │   ├── index.tsx        # ゲスト用レイアウト
+│   │   │   └── Header.tsx       # レイアウト専用
 │   │   ├── login/
 │   │   │   ├── route.tsx
 │   │   │   └── LoginForm.tsx    # コロケーション
@@ -172,7 +181,9 @@ app/
 │   │       └── route.tsx
 │   │
 │   └── (user)/
-│       ├── _layout.tsx          # ユーザー用レイアウト
+│       ├── _layout/
+│       │   ├── index.tsx        # ユーザー用レイアウト
+│       │   └── Sidebar.tsx      # レイアウト専用
 │       ├── home/
 │       │   ├── route.tsx
 │       │   └── components/
@@ -204,6 +215,10 @@ app/
 │
 ├── routes/
 │   ├── _authenticated/          # ❌ 技術的条件でグループ化しない
+│   ├── (user)/
+│   │   ├── _layout.tsx          # ❌ _layout/ ディレクトリを使う
+│   │   └── _shared/             # ❌ ロールレベルの_shared/は使わない
+│   │       └── Header.tsx
 │   └── todos/
 │       └── route.tsx
 ```

@@ -47,12 +47,16 @@ app/routes/({role})/{feature}/
 ```
 app/routes/
 ├── ({roleA})/              # ロールAのルート
-│   ├── _layout.tsx         # ロールA用レイアウト
+│   ├── _layout/            # レイアウト + 専用コンポーネント
+│   │   ├── index.tsx       # レイアウト本体
+│   │   └── Header.tsx      # レイアウト専用コンポーネント
 │   └── {feature}/
 │       └── route.tsx       # ロールA向けのデータ取得・処理
 │
 └── ({roleB})/              # ロールBのルート
-    ├── _layout.tsx         # ロールB用レイアウト
+    ├── _layout/            # レイアウト + 専用コンポーネント
+    │   ├── index.tsx       # レイアウト本体
+    │   └── Sidebar.tsx     # レイアウト専用コンポーネント
     └── {feature}/
         └── route.tsx       # ロールB向けのデータ取得・処理
 ```

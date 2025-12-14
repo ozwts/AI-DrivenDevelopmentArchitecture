@@ -76,6 +76,8 @@ app/features/product/components/ProductCard.tsx
 
 `_shared/` は**親子ルート間で共有するコード**を配置する場所。機能（feature）ディレクトリ直下に置き、その機能内の複数ルートから参照される。
 
+**注意**: レイアウト専用コンポーネントは `_layout/` ディレクトリに配置する（後述）。
+
 ### 命名規則
 
 | 項目 | 規則 |
@@ -91,28 +93,41 @@ app/features/product/components/ProductCard.tsx
 | 条件 | `_shared/` に配置？ |
 |------|-------------------|
 | 親ルート（`route.tsx`）と子ルート（`new/`, `[param]/`）で共有 | ✅ Yes |
-| レイアウト（`_layout.tsx`）専用コンポーネント | ✅ Yes |
+| 機能内の親子ルート間で共有する純粋関数（utils） | ✅ Yes |
+| レイアウト専用コンポーネント | ❌ No → `_layout/` |
 | 同一ルート内の複数コンポーネントで共有 | ❌ No → `components/` |
 | 異なるルート（`todos/` と `projects/`）で共有 | ❌ No → `features/` |
+
+**重要な補足**:
+
+- **純粋関数でも3箇所未満なら `lib/` に移動しない**。「純粋だから `lib/`」ではなく、「3+ルートで横断利用」が `lib/` への昇格条件
 
 ### ディレクトリ構造
 
 ```
-app/routes/({role})/{feature}/
-├── _shared/                    # ← 親子ルート間で共通
-│   ├── components/
-│   │   └── {Feature}Form.tsx   # 作成・編集で共通のフォーム
-│   ├── hooks/
-│   │   └── use{Feature}Mutation.ts
-│   └── types.ts                # 共通の型定義
-│
-├── route.tsx                   # 一覧ルート
-├── new/
-│   └── route.tsx               # 新規作成（_shared/を参照）
-└── [param]/
-    ├── route.tsx               # 詳細
-    └── edit/
-        └── route.tsx           # 編集（_shared/を参照）
+app/routes/
+├── ({role})/                       # ロールディレクトリ
+│   ├── _layout/                    # レイアウト + 専用コンポーネント
+│   │   ├── index.tsx               # レイアウト本体
+│   │   └── Header.tsx              # レイアウト専用コンポーネント
+│   │
+│   └── {feature}/                  # 機能ディレクトリ
+│       ├── _shared/                # ← 親子ルート間で共通
+│       │   ├── components/
+│       │   │   └── {Feature}Form.tsx
+│       │   ├── hooks/
+│       │   │   └── use{Feature}Mutation.ts
+│       │   ├── utils/              # 機能内で共有する純粋関数
+│       │   │   └── helper.ts
+│       │   └── types.ts
+│       │
+│       ├── route.tsx               # 一覧ルート
+│       ├── new/
+│       │   └── route.tsx           # 新規作成（_shared/を参照）
+│       └── [param]/
+│           ├── route.tsx           # 詳細
+│           └── edit/
+│               └── route.tsx       # 編集（_shared/を参照）
 ```
 
 ### 典型的なユースケース
@@ -199,8 +214,54 @@ todos/
 | ケース | 理由 | 配置先 |
 |--------|------|--------|
 | 1つのルートでのみ使用 | 共有の必要がない | そのルートの `components/` |
+| レイアウト専用コンポーネント | レイアウトとコロケーション | `_layout/` |
 | 3+の異なるルートで使用 | ルート横断 | `app/features/` |
 | ビジネスロジックを含まない純粋UI | 汎用 | `app/lib/ui/` |
+
+---
+
+## `_layout/` ディレクトリの使い方
+
+### 目的
+
+`_layout/` は**レイアウト本体と専用コンポーネント**をコロケーションする場所。ロールディレクトリ直下に配置する。
+
+### 構造
+
+```
+({role})/
+├── _layout/
+│   ├── index.tsx        # レイアウト本体（routes.ts で参照）
+│   ├── Header.tsx       # レイアウト専用コンポーネント
+│   └── Sidebar.tsx      # レイアウト専用コンポーネント
+└── {feature}/
+```
+
+### routes.ts での定義
+
+```typescript
+layout("routes/(user)/_layout/index.tsx", [
+  // ルート定義...
+])
+```
+
+### インポート
+
+```typescript
+// _layout/index.tsx から
+import { Header } from "./Header";
+import { Sidebar } from "./Sidebar";
+```
+
+### `_layout/` vs `_shared/`
+
+| 項目 | `_layout/` | `_shared/` |
+|------|-----------|-----------|
+| 配置場所 | ロールディレクトリ直下 | 機能ディレクトリ直下 |
+| 用途 | レイアウト専用 | 親子ルート間共有 |
+| 含むもの | レイアウト本体 + 専用コンポーネント | 共通コンポーネント、フック、utils |
+
+---
 
 ### インポートパス
 
@@ -219,6 +280,10 @@ import { TodoForm } from "@/routes/(user)/todos/_shared/components/TodoForm";
 app/
 ├── routes/
 │   └── (user)/
+│       ├── _layout/                        # レイアウト + 専用コンポーネント
+│       │   ├── index.tsx                   # レイアウト本体
+│       │   └── Header.tsx                  # レイアウト専用
+│       │
 │       ├── products/
 │       │   ├── _shared/                    # (親子) 親子ルート間で共通
 │       │   │   └── components/

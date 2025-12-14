@@ -71,7 +71,9 @@
       "mcp__guardrails__review_route",
       "mcp__guardrails__review_component",
       "Bash(npx playwright test:*)",
-      "WebFetch(domain:discuss.hashicorp.com)"
+      "WebFetch(domain:discuss.hashicorp.com)",
+      "mcp__guardrails__review_hooks",
+      "mcp__guardrails__review_lib"
     ],
     "deny": [],
     "ask": []
