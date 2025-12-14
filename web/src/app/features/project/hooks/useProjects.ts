@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
-import { apiClient } from "@/app/lib/api";
+import { projectApi } from "../api";
 import { buildLogger } from "@/app/lib/logger";
 import { schemas } from "@/generated/zod-schemas";
 
@@ -13,14 +13,14 @@ const QUERY_KEY = "projects";
 export function useProjects() {
   return useQuery({
     queryKey: [QUERY_KEY],
-    queryFn: () => apiClient.getProjects(),
+    queryFn: () => projectApi.getProjects(),
   });
 }
 
 export function useProject(projectId: string) {
   return useQuery({
     queryKey: [QUERY_KEY, projectId],
-    queryFn: () => apiClient.getProject(projectId),
+    queryFn: () => projectApi.getProject(projectId),
     enabled: !!projectId,
   });
 }
@@ -31,7 +31,7 @@ export function useCreateProject() {
   return useMutation({
     mutationFn: (data: CreateProjectParams) => {
       logger.info("プロジェクト作成開始", { name: data.name });
-      return apiClient.createProject(data);
+      return projectApi.createProject(data);
     },
     onSuccess: () => {
       logger.info("プロジェクト作成成功");
@@ -55,7 +55,7 @@ export function useUpdateProject() {
       data: UpdateProjectParams;
     }) => {
       logger.info("プロジェクト更新開始", { projectId, name: data.name });
-      return apiClient.updateProject(projectId, data);
+      return projectApi.updateProject(projectId, data);
     },
     onSuccess: (_, { projectId }) => {
       logger.info("プロジェクト更新成功", { projectId });
@@ -73,7 +73,7 @@ export function useDeleteProject() {
   return useMutation({
     mutationFn: (projectId: string) => {
       logger.info("プロジェクト削除開始", { projectId });
-      return apiClient.deleteProject(projectId);
+      return projectApi.deleteProject(projectId);
     },
     onSuccess: (_, projectId) => {
       logger.info("プロジェクト削除成功", { projectId });

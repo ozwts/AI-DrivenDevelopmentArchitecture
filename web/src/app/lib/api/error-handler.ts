@@ -2,8 +2,10 @@
  * APIエラーハンドリング
  */
 
+import { buildLogger } from "@/app/lib/logger";
 import { handleUnauthorized } from "./auth-handler";
-import { apiLogger } from "./logger";
+
+const logger = buildLogger("ApiClient");
 
 type ErrorContext = {
   url: string;
@@ -18,7 +20,21 @@ type ErrorContext = {
  * 401の場合はリダイレクト、それ以外はエラーをスロー
  */
 export const handleHttpError = (context: ErrorContext): never => {
-  apiLogger.error(context);
+  const logData = {
+    method: context.method,
+    url: context.url,
+    status: context.status,
+    statusText: context.statusText,
+    errorText: context.errorText,
+  };
+
+  // 5xx: サーバーエラー → ERROR（監視対象）
+  // 4xx: クライアントエラー → WARN（ユーザー操作起因）
+  if (context.status >= 500) {
+    logger.error("リクエスト失敗（サーバーエラー）", logData);
+  } else {
+    logger.warn("リクエスト失敗（クライアントエラー）", logData);
+  }
 
   if (context.status === 401) {
     handleUnauthorized();
@@ -36,10 +52,10 @@ export const handleHttpError = (context: ErrorContext): never => {
 export const handleValidationError = (
   endpoint: string,
   errors: unknown[],
-  data: unknown,
+  _data: unknown,
   message: string,
 ): never => {
-  apiLogger.validationError({ endpoint, errors, data });
+  logger.error("レスポンスバリデーション失敗", { endpoint, errors });
   throw new Error(
     `APIレスポンスのバリデーションに失敗しました (${endpoint}): ${message}`,
   );

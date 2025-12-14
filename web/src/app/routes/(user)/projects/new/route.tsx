@@ -4,7 +4,7 @@ import { z } from "zod";
 import { schemas } from "@/generated/zod-schemas";
 import { Button, Card } from "@/app/lib/ui";
 import { buildLogger } from "@/app/lib/logger";
-import { useToast } from "@/app/features/toast";
+import { useToast } from "@/app/lib/hooks";
 import { useCreateProject } from "@/app/features/project";
 import { ProjectForm } from "../_shared";
 

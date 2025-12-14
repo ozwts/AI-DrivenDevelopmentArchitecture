@@ -12,7 +12,7 @@ import {
 import { configureAuth } from "./authConfig";
 import { config } from "@/config";
 import { AuthContext, AuthContextType } from "./AuthContext";
-import { buildLogger } from "@/app/lib/logger";
+import { buildLogger, setUserSub } from "@/app/lib/logger";
 
 const logger = buildLogger("AuthProvider");
 
@@ -59,6 +59,11 @@ export function AuthProvider({ children }: AuthProviderProps): ReactNode {
   useEffect(() => {
     checkUser();
   }, [checkUser]);
+
+  // ユーザー状態が変化したらloggerにuserSubを設定
+  useEffect(() => {
+    setUserSub(user?.userId);
+  }, [user?.userId]);
 
   /**
    * ログイン

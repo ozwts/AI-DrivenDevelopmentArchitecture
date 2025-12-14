@@ -10,7 +10,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { z } from "zod";
 import { Card, Badge, Button } from "@/app/lib/ui";
-import { isOverdue as checkOverdue } from "@/app/lib/utils";
+import { isOverdue as checkOverdue } from "@/app/lib/utils/formatter";
 import { schemas } from "@/generated/zod-schemas";
 
 type TodoResponse = z.infer<typeof schemas.TodoResponse>;

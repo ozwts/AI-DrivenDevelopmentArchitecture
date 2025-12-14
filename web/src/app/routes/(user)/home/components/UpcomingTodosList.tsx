@@ -5,7 +5,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { z } from "zod";
 import { Card, Badge } from "@/app/lib/ui";
-import { isOverdue, getDueDateLabel } from "@/app/lib/utils";
+import { isOverdue, getDueDateLabel } from "@/app/lib/utils/formatter";
 import {
   getStatusLabel,
   getPriorityLabel,

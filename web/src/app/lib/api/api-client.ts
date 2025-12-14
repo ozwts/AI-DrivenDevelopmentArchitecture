@@ -1,17 +1,14 @@
 /**
- * APIクライアント
- * HTTP通信の基盤と各エンドポイントを統合
+ * APIクライアント基盤
+ * HTTP通信の基盤機能を提供（エンドポイントは各featureに配置）
  */
 import { type ZodType } from "zod";
 import { config } from "@/config";
-import { apiLogger } from "./logger";
+import { buildLogger } from "@/app/lib/logger";
 import { type GetAccessTokenFn, createAuthHeader } from "./auth-handler";
 import { handleHttpError, handleValidationError } from "./error-handler";
-import { createHealthEndpoints } from "./endpoints/health";
-import { createTodoEndpoints } from "./endpoints/todos";
-import { createProjectEndpoints } from "./endpoints/projects";
-import { createUserEndpoints } from "./endpoints/users";
-import { createAttachmentEndpoints } from "./endpoints/attachments";
+
+const logger = buildLogger("ApiClient");
 
 /**
  * APIリクエストオプション（headersの型を制限）
@@ -70,7 +67,11 @@ const executeFetch = async (
   };
 
   try {
-    apiLogger.request({ url, method, body: options.body });
+    logger.debug("リクエスト開始", {
+      method,
+      url,
+      hasBody: options.body !== undefined && options.body !== null,
+    });
 
     const response = await fetch(url, { ...options, headers });
 
@@ -85,10 +86,12 @@ const executeFetch = async (
       });
     }
 
-    apiLogger.response({ url, method, status: response.status });
+    logger.info("リクエスト成功", { method, url, status: response.status });
     return response;
   } catch (error) {
-    apiLogger.fetchError({ url, method, error });
+    const errorData =
+      error instanceof Error ? error : { message: String(error) };
+    logger.error("通信エラー", { method, url, error: errorData });
     throw error;
   }
 };
@@ -96,7 +99,7 @@ const executeFetch = async (
 /**
  * レスポンスボディがあるリクエスト
  */
-const request: RequestFn = async <T>(
+export const request: RequestFn = async <T>(
   endpoint: string,
   schema: ZodType<T>,
   options: ApiRequestOptions = {},
@@ -119,38 +122,23 @@ const request: RequestFn = async <T>(
 /**
  * レスポンスボディがないリクエスト（DELETE等）
  */
-const requestVoid: RequestVoidFn = async (
+export const requestVoid: RequestVoidFn = async (
   endpoint: string,
   options: ApiRequestOptions = {},
 ): Promise<void> => {
   await executeFetch(endpoint, options);
 };
 
-export const apiClient = {
-  /**
-   * APIクライアントを初期化
-   * アプリケーション起動時に一度だけ呼び出す
-   */
-  initialize(clientConfig: { getAccessToken: GetAccessTokenFn }): void {
-    if (isInitialized) {
-      return;
-    }
-    getAccessToken = clientConfig.getAccessToken;
-    isInitialized = true;
-  },
-
-  // Health Check
-  ...createHealthEndpoints(request),
-
-  // Todo API
-  ...createTodoEndpoints(request, requestVoid),
-
-  // Project API
-  ...createProjectEndpoints(request, requestVoid),
-
-  // User API
-  ...createUserEndpoints(request, requestVoid),
-
-  // Attachment API
-  ...createAttachmentEndpoints(request, requestVoid),
+/**
+ * APIクライアントを初期化
+ * アプリケーション起動時に一度だけ呼び出す
+ */
+export const initialize = (clientConfig: {
+  getAccessToken: GetAccessTokenFn;
+}): void => {
+  if (isInitialized) {
+    return;
+  }
+  getAccessToken = clientConfig.getAccessToken;
+  isInitialized = true;
 };

@@ -2,7 +2,7 @@ import { useNavigate } from "react-router";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { Button, Card } from "@/app/lib/ui";
 import { buildLogger } from "@/app/lib/logger";
-import { useToast } from "@/app/features/toast";
+import { useToast } from "@/app/lib/hooks";
 import { useCreateTodo } from "@/app/features/todo";
 import { z } from "zod";
 import { schemas } from "@/generated/zod-schemas";

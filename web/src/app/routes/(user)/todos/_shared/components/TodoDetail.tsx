@@ -2,7 +2,7 @@ import { z } from "zod";
 import { schemas } from "@/generated/zod-schemas";
 import { AttachmentUpload } from "./AttachmentUpload";
 import { AttachmentList } from "./AttachmentList";
-import { formatDateShort } from "@/app/lib/utils";
+import { formatDateShort } from "@/app/lib/utils/formatter";
 import { getStatusLabel, getPriorityLabel } from "@/app/features/todo";
 
 type TodoResponse = z.infer<typeof schemas.TodoResponse>;

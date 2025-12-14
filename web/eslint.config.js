@@ -164,8 +164,8 @@ export default defineConfig(
       // Feature設計: Feature間直接インポート禁止
       "local-rules/feature/no-cross-feature-import": "error",
 
-      // 技術基盤: lib/内でのProvider/Context禁止
-      "local-rules/lib/no-provider-context": "error",
+      // 技術基盤: lib/内でのアプリケーション固有コードへの依存禁止
+      "local-rules/lib/no-domain-dependency": "error",
 
       // デザイン: Tailwind arbitrary values禁止
       "local-rules/design/no-arbitrary-values": "error",

@@ -34,7 +34,7 @@ module.exports = {
   "feature/no-cross-feature-import": featureRules["no-cross-feature-import"],
 
   // 技術基盤用ルール（プレフィックス: lib/）
-  "lib/no-provider-context": libRules["no-provider-context"],
+  "lib/no-domain-dependency": libRules["no-domain-dependency"],
 
   // デザイン用ルール（プレフィックス: design/）
   "design/no-arbitrary-values": designRules["no-arbitrary-values"],

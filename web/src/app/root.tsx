@@ -1,6 +1,6 @@
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ToastProvider } from "@/app/features/toast";
+import { ToastProvider } from "@/app/lib/contexts";
 import { ErrorBoundary } from "@/app/lib/ui";
 import { AuthProvider, AuthInitializer } from "@/app/features/auth";
 import "./app.css";

@@ -3,7 +3,7 @@
  */
 import { z } from "zod";
 import { schemas } from "@/generated/zod-schemas";
-import { type RequestFn, type RequestVoidFn } from "../api-client";
+import { request, requestVoid, uploadToSignedUrl } from "@/app/lib/api";
 
 type AttachmentResponse = z.infer<typeof schemas.AttachmentResponse>;
 type PrepareAttachmentParams = z.infer<typeof schemas.PrepareAttachmentParams>;
@@ -13,10 +13,7 @@ type PrepareAttachmentResponse = z.infer<
 type UpdateAttachmentParams = z.infer<typeof schemas.UpdateAttachmentParams>;
 type DownloadUrlResponse = z.infer<typeof schemas.DownloadUrlResponse>;
 
-export const createAttachmentEndpoints = (
-  request: RequestFn,
-  requestVoid: RequestVoidFn,
-) => ({
+export const attachmentApi = {
   getAttachments: async (todoId: string): Promise<AttachmentResponse[]> => {
     return request(`/todos/${todoId}/attachments`, schemas.AttachmentsResponse);
   },
@@ -45,18 +42,8 @@ export const createAttachmentEndpoints = (
     );
   },
 
-  uploadFileToS3: async (uploadUrl: string, file: File): Promise<void> => {
-    const response = await fetch(uploadUrl, {
-      method: "PUT",
-      body: file,
-      headers: {
-        "Content-Type": file.type,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`S3 Upload Failed: ${response.statusText}`);
-    }
+  uploadFileToS3: (uploadUrl: string, file: File): Promise<void> => {
+    return uploadToSignedUrl(uploadUrl, file);
   },
 
   updateAttachment: async (
@@ -92,4 +79,4 @@ export const createAttachmentEndpoints = (
       schemas.DownloadUrlResponse,
     );
   },
-});
+};

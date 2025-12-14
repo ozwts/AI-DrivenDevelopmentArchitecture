@@ -73,7 +73,10 @@
       "mcp__playwright__browser_snapshot",
       "mcp__playwright__browser_console_messages",
       "mcp__playwright__browser_wait_for",
-      "mcp__playwright__browser_navigate"
+      "mcp__playwright__browser_navigate",
+      "WebFetch(domain:slack.engineering)",
+      "mcp__playwright__browser_fill_form",
+      "mcp__playwright__browser_select_option"
     ],
     "deny": [],
     "ask": []

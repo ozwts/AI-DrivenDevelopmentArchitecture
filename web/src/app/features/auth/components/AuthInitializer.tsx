@@ -1,7 +1,8 @@
-/* eslint-disable local-rules/component/require-component-test -- 外部サービス依存（useAuth + apiClient）のため、E2Eテストでカバー。 */
+/* eslint-disable local-rules/component/require-component-test -- 外部サービス依存（useAuth + userApi）のため、E2Eテストでカバー。 */
 import { useEffect, useState, ReactNode } from "react";
 import { useAuth } from "../hooks/useAuth";
-import { apiClient } from "@/app/lib/api";
+import { initialize } from "@/app/lib/api";
+import { authUserApi } from "../api";
 import { Button } from "@/app/lib/ui";
 
 type AuthInitializerProps = {
@@ -20,7 +21,7 @@ export function AuthInitializer({ children }: AuthInitializerProps): ReactNode {
 
   useEffect(() => {
     // API clientを初期化
-    apiClient.initialize({ getAccessToken });
+    initialize({ getAccessToken });
   }, [getAccessToken]);
 
   useEffect(() => {
@@ -34,7 +35,7 @@ export function AuthInitializer({ children }: AuthInitializerProps): ReactNode {
 
       try {
         // ユーザー情報を取得
-        const user = await apiClient.getCurrentUser();
+        const user = await authUserApi.getCurrentUser();
         console.log("[AuthInitializer] User already registered:", user);
         setIsInitialized(true);
       } catch (error) {
@@ -51,7 +52,7 @@ export function AuthInitializer({ children }: AuthInitializerProps): ReactNode {
             "[AuthInitializer] User not found (404). Registering new user...",
           );
           try {
-            const newUser = await apiClient.registerUser();
+            const newUser = await authUserApi.registerUser();
             console.log(
               "[AuthInitializer] User registered successfully:",
               newUser,

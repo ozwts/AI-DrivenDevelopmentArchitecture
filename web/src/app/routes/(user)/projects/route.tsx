@@ -3,7 +3,7 @@ import { useNavigate } from "react-router";
 import { PlusIcon, FolderIcon } from "@heroicons/react/24/outline";
 import { Button, Modal, LoadingPage, Alert, EmptyState } from "@/app/lib/ui";
 import { buildLogger } from "@/app/lib/logger";
-import { useToast } from "@/app/features/toast";
+import { useToast } from "@/app/lib/hooks";
 import { useTodos } from "@/app/features/todo";
 import { useProjects, useDeleteProject } from "@/app/features/project";
 import { z } from "zod";

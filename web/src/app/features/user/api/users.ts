@@ -3,15 +3,12 @@
  */
 import { z } from "zod";
 import { schemas } from "@/generated/zod-schemas";
-import { type RequestFn, type RequestVoidFn } from "../api-client";
+import { request, requestVoid } from "@/app/lib/api";
 
 type UserResponse = z.infer<typeof schemas.UserResponse>;
 type UpdateUserParams = z.infer<typeof schemas.UpdateUserParams>;
 
-export const createUserEndpoints = (
-  request: RequestFn,
-  requestVoid: RequestVoidFn,
-) => ({
+export const userApi = {
   getUsers: async (): Promise<UserResponse[]> => {
     return request("/users", schemas.UsersResponse);
   },
@@ -42,4 +39,4 @@ export const createUserEndpoints = (
       method: "POST",
     });
   },
-});
+};

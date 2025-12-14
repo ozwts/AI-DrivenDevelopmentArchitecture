@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { apiClient } from "@/app/lib/api";
+import { attachmentApi } from "../api";
 import { buildLogger } from "@/app/lib/logger";
 
 const logger = buildLogger("useFileUpload");
@@ -31,7 +31,7 @@ export const useFileUpload = () => {
           logger.debug("ファイル処理開始", { filename: file.name, size: file.size });
 
           // 1. アップロード準備（uploadUrlとattachmentを取得）
-          const { uploadUrl, attachment } = await apiClient.prepareAttachment(
+          const { uploadUrl, attachment } = await attachmentApi.prepareAttachment(
             todoId,
             {
               filename: file.name,
@@ -41,10 +41,10 @@ export const useFileUpload = () => {
           );
 
           // 2. S3に直接アップロード
-          await apiClient.uploadFileToS3(uploadUrl, file);
+          await attachmentApi.uploadFileToS3(uploadUrl, file);
 
           // 3. ステータスをUPLOADEDに更新
-          await apiClient.updateAttachment(todoId, attachment.id, {
+          await attachmentApi.updateAttachment(todoId, attachment.id, {
             status: "UPLOADED",
           });
 

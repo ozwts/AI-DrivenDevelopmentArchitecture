@@ -3,16 +3,13 @@
  */
 import { z } from "zod";
 import { schemas } from "@/generated/zod-schemas";
-import { type RequestFn, type RequestVoidFn } from "../api-client";
+import { request, requestVoid } from "@/app/lib/api";
 
 type ProjectResponse = z.infer<typeof schemas.ProjectResponse>;
 type CreateProjectParams = z.infer<typeof schemas.CreateProjectParams>;
 type UpdateProjectParams = z.infer<typeof schemas.UpdateProjectParams>;
 
-export const createProjectEndpoints = (
-  request: RequestFn,
-  requestVoid: RequestVoidFn,
-) => ({
+export const projectApi = {
   getProjects: async (): Promise<ProjectResponse[]> => {
     return request("/projects", schemas.ProjectsResponse);
   },
@@ -45,4 +42,4 @@ export const createProjectEndpoints = (
       method: "DELETE",
     });
   },
-});
+};

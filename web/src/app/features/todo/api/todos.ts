@@ -3,17 +3,14 @@
  */
 import { z } from "zod";
 import { schemas } from "@/generated/zod-schemas";
-import { type RequestFn, type RequestVoidFn } from "../api-client";
+import { request, requestVoid } from "@/app/lib/api";
 
 type TodoResponse = z.infer<typeof schemas.TodoResponse>;
 type RegisterTodoParams = z.infer<typeof schemas.RegisterTodoParams>;
 type UpdateTodoParams = z.infer<typeof schemas.UpdateTodoParams>;
 type TodoStatus = z.infer<typeof schemas.TodoStatus>;
 
-export const createTodoEndpoints = (
-  request: RequestFn,
-  requestVoid: RequestVoidFn,
-) => ({
+export const todoApi = {
   getTodos: async (filters?: {
     status?: TodoStatus;
     projectId?: string;
@@ -58,4 +55,4 @@ export const createTodoEndpoints = (
       method: "DELETE",
     });
   },
-});
+};

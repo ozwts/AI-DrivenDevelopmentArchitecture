@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
-import { apiClient } from "@/app/lib/api";
+import { todoApi } from "../api";
 import { buildLogger } from "@/app/lib/logger";
 import { schemas } from "@/generated/zod-schemas";
 
@@ -21,7 +21,7 @@ export function useTodos(filters?: {
 }) {
   return useQuery({
     queryKey: [QUERY_KEY, filters],
-    queryFn: () => apiClient.getTodos(filters),
+    queryFn: () => todoApi.getTodos(filters),
   });
 }
 
@@ -31,7 +31,7 @@ export function useTodos(filters?: {
 export function useTodo(todoId: string) {
   return useQuery({
     queryKey: [QUERY_KEY, todoId],
-    queryFn: () => apiClient.getTodo(todoId),
+    queryFn: () => todoApi.getTodo(todoId),
     enabled: !!todoId,
   });
 }
@@ -45,7 +45,7 @@ export function useCreateTodo() {
   return useMutation({
     mutationFn: (data: RegisterTodoParams) => {
       logger.info("TODO作成開始", { title: data.title, projectId: data.projectId });
-      return apiClient.createTodo(data);
+      return todoApi.createTodo(data);
     },
     onSuccess: () => {
       logger.info("TODO作成成功");
@@ -72,7 +72,7 @@ export function useUpdateTodo() {
       data: UpdateTodoParams;
     }) => {
       logger.info("TODO更新開始", { todoId, status: data.status });
-      return apiClient.updateTodo(todoId, data);
+      return todoApi.updateTodo(todoId, data);
     },
     onSuccess: (_, { todoId }) => {
       logger.info("TODO更新成功", { todoId });
@@ -94,7 +94,7 @@ export function useDeleteTodo() {
   return useMutation({
     mutationFn: (todoId: string) => {
       logger.info("TODO削除開始", { todoId });
-      return apiClient.deleteTodo(todoId);
+      return todoApi.deleteTodo(todoId);
     },
     onSuccess: (_, todoId) => {
       logger.info("TODO削除成功", { todoId });

@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { PaperClipIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { Button, Alert } from "@/app/lib/ui";
-import { formatFileSize } from "@/app/lib/utils";
+import { formatFileSize } from "@/app/lib/utils/formatter";
 import { MAX_FILE_SIZE, ALLOWED_FILE_TYPES } from "../constants";
 
 type AttachmentUploadProps = {

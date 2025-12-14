@@ -1,6 +1,5 @@
 import {
   createContext,
-  useContext,
   useState,
   useCallback,
   ReactNode,
@@ -21,7 +20,7 @@ type Toast = {
   message: string;
 };
 
-type ToastContextType = {
+export type ToastContextType = {
   showToast: (type: ToastType, message: string) => void;
   success: (message: string) => void;
   error: (message: string) => void;
@@ -29,7 +28,10 @@ type ToastContextType = {
   info: (message: string) => void;
 };
 
-const ToastContext = createContext<ToastContextType | undefined>(undefined);
+// eslint-disable-next-line react-refresh/only-export-components
+export const ToastContext = createContext<ToastContextType | undefined>(
+  undefined,
+);
 
 const toastConfig: Record<
   ToastType,
@@ -129,13 +131,4 @@ export function ToastProvider({ children }: ToastProviderProps) {
       </div>
     </ToastContext.Provider>
   );
-}
-
-// eslint-disable-next-line react-refresh/only-export-components
-export function useToast() {
-  const context = useContext(ToastContext);
-  if (!context) {
-    throw new Error("useToast must be used within a ToastProvider");
-  }
-  return context;
 }

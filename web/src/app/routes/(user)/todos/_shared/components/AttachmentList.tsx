@@ -6,7 +6,7 @@ import {
 import { z } from "zod";
 import { Button, LoadingSpinner, EmptyState } from "@/app/lib/ui";
 import { schemas } from "@/generated/zod-schemas";
-import { formatFileSize, formatDate } from "@/app/lib/utils";
+import { formatFileSize, formatDate } from "@/app/lib/utils/formatter";
 
 type AttachmentResponse = z.infer<typeof schemas.AttachmentResponse>;
 

@@ -2,7 +2,7 @@ import { Link, useSearchParams, useNavigate } from "react-router";
 import { PlusIcon, ListBulletIcon } from "@heroicons/react/24/outline";
 import { Button, LoadingPage, Alert, EmptyState, Select } from "@/app/lib/ui";
 import { buildLogger } from "@/app/lib/logger";
-import { useToast } from "@/app/features/toast";
+import { useToast } from "@/app/lib/hooks";
 import { useTodos, useUpdateTodo, useDeleteTodo } from "@/app/features/todo";
 import { useUsers } from "@/app/features/user";
 import { useProjects } from "@/app/features/project";

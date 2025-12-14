@@ -7,7 +7,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { Card, Button, Modal, Alert } from "@/app/lib/ui";
 import { buildLogger } from "@/app/lib/logger";
-import { useToast } from "@/app/features/toast";
+import { useToast } from "@/app/lib/hooks";
 import {
   useCurrentUser,
   useUpdateCurrentUser,
