@@ -61,7 +61,7 @@ export default function LoginRoute(): ReactNode {
 
         if (isUserNotConfirmed) {
           logger.info("メール確認が必要", { email: data.email });
-          navigate("/signup/confirm", {
+          navigate("/auth/signup/confirm", {
             state: { email: data.email, needsConfirmation: true },
           });
         } else {
@@ -101,7 +101,7 @@ export default function LoginRoute(): ReactNode {
             />
             <div className="mt-2 text-right">
               <Link
-                to="/reset-password"
+                to="/auth/reset-password"
                 className="text-sm text-secondary-600 hover:text-secondary-700 hover:underline"
               >
                 パスワードを忘れた場合
@@ -133,7 +133,7 @@ export default function LoginRoute(): ReactNode {
               アカウントをお持ちでない方は{" "}
             </span>
             <Link
-              to="/signup"
+              to="/auth/signup"
               className="text-secondary-600 hover:text-secondary-700 font-medium hover:underline"
             >
               サインアップ

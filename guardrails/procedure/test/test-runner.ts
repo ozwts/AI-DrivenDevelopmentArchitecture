@@ -275,6 +275,23 @@ class TestRunner {
       duration: Date.now() - startTime,
     };
   }
+
+  /**
+   * スナップショットリフレッシュ（全削除して再生成）
+   */
+  async refreshSnapshots(): Promise<TestResult> {
+    const startTime = Date.now();
+
+    const command = "npm run test:ss:refresh -w web";
+    const result = await runCommand(command, this.projectRoot);
+
+    return {
+      success: result.success,
+      target: "web:snapshot",
+      output: result.output,
+      duration: Date.now() - startTime,
+    };
+  }
 }
 
 // シングルトンインスタンス

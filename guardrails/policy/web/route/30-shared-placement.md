@@ -47,8 +47,8 @@ app/features/product/components/ProductCard.tsx
 ```typescript
 // 見た目が似ているだけのカード
 // → 意味的に異なるので共通化NG
-// app/routes/(user)/todos/components/TodoCard.tsx
-// app/routes/(user)/projects/components/ProjectCard.tsx
+// app/routes/({role})/todos/components/TodoCard.tsx
+// app/routes/({role})/projects/components/ProjectCard.tsx
 // ↑ 各ルートで別々に持つ
 ```
 
@@ -135,7 +135,7 @@ app/routes/
 #### 1. 作成・編集で共通のフォーム
 
 ```typescript
-// app/routes/(user)/todos/_shared/components/TodoForm.tsx
+// app/routes/({role})/todos/_shared/components/TodoForm.tsx
 type Props = {
   readonly defaultValues?: TodoFormData;
   readonly onSubmit: (data: TodoFormData) => void;
@@ -148,7 +148,7 @@ export function TodoForm({ defaultValues, onSubmit, isSubmitting }: Props) {
 ```
 
 ```typescript
-// app/routes/(user)/todos/new/route.tsx
+// app/routes/({role})/todos/new/route.tsx
 import { TodoForm } from "../_shared/components/TodoForm";
 
 export default function NewTodoRoute() {
@@ -158,7 +158,7 @@ export default function NewTodoRoute() {
 ```
 
 ```typescript
-// app/routes/(user)/todos/[todoId]/edit/route.tsx
+// app/routes/({role})/todos/[todoId]/edit/route.tsx
 import { TodoForm } from "../../_shared/components/TodoForm";
 
 export default function EditTodoRoute() {
@@ -177,7 +177,7 @@ export default function EditTodoRoute() {
 #### 2. 共通のミューテーションフック
 
 ```typescript
-// app/routes/(user)/todos/_shared/hooks/useTodoMutations.ts
+// app/routes/({role})/todos/_shared/hooks/useTodoMutations.ts
 export function useCreateTodo() { ... }
 export function useUpdateTodo() { ... }
 export function useDeleteTodo() { ... }
@@ -239,11 +239,28 @@ todos/
 
 ### routes.ts での定義
 
+**routes.ts が正**: ディレクトリ階層ではなく routes.ts での定義が適用される。
+
 ```typescript
-layout("routes/(user)/_layout/index.tsx", [
-  // ルート定義...
-])
+export default [
+  // 認証ページ（公開）- auth/_layout を使用
+  layout("routes/(buyer)/auth/_layout/index.tsx", [
+    route("login", "routes/(buyer)/auth/login/route.tsx"),
+    route("signup", "routes/(buyer)/auth/signup/route.tsx"),
+  ]),
+
+  // アプリページ（認証必要）- _layout を使用
+  layout("routes/(buyer)/_layout/index.tsx", [
+    index("routes/(buyer)/home/route.tsx"),
+    route("products", "routes/(buyer)/products/route.tsx"),
+  ]),
+]
 ```
+
+### レイアウトの適用ルール
+
+1. **機能ごとにレイアウト**: `auth/_layout` と `_layout` は独立
+2. **親の _layout は自動適用されない**: 明示的に layout() でラップしたルートのみに適用
 
 ### インポート
 
@@ -271,7 +288,7 @@ import { TodoForm } from "../_shared/components/TodoForm";
 import { TodoForm } from "../../_shared/components/TodoForm";
 
 // ❌ エイリアスは使わない（機能境界を曖昧にする）
-import { TodoForm } from "@/routes/(user)/todos/_shared/components/TodoForm";
+import { TodoForm } from "@/routes/({role})/todos/_shared/components/TodoForm";
 ```
 
 ### 配置の具体例
@@ -279,7 +296,7 @@ import { TodoForm } from "@/routes/(user)/todos/_shared/components/TodoForm";
 ```
 app/
 ├── routes/
-│   └── (user)/
+│   └── (buyer)/
 │       ├── _layout/                        # レイアウト + 専用コンポーネント
 │       │   ├── index.tsx                   # レイアウト本体
 │       │   └── Header.tsx                  # レイアウト専用
@@ -294,7 +311,7 @@ app/
 │       │   │       └── ProductDetail.tsx
 │       │   └── new/
 │       │       └── route.tsx
-│       └── todos/
+│       └── cart/
 │           └── ...
 │
 ├── features/                               # (3+) 複数機能横断で共通
@@ -323,7 +340,7 @@ app/routes/ → app/features/ → app/lib/
 ### Do
 
 ```typescript
-// app/routes/(user)/todos/route.tsx
+// app/routes/({role})/todos/route.tsx
 import { UserAvatar } from "@/app/features/user";
 import { formatDate } from "@/app/lib/utils";
 import { Button } from "@/app/lib/ui";
@@ -333,17 +350,17 @@ import { Button } from "@/app/lib/ui";
 
 ```typescript
 // app/features/user/components/UserAvatar.tsx
-import { TodoList } from "@/routes/(user)/todos/components/TodoList"; // NG: 逆方向
+import { TodoList } from "@/routes/({role})/todos/components/TodoList"; // NG: 逆方向
 ```
 
 ## 共通化の昇格フロー
 
 ```
 1. 最初はルート内に配置
-   app/routes/(user)/todos/components/StatusBadge.tsx
+   app/routes/({role})/todos/components/StatusBadge.tsx
 
 2. 2箇所目で使いたくなっても、まだ共通化しない
-   app/routes/(user)/projects/components/StatusBadge.tsx（別で作る）
+   app/routes/({role})/projects/components/StatusBadge.tsx（別で作る）
 
 3. 3箇所目で共通化を検討
    → 意味的に同一か確認（同じAPI型を使っている？）
@@ -357,5 +374,6 @@ import { TodoList } from "@/routes/(user)/todos/components/TodoList"; // NG: 逆
 ## 関連ドキュメント
 
 - `10-route-overview.md`: ルート設計概要
-- `20-colocation-patterns.md`: コロケーションパターン
+- `15-role-design.md`: ロール設計（WHO）
+- `20-colocation-patterns.md`: コロケーション（HOW）
 - `../feature/10-feature-overview.md`: Feature設計概要

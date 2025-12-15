@@ -115,7 +115,7 @@ msw.worker.use(
 - 特定のステータスや条件のデータが必要な場合
 - テストの再現性を確実に保証したい場合
 
-### 5. ランダム要素の処理
+### 4. ランダム要素の処理
 
 ランダムに生成される要素（カラーパレット等）は、**マスク機能**で比較対象から除外する。
 
@@ -132,7 +132,7 @@ await expect(page).toHaveScreenshot({ fullPage: true, mask: colorOptions });
 - テストコードに閉じた対応
 - `Math.random`モックのタイミング問題を回避
 
-### 6. 非同期処理の安定化
+### 5. 非同期処理の安定化
 
 ```typescript
 await page.goto("/todos");
@@ -302,6 +302,7 @@ app/routes/({role})/{feature}/
 ## 関連ドキュメント
 
 - `10-route-overview.md`: ルート設計概要
+- `20-colocation-patterns.md`: コロケーション（HOW）- テスト配置
 - `../component/30-test-patterns.md`: コンポーネントテスト（CT）
 - `../mock/10-mock-overview.md`: テストデータ命名規則
 - `../mock/20-msw-patterns.md`: MSWハンドラーパターン

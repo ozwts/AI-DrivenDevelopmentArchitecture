@@ -55,7 +55,7 @@ export default function ProfileRoute() {
       // 削除成功後のログアウト処理
       sessionStorage.clear();
       localStorage.clear();
-      window.location.href = "/login";
+      window.location.href = "/auth";
     } catch (error) {
       logger.error(
         "アカウント削除失敗",

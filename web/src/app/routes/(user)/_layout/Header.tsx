@@ -32,7 +32,7 @@ export const Header = () => {
   const handleLogout = async () => {
     try {
       await logout();
-      navigate("/login", { replace: true });
+      navigate("/auth", { replace: true });
     } catch (error) {
       logger.error(
         "ログアウトに失敗しました",

@@ -14,7 +14,7 @@ export const handleUnauthorized = (): void => {
   logger.warn("認証切れ、ログインページへリダイレクト");
   sessionStorage.clear();
   localStorage.clear();
-  window.location.href = "/login";
+  window.location.href = "/auth";
 };
 
 /**

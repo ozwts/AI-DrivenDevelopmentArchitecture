@@ -6,15 +6,15 @@ import {
 } from "@react-router/dev/routes";
 
 export default [
-  // ゲストロール（未認証ユーザー）
-  layout("routes/(guest)/_layout/index.tsx", [
-    route("login", "routes/(guest)/login/route.tsx"),
-    route("signup", "routes/(guest)/signup/route.tsx"),
-    route("signup/confirm", "routes/(guest)/signup/confirm/route.tsx"),
-    route("reset-password", "routes/(guest)/reset-password/route.tsx"),
+  // 認証ページ（公開）
+  layout("routes/(user)/auth/_layout/index.tsx", [
+    route("auth", "routes/(user)/auth/route.tsx"),
+    route("auth/signup", "routes/(user)/auth/signup/route.tsx"),
+    route("auth/signup/confirm", "routes/(user)/auth/signup/confirm/route.tsx"),
+    route("auth/reset-password", "routes/(user)/auth/reset-password/route.tsx"),
   ]),
 
-  // ユーザーロール（認証済みユーザー）
+  // アプリページ（認証必要）
   layout("routes/(user)/_layout/index.tsx", [
     index("routes/(user)/home/route.tsx"),
     route("profile", "routes/(user)/profile/route.tsx"),

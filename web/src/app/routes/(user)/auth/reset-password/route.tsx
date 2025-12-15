@@ -213,7 +213,7 @@ export default function ResetPasswordRoute(): ReactNode {
 
             <div className="text-center text-sm">
               <Link
-                to="/login"
+                to="/auth"
                 className="text-secondary-600 hover:text-secondary-700 font-medium hover:underline"
               >
                 ログインページに戻る

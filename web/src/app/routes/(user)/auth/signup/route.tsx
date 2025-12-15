@@ -58,7 +58,7 @@ export default function SignupRoute(): ReactNode {
     try {
       await signUp(data.email, data.password);
       logger.info("サインアップ成功", { email: data.email });
-      navigate("/signup/confirm", {
+      navigate("/auth/signup/confirm", {
         state: { email: data.email, password: data.password },
       });
     } catch (error) {
@@ -145,7 +145,7 @@ export default function SignupRoute(): ReactNode {
               既にアカウントをお持ちですか？{" "}
             </span>
             <Link
-              to="/login"
+              to="/auth"
               className="text-secondary-600 hover:text-secondary-700 font-medium hover:underline"
             >
               ログイン

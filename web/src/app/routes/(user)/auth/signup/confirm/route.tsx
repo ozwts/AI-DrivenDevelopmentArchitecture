@@ -62,7 +62,7 @@ export default function SignupConfirmRoute(): ReactNode {
   // emailがない場合はサインアップページにリダイレクト
   useEffect(() => {
     if (!email) {
-      navigate("/signup", { replace: true });
+      navigate("/auth/signup", { replace: true });
     }
   }, [email, navigate]);
 
@@ -88,7 +88,7 @@ export default function SignupConfirmRoute(): ReactNode {
           "メール確認が完了しました。ログインページに移動します。",
         );
         setTimeout(() => {
-          navigate("/login", { replace: true });
+          navigate("/auth", { replace: true });
         }, 2000);
       }
     } catch (error) {
@@ -198,7 +198,7 @@ export default function SignupConfirmRoute(): ReactNode {
             </div>
             <div>
               <Link
-                to="/login"
+                to="/auth"
                 className="text-secondary-600 hover:text-secondary-700 font-medium hover:underline"
               >
                 ログインページに戻る

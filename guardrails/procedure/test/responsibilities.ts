@@ -163,4 +163,17 @@ export const TEST_RESPONSIBILITIES: ProcedureResponsibility[] = [
       return formatTestResult(result);
     },
   },
+
+  // ----- スナップショットリフレッシュ -----
+  {
+    id: "procedure_test_refresh_snapshots",
+    toolDescription:
+      "スナップショットを全削除して再生成します。全スナップショットをクリーンな状態から作り直します。",
+    inputSchema: {},
+    handler: async (_input, projectRoot): Promise<string> => {
+      const runner = getTestRunner(projectRoot);
+      const result = await runner.refreshSnapshots();
+      return formatTestResult(result);
+    },
+  },
 ];

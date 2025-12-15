@@ -14,6 +14,8 @@
 app/routes/({role})/{feature}/
 ├── route.tsx            # ルートコンポーネント（エントリーポイント）
 ├── route.ss.test.ts     # スナップショットテスト（route.tsxに対応）
+├── _layout/             # 機能固有レイアウト（必要な場合のみ）
+│   └── index.tsx
 ├── components/          # ルート固有コンポーネント
 │   ├── {Feature}List.tsx
 │   ├── {Feature}List.ct.test.tsx  # コンポーネントテスト
@@ -21,6 +23,44 @@ app/routes/({role})/{feature}/
 └── hooks/               # ルート固有フック
     └── use{Feature}.ts
 ```
+
+## 機能固有レイアウト（`{feature}/_layout/`）
+
+### 配置の判断基準
+
+| 条件 | `_layout/` を置く？ |
+|------|-------------------|
+| 親レイアウトと異なるシェルが必要 | ✅ Yes |
+| 親レイアウトをそのまま使う | ❌ No |
+
+### 典型例
+
+**`_layout/` が必要なケース**: 認証ページ
+```
+(user)/
+├── _layout/              # アプリ用（Header + Sidebar）
+├── auth/
+│   ├── _layout/          # 認証用（シンプルな中央配置）
+│   ├── route.tsx         # /auth（ログイン）
+│   └── signup/
+└── todos/                # 親の _layout/ を使用
+    └── route.tsx
+```
+
+認証ページはアプリのヘッダー・サイドバーが不要なため、専用の `_layout/` を持つ。
+
+**`_layout/` が不要なケース**: 通常機能
+```
+(user)/
+├── _layout/              # アプリ用（Header + Sidebar）
+├── todos/                # 親の _layout/ を使用
+│   ├── route.tsx
+│   └── [todoId]/
+└── projects/             # 親の _layout/ を使用
+    └── route.tsx
+```
+
+通常機能は親の `_layout/` で十分なため、機能固有の `_layout/` は不要。
 
 ## コロケーションの判断基準
 
@@ -35,72 +75,7 @@ app/routes/({role})/{feature}/
 
 ---
 
-## 実践パターン①: ロールによる分離
-
-ロールディレクトリ（`({role})/`）でユーザー体験を完全に分離する。各ルート内にはそのロールに必要な機能だけを実装する。
-
-**根拠となる憲法**:
-- `module-cohesion-principles.md`: 原則2「ロール・コンテキストによる構造的分離」
-
-### ディレクトリ構造
-
-```
-app/routes/
-├── ({roleA})/              # ロールAのルート
-│   ├── _layout/            # レイアウト + 専用コンポーネント
-│   │   ├── index.tsx       # レイアウト本体
-│   │   └── Header.tsx      # レイアウト専用コンポーネント
-│   └── {feature}/
-│       └── route.tsx       # ロールA向けのデータ取得・処理
-│
-└── ({roleB})/              # ロールBのルート
-    ├── _layout/            # レイアウト + 専用コンポーネント
-    │   ├── index.tsx       # レイアウト本体
-    │   └── Sidebar.tsx     # レイアウト専用コンポーネント
-    └── {feature}/
-        └── route.tsx       # ロールB向けのデータ取得・処理
-```
-
-### ロール別の責務分離
-
-各ロールに必要な機能（データ取得/更新処理）だけを実装する。
-
-```typescript
-// ({roleA})/{feature}/route.tsx
-// ロールA: 参照のみ（データ取得のみ）
-export function useRoleAFeature() {
-  return useQuery({ /* ロールA向けのデータ取得 */ });
-}
-
-// ({roleB})/{feature}/route.tsx
-// ロールB: 参照 + 更新（データ取得 + 更新処理）
-export function useRoleBFeature() {
-  return useQuery({ /* ロールB向けのデータ取得 */ });
-}
-export function useRoleBMutation() {
-  return useMutation({ /* ロールB向けの更新処理 */ });
-}
-```
-
-### Do / Don't
-
-**Do**: ロールは物理グループ化、各ロールに必要な機能のみ実装
-```
-routes/
-├── ({roleA})/{feature}/route.tsx  # ロールA向け機能のみ
-└── ({roleB})/{feature}/route.tsx  # ロールB向け機能のみ
-```
-
-**Don't**: 技術的条件で物理グループ化
-```
-routes/
-├── _authenticated/                 # ❌ 技術的条件はロールではない
-│   └── {feature}/
-```
-
----
-
-## 実践パターン②: 作成（new）と編集（edit）の分離
+## 実践パターン①: 作成（new）と編集（edit）の分離
 
 たとえUIコンポーネント（フォーム）が同じでも、責務が異なるためルートは分割する。共通フォームは親の`_shared/`ディレクトリに配置し、各ルートから利用する。
 
@@ -162,7 +137,7 @@ function {Feature}FormPage({ mode }: { mode: "new" | "edit" }) {
 
 ---
 
-## 実践パターン③: Outletによるネスト（親子データ共有）
+## 実践パターン②: Outletによるネスト（親子データ共有）
 
 親ルートで共通のデータを取得し、共通のレイアウト（ヘッダー、ナビゲーション等）を定義する。子ルートは自身の機能とデータ取得に集中できる。
 
@@ -294,5 +269,6 @@ export function {Feature}Item({ item }: Props) {
 ## 関連ドキュメント
 
 - `10-route-overview.md`: ルート設計概要
-- `30-shared-placement.md`: 共通化の配置基準
+- `15-role-design.md`: ロール設計（WHO）
+- `30-shared-placement.md`: 配置基準（WHERE）
 - `../component/10-component-overview.md`: コンポーネント設計
