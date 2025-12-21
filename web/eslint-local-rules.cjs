@@ -44,4 +44,5 @@ module.exports = {
   // ルート設計用ルール（プレフィックス: route/）
   "route/require-outlet-context-type": routeRules["require-outlet-context-type"],
   "route/outlet-requires-context": routeRules["outlet-requires-context"],
+  "route/require-snapshot-test": routeRules["require-snapshot-test"],
 };

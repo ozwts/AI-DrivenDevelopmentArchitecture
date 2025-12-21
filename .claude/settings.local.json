@@ -101,7 +101,8 @@
       "mcp__guardrails__procedure_test_web_component",
       "mcp__guardrails__procedure_test_web_snapshot",
       "mcp__guardrails__procedure_test_web",
-      "mcp__guardrails__procedure_test_update_snapshots"
+      "mcp__guardrails__procedure_test_update_snapshots",
+      "WebFetch(domain:playwright.dev)"
     ],
     "deny": [],
     "ask": []

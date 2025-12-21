@@ -175,6 +175,9 @@ export default defineConfig(
 
       // ルート設計: Outletのcontext prop必須
       "local-rules/route/outlet-requires-context": "warn",
+
+      // ルート設計: route.tsxにroute.ss.test.tsが必須
+      "local-rules/route/require-snapshot-test": "error",
     },
   },
 

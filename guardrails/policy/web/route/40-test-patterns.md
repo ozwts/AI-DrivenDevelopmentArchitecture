@@ -299,6 +299,28 @@ app/routes/({role})/{feature}/
 
 **根拠**: `route.tsx` がエントリーポイントなので、テストも `route.ss.test.ts` で統一。ディレクトリ名で機能を識別できる。
 
+### Outlet親ルートのテスト方針
+
+**Outlet親ルート（`<Outlet>`を含む`route.tsx`）にはスナップショットテストを配置しない。**
+
+```
+app/routes/({role})/{feature}/[id]/
+├── route.tsx             # Outlet親（テスト不要）
+├── _index/
+│   ├── route.tsx
+│   └── route.ss.test.ts  # ✅ 親レイアウトも含めてテスト
+└── edit/
+    ├── route.tsx
+    └── route.ss.test.ts  # ✅ 親レイアウトも含めてテスト
+```
+
+**理由**:
+- 子ルートのスナップショットは親ルートのレイアウト（戻るボタン等）を含む
+- 親ルート単独でのテストは重複となり保守コストが増加
+- ローディング・エラー状態も子ルート経由でカバー可能
+
+**Lintルール**: `local-rules/route/require-snapshot-test` が自動検知
+
 ## 関連ドキュメント
 
 - `10-route-overview.md`: ルート設計概要
