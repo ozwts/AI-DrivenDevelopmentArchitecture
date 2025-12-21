@@ -108,7 +108,7 @@ app/features/product/components/ProductCard.tsx
 app/routes/
 ├── ({role})/                       # ロールディレクトリ
 │   ├── _layout/                    # レイアウト + 専用コンポーネント
-│   │   ├── index.tsx               # レイアウト本体
+│   │   ├── layout.tsx              # レイアウト本体
 │   │   └── Header.tsx              # レイアウト専用コンポーネント
 │   │
 │   └── {feature}/                  # 機能ディレクトリ
@@ -231,7 +231,7 @@ todos/
 ```
 ({role})/
 ├── _layout/
-│   ├── index.tsx        # レイアウト本体（routes.ts で参照）
+│   ├── layout.tsx       # レイアウト本体（routes.ts で参照）
 │   ├── Header.tsx       # レイアウト専用コンポーネント
 │   └── Sidebar.tsx      # レイアウト専用コンポーネント
 └── {feature}/
@@ -244,13 +244,13 @@ todos/
 ```typescript
 export default [
   // 認証ページ（公開）- auth/_layout を使用
-  layout("routes/(buyer)/auth/_layout/index.tsx", [
+  layout("routes/(buyer)/auth/_layout/layout.tsx", [
     route("login", "routes/(buyer)/auth/login/route.tsx"),
     route("signup", "routes/(buyer)/auth/signup/route.tsx"),
   ]),
 
   // アプリページ（認証必要）- _layout を使用
-  layout("routes/(buyer)/_layout/index.tsx", [
+  layout("routes/(buyer)/_layout/layout.tsx", [
     index("routes/(buyer)/home/route.tsx"),
     route("products", "routes/(buyer)/products/route.tsx"),
   ]),
@@ -265,7 +265,7 @@ export default [
 ### インポート
 
 ```typescript
-// _layout/index.tsx から
+// _layout/layout.tsx から
 import { Header } from "./Header";
 import { Sidebar } from "./Sidebar";
 ```
@@ -298,7 +298,7 @@ app/
 ├── routes/
 │   └── (buyer)/
 │       ├── _layout/                        # レイアウト + 専用コンポーネント
-│       │   ├── index.tsx                   # レイアウト本体
+│       │   ├── layout.tsx                  # レイアウト本体
 │       │   └── Header.tsx                  # レイアウト専用
 │       │
 │       ├── products/

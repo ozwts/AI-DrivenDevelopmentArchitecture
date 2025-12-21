@@ -9,6 +9,7 @@
  * - feature/: Feature設計用ルール
  * - lib/: 技術基盤用ルール
  * - design/: デザイン用ルール
+ * - route/: ルート設計用ルール
  *
  * 参照: guardrails/policy/web/
  */
@@ -20,6 +21,7 @@ const componentRules = require("./eslint-local-rules/component/index.cjs");
 const featureRules = require("./eslint-local-rules/feature/index.cjs");
 const libRules = require("./eslint-local-rules/lib/index.cjs");
 const designRules = require("./eslint-local-rules/design/index.cjs");
+const routeRules = require("./eslint-local-rules/route/index.cjs");
 
 module.exports = {
   // 共通ルール（プレフィックス: common/）
@@ -38,4 +40,8 @@ module.exports = {
 
   // デザイン用ルール（プレフィックス: design/）
   "design/no-arbitrary-values": designRules["no-arbitrary-values"],
+
+  // ルート設計用ルール（プレフィックス: route/）
+  "route/require-outlet-context-type": routeRules["require-outlet-context-type"],
+  "route/outlet-requires-context": routeRules["outlet-requires-context"],
 };

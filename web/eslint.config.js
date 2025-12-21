@@ -169,6 +169,12 @@ export default defineConfig(
 
       // デザイン: Tailwind arbitrary values禁止
       "local-rules/design/no-arbitrary-values": "error",
+
+      // ルート設計: useOutletContextの型パラメータ必須
+      "local-rules/route/require-outlet-context-type": "error",
+
+      // ルート設計: Outletのcontext prop必須
+      "local-rules/route/outlet-requires-context": "warn",
     },
   },
 

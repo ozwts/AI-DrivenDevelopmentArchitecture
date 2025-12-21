@@ -1,31 +1,31 @@
-import { useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router";
-import { ArrowLeftIcon, PencilIcon } from "@heroicons/react/24/outline";
-import { Button, Card, LoadingPage, Alert } from "@/app/lib/ui";
+import { Outlet, useParams, useNavigate } from "react-router";
+import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { Button, LoadingPage, Alert } from "@/app/lib/ui";
 import { useTodo } from "@/app/features/todo";
 import { useProjects } from "@/app/features/project";
-import { TodoDetail } from "../_shared/components";
-import { buildLogger } from "@/app/lib/logger";
+import { z } from "zod";
+import { schemas } from "@/generated/zod-schemas";
 
-const logger = buildLogger("TodoDetailRoute");
+type TodoResponse = z.infer<typeof schemas.TodoResponse>;
+type ProjectResponse = z.infer<typeof schemas.ProjectResponse>;
 
 /**
- * TODO詳細ページ
- * 責務: TODOの詳細表示、添付ファイル管理
+ * TODO詳細親ルート
+ * 責務: 共通データ取得（TODO + プロジェクト一覧）、共通レイアウト、子ルートへの委譲
  */
-export default function TodoDetailRoute() {
+
+export type TodoOutletContext = {
+  todo: TodoResponse;
+  projects: ProjectResponse[];
+  getProjectById: (projectId?: string) => ProjectResponse | undefined;
+};
+
+export default function TodoDetailLayout() {
   const { todoId } = useParams();
   const navigate = useNavigate();
 
   const { data: todo, isLoading, error } = useTodo(todoId ?? "");
   const { data: projects } = useProjects();
-
-  // ページ表示ログ
-  useEffect(() => {
-    if (!isLoading && todo) {
-      logger.info("TODO詳細ページ表示", { todoId: todo.id, title: todo.title });
-    }
-  }, [isLoading, todo]);
 
   const getProjectById = (projectId?: string) => {
     if (!projectId || !projects) return undefined;
@@ -56,27 +56,24 @@ export default function TodoDetailRoute() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      {/* Header */}
+      {/* 共通ヘッダー: 戻るボタン */}
       <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <Button variant="ghost" onClick={() => navigate("/todos")}>
-            <ArrowLeftIcon className="h-4 w-4 mr-2" />
-            戻る
-          </Button>
-          <Link to={`/todos/${todoId}/edit`}>
-            <Button variant="secondary">
-              <PencilIcon className="h-4 w-4 mr-2" />
-              編集
-            </Button>
-          </Link>
-        </div>
-        <h1 className="text-3xl font-bold text-text-primary">TODO詳細</h1>
+        <Button variant="ghost" onClick={() => navigate("/todos")} className="mb-4">
+          <ArrowLeftIcon className="h-4 w-4 mr-2" />
+          一覧に戻る
+        </Button>
       </div>
 
-      {/* Detail */}
-      <Card className="p-6">
-        <TodoDetail todo={todo} project={getProjectById(todo.projectId)} />
-      </Card>
+      {/* 子ルート */}
+      <Outlet
+        context={
+          {
+            todo,
+            projects: projects ?? [],
+            getProjectById,
+          } satisfies TodoOutletContext
+        }
+      />
     </div>
   );
 }

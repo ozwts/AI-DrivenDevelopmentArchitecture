@@ -10,12 +10,14 @@
 
 ## ルート内のファイル構成
 
+単一ルート（子ルートなし）の基本構成。子ルートがある場合は「実践パターン②: Outletによるネスト」を参照。
+
 ```
 app/routes/({role})/{feature}/
 ├── route.tsx            # ルートコンポーネント（エントリーポイント）
 ├── route.ss.test.ts     # スナップショットテスト（route.tsxに対応）
 ├── _layout/             # 機能固有レイアウト（必要な場合のみ）
-│   └── index.tsx
+│   └── layout.tsx
 ├── components/          # ルート固有コンポーネント
 │   ├── {Feature}List.tsx
 │   ├── {Feature}List.ct.test.tsx  # コンポーネントテスト
@@ -88,18 +90,23 @@ app/routes/({role})/{feature}/
 app/routes/({role})/{feature}/
 ├── _shared/
 │   └── components/
-│       └── {Feature}Form.tsx   # ← 共通フォーム
+│       ├── {Feature}Form.tsx        # ← 共通フォーム
+│       └── {Feature}Form.ct.test.tsx
 │
 ├── route.tsx                   # 一覧
+├── route.ss.test.ts
 ├── new/
-│   └── route.tsx               # ← 新規作成
+│   ├── route.tsx               # ← 新規作成
+│   └── route.ss.test.ts
 │
 └── [param]/
     ├── route.tsx               # ← 親: データ取得 + Outlet
     ├── _index/
-    │   └── route.tsx           # ← 子: 詳細表示
+    │   ├── route.tsx           # ← 子: 詳細表示
+    │   └── route.ss.test.ts
     └── edit/
-        └── route.tsx           # ← 子: 編集フォーム
+        ├── route.tsx           # ← 子: 編集フォーム
+        └── route.ss.test.ts
 ```
 
 ### 共通フォームコンポーネント
@@ -142,7 +149,23 @@ function {Feature}FormPage({ mode }: { mode: "new" | "edit" }) {
 親ルートで共通のデータを取得し、共通のレイアウト（ヘッダー、ナビゲーション等）を定義する。子ルートは自身の機能とデータ取得に集中できる。
 
 **根拠となる憲法**:
-- `module-cohesion-principles.md`: 原則1「ディレクトリ = 機能境界」
+- `module-cohesion-principles.md`: 原則1「ディレクトリ = 機能境界」、原則4「共通化は最も近い共通の親に配置」
+- `analyzability-principles.md`: 影響範囲の静的追跡（型付きContextで依存を明示）
+
+### いつ使うか（判断基準）
+
+| 条件 | Outletパターンを使う？ |
+|------|----------------------|
+| 詳細・編集など複数の子ルートがある | ✅ Yes |
+| 子ルート間で同じデータを参照する | ✅ Yes |
+| 子ルート間で共通のレイアウトがある | ✅ Yes |
+| 単一ルートで子ルートがない | ❌ No |
+
+### 親ルートの3つの責務
+
+1. **共通データ取得**: 子ルート間で共有するデータを一度だけ取得
+2. **共通レイアウト**: 戻るボタン、コンテナ等の共通UIを提供
+3. **子ルートへの委譲**: `<Outlet context={...} />` で子にデータを渡す
 
 ### ディレクトリ構造
 
@@ -150,12 +173,17 @@ function {Feature}FormPage({ mode }: { mode: "new" | "edit" }) {
 app/routes/({role})/{feature}/[param]/
 ├── route.tsx              # 親ルート（共通データ取得 + 共通レイアウト + Outlet）
 ├── _index/
-│   └── route.tsx          # 詳細表示（デフォルト）
+│   ├── route.tsx          # 詳細表示（デフォルト）
+│   └── route.ss.test.ts   # 詳細ページのスナップショットテスト
 ├── {subFeatureA}/
-│   └── route.tsx          # サブ機能A
+│   ├── route.tsx          # サブ機能A
+│   └── route.ss.test.ts   # サブ機能Aのスナップショットテスト
 └── edit/
-    └── route.tsx          # 編集フォーム
+    ├── route.tsx          # 編集フォーム
+    └── route.ss.test.ts   # 編集ページのスナップショットテスト
 ```
+
+**テスト配置の原則**: 各`route.tsx`のテストは同一ディレクトリに配置する。親ルート（`[param]/route.tsx`）は共通レイアウトとOutletのみのため、通常テスト不要。
 
 ### 親ルート（共通レイアウト + Outlet）
 
@@ -190,11 +218,34 @@ export default function {Feature}Layout() {
 
 ```typescript
 // app/routes/({role})/{feature}/[param]/_index/route.tsx
+import type { {Feature}OutletContext } from "../route";
+
 export default function {Feature}DetailRoute() {
   const { {feature} } = useOutletContext<{Feature}OutletContext>();
   return <{Feature}Detail data={{feature}} />;
 }
 ```
+
+### OutletContext型のパターン
+
+親ルートで型をexportし、子ルートでimportして使用する。
+
+```typescript
+// 親ルート: 型をexportする
+export type {Feature}OutletContext = {
+  {feature}: {Feature}Response;
+  // 必要に応じてヘルパー関数も含める
+  getRelatedById: (id?: string) => Related | undefined;
+};
+
+// 子ルート: 型をimportして使用
+import type { {Feature}OutletContext } from "../route";
+const { {feature} } = useOutletContext<{Feature}OutletContext>();
+```
+
+**型定義の効果**:
+- 子ルートがどのデータに依存しているか静的に追跡可能
+- データ構造変更時に影響範囲がコンパイルエラーで明示
 
 ### Do / Don't
 

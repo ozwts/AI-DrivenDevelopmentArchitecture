@@ -101,7 +101,7 @@ routes/products/
 
 ```
 routes/(seller)/
-├── _layout/index.tsx     # 権限に応じてナビ出し分け
+├── _layout/layout.tsx    # 権限に応じてナビ出し分け
 ├── products/
 │   └── route.tsx         # role で削除ボタンの表示/非表示
 └── settings/             # admin専用（権限チェックでリダイレクト）
