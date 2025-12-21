@@ -223,14 +223,16 @@ export default function ProfileRoute() {
         }}
         title="プロフィール編集"
       >
-        <ProfileEditForm
-          user={user}
-          onSubmit={handleUpdate}
-          onCancel={() => {
-            setIsEditModalOpen(false);
-          }}
-          isLoading={updateUser.isPending}
-        />
+        <div className="p-6">
+          <ProfileEditForm
+            user={user}
+            onSubmit={handleUpdate}
+            onCancel={() => {
+              setIsEditModalOpen(false);
+            }}
+            isLoading={updateUser.isPending}
+          />
+        </div>
       </Modal>
 
       {/* Delete Confirmation Modal */}
@@ -241,14 +243,16 @@ export default function ProfileRoute() {
         }}
         title="アカウント削除の確認"
       >
-        <DeleteAccountConfirmation
-          user={user}
-          onConfirm={handleDelete}
-          onCancel={() => {
-            setIsDeleteModalOpen(false);
-          }}
-          isDeleting={deleteUser.isPending}
-        />
+        <div className="p-6">
+          <DeleteAccountConfirmation
+            user={user}
+            onConfirm={handleDelete}
+            onCancel={() => {
+              setIsDeleteModalOpen(false);
+            }}
+            isDeleting={deleteUser.isPending}
+          />
+        </div>
       </Modal>
     </div>
   );

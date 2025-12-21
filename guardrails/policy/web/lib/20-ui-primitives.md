@@ -154,7 +154,7 @@ export function TodoForm() {
 
 UIプリミティブの余白責務は**コンポーネント種別**によって異なる。
 
-### コンテナコンポーネント（Card, Modal, Alert, EmptyState等）
+### 純粋コンテナコンポーネント（Card, Alert, EmptyState等）
 
 **内部余白は呼び出し側の責務**。文脈によって必要な余白が変わるため、固定しない。
 
@@ -184,6 +184,67 @@ export const Card = ({ children }) => (
   </div>
 );
 ```
+
+### 構造化コンテナコンポーネント（Modal, Sheet, Drawer等）
+
+**Compound Componentsパターンを採用し、サブコンポーネントが余白責務を持つ**。
+
+理由：
+- 用途が限定され、一貫したUX（ヘッダー・ボディ・フッター構造）が必要
+- 毎回呼び出し側で余白を指定するのは非実用的で定型コードが増加
+- 業界標準（shadcn/ui, Radix, Mantine等）がこのパターンを採用
+- 「反復」原則により一貫した余白を強制
+
+```tsx
+// Do: Compound Componentsパターン
+// サブコンポーネントが余白責務を持つ
+export const Modal = ({ isOpen, onClose, children }: ModalProps) => { ... };
+
+Modal.Header = ({ children, className }: HeaderProps) => (
+  <div className={twMerge("px-6 py-4 border-b border-border-light", className)}>
+    {children}
+  </div>
+);
+
+Modal.Body = ({ children, className }: BodyProps) => (
+  <div className={twMerge("px-6 py-4", className)}>
+    {children}
+  </div>
+);
+
+Modal.Footer = ({ children, className }: FooterProps) => (
+  <div className={twMerge("px-6 py-4 border-t border-border-light", className)}>
+    {children}
+  </div>
+);
+
+// 使用例: 構造が明確で呼び出し側がシンプル
+<Modal isOpen={isOpen} onClose={onClose}>
+  <Modal.Header>
+    <h2>タイトル</h2>
+  </Modal.Header>
+  <Modal.Body>
+    <p>コンテンツ</p>
+  </Modal.Body>
+  <Modal.Footer>
+    <Button onClick={onClose}>閉じる</Button>
+  </Modal.Footer>
+</Modal>
+
+// className で余白の上書きも可能（特殊ケース）
+<Modal.Body className="p-0">  {/* 余白なしのケース */}
+  <FullWidthContent />
+</Modal.Body>
+```
+
+### 純粋 vs 構造化の判断基準
+
+| 基準 | 純粋コンテナ | 構造化コンテナ |
+|-----|-------------|---------------|
+| 内部構造 | 自由 | Header/Body/Footer等の固定構造 |
+| 余白要件 | 文脈依存で多様 | 一貫したUXが必要 |
+| 用途 | 汎用的 | 特定用途に限定 |
+| 例 | Card, Alert | Modal, Sheet, Drawer |
 
 ### インタラクティブコンポーネント（Button, Input, Select, Badge等）
 

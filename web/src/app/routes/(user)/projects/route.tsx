@@ -137,7 +137,7 @@ export default function ProjectsIndexRoute() {
         }}
         title="プロジェクトの削除"
         footer={
-          <>
+          <div className="px-6 py-4 flex justify-end gap-2">
             <Button
               variant="ghost"
               onClick={() => {
@@ -153,24 +153,26 @@ export default function ProjectsIndexRoute() {
             >
               削除
             </Button>
-          </>
+          </div>
         }
       >
-        <p className="text-text-secondary">
-          プロジェクト「{deletingProject?.name}」を削除してもよろしいですか？
-          <br />
-          {deletingProject && (
-            <>
-              このプロジェクトに紐づくTODOが
-              <span className="font-semibold">
-                {getTodoCount(deletingProject.id)}件
-              </span>
-              削除されます。
-              <br />
-            </>
-          )}
-          この操作は取り消せません。
-        </p>
+        <div className="p-6">
+          <p className="text-text-secondary">
+            プロジェクト「{deletingProject?.name}」を削除してもよろしいですか？
+            <br />
+            {deletingProject && (
+              <>
+                このプロジェクトに紐づくTODOが
+                <span className="font-semibold">
+                  {getTodoCount(deletingProject.id)}件
+                </span>
+                削除されます。
+                <br />
+              </>
+            )}
+            この操作は取り消せません。
+          </p>
+        </div>
       </Modal>
     </div>
   );

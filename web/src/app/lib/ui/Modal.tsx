@@ -67,7 +67,7 @@ export const Modal = ({
           `}
         >
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-border-light">
+          <div className="flex items-center justify-between border-b border-border-light px-6 py-4">
             <h2
               id="modal-title"
               className="text-xl font-semibold text-text-primary"
@@ -84,11 +84,11 @@ export const Modal = ({
           </div>
 
           {/* Body */}
-          <div>{children}</div>
+          {children}
 
           {/* Footer */}
           {footer && (
-            <div className="border-t border-border-light flex justify-end gap-2">
+            <div className="border-t border-border-light">
               {footer}
             </div>
           )}
