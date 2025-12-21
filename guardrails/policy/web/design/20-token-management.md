@@ -99,4 +99,4 @@ export default [
 ## 関連ドキュメント
 
 - `10-design-overview.md`: デザイン概要
-- `../lib/20-ui-primitives.md`: UIプリミティブ実装
+- `../ui/10-ui-overview.md`: UIプリミティブ設計概要

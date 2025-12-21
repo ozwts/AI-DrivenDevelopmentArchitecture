@@ -1,5 +1,5 @@
 {
   "label": "コンポーネント",
   "description": "ルート内コンポーネントの設計・実装・テストパターン",
-  "dependencies": ["route", "lib", "design", "hooks"]
+  "dependencies": ["route", "ui", "design", "hooks"]
 }

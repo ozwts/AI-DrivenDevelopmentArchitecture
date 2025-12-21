@@ -185,4 +185,4 @@ await expect(component.getByText(/200.*文字/)).toBeVisible();
 
 - `10-component-overview.md`: コンポーネント設計概要
 - `30-test-patterns.md`: コンポーネントテスト（CT）
-- `../lib/20-ui-primitives.md`: UIプリミティブ
+- `../ui/10-ui-overview.md`: UIプリミティブ設計概要

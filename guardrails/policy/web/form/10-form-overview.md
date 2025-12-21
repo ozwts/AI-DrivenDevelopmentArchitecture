@@ -60,4 +60,4 @@ export function TodoForm({ onSubmit }: Props) {
 ## 関連ドキュメント
 
 - `20-conditional-validation.md`: 条件分岐バリデーション
-- `../lib/20-ui-primitives.md`: UIプリミティブ
+- `../ui/10-ui-overview.md`: UIプリミティブ設計概要

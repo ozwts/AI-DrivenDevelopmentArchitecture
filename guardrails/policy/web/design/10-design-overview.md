@@ -70,4 +70,4 @@
 
 - `20-token-management.md`: トークンの管理と再構成
 - `30-aesthetic-direction.md`: 美的方向性
-- `../lib/20-ui-primitives.md`: UIプリミティブ実装
+- `../ui/10-ui-overview.md`: UIプリミティブ設計概要

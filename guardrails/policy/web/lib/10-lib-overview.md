@@ -42,7 +42,7 @@ lib/
 ├── hooks/         # Context以外の汎用カスタムフック
 ├── logger/        # ログ出力インフラ
 ├── services/      # 外部SDK連携の汎用抽象化（Facade Pattern）
-├── ui/            # UIプリミティブ（Leaf/Container/Composite）
+├── ui/            # UIプリミティブ（Leaf/Composite）
 └── utils/         # 純粋関数ユーティリティ
 ```
 
@@ -76,7 +76,7 @@ lib/
 **なぜ ui/ ではないのか**:
 - ErrorBoundaryは「視覚的プリミティブ」ではなく「エラー処理インフラ」
 - Reactの制約でクラスコンポーネント必須（他のUIプリミティブと設計が異なる）
-- Leaf/Container/Compositeの分類に当てはまらない
+- Leaf/Compositeの分類に当てはまらない
 
 ## 実施すること
 

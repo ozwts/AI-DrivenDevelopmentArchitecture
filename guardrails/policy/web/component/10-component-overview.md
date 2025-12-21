@@ -27,7 +27,7 @@ app/routes/({role})/{feature}/
 2. **単一責務**: 1コンポーネント = 1つの明確な役割
 3. **Props型の明示**: `readonly`修飾子で不変性を表現
 4. **UIプリミティブの利用**: `app/lib/ui/`のButton, Input等を活用
-5. **余白・配置の制御**: UIプリミティブの余白は呼び出し側で制御（詳細は`../lib/20-ui-primitives.md`）
+5. **配置の制御**: UIプリミティブの配置は呼び出し側で制御（余白はUIプリミティブ内部で定義。詳細は`../ui/10-ui-overview.md`）
 
 ## 実施しないこと
 
@@ -72,9 +72,54 @@ export function TodoItem({ todo, onComplete, onDelete }: Props) {
 | 親子ルート間 | `routes/({role})/{feature}/_shared/components/` |
 | 3+ルート横断 | `app/features/{feature}/components/` |
 
+## UIプリミティブ化の判断
+
+ルート内コンポーネントから`app/lib/ui/`への移行を検討する判断基準。
+
+### 判断フロー
+
+```
+Q1: アプリケーション固有の概念（Todo, Project, User等）を知っているか？
+│
+├─ Yes → UIプリミティブではない（共通化は上記3回ルールで判断）
+│
+└─ No（汎用UI部品）
+    │
+    Q2: 下記の「兆候」に当てはまるか？
+    │
+    ├─ Yes → UIプリミティブ化を検討（../ui/10-ui-overview.md参照）
+    │
+    └─ No → 現状維持（div + Tailwindで十分）
+```
+
+### UIプリミティブ化を検討すべき兆候
+
+- 同じTailwindクラスの組み合わせが3箇所以上で出現
+- 「他のページと同じスタイルにして」という指摘を受けた
+- デザイン変更時に「全部直さないと」となった
+- arbitrary values（`bg-[#xxx]`）を書きたくなった
+- 「このボタン、primaryかsecondaryか」と聞かれた
+
+### UIプリミティブ化のメリット
+
+| メリット | 説明 |
+|---------|------|
+| 一貫性の強制 | variant/sizeで選択肢を限定、デザイン崩れを防止 |
+| 変更の一括適用 | UIプリミティブを1箇所修正 → 全箇所に反映 |
+| 型安全 | CVAで「使えるスタイル」が型レベルで明確 |
+| 認知負荷の削減 | 「どうスタイリングするか」を毎回考えなくていい |
+
+### UIプリミティブ化しないリスク
+
+| リスク | 説明 |
+|-------|------|
+| スタイルの不一致 | 同じ見た目のはずが微妙に違う（padding、色など） |
+| 変更漏れ | デザイン修正時に「あ、ここも直さないと」が発生 |
+| arbitrary values増加 | トークン外の値が増え、一貫性が崩れる |
+
 ## 関連ドキュメント
 
 - `20-selector-strategy.md`: セレクタ戦略
 - `30-test-patterns.md`: コンポーネントテスト（CT）
 - `../route/10-route-overview.md`: ルート設計概要
-- `../lib/20-ui-primitives.md`: UIプリミティブ
+- `../ui/10-ui-overview.md`: UIプリミティブ設計概要
