@@ -95,116 +95,116 @@ export const TodoCard = ({
   };
 
   return (
-    <Card className="hover:shadow-md transition-shadow p-6">
-      <div className="space-y-3">
-        {/* Header */}
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              <h3 className="text-base font-semibold text-text-primary">
-                {todo.title}
-              </h3>
-            </div>
-            {todo.description && (
-              <p className="text-text-secondary text-sm line-clamp-2">
-                {todo.description}
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Badges */}
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant={statusCfg.variant}>
-            <StatusIcon className="h-3 w-3 mr-1 inline" />
-            {statusCfg.label}
-          </Badge>
-          <Badge variant={priorityCfg.variant}>{priorityCfg.label}</Badge>
-          {assignee && (
-            <Badge variant="info">
-              <UserCircleIcon className="h-3 w-3 mr-1 inline" />
-              {assignee.name}
-            </Badge>
-          )}
-          {/* style属性: ユーザー選択の動的カラー（Tailwindトークン化不可） */}
-          {project && (
-            <span
-              className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md border"
-              style={{
-                backgroundColor: project.color + "20",
-                color: project.color,
-                borderColor: project.color,
-              }}
-            >
-              <FolderIcon className="h-3 w-3" />
-              {project.name}
-            </span>
-          )}
-          {todo.dueDate && (
-            <Badge variant={overdueFlag ? "danger" : "default"}>
-              {overdueFlag && (
-                <ExclamationCircleIcon className="h-3 w-3 mr-1 inline" />
+    <Card>
+      <Card.Body>
+        <div className="space-y-3">
+          {/* Header */}
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <h3 className="text-base font-semibold text-text-primary">
+                  {todo.title}
+                </h3>
+              </div>
+              {todo.description && (
+                <p className="text-text-secondary text-sm line-clamp-2">
+                  {todo.description}
+                </p>
               )}
-              期限: {new Date(todo.dueDate).toLocaleDateString("ja-JP")}
-            </Badge>
-          )}
-          {todo.attachments.length > 0 && (
-            <Badge variant="default">
-              <PaperClipIcon className="h-3 w-3 mr-1 inline" />
-              {todo.attachments.length}件
-            </Badge>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-between pt-2 border-t border-border-light">
-          <div className="flex items-center gap-3">
-            <div className="text-xs text-text-tertiary">
-              作成: {new Date(todo.createdAt).toLocaleDateString("ja-JP")}
             </div>
-            {onView && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  onView(todo);
+          </div>
+
+          {/* Badges */}
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant={statusCfg.variant}>
+              <StatusIcon className="h-3 w-3 mr-1 inline" />
+              {statusCfg.label}
+            </Badge>
+            <Badge variant={priorityCfg.variant}>{priorityCfg.label}</Badge>
+            {assignee && (
+              <Badge variant="info">
+                <UserCircleIcon className="h-3 w-3 mr-1 inline" />
+                {assignee.name}
+              </Badge>
+            )}
+            {/* style属性: ユーザー選択の動的カラー（Tailwindトークン化不可） */}
+            {project && (
+              <span
+                className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md border"
+                style={{
+                  backgroundColor: project.color + "20",
+                  color: project.color,
+                  borderColor: project.color,
                 }}
               >
-                詳細を見る
-              </Button>
+                <FolderIcon className="h-3 w-3" />
+                {project.name}
+              </span>
+            )}
+            {todo.dueDate && (
+              <Badge variant={overdueFlag ? "danger" : "default"}>
+                {overdueFlag && (
+                  <ExclamationCircleIcon className="h-3 w-3 mr-1 inline" />
+                )}
+                期限: {new Date(todo.dueDate).toLocaleDateString("ja-JP")}
+              </Badge>
+            )}
+            {todo.attachments.length > 0 && (
+              <Badge variant="default">
+                <PaperClipIcon className="h-3 w-3 mr-1 inline" />
+                {todo.attachments.length}件
+              </Badge>
             )}
           </div>
-          <div className="flex gap-2">
-            {todo.status !== "COMPLETED" && (
-              <Button variant="secondary" size="sm" onClick={handleStatusClick}>
-                {todo.status === "TODO" ? "開始" : "完了"}
+
+          {/* Footer */}
+          <div className="flex items-center justify-between pt-2 border-t border-border-light">
+            <div className="flex items-center gap-3">
+              <div className="text-xs text-text-tertiary">
+                作成: {new Date(todo.createdAt).toLocaleDateString("ja-JP")}
+              </div>
+              {onView && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    onView(todo);
+                  }}
+                >
+                  詳細を見る
+                </Button>
+              )}
+            </div>
+            <div className="flex gap-2">
+              {todo.status !== "COMPLETED" && (
+                <Button variant="secondary" size="sm" onClick={handleStatusClick}>
+                  {todo.status === "TODO" ? "開始" : "完了"}
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="iconOnly"
+                onClick={() => {
+                  onEdit(todo);
+                }}
+                aria-label="編集"
+              >
+                <PencilIcon className="h-4 w-4" aria-hidden="true" />
               </Button>
-            )}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                onEdit(todo);
-              }}
-              className="!p-2"
-              aria-label="編集"
-            >
-              <PencilIcon className="h-4 w-4" aria-hidden="true" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                onDelete(todo);
-              }}
-              className="!p-2 text-error-600 hover:text-error-700"
-              aria-label="削除"
-            >
-              <TrashIcon className="h-4 w-4" aria-hidden="true" />
-            </Button>
+              <Button
+                variant="ghost"
+                size="iconOnly"
+                onClick={() => {
+                  onDelete(todo);
+                }}
+                aria-label="削除"
+              >
+                <TrashIcon className="h-4 w-4 text-error-600" aria-hidden="true" />
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
+      </Card.Body>
     </Card>
   );
 };

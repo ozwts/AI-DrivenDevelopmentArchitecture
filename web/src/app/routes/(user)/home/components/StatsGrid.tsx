@@ -14,58 +14,64 @@ type Props = {
 export function StatsGrid({ todoCount, inProgressCount, doneCount }: Props) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-      <Card className="bg-background-surface p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-text-secondary mb-1">
-              未着手のTODO
-            </p>
-            <p
-              className="text-3xl font-bold text-text-primary"
-              role="status"
-              aria-label="未着手のTODO数"
-            >
-              {todoCount}
-            </p>
+      <Card tone="surface">
+        <Card.Body>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-text-secondary mb-1">
+                未着手のTODO
+              </p>
+              <p
+                className="text-3xl font-bold text-text-primary"
+                role="status"
+                aria-label="未着手のTODO数"
+              >
+                {todoCount}
+              </p>
+            </div>
+            <ListBulletIcon className="h-12 w-12 text-text-tertiary" />
           </div>
-          <ListBulletIcon className="h-12 w-12 text-text-tertiary" />
-        </div>
+        </Card.Body>
       </Card>
 
-      <Card className="bg-background-surface p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-text-secondary mb-1">
-              進行中のTODO
-            </p>
-            <p
-              className="text-3xl font-bold text-primary-600"
-              role="status"
-              aria-label="進行中のTODO数"
-            >
-              {inProgressCount}
-            </p>
+      <Card tone="surface">
+        <Card.Body>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-text-secondary mb-1">
+                進行中のTODO
+              </p>
+              <p
+                className="text-3xl font-bold text-primary-600"
+                role="status"
+                aria-label="進行中のTODO数"
+              >
+                {inProgressCount}
+              </p>
+            </div>
+            <ClockIcon className="h-12 w-12 text-primary-600" />
           </div>
-          <ClockIcon className="h-12 w-12 text-primary-600" />
-        </div>
+        </Card.Body>
       </Card>
 
-      <Card className="bg-background-surface p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-text-secondary mb-1">
-              完了したTODO
-            </p>
-            <p
-              className="text-3xl font-bold text-text-primary"
-              role="status"
-              aria-label="完了したTODO数"
-            >
-              {doneCount}
-            </p>
+      <Card tone="surface">
+        <Card.Body>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-text-secondary mb-1">
+                完了したTODO
+              </p>
+              <p
+                className="text-3xl font-bold text-text-primary"
+                role="status"
+                aria-label="完了したTODO数"
+              >
+                {doneCount}
+              </p>
+            </div>
+            <CheckCircleIcon className="h-12 w-12 text-text-tertiary" />
           </div>
-          <CheckCircleIcon className="h-12 w-12 text-text-tertiary" />
-        </div>
+        </Card.Body>
       </Card>
     </div>
   );

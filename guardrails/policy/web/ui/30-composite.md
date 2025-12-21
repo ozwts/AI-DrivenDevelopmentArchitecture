@@ -2,13 +2,15 @@
 
 ## 核心原則
 
-Compositeは**複数のスロット（Props）を持ち、それらの配置・余白を内部で制御するコンポーネント**である。一貫したUX（ヘッダー・ボディ・フッター等の構造）を提供し、「反復」原則により一貫した余白を強制する。
+Compositeは**複数のスロット（構造を定義するProps）を持ち、それらの配置・余白を内部で制御するコンポーネント**である。一貫したUX（ヘッダー・ボディ・フッター等の構造）を提供し、「反復」原則により一貫した余白を強制する。
+
+**判断基準**: 複数のスロット（header/body/footer, icon/title/description, label/input/error 等）を持つ。
 
 ---
 
 ## className方針
 
-**❌ classNameを受け入れない（サブコンポーネント含む）**
+**classNameを受け入れない（サブコンポーネント含む）**
 
 ### 有効なパターン（2種類）
 
@@ -38,6 +40,7 @@ type FieldProps = Omit<ComponentPropsWithoutRef<"input">, "className"> & {
 |------|---------|
 | 余白変更 | variant prop（例: `noPadding`） |
 | サイズ変更 | size prop（例: `size="lg"`） |
+| 視覚的変更 | CVAでバリアント管理（`40-variant-system.md`参照） |
 
 理由:
 - 一貫したUXを強制
@@ -51,6 +54,7 @@ type FieldProps = Omit<ComponentPropsWithoutRef<"input">, "className"> & {
 1. **複数スロットの定義**: Header/Body/Footer、icon/title/description等
 2. **内部で余白・レイアウトを制御**: 一貫したUXを担保
 3. **Compound ComponentsまたはPropsパターン**: 柔軟性に応じて選択
+4. **CVAでバリアント管理**: 視覚的変更が必要な場合
 
 ## 実施しないこと
 
@@ -67,7 +71,7 @@ type FieldProps = Omit<ComponentPropsWithoutRef<"input">, "className"> & {
 理由:
 - 一貫したUX（ヘッダー・ボディ・フッター等の構造）が必要
 - 毎回呼び出し側で余白を指定するのは非実用的で定型コードが増加
-- 業界標準（shadcn/ui, Radix, Mantine等）がこのパターンを採用
+- 業界標準がこのパターンを採用
 - 「反復」原則により一貫した余白を強制
 
 ---
@@ -78,7 +82,7 @@ Compositeには2つの実装パターンがある:
 
 | パターン | 用途 | 例 |
 |---------|------|-----|
-| **Compound Components** | 柔軟性が必要、複雑な構造 | Modal, Sheet |
+| **Compound Components** | 柔軟性が必要、複雑な構造 | Card, Modal, Sheet |
 | **Props** | シンプルな固定構造 | EmptyState, Alert |
 
 ### 判断基準
@@ -89,6 +93,135 @@ Compositeには2つの実装パターンがある:
 | スロット内のコンテンツが固定的 | Props |
 | 構造のカスタマイズが必要 | Compound Components |
 | 構造が完全に固定 | Props |
+
+---
+
+## Card パターン
+
+Cardは**Compositeとして実装**する。デフォルト余白を持ち、一貫したUXを提供する。
+
+**注意**: 旧設計ではCardを「Container」として分類し、余白を呼び出し側に委ねていたが、これは「反復」原則に反するため廃止。
+
+### Do: CardをCompound Componentsで実装
+
+```tsx
+// ui/composite/Card.tsx
+import { forwardRef, type ReactNode } from "react";
+import { cva, type VariantProps } from "class-variance-authority";
+
+// CVAでバリアント管理
+const cardVariants = cva("rounded-lg border bg-white", {
+  variants: {
+    tone: {
+      default: "shadow-sm",
+      elevated: "shadow-lg",
+    },
+  },
+  defaultVariants: {
+    tone: "default",
+  },
+});
+
+type CardProps = VariantProps<typeof cardVariants> & {
+  readonly children: ReactNode;
+};
+
+const CardRoot = forwardRef<HTMLDivElement, CardProps>(
+  ({ tone, children }, ref) => (
+    <div ref={ref} className={cardVariants({ tone })}>
+      {children}
+    </div>
+  )
+);
+CardRoot.displayName = "Card";
+
+// サブコンポーネント: デフォルト余白を持つ
+type CardHeaderProps = { readonly children: ReactNode };
+const CardHeader = forwardRef<HTMLDivElement, CardHeaderProps>(
+  ({ children }, ref) => (
+    <div ref={ref} className="px-6 py-4 border-b border-border">
+      {children}
+    </div>
+  )
+);
+CardHeader.displayName = "Card.Header";
+
+type CardBodyProps = { readonly children: ReactNode };
+const CardBody = forwardRef<HTMLDivElement, CardBodyProps>(
+  ({ children }, ref) => (
+    <div ref={ref} className="px-6 py-4">
+      {children}
+    </div>
+  )
+);
+CardBody.displayName = "Card.Body";
+
+type CardFooterProps = { readonly children: ReactNode };
+const CardFooter = forwardRef<HTMLDivElement, CardFooterProps>(
+  ({ children }, ref) => (
+    <div ref={ref} className="px-6 py-4 border-t border-border">
+      {children}
+    </div>
+  )
+);
+CardFooter.displayName = "Card.Footer";
+
+export const Card = Object.assign(CardRoot, {
+  Header: CardHeader,
+  Body: CardBody,
+  Footer: CardFooter,
+});
+```
+
+### 使用例
+
+```tsx
+import { Card, Button } from "@/app/lib/ui";
+
+// プロフィールカード
+<Card>
+  <Card.Header>
+    <h2 className="text-lg font-semibold">プロフィール</h2>
+  </Card.Header>
+  <Card.Body>
+    <div className="flex items-center gap-4">
+      <Avatar />
+      <div>
+        <p className="font-medium">{user.name}</p>
+        <p className="text-text-secondary">{user.email}</p>
+      </div>
+    </div>
+  </Card.Body>
+  <Card.Footer>
+    <Button>編集</Button>
+  </Card.Footer>
+</Card>
+
+// シンプルなカード（Bodyのみ）
+<Card>
+  <Card.Body>
+    <p>コンテンツ</p>
+  </Card.Body>
+</Card>
+```
+
+### Don't: 旧Container方式（廃止）
+
+```tsx
+// NG: 呼び出し側で毎回余白を指定（旧Container方式）
+<Card className="p-6 space-y-4">
+  <h3>タイトル</h3>
+  <p>本文</p>
+</Card>
+
+// OK: サブコンポーネントがデフォルト余白を持つ
+<Card>
+  <Card.Body>
+    <h3>タイトル</h3>
+    <p>本文</p>
+  </Card.Body>
+</Card>
+```
 
 ---
 
@@ -105,7 +238,7 @@ Compositeには2つの実装パターンがある:
 
 | 項目 | 内容 |
 |------|------|
-| className | ❌ 受け入れない（`Omit<..., "className">`） |
+| className | 受け入れない（`Omit<..., "className">`） |
 | 内部構造 | label → input → error の固定順序 |
 | 幅 | `w-full` を内部で持つ（業界標準） |
 | React Hook Form | `forwardRef` で統合 |
@@ -133,6 +266,7 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
     </div>
   )
 );
+TextField.displayName = "TextField";
 ```
 
 ---
@@ -146,16 +280,22 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
 
 // サブコンポーネント: classNameなし、余白は内部で固定
 type BodyProps = { readonly children: ReactNode };
-const Body = ({ children }: BodyProps) => (
-  <div className="px-6 py-4">{children}</div>  // 余白を内部で定義
+const Body = forwardRef<HTMLDivElement, BodyProps>(
+  ({ children }, ref) => (
+    <div ref={ref} className="px-6 py-4">{children}</div>
+  )
 );
+Body.displayName = "Modal.Body";
 
 type FooterProps = { readonly children: ReactNode };
-const Footer = ({ children }: FooterProps) => (
-  <div className="flex justify-end gap-2 border-t border-border-light px-6 py-4">
-    {children}
-  </div>
+const Footer = forwardRef<HTMLDivElement, FooterProps>(
+  ({ children }, ref) => (
+    <div ref={ref} className="flex justify-end gap-2 border-t border-border px-6 py-4">
+      {children}
+    </div>
+  )
 );
+Footer.displayName = "Modal.Footer";
 
 // Compound Component としてエクスポート
 export const Modal = Object.assign(ModalRoot, { Header, Body, Footer });
@@ -165,7 +305,7 @@ export const Modal = Object.assign(ModalRoot, { Header, Body, Footer });
 
 ```tsx
 // ui/composite/EmptyState.tsx
-import { ReactNode } from "react";
+import { forwardRef, type ReactNode } from "react";
 
 type EmptyStateProps = {
   readonly icon?: ReactNode;
@@ -174,39 +314,58 @@ type EmptyStateProps = {
   readonly action?: ReactNode;
 };
 
-export const EmptyState = ({ icon, title, description, action }: EmptyStateProps) => {
-  return (
-    <div className="text-center py-12 px-6">
+export const EmptyState = forwardRef<HTMLDivElement, EmptyStateProps>(
+  ({ icon, title, description, action }, ref) => (
+    <div ref={ref} className="text-center py-12 px-6">
       {icon && <div className="flex justify-center mb-4">{icon}</div>}
       <h3 className="text-lg font-medium text-text-primary mb-2">{title}</h3>
       {description && <p className="text-text-secondary mb-6">{description}</p>}
       {action && <div>{action}</div>}
     </div>
-  );
-};
+  )
+);
+EmptyState.displayName = "EmptyState";
 ```
 
-### Do: Props（Alert）
+### Do: Props + CVA（Alert）
 
 ```tsx
-// ui/composite/Alert.tsx - Propsパターン、classNameなし
-type AlertProps = {
-  readonly variant: "success" | "warning" | "error" | "info";
+// ui/composite/Alert.tsx - CVAでバリアント管理
+import { forwardRef, type ReactNode } from "react";
+import { cva, type VariantProps } from "class-variance-authority";
+
+const alertVariants = cva("rounded-lg border p-4", {
+  variants: {
+    variant: {
+      success: "bg-green-50 border-green-200 text-green-800",
+      warning: "bg-yellow-50 border-yellow-200 text-yellow-800",
+      error: "bg-red-50 border-red-200 text-red-800",
+      info: "bg-blue-50 border-blue-200 text-blue-800",
+    },
+  },
+  defaultVariants: {
+    variant: "info",
+  },
+});
+
+type AlertProps = VariantProps<typeof alertVariants> & {
   readonly title?: string;
   readonly children: ReactNode;
 };
 
-export const Alert = ({ variant, title, children }: AlertProps) => (
-  <div role="alert" className={`rounded-lg border p-4 ${variantConfig[variant].bgColor}`}>
-    <div className="flex items-start gap-3">
-      <Icon className="h-5 w-5" />
-      <div className="flex-1">
-        {title && <h3 className="font-medium mb-1">{title}</h3>}
-        <div className="text-sm">{children}</div>
+export const Alert = forwardRef<HTMLDivElement, AlertProps>(
+  ({ variant, title, children }, ref) => (
+    <div ref={ref} role="alert" className={alertVariants({ variant })}>
+      <div className="flex items-start gap-3">
+        <div className="flex-1">
+          {title && <h3 className="font-medium mb-1">{title}</h3>}
+          <div className="text-sm">{children}</div>
+        </div>
       </div>
     </div>
-  </div>
+  )
 );
+Alert.displayName = "Alert";
 ```
 
 ### Don't: 呼び出し側に余白を要求
@@ -296,4 +455,6 @@ import { Alert } from "@/app/lib/ui";
 ## 関連ドキュメント
 
 - `10-ui-overview.md`: UIプリミティブ設計概要
+- `20-leaf.md`: Leaf実装パターン
+- `40-variant-system.md`: CVA/バリアント管理
 - `../component/20-selector-strategy.md`: セレクタ戦略

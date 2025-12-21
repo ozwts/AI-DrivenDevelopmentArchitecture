@@ -29,8 +29,10 @@ export function UpcomingTodosList({ todos, onTodoClick }: Props) {
   }
 
   return (
-    <Card className="mt-6 p-6">
-      <div className="flex items-center justify-between mb-4">
+    <div className="mt-6">
+      <Card>
+        <Card.Body>
+          <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-text-primary flex items-center gap-2">
           <ExclamationCircleIcon className="h-6 w-6 text-warning-600" />
           期限が近いタスク（3日以内）
@@ -88,7 +90,9 @@ export function UpcomingTodosList({ todos, onTodoClick }: Props) {
             </button>
           );
         })}
-      </div>
-    </Card>
+        </div>
+        </Card.Body>
+      </Card>
+    </div>
   );
 }

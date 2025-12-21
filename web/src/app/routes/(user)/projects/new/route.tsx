@@ -45,14 +45,15 @@ export default function NewProjectRoute() {
     <div className="max-w-2xl mx-auto">
       {/* ヘッダー */}
       <div className="mb-8">
-        <Button
-          variant="ghost"
-          onClick={() => navigate("/projects")}
-          className="mb-4"
-        >
-          <ArrowLeftIcon className="h-4 w-4 mr-2" />
-          プロジェクト一覧に戻る
-        </Button>
+        <div className="mb-4">
+          <Button
+            variant="ghost"
+            onClick={() => navigate("/projects")}
+          >
+            <ArrowLeftIcon className="h-4 w-4 mr-2" />
+            プロジェクト一覧に戻る
+          </Button>
+        </div>
         <h1 className="text-3xl font-bold text-text-primary">
           新規プロジェクト
         </h1>
@@ -62,12 +63,14 @@ export default function NewProjectRoute() {
       </div>
 
       {/* フォーム */}
-      <Card className="p-6">
-        <ProjectForm
+      <Card>
+        <Card.Body>
+          <ProjectForm
           onSubmit={handleSubmit}
           onCancel={handleCancel}
           isLoading={createProject.isPending}
         />
+        </Card.Body>
       </Card>
     </div>
   );

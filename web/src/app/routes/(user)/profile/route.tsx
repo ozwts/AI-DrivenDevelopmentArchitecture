@@ -101,8 +101,9 @@ export default function ProfileRoute() {
       </div>
 
       {/* Profile Card */}
-      <Card className="p-6">
-        <div className="space-y-6">
+      <Card>
+        <Card.Body>
+          <div className="space-y-6">
           {/* User Icon and Name */}
           <div className="flex items-center gap-4">
             <div className="flex-shrink-0">
@@ -164,12 +165,14 @@ export default function ProfileRoute() {
               </div>
             </dl>
           </div>
-        </div>
+          </div>
+        </Card.Body>
       </Card>
 
       {/* Danger Zone */}
-      <Card className="p-6">
-        <div className="border-2 border-error-200 rounded-lg bg-error-50 p-6">
+      <Card>
+        <Card.Body>
+          <div className="border-2 border-error-200 rounded-lg bg-error-50 p-6">
           <div className="space-y-4">
             {/* Header */}
             <div className="flex items-start gap-3">
@@ -212,7 +215,8 @@ export default function ProfileRoute() {
               </div>
             </div>
           </div>
-        </div>
+          </div>
+        </Card.Body>
       </Card>
 
       {/* Edit Modal */}

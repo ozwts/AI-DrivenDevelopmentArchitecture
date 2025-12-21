@@ -1,11 +1,11 @@
 import {
-  ReactNode,
   useEffect,
   createContext,
   useContext,
   forwardRef,
-  ComponentPropsWithoutRef,
+  type ComponentPropsWithoutRef,
 } from "react";
+import { cva, type VariantProps } from "class-variance-authority";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 
 type ModalContextValue = {
@@ -14,75 +14,91 @@ type ModalContextValue = {
 
 const ModalContext = createContext<ModalContextValue | null>(null);
 
-type ModalProps = {
-  readonly isOpen: boolean;
-  readonly onClose: () => void;
-  readonly children: ReactNode;
-  readonly size?: "sm" | "md" | "lg" | "xl";
-};
+const modalVariants = cva(
+  "relative w-full bg-white rounded-md shadow-xl transform transition-all",
+  {
+    variants: {
+      size: {
+        sm: "max-w-md",
+        md: "max-w-lg",
+        lg: "max-w-2xl",
+        xl: "max-w-4xl",
+      },
+    },
+    defaultVariants: {
+      size: "md",
+    },
+  },
+);
 
-const sizeClasses = {
-  sm: "max-w-md",
-  md: "max-w-lg",
-  lg: "max-w-2xl",
-  xl: "max-w-4xl",
-};
+const headerTitleVariants = cva("text-xl font-semibold text-text-primary");
 
-const ModalRoot = ({
-  isOpen,
-  onClose,
-  children,
-  size = "md",
-}: ModalProps) => {
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onClose();
+const headerCloseButtonVariants = cva(
+  "text-text-tertiary hover:text-text-secondary transition-colors",
+);
+
+const headerCloseIconVariants = cva("h-6 w-6");
+
+type ModalProps = Omit<ComponentPropsWithoutRef<"div">, "className"> &
+  VariantProps<typeof modalVariants> & {
+    readonly isOpen: boolean;
+    readonly onClose: () => void;
+  };
+
+const ModalRoot = forwardRef<HTMLDivElement, ModalProps>(
+  ({ isOpen, onClose, children, size, ...props }, ref) => {
+    useEffect(() => {
+      const handleEscape = (e: KeyboardEvent) => {
+        if (e.key === "Escape") {
+          onClose();
+        }
+      };
+
+      if (isOpen) {
+        document.addEventListener("keydown", handleEscape);
+        document.body.style.overflow = "hidden";
       }
-    };
 
-    if (isOpen) {
-      document.addEventListener("keydown", handleEscape);
-      document.body.style.overflow = "hidden";
-    }
+      return () => {
+        document.removeEventListener("keydown", handleEscape);
+        document.body.style.overflow = "unset";
+      };
+    }, [isOpen, onClose]);
 
-    return () => {
-      document.removeEventListener("keydown", handleEscape);
-      document.body.style.overflow = "unset";
-    };
-  }, [isOpen, onClose]);
+    if (!isOpen) return null;
 
-  if (!isOpen) return null;
+    return (
+      <ModalContext.Provider value={{ onClose }}>
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex min-h-screen items-center justify-center p-4">
+            {/* Backdrop */}
+            <div
+              className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+              onClick={onClose}
+              aria-hidden="true"
+            />
 
-  return (
-    <ModalContext.Provider value={{ onClose }}>
-      <div className="fixed inset-0 z-50 overflow-y-auto">
-        <div className="flex min-h-screen items-center justify-center p-4">
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
-            onClick={onClose}
-            aria-hidden="true"
-          />
-
-          {/* Modal */}
-          <div
-            role="dialog"
-            aria-modal="true"
-            className={`relative w-full bg-white rounded-md shadow-xl transform transition-all ${sizeClasses[size]}`}
-          >
-            {children}
+            {/* Modal */}
+            <div
+              ref={ref}
+              role="dialog"
+              aria-modal="true"
+              className={modalVariants({ size })}
+              {...props}
+            >
+              {children}
+            </div>
           </div>
         </div>
-      </div>
-    </ModalContext.Provider>
-  );
-};
+      </ModalContext.Provider>
+    );
+  },
+);
+
+ModalRoot.displayName = "Modal";
 
 // サブコンポーネント: Header
-type HeaderProps = Omit<ComponentPropsWithoutRef<"div">, "className"> & {
-  readonly children: ReactNode;
-};
+type HeaderProps = Omit<ComponentPropsWithoutRef<"div">, "className">;
 
 const Header = forwardRef<HTMLDivElement, HeaderProps>(
   ({ children, ...props }, ref) => {
@@ -94,14 +110,15 @@ const Header = forwardRef<HTMLDivElement, HeaderProps>(
         className="flex items-center justify-between border-b border-border-light px-6 py-4"
         {...props}
       >
-        <h2 className="text-xl font-semibold text-text-primary">{children}</h2>
-        {context && (
+        <h2 className={headerTitleVariants()}>{children}</h2>
+        {context !== null && (
           <button
+            type="button"
             onClick={context.onClose}
-            className="text-text-tertiary hover:text-text-secondary transition-colors"
+            className={headerCloseButtonVariants()}
             aria-label="閉じる"
           >
-            <XMarkIcon className="h-6 w-6" />
+            <XMarkIcon className={headerCloseIconVariants()} aria-hidden="true" />
           </button>
         )}
       </div>
@@ -112,9 +129,7 @@ const Header = forwardRef<HTMLDivElement, HeaderProps>(
 Header.displayName = "Modal.Header";
 
 // サブコンポーネント: Body
-type BodyProps = Omit<ComponentPropsWithoutRef<"div">, "className"> & {
-  readonly children: ReactNode;
-};
+type BodyProps = Omit<ComponentPropsWithoutRef<"div">, "className">;
 
 const Body = forwardRef<HTMLDivElement, BodyProps>(
   ({ children, ...props }, ref) => (
@@ -127,9 +142,7 @@ const Body = forwardRef<HTMLDivElement, BodyProps>(
 Body.displayName = "Modal.Body";
 
 // サブコンポーネント: Footer
-type FooterProps = Omit<ComponentPropsWithoutRef<"div">, "className"> & {
-  readonly children: ReactNode;
-};
+type FooterProps = Omit<ComponentPropsWithoutRef<"div">, "className">;
 
 const Footer = forwardRef<HTMLDivElement, FooterProps>(
   ({ children, ...props }, ref) => (

@@ -68,13 +68,15 @@ export default function TodoNewRoute() {
   if (isUploading) {
     return (
       <div className="max-w-2xl mx-auto">
-        <Card className="p-6">
-          <div className="flex flex-col items-center justify-center py-8 space-y-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-            <p className="text-text-secondary">
-              ファイルをアップロード中です...
-            </p>
-          </div>
+        <Card>
+          <Card.Body>
+            <div className="flex flex-col items-center justify-center py-8 space-y-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+              <p className="text-text-secondary">
+                ファイルをアップロード中です...
+              </p>
+            </div>
+          </Card.Body>
         </Card>
       </div>
     );
@@ -95,13 +97,15 @@ export default function TodoNewRoute() {
       </div>
 
       {/* Form */}
-      <Card className="p-6">
-        <TodoForm
-          mode="create"
-          onSubmit={handleCreate}
-          onCancel={handleCancel}
-          isLoading={createTodo.isPending}
-        />
+      <Card>
+        <Card.Body>
+          <TodoForm
+            mode="create"
+            onSubmit={handleCreate}
+            onCancel={handleCancel}
+            isLoading={createTodo.isPending}
+          />
+        </Card.Body>
       </Card>
     </div>
   );

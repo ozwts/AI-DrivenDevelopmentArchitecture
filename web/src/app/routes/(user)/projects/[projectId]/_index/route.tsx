@@ -51,8 +51,9 @@ export default function ProjectDetailRoute() {
       </div>
 
       {/* 詳細情報 */}
-      <Card className="p-6">
-        <div className="space-y-6">
+      <Card>
+        <Card.Body>
+          <div className="space-y-6">
           <div>
             <h2 className="text-sm font-medium text-text-secondary mb-2">
               説明
@@ -96,7 +97,8 @@ export default function ProjectDetailRoute() {
               </p>
             </div>
           </div>
-        </div>
+          </div>
+        </Card.Body>
       </Card>
 
       {/* TODOへのリンク */}

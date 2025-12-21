@@ -1,5 +1,5 @@
 {
   "label": "UIプリミティブ",
-  "description": "Leaf/Container/Composite の3分類に基づくUIプリミティブ設計",
+  "description": "Leaf/Composite の2分類に基づくUIプリミティブ設計（CVAによるバリアント管理）",
   "dependencies": ["lib", "design"]
 }

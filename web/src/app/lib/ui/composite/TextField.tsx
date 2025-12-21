@@ -1,10 +1,34 @@
-import { InputHTMLAttributes, forwardRef, useId } from "react";
+import { forwardRef, useId, type ComponentPropsWithoutRef } from "react";
+import { cva, type VariantProps } from "class-variance-authority";
 
-type TextFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, "className"> & {
-  readonly label?: string;
-  readonly error?: string;
-  readonly helperText?: string;
-};
+const inputVariants = cva(
+  [
+    "w-full px-3 py-2",
+    "border rounded-md",
+    "text-text-primary bg-white",
+    "placeholder-text-tertiary",
+    "focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent",
+    "disabled:bg-neutral-100 disabled:cursor-not-allowed",
+  ],
+  {
+    variants: {
+      hasError: {
+        true: "border-error-600",
+        false: "border-border-light",
+      },
+    },
+    defaultVariants: {
+      hasError: false,
+    },
+  },
+);
+
+type TextFieldProps = Omit<ComponentPropsWithoutRef<"input">, "className"> &
+  VariantProps<typeof inputVariants> & {
+    readonly label?: string;
+    readonly error?: string;
+    readonly helperText?: string;
+  };
 
 export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
   ({ label, error, helperText, id, ...props }, ref) => {
@@ -21,13 +45,15 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
 
     return (
       <div className="w-full">
-        {label && (
+        {label !== undefined && (
           <label
             htmlFor={inputId}
             className="block text-sm font-medium text-text-primary mb-1"
           >
             {label}
-            {props.required && <span className="text-error-600 ml-1">*</span>}
+            {props.required === true && (
+              <span className="text-error-600 ml-1">*</span>
+            )}
           </label>
         )}
         <input
@@ -35,15 +61,7 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
           ref={ref}
           aria-invalid={hasError}
           aria-describedby={describedBy}
-          className={`
-            w-full px-3 py-2
-            border rounded-md
-            text-text-primary bg-white
-            placeholder-text-tertiary
-            focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent
-            disabled:bg-neutral-100 disabled:cursor-not-allowed
-            ${hasError ? "border-error-600" : "border-border-light"}
-          `}
+          className={inputVariants({ hasError })}
           {...props}
         />
         {hasError && (

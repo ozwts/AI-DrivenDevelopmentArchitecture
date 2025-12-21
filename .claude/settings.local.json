@@ -103,7 +103,8 @@
       "mcp__guardrails__procedure_test_web",
       "mcp__guardrails__procedure_test_update_snapshots",
       "WebFetch(domain:playwright.dev)",
-      "Bash(git -C:*)"
+      "Bash(git -C:*)",
+      "Skill(review)"
     ],
     "deny": [],
     "ask": []

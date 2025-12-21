@@ -34,8 +34,10 @@ export default function TodoDetailRoute() {
       </div>
 
       {/* Detail */}
-      <Card className="p-6">
-        <TodoDetail todo={todo} project={getProjectById(todo.projectId)} />
+      <Card>
+        <Card.Body>
+          <TodoDetail todo={todo} project={getProjectById(todo.projectId)} />
+        </Card.Body>
       </Card>
     </>
   );

@@ -64,25 +64,23 @@ export const AttachmentList = ({
           <div className="flex gap-2 flex-shrink-0">
             <Button
               variant="ghost"
-              size="sm"
+              size="iconOnly"
               onClick={() => {
                 onDownload(attachment);
               }}
-              className="!p-2"
               aria-label={`${attachment.filename}をダウンロード`}
             >
               <ArrowDownTrayIcon className="h-4 w-4" aria-hidden="true" />
             </Button>
             <Button
               variant="ghost"
-              size="sm"
+              size="iconOnly"
               onClick={() => {
                 onDelete(attachment);
               }}
-              className="!p-2 text-error-600 hover:text-error-700"
               aria-label={`${attachment.filename}を削除`}
             >
-              <TrashIcon className="h-4 w-4" aria-hidden="true" />
+              <TrashIcon className="h-4 w-4 text-error-600" aria-hidden="true" />
             </Button>
           </div>
         </div>

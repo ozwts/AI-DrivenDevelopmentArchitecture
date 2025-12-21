@@ -59,13 +59,15 @@ export default function EditProjectRoute() {
       </div>
 
       {/* フォーム */}
-      <Card className="p-6">
-        <ProjectForm
-          project={project}
-          onSubmit={handleSubmit}
-          onCancel={handleCancel}
-          isLoading={updateProject.isPending}
-        />
+      <Card>
+        <Card.Body>
+          <ProjectForm
+            project={project}
+            onSubmit={handleSubmit}
+            onCancel={handleCancel}
+            isLoading={updateProject.isPending}
+          />
+        </Card.Body>
       </Card>
     </>
   );

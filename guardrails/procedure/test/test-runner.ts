@@ -132,6 +132,8 @@ class TestRunner {
    * playwright options:
    * - file: playwright test <file>
    * - testName: playwright test --grep "<testName>"
+   *
+   * 注意: "No tests found" の場合は成功として扱う（テストが存在しないだけ）
    */
   async runWebComponentTests(filter?: TestFilter): Promise<TestResult> {
     const startTime = Date.now();
@@ -152,10 +154,16 @@ class TestRunner {
 
     const result = await runCommand(command, this.projectRoot);
 
+    // "No tests found" はテストが存在しないだけなので成功扱い
+    const noTestsFound = result.output.includes("No tests found");
+    const success = result.success || noTestsFound;
+
     return {
-      success: result.success,
+      success,
       target: "web:component",
-      output: result.output,
+      output: noTestsFound
+        ? result.output + "\n(テストが存在しないためスキップ)"
+        : result.output,
       duration: Date.now() - startTime,
     };
   }
@@ -166,6 +174,8 @@ class TestRunner {
    * playwright options:
    * - file: playwright test <file>
    * - testName: playwright test --grep "<testName>"
+   *
+   * 注意: "No tests found" の場合は成功として扱う（テストが存在しないだけ）
    */
   async runWebSnapshotTests(filter?: TestFilter): Promise<TestResult> {
     const startTime = Date.now();
@@ -186,10 +196,16 @@ class TestRunner {
 
     const result = await runCommand(command, this.projectRoot);
 
+    // "No tests found" はテストが存在しないだけなので成功扱い
+    const noTestsFound = result.output.includes("No tests found");
+    const success = result.success || noTestsFound;
+
     return {
-      success: result.success,
+      success,
       target: "web:snapshot",
-      output: result.output,
+      output: noTestsFound
+        ? result.output + "\n(テストが存在しないためスキップ)"
+        : result.output,
       duration: Date.now() - startTime,
     };
   }

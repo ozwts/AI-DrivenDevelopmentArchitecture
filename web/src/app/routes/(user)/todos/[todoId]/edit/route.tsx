@@ -52,14 +52,16 @@ export default function TodoEditRoute() {
       </div>
 
       {/* Form */}
-      <Card className="p-6">
-        <TodoForm
-          mode="edit"
-          todo={todo}
-          onSubmit={handleUpdate}
-          onCancel={handleCancel}
-          isLoading={updateTodo.isPending}
-        />
+      <Card>
+        <Card.Body>
+          <TodoForm
+            mode="edit"
+            todo={todo}
+            onSubmit={handleUpdate}
+            onCancel={handleCancel}
+            isLoading={updateTodo.isPending}
+          />
+        </Card.Body>
       </Card>
     </>
   );

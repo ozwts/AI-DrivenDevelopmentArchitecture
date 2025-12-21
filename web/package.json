@@ -41,6 +41,7 @@
     "@tanstack/react-query": "^4.36.1",
     "@uiw/react-markdown-preview": "5.1.5",
     "aws-amplify": "^6.15.8",
+    "class-variance-authority": "^0.7.1",
     "i18next": "^25.6.2",
     "isbot": "^5",
     "react": "^18.3.1",
