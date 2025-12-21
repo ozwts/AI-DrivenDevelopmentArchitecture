@@ -37,9 +37,15 @@ export function useUpdateCurrentUser() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: UpdateUserParams) => {
-      logger.info("ユーザー情報更新開始", { displayName: data.displayName });
-      return userApi.updateCurrentUser(data);
+    mutationFn: ({
+      data,
+      dirtyFields,
+    }: {
+      data: UpdateUserParams;
+      dirtyFields: Partial<Record<keyof UpdateUserParams, boolean>>;
+    }) => {
+      logger.info("ユーザー情報更新開始", { name: data.name });
+      return userApi.updateCurrentUser(data, dirtyFields);
     },
     onSuccess: () => {
       logger.info("ユーザー情報更新成功");

@@ -27,7 +27,10 @@ type TodoFormCreateProps = {
 type TodoFormEditProps = {
   readonly mode: "edit";
   readonly todo: TodoResponse;
-  readonly onSubmit: (data: UpdateTodoParams) => void;
+  readonly onSubmit: (
+    data: UpdateTodoParams,
+    dirtyFields: Partial<Record<keyof UpdateTodoParams, boolean>>,
+  ) => void;
   readonly onCancel: () => void;
   readonly isLoading?: boolean;
 };
@@ -56,7 +59,7 @@ export const TodoForm = (props: TodoFormProps) => {
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, dirtyFields },
     reset,
   } = useForm<RegisterTodoParams | UpdateTodoParams>({
     defaultValues: todo
@@ -139,7 +142,15 @@ export const TodoForm = (props: TodoFormProps) => {
 
   const onFormSubmit = (data: RegisterTodoParams | UpdateTodoParams) => {
     if (mode === "edit") {
-      (onSubmit as (data: UpdateTodoParams) => void)(data as UpdateTodoParams);
+      (
+        onSubmit as (
+          data: UpdateTodoParams,
+          dirtyFields: Partial<Record<keyof UpdateTodoParams, boolean>>,
+        ) => void
+      )(
+        data as UpdateTodoParams,
+        dirtyFields as Partial<Record<keyof UpdateTodoParams, boolean>>,
+      );
     } else {
       (onSubmit as (data: RegisterTodoParams, files: File[]) => void)(
         data as RegisterTodoParams,

@@ -201,9 +201,78 @@ async (c: AppContext) => {
 
 ## 入力正規化パターン
 
-### オプショナルIDの空文字列対応
+### クライアント・サーバー間の責務分担
+
+**参照**:
+- `policy/contract/api/20-endpoint-design.md` - PATCH操作の3値セマンティクス
+- `policy/web/api/20-request-normalization.md` - クライアント側の正規化
+
+| 層 | 責務 |
+|----|------|
+| クライアント（web/api） | `dirtyFields`で変更フィールドを検出、空文字列→null変換 |
+| サーバー（Handler） | null→undefined変換、3値の判別 |
+
+### PATCHリクエストの null → undefined 変換（3値判別）
+
+OpenAPIで`nullable: true`のフィールドがある場合、以下の3値を区別する：
+
+| クライアント送信 | JSON表現 | 意味 | UseCaseへの渡し方 |
+| -------------- | -------- | ---- | ----------------- |
+| フィールド省略 | `{}` | 更新しない | **プロパティを渡さない** |
+| `null`送信 | `{"dueDate": null}` | 値をクリア | `undefined`を渡す |
+| 値を送信 | `{"dueDate": "2025-01-01"}` | その値で更新 | その値を渡す |
 
 ```typescript
+const body = parseResult.data;
+
+// 3値を区別するため、条件付きでプロパティを追加
+const result = await useCase.execute({
+  todoId,
+  title: body.title,
+  // キーが存在する場合のみプロパティを追加（スプレッド構文）
+  ...("description" in body && {
+    description: body.description === null ? undefined : body.description,
+  }),
+  ...("dueDate" in body && {
+    dueDate: body.dueDate === null ? undefined : body.dueDate,
+  }),
+  ...("projectId" in body && {
+    projectId: body.projectId === null ? undefined : body.projectId,
+  }),
+});
+```
+
+**重要**:
+- **キー未指定**: プロパティ自体を渡さない → UseCase側で `"field" in input === false`
+- **null送信**: `undefined` を渡す → UseCase側で `input.field === undefined`
+- **値送信**: その値を渡す → UseCase側で `input.field === "value"`
+
+UseCase層では `"field" in input` でキーの存在を確認し、3値を区別する。
+
+```typescript
+// UseCase側の実装例
+.map((t: Todo) =>
+  "description" in input ? t.clarify(input.description, now) : t,
+)
+```
+
+### POSTリクエストの空文字列対応
+
+POSTリクエスト（新規作成）では、クライアントが空文字列のフィールドを**省略（送信しない）**する。
+
+**根拠となる契約**:
+- `../../contract/api/15-validation-constraints.md`: Register*ParamsとUpdate*Paramsの違い
+- `../../contract/api/20-endpoint-design.md`: POST操作の2値セマンティクス
+
+| HTTPメソッド | 許可される状態 | nullの扱い |
+|-------------|----------------|------------|
+| POST | 2値: 有効な値 or 省略 | 許可されない（型エラー） |
+| PATCH | 3値: 有効な値 or null or 省略 | `undefined`に変換 |
+
+```typescript
+// クライアント側で空文字列フィールドを除外済み
+// { title: "タスク", description: "" } → { title: "タスク" }
+
 const parseResult = schemas.RegisterTodoParams.safeParse(rawBody);
 if (!parseResult.success) {
   return c.json({ name: "ValidationError", ... }, 400);
@@ -211,57 +280,19 @@ if (!parseResult.success) {
 
 const body = parseResult.data;
 
-// 空文字列はundefinedに正規化
-const projectId =
-  body.projectId?.trim() === "" ? undefined : body.projectId;
-
 const result = await useCase.execute({
   userSub,
   title: body.title,
-  projectId,  // undefinedまたは有効なID
+  projectId: body.projectId,       // undefinedまたは有効なID
+  description: body.description,   // undefinedまたは有効な文字列
 });
 ```
 
-### PATCHリクエストの null → undefined 変換（3値判別）
-
-**参照**: `policy/contract/api/20-endpoint-design.md` - PATCH操作でのフィールドクリア（null使用）
-
-OpenAPIで`nullable: true`のフィールドがある場合、以下の3値を区別する必要がある：
-
-| リクエスト状態 | 意味 | UseCaseへの渡し方 |
-| -------------- | ---- | ----------------- |
-| キー未指定 | 更新しない | フィールドを渡さない |
-| `null` | 値をクリア | `undefined`を渡す |
-| 値あり | その値で更新 | その値を渡す |
-
-```typescript
-const body = parseResult.data;
-
-// null → undefined 変換（nullable: trueフィールド）
-// "in"演算子でキーの存在を確認し、3値を判別
-const description =
-  "description" in body
-    ? body.description === null
-      ? undefined        // null → undefined（値をクリア）
-      : body.description // 値あり → そのまま
-    : undefined;         // キー未指定 → フィールドを渡さない
-
-const dueDate =
-  "dueDate" in body
-    ? body.dueDate === null
-      ? undefined
-      : body.dueDate
-    : undefined;
-
-const result = await useCase.execute({
-  todoId,
-  title: body.title,
-  description,  // undefined | string
-  dueDate,      // undefined | string
-});
-```
-
-**注意**: この変換はPATCHリクエスト（部分更新）で必要。POSTリクエスト（新規作成）では通常不要。
+**注意**:
+- `Register*Params` には `nullable: true` が設定されていない
+- 空文字列は `minLength: 1` でバリデーションエラー
+- クライアントは空文字列フィールドを省略して送信する
+- Handler側でnull→undefined変換は不要（POSTでnullは許可されない）
 
 ## 禁止パターン
 
@@ -356,3 +387,8 @@ const logger = container.get<Logger>(serviceId.LOGGER);
 const useCase = container.get<UseCase>(serviceId.USE_CASE);
 ```
 
+## 関連ドキュメント
+
+- `10-handler-overview.md`: ハンドラー設計概要
+- `../../contract/api/20-endpoint-design.md`: PATCH操作の3値セマンティクス（契約）
+- `../../web/api/20-request-normalization.md`: クライアント側のリクエスト正規化

@@ -3,7 +3,12 @@
  */
 import { z } from "zod";
 import { schemas } from "@/generated/zod-schemas";
-import { request, requestVoid } from "@/app/lib/api";
+import {
+  request,
+  requestVoid,
+  normalizePatchRequest,
+  normalizePostRequest,
+} from "@/app/lib/api";
 
 type TodoResponse = z.infer<typeof schemas.TodoResponse>;
 type RegisterTodoParams = z.infer<typeof schemas.RegisterTodoParams>;
@@ -34,19 +39,22 @@ export const todoApi = {
   },
 
   createTodo: async (data: RegisterTodoParams): Promise<TodoResponse> => {
+    const normalized = normalizePostRequest(data);
     return request("/todos", schemas.TodoResponse, {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify(normalized),
     });
   },
 
   updateTodo: async (
     todoId: string,
     data: UpdateTodoParams,
+    dirtyFields: Partial<Record<keyof UpdateTodoParams, boolean>>,
   ): Promise<TodoResponse> => {
+    const normalized = normalizePatchRequest(data, dirtyFields);
     return request(`/todos/${todoId}`, schemas.TodoResponse, {
-      method: "PUT",
-      body: JSON.stringify(data),
+      method: "PATCH",
+      body: JSON.stringify(normalized),
     });
   },
 

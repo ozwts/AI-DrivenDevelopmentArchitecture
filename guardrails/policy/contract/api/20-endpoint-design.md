@@ -218,6 +218,54 @@ post:
 - 422: ドメインルールエラー（Domain層（Value Object/Entity））
 - `Location`ヘッダーは通常省略（RESTful純粋主義では推奨されるが実用上不要なことが多い）
 
+#### POST操作の2値セマンティクス
+
+**参照**: `15-validation-constraints.md` - Register*ParamsとUpdate*Paramsの違い
+
+POSTリクエスト（新規作成）では、PATCHと異なり**2値のみ**を区別する：
+
+| クライアント送信 | JSON表現 | 意味 | TypeScript内部 |
+| -------------- | -------- | ---- | -------------- |
+| フィールド省略 | `{}` | 未設定（デフォルト値） | `undefined` |
+| 値を送信 | `{"projectId": "proj-123"}` | 値を設定 | `string` |
+
+**重要**: `null` 送信は許可されない（`nullable: true` が設定されていないため）
+
+##### Register*Paramsでの nullable: true 禁止
+
+```yaml
+# ❌ Bad: Register*Paramsに nullable: true を設定
+RegisterTodoParams:
+  properties:
+    projectId:
+      type: string
+      minLength: 1
+      nullable: true    # ❌ 新規作成時に「クリア」操作は不要
+
+# ✅ Good: Register*Paramsは nullable: true なし
+RegisterTodoParams:
+  properties:
+    projectId:
+      type: string
+      minLength: 1      # 空文字列禁止
+      # nullable なし → 有効な値 or 省略 の2値のみ
+```
+
+##### クライアント実装
+
+**参照**: `policy/web/api/20-request-normalization.md` - フロントエンドでの正規化
+
+```typescript
+// POST: 空文字列フィールドを省略（nullではなく送信しない）
+const normalized = normalizePostRequest(data);
+// { title: "タスク", description: "" } → { title: "タスク" }
+
+await fetch("/todos", {
+  method: "POST",
+  body: JSON.stringify(normalized),
+});
+```
+
 ### GET: リソース取得
 
 ```yaml
@@ -431,6 +479,8 @@ Update{Entity}Params:
 
 ##### クライアント実装例
 
+**参照**: `policy/web/api/20-request-normalization.md` - フロントエンドでの正規化実装
+
 ```typescript
 // ケース1: フィールドを変更しない（省略）
 PATCH /{resources}/123
@@ -452,6 +502,8 @@ PATCH /{resources}/123
   "description": "新しい説明"
 }
 ```
+
+**重要**: フロントエンドでは `dirtyFields` を使用して変更フィールドを検出し、空文字列は `null` に変換して送信する。
 
 ##### TypeScript内部への変換
 

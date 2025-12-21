@@ -51,11 +51,13 @@ export const attachmentApi = {
     attachmentId: string,
     data: UpdateAttachmentParams,
   ): Promise<AttachmentResponse> => {
+    // UpdateAttachmentParamsはstatusのみでnullable: trueなし
+    // ステータス遷移専用のためdirtyFieldsは不要
     return request(
       `/todos/${todoId}/attachments/${attachmentId}`,
       schemas.AttachmentResponse,
       {
-        method: "PUT",
+        method: "PATCH",
         body: JSON.stringify(data),
       },
     );

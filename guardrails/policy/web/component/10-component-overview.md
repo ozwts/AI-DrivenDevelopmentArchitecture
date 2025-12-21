@@ -64,6 +64,12 @@ export function TodoItem({ todo, onComplete, onDelete }: Props) {
 - API型（`TodoResponse`）を直接参照
 - コールバックは親から注入
 
+## 更新フォームコンポーネント
+
+更新用フォームでは `onSubmit` コールバックに `dirtyFields` を渡す。
+
+**参照**: `../api/20-request-normalization.md`（パターン詳細とコード例）
+
 ## 共通化の判断
 
 | 使用箇所 | 配置先 |
@@ -123,3 +129,5 @@ Q1: アプリケーション固有の概念（Todo, Project, User等）を知っ
 - `30-test-patterns.md`: コンポーネントテスト（CT）
 - `../route/10-route-overview.md`: ルート設計概要
 - `../ui/10-ui-overview.md`: UIプリミティブ設計概要
+- `../api/20-request-normalization.md`: PATCHリクエスト正規化（dirtyFields）
+- `../form/10-form-overview.md`: フォーム設計概要

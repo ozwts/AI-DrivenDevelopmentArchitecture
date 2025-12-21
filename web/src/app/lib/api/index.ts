@@ -9,3 +9,4 @@ export {
 } from "./api-client";
 export type { GetAccessTokenFn } from "./auth-handler";
 export { uploadToSignedUrl } from "./external-upload";
+export { normalizePatchRequest, normalizePostRequest } from "./normalize";

@@ -50,12 +50,14 @@ export function useUpdateProject() {
     mutationFn: ({
       projectId,
       data,
+      dirtyFields,
     }: {
       projectId: string;
       data: UpdateProjectParams;
+      dirtyFields: Partial<Record<keyof UpdateProjectParams, boolean>>;
     }) => {
       logger.info("プロジェクト更新開始", { projectId, name: data.name });
-      return projectApi.updateProject(projectId, data);
+      return projectApi.updateProject(projectId, data, dirtyFields);
     },
     onSuccess: (_, { projectId }) => {
       logger.info("プロジェクト更新成功", { projectId });

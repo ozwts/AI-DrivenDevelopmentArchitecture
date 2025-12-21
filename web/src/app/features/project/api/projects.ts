@@ -3,7 +3,12 @@
  */
 import { z } from "zod";
 import { schemas } from "@/generated/zod-schemas";
-import { request, requestVoid } from "@/app/lib/api";
+import {
+  request,
+  requestVoid,
+  normalizePatchRequest,
+  normalizePostRequest,
+} from "@/app/lib/api";
 
 type ProjectResponse = z.infer<typeof schemas.ProjectResponse>;
 type CreateProjectParams = z.infer<typeof schemas.CreateProjectParams>;
@@ -21,19 +26,22 @@ export const projectApi = {
   createProject: async (
     data: CreateProjectParams,
   ): Promise<ProjectResponse> => {
+    const normalized = normalizePostRequest(data);
     return request("/projects", schemas.ProjectResponse, {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify(normalized),
     });
   },
 
   updateProject: async (
     projectId: string,
     data: UpdateProjectParams,
+    dirtyFields: Partial<Record<keyof UpdateProjectParams, boolean>>,
   ): Promise<ProjectResponse> => {
+    const normalized = normalizePatchRequest(data, dirtyFields);
     return request(`/projects/${projectId}`, schemas.ProjectResponse, {
-      method: "PUT",
-      body: JSON.stringify(data),
+      method: "PATCH",
+      body: JSON.stringify(normalized),
     });
   },
 

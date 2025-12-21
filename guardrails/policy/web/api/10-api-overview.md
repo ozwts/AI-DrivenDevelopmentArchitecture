@@ -210,8 +210,10 @@ const response = await fetch("/api/todos");
 
 ## 関連ドキュメント
 
+- `20-request-normalization.md`: リクエスト正規化（dirtyFields、空文字列→null変換）
 - `../lib/10-lib-overview.md`: 技術基盤設計概要
 - `../logger/10-logger-overview.md`: ログ出力基盤
 - `../route/30-shared-placement.md`: _shared配置基準
 - `../feature/10-feature-overview.md`: Feature設計概要
 - `../hooks/20-query-patterns.md`: React Queryパターン
+- `../../contract/api/20-endpoint-design.md`: PATCH操作の3値セマンティクス

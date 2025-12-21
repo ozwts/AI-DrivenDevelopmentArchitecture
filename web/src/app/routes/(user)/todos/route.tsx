@@ -71,7 +71,8 @@ export default function TodosIndexRoute() {
     try {
       await updateTodo.mutateAsync({
         todoId: todo.id,
-        data: { ...todo, status },
+        data: { status },
+        dirtyFields: { status: true },
       });
       logger.info("TODOステータス変更成功", { todoId: todo.id });
       toast.success("ステータスを更新しました");

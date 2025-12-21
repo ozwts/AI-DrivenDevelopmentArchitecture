@@ -10,19 +10,29 @@ import { generateColorPalette } from "../utils/color";
 type ProjectResponse = z.infer<typeof schemas.ProjectResponse>;
 type CreateProjectParams = z.infer<typeof schemas.CreateProjectParams>;
 
-type ProjectFormProps = {
-  readonly project?: ProjectResponse;
+type UpdateProjectParams = z.infer<typeof schemas.UpdateProjectParams>;
+
+type ProjectFormCreateProps = {
+  readonly project?: undefined;
   readonly onSubmit: (data: CreateProjectParams) => Promise<void>;
   readonly onCancel: () => void;
   readonly isLoading?: boolean;
 };
 
-export const ProjectForm = ({
-  project,
-  onSubmit,
-  onCancel,
-  isLoading,
-}: ProjectFormProps) => {
+type ProjectFormEditProps = {
+  readonly project: ProjectResponse;
+  readonly onSubmit: (
+    data: UpdateProjectParams,
+    dirtyFields: Partial<Record<keyof UpdateProjectParams, boolean>>,
+  ) => Promise<void>;
+  readonly onCancel: () => void;
+  readonly isLoading?: boolean;
+};
+
+type ProjectFormProps = ProjectFormCreateProps | ProjectFormEditProps;
+
+export const ProjectForm = (props: ProjectFormProps) => {
+  const { project, onCancel, isLoading } = props;
   const [colorPalette, setColorPalette] = useState<string[]>(() =>
     generateColorPalette(6),
   );
@@ -30,7 +40,7 @@ export const ProjectForm = ({
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, dirtyFields },
     watch,
     setValue,
   } = useForm<CreateProjectParams>({
@@ -56,8 +66,21 @@ export const ProjectForm = ({
     setValue("color", newPalette[0], { shouldDirty: true, shouldTouch: true });
   };
 
+  const onFormSubmit = (data: CreateProjectParams) => {
+    if (project !== undefined) {
+      (
+        props.onSubmit as (
+          data: UpdateProjectParams,
+          dirtyFields: Partial<Record<keyof UpdateProjectParams, boolean>>,
+        ) => Promise<void>
+      )(data, dirtyFields as Partial<Record<keyof UpdateProjectParams, boolean>>);
+    } else {
+      (props.onSubmit as (data: CreateProjectParams) => Promise<void>)(data);
+    }
+  };
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
       {/* プロジェクト名 */}
       <TextField
         label="プロジェクト名"

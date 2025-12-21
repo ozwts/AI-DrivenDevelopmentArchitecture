@@ -42,39 +42,29 @@ export const buildUpdateTodoHandler =
 
       const body = parseResult.data;
 
-      // 入力の正規化: 空文字列は意味を持たないのでundefinedに変換
-      const projectId =
-        body.projectId?.trim() === ""
-          ? undefined
-          : (body.projectId ?? undefined);
-      const assigneeUserId =
-        body.assigneeUserId?.trim() === ""
-          ? undefined
-          : (body.assigneeUserId ?? undefined);
-
-      // null → undefined 変換（Special Case/Optionalフィールド）
-      const description =
-        "description" in body
-          ? body.description === null
-            ? undefined
-            : body.description
-          : undefined;
-      const dueDate =
-        "dueDate" in body
-          ? body.dueDate === null
-            ? undefined
-            : body.dueDate
-          : undefined;
-
+      // 3値を区別するため、条件付きでプロパティを追加
+      // - キー未指定: プロパティを渡さない → UseCase側で "field" in input === false
+      // - null送信: undefined を渡す → UseCase側で値をクリア
+      // - 値送信: その値を渡す → UseCase側で値を更新
       const result = await useCase.execute({
         todoId,
         title: body.title,
-        description,
+        ...("description" in body && {
+          description:
+            body.description === null ? undefined : body.description,
+        }),
         status: convertToTodoStatus(body.status),
         priority: body.priority,
-        dueDate,
-        projectId,
-        assigneeUserId,
+        ...("dueDate" in body && {
+          dueDate: body.dueDate === null ? undefined : body.dueDate,
+        }),
+        ...("projectId" in body && {
+          projectId: body.projectId === null ? undefined : body.projectId,
+        }),
+        ...("assigneeUserId" in body && {
+          assigneeUserId:
+            body.assigneeUserId === null ? undefined : body.assigneeUserId,
+        }),
       });
 
       if (!result.isOk()) {

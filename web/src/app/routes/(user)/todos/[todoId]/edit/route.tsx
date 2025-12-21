@@ -23,12 +23,16 @@ export default function TodoEditRoute() {
 
   const updateTodo = useUpdateTodo();
 
-  const handleUpdate = async (data: UpdateTodoParams) => {
+  const handleUpdate = async (
+    data: UpdateTodoParams,
+    dirtyFields: Partial<Record<keyof UpdateTodoParams, boolean>>,
+  ) => {
     logger.info("TODO更新開始", { todoId: todo.id, title: data.title });
     try {
       await updateTodo.mutateAsync({
         todoId: todo.id,
         data,
+        dirtyFields,
       });
       logger.info("TODO更新成功", { todoId: todo.id });
       toast.success("TODOを更新しました");

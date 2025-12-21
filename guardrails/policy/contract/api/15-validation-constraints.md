@@ -331,12 +331,91 @@ const result = await useCase.execute({
 });
 ```
 
+## Register*Params（POST）と Update*Params（PATCH）の違い
+
+### 核心原則
+
+**Register*Params（POST）では `nullable: true` を設定しない。Update*Params（PATCH）でのみ `nullable: true` を設定する。**
+
+### 理由
+
+| スキーマ | nullable: true | 空文字列 | 許可される状態 |
+|---------|----------------|----------|----------------|
+| Register*Params | ❌ 設定しない | ❌ minLength: 1 | 2値: 有効な値 or 省略 |
+| Update*Params | ✅ 必要に応じて設定 | ❌ minLength: 1 | 3値: 有効な値 or null or 省略 |
+
+**POSTで `nullable: true` を設定しない理由**:
+
+1. **意味的な不整合**: 新規作成時に「値をクリアする」操作は存在しない
+2. **バリデーションエラー回避**: `null` を送信すると型エラー（`nullable: true` なしでは null は許可されない）
+3. **シンプルな契約**: 2値（有効な値 or 省略）で十分
+
+### OpenAPI定義例
+
+```yaml
+# ✅ Good: Register*Params（POST）- nullable: true なし
+RegisterTodoParams:
+  type: object
+  required:
+    - title
+  properties:
+    title:
+      type: string
+      minLength: 1
+      maxLength: 200
+    description:
+      type: string
+      minLength: 1    # 空文字列禁止
+      # nullable: true なし（新規作成時に「クリア」は不要）
+    projectId:
+      type: string
+      minLength: 1    # 空文字列禁止
+      # nullable: true なし
+
+# ✅ Good: Update*Params（PATCH）- nullable: true あり
+UpdateTodoParams:
+  type: object
+  properties:
+    title:
+      type: string
+      minLength: 1
+      maxLength: 200
+    description:
+      type: string
+      minLength: 1    # 空文字列禁止
+      nullable: true  # クリア操作を許可
+    projectId:
+      type: string
+      minLength: 1    # 空文字列禁止
+      nullable: true  # クリア操作を許可
+```
+
+### クライアント実装への影響
+
+**参照**: `../../web/api/20-request-normalization.md` - フロントエンドでの正規化実装
+
+| HTTPメソッド | 空文字列の扱い | 正規化関数 |
+|-------------|---------------|-----------|
+| POST | 省略（フィールドを送信しない） | `normalizePostRequest()` |
+| PATCH | `null` に変換 | `normalizePatchRequest()` |
+
+```typescript
+// POST: 空文字列フィールドを省略
+const normalized = normalizePostRequest(data);
+// { title: "タイトル", description: "" } → { title: "タイトル" }
+
+// PATCH: 空文字列を null に変換（dirtyFieldsでフィルタリング後）
+const normalized = normalizePatchRequest(data, dirtyFields);
+// { description: "" } → { description: null }
+```
+
 ## チェックリスト
 
 ```
 [ ] すべての文字列フィールドにminLength: 1を設定（空文字列禁止）
 [ ] 必須フィールドはrequiredに含め、minLength: 1を設定
 [ ] オプショナルフィールドはrequiredに含めず、minLength: 1を設定
-[ ] 値のクリアが必要なフィールドにnullable: trueを設定
+[ ] Register*Paramsでは nullable: true を設定しない
+[ ] Update*Paramsでは値のクリアが必要なフィールドに nullable: true を設定
 [ ] descriptionで制約の意図を明記
 ```

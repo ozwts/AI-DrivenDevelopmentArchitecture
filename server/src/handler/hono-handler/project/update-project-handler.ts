@@ -39,10 +39,17 @@ export const buildUpdateProjectHandler =
 
       const body = parseResult.data;
 
+      // 3値を区別するため、条件付きでプロパティを追加
+      // - キー未指定: プロパティを渡さない → UseCase側で "field" in input === false
+      // - null送信: undefined を渡す → UseCase側で値をクリア
+      // - 値送信: その値を渡す → UseCase側で値を更新
       const result = await useCase.execute({
         projectId,
         name: body.name,
-        description: body.description ?? undefined,
+        ...("description" in body && {
+          description:
+            body.description === null ? undefined : body.description,
+        }),
         color: body.color,
       });
 

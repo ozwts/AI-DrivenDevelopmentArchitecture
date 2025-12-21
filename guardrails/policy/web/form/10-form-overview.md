@@ -57,7 +57,25 @@ export function TodoForm({ onSubmit }: Props) {
 }
 ```
 
+## 更新フォームでの注意点
+
+更新フォーム（PATCH用）では、`dirtyFields` を使用して変更フィールドのみを送信する。
+
+```typescript
+const {
+  handleSubmit,
+  formState: { dirtyFields },
+} = useForm<UpdateTodoParams>({
+  defaultValues: todo,  // サーバーから取得した現在値を設定
+});
+```
+
+**重要**: `defaultValues` にサーバーの現在値を設定しないと、全フィールドが dirty になる。
+
+詳細は `../api/20-request-normalization.md` を参照。
+
 ## 関連ドキュメント
 
 - `20-conditional-validation.md`: 条件分岐バリデーション
+- `../api/20-request-normalization.md`: リクエスト正規化（dirtyFields、空文字列→null変換）
 - `../ui/10-ui-overview.md`: UIプリミティブ設計概要

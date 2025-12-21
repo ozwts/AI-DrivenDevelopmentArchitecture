@@ -10,7 +10,7 @@ import type { ProjectOutletContext } from "../route";
 
 const logger = buildLogger("EditProjectRoute");
 
-type CreateProjectParams = z.infer<typeof schemas.CreateProjectParams>;
+type UpdateProjectParams = z.infer<typeof schemas.UpdateProjectParams>;
 
 /**
  * プロジェクト編集ページ
@@ -23,12 +23,16 @@ export default function EditProjectRoute() {
 
   const updateProject = useUpdateProject();
 
-  const handleSubmit = async (data: CreateProjectParams) => {
+  const handleSubmit = async (
+    data: UpdateProjectParams,
+    dirtyFields: Partial<Record<keyof UpdateProjectParams, boolean>>,
+  ) => {
     logger.info("プロジェクト更新開始", { projectId: project.id, name: data.name });
     try {
       await updateProject.mutateAsync({
         projectId: project.id,
         data,
+        dirtyFields,
       });
       logger.info("プロジェクト更新成功", { projectId: project.id });
       toast.success("プロジェクトを更新しました");

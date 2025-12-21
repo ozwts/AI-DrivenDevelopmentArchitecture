@@ -31,10 +31,13 @@ export default function ProfileRoute() {
   const deleteUser = useDeleteCurrentUser();
   const toast = useToast();
 
-  const handleUpdate = async (data: UpdateUserParams) => {
-    logger.info("プロフィール更新開始", { displayName: data.displayName });
+  const handleUpdate = async (
+    data: UpdateUserParams,
+    dirtyFields: Partial<Record<keyof UpdateUserParams, boolean>>,
+  ) => {
+    logger.info("プロフィール更新開始", { name: data.name });
     try {
-      await updateUser.mutateAsync(data);
+      await updateUser.mutateAsync({ data, dirtyFields });
       logger.info("プロフィール更新成功");
       setIsEditModalOpen(false);
       toast.success("プロフィールを更新しました");

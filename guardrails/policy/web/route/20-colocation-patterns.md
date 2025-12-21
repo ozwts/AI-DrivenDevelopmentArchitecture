@@ -111,19 +111,9 @@ app/routes/({role})/{feature}/
 
 ### 共通フォームコンポーネント
 
-```typescript
-// app/routes/({role})/{feature}/_shared/components/{Feature}Form.tsx
-type Props = {
-  readonly defaultValues?: {Feature}Response;
-  readonly onSubmit: (data: {Feature}FormData) => void;
-  readonly onCancel: () => void;
-  readonly isLoading?: boolean;
-};
+作成と編集で共通フォームを使用する場合、編集時は `dirtyFields` を `onSubmit` コールバックに渡す。
 
-export function {Feature}Form({ defaultValues, onSubmit, onCancel, isLoading }: Props) {
-  // フォームUIのみ（データ取得・更新は呼び出し元の責務）
-}
-```
+**参照**: `../api/20-request-normalization.md`（パターン詳細とコード例）
 
 ### Do / Don't
 
@@ -323,3 +313,5 @@ export function {Feature}Item({ item }: Props) {
 - `15-role-design.md`: ロール設計（WHO）
 - `30-shared-placement.md`: 配置基準（WHERE）
 - `../component/10-component-overview.md`: コンポーネント設計
+- `../api/20-request-normalization.md`: PATCHリクエスト正規化（dirtyFields）
+- `../form/10-form-overview.md`: フォーム設計概要

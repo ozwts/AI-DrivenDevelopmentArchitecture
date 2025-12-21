@@ -9,7 +9,10 @@ type UpdateUserParams = z.infer<typeof schemas.UpdateUserParams>;
 
 type ProfileEditFormProps = {
   readonly user: UserResponse;
-  readonly onSubmit: (data: UpdateUserParams) => void;
+  readonly onSubmit: (
+    data: UpdateUserParams,
+    dirtyFields: Partial<Record<keyof UpdateUserParams, boolean>>,
+  ) => void;
   readonly onCancel: () => void;
   readonly isLoading?: boolean;
 };
@@ -23,7 +26,7 @@ export const ProfileEditForm = ({
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, dirtyFields },
   } = useForm<UpdateUserParams>({
     defaultValues: {
       name: user.name,
@@ -33,8 +36,12 @@ export const ProfileEditForm = ({
     reValidateMode: "onChange",
   });
 
+  const onFormSubmit = (data: UpdateUserParams) => {
+    onSubmit(data, dirtyFields);
+  };
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
       <TextField
         label="ユーザー名"
         {...register("name")}

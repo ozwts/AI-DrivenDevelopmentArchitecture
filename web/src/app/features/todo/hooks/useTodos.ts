@@ -70,12 +70,14 @@ export function useUpdateTodo() {
     mutationFn: ({
       todoId,
       data,
+      dirtyFields,
     }: {
       todoId: string;
       data: UpdateTodoParams;
+      dirtyFields: Partial<Record<keyof UpdateTodoParams, boolean>>;
     }) => {
       logger.info("TODO更新開始", { todoId, status: data.status });
-      return todoApi.updateTodo(todoId, data);
+      return todoApi.updateTodo(todoId, data, dirtyFields);
     },
     onSuccess: (_, { todoId }) => {
       logger.info("TODO更新成功", { todoId });

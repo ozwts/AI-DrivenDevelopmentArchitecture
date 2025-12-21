@@ -110,19 +110,7 @@ export function useCreateTodo() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: RegisterTodoParams) => apiClient.createTodo(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
-    },
-  });
-}
-
-export function useUpdateTodo() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ todoId, data }: { todoId: string; data: UpdateTodoParams }) =>
-      apiClient.updateTodo(todoId, data),
+    mutationFn: (data: RegisterTodoParams) => todoApi.createTodo(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
     },
@@ -133,13 +121,15 @@ export function useDeleteTodo() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (todoId: string) => apiClient.deleteTodo(todoId),
+    mutationFn: (todoId: string) => todoApi.deleteTodo(todoId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
     },
   });
 }
 ```
+
+**更新系ミューテーション**: `dirtyFields` を使用した PATCH リクエストパターンは `../api/20-request-normalization.md` を参照。
 
 ### 楽観的更新（Optimistic Updates）
 
@@ -149,7 +139,7 @@ export function useToggleTodoStatus() {
 
   return useMutation({
     mutationFn: ({ todoId, status }: { todoId: string; status: TodoStatus }) =>
-      apiClient.updateTodo(todoId, { status }),
+      todoApi.updateTodoStatus(todoId, status),
 
     // 楽観的更新：UIを即座に更新
     onMutate: async ({ todoId, status }) => {
@@ -196,20 +186,14 @@ export function useToggleTodoStatus() {
 
 ### 関連クエリの無効化
 
-```typescript
-export function useUpdateTodo() {
-  const queryClient = useQueryClient();
+更新成功時に一覧と詳細の両方を無効化する：
 
-  return useMutation({
-    mutationFn: ({ todoId, data }: { todoId: string; data: UpdateTodoParams }) =>
-      apiClient.updateTodo(todoId, data),
-    onSuccess: (_, { todoId }) => {
-      // 一覧と詳細の両方を無効化
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, todoId] });
-    },
-  });
-}
+```typescript
+onSuccess: (_, { todoId }) => {
+  // 一覧と詳細の両方を無効化
+  queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+  queryClient.invalidateQueries({ queryKey: [QUERY_KEY, todoId] });
+},
 ```
 
 ### プロジェクト削除時の関連TODO無効化
@@ -354,6 +338,7 @@ const { data } = useSuspenseQuery(todoQueries.all());
 - `10-hooks-overview.md`: カスタムフック設計概要
 - `30-state-patterns.md`: 複雑な状態管理パターン
 - `../api/10-api-overview.md`: API通信基盤
+- `../api/20-request-normalization.md`: PATCHリクエスト正規化（dirtyFields）
 
 ## 参考
 

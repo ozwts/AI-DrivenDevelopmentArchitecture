@@ -3,7 +3,7 @@
  */
 import { z } from "zod";
 import { schemas } from "@/generated/zod-schemas";
-import { request, requestVoid } from "@/app/lib/api";
+import { request, requestVoid, normalizePatchRequest } from "@/app/lib/api";
 
 type UserResponse = z.infer<typeof schemas.UserResponse>;
 type UpdateUserParams = z.infer<typeof schemas.UpdateUserParams>;
@@ -21,10 +21,14 @@ export const userApi = {
     return request("/users/me", schemas.UserResponse);
   },
 
-  updateCurrentUser: async (data: UpdateUserParams): Promise<UserResponse> => {
+  updateCurrentUser: async (
+    data: UpdateUserParams,
+    dirtyFields: Partial<Record<keyof UpdateUserParams, boolean>>,
+  ): Promise<UserResponse> => {
+    const normalized = normalizePatchRequest(data, dirtyFields);
     return request("/users/me", schemas.UserResponse, {
-      method: "PUT",
-      body: JSON.stringify(data),
+      method: "PATCH",
+      body: JSON.stringify(normalized),
     });
   },
 

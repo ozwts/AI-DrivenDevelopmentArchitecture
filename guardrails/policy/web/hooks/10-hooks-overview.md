@@ -113,14 +113,14 @@ export function useTodo(todoId: string) {
 ```typescript
 // app/features/todo/hooks/useTodos.ts
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiClient } from "@/app/lib/api";
+import { todoApi } from "../api";
 import type { RegisterTodoParams } from "@/generated/zod-schemas";
 
 export function useCreateTodo() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: RegisterTodoParams) => apiClient.createTodo(data),
+    mutationFn: (data: RegisterTodoParams) => todoApi.createTodo(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
     },
@@ -132,6 +132,8 @@ export function useCreateTodo() {
 - onSuccessでキャッシュを無効化
 - mutationFnの引数は型安全に
 - useMutationの戻り値をそのまま返す
+
+**更新系ミューテーション**: `dirtyFields` を受け取るパターンは `../api/20-request-normalization.md` を参照。
 
 ## オプション公開の制限
 
@@ -301,3 +303,4 @@ routes/hooks/ → features/hooks/ → lib/hooks/
 - `../feature/10-feature-overview.md`: Feature設計概要
 - `../lib/10-lib-overview.md`: 技術基盤設計概要
 - `../logger/10-logger-overview.md`: ログ出力基盤（Hooksでのログ実装必須）
+- `../api/20-request-normalization.md`: PATCHリクエスト正規化（dirtyFields）
