@@ -2,50 +2,9 @@
  * テスト実行の責務定義
  */
 import { z } from "zod";
-import { getTestRunner, TestResult, TestFilter } from "./test-runner";
+import { getTestRunner, type TestFilter } from "./test-runner";
+import { formatTestResult } from "./formatter";
 import type { ProcedureResponsibility } from "../dev";
-
-/**
- * 実行時間をフォーマット
- */
-const formatDuration = (ms: number): string => {
-  const seconds = Math.floor(ms / 1000);
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-
-  if (minutes > 0) {
-    return `${minutes}分${remainingSeconds}秒`;
-  }
-  return `${seconds}秒`;
-};
-
-/**
- * テスト結果をフォーマット
- */
-const formatTestResult = (result: TestResult): string => {
-  const status = result.success ? "✅ 成功" : "❌ 失敗";
-  const duration = formatDuration(result.duration);
-
-  // 出力が長い場合は末尾を切り詰める
-  const maxOutputLength = 5000;
-  let { output } = result;
-  if (output.length > maxOutputLength) {
-    output = `${output.slice(0, maxOutputLength)}\n... (出力が長いため省略)`;
-  }
-
-  return [
-    `## テスト結果: ${status}`,
-    "",
-    `- **対象**: ${result.target}`,
-    `- **実行時間**: ${duration}`,
-    "",
-    "### 出力",
-    "",
-    "```",
-    output,
-    "```",
-  ].join("\n");
-};
 
 /**
  * 入力からTestFilterを構築

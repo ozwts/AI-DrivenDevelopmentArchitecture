@@ -162,7 +162,7 @@ class TestRunner {
       success,
       target: "web:component",
       output: noTestsFound
-        ? result.output + "\n(テストが存在しないためスキップ)"
+        ? `${result.output}\n(テストが存在しないためスキップ)`
         : result.output,
       duration: Date.now() - startTime,
     };
@@ -204,7 +204,7 @@ class TestRunner {
       success,
       target: "web:snapshot",
       output: noTestsFound
-        ? result.output + "\n(テストが存在しないためスキップ)"
+        ? `${result.output}\n(テストが存在しないためスキップ)`
         : result.output,
       duration: Date.now() - startTime,
     };

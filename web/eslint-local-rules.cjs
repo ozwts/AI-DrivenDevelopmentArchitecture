@@ -51,4 +51,5 @@ module.exports = {
   // UIプリミティブ設計用ルール（プレフィックス: ui/）
   "ui/no-classname-in-props": uiRules["no-classname-in-props"],
   "ui/require-omit-classname": uiRules["require-omit-classname"],
+  "ui/require-composite-test": uiRules["require-composite-test"],
 };

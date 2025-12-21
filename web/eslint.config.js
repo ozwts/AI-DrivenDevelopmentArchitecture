@@ -183,6 +183,8 @@ export default defineConfig(
       "local-rules/ui/no-classname-in-props": "error",
       // UIプリミティブ設計: HTML属性型使用時はOmit<..., "className">必須
       "local-rules/ui/require-omit-classname": "error",
+      // UIプリミティブ設計: Compositeコンポーネントにテスト必須
+      "local-rules/ui/require-composite-test": "error",
     },
   },
 
