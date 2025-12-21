@@ -10,6 +10,30 @@ Compositeは**複数のスロット（Props）を持ち、それらの配置・�
 
 **❌ classNameを受け入れない（サブコンポーネント含む）**
 
+### 有効なパターン（2種類）
+
+| パターン | 説明 |
+|---------|------|
+| **独自Props型** | HTML属性型を継承せず、必要なpropsのみ定義。`className`が型に存在しない |
+| **Omitパターン** | HTML属性型を継承しつつ`Omit<..., "className">`で除外 |
+
+```tsx
+// パターン1: 独自Props型（className が型に存在しない）
+type ExampleProps = {
+  readonly variant: "success" | "error";
+  readonly children: ReactNode;
+};
+
+// パターン2: Omitパターン（HTML属性を継承する場合）
+type FieldProps = Omit<ComponentPropsWithoutRef<"input">, "className"> & {
+  readonly label?: string;
+};
+```
+
+**どちらも有効**。パターン1はclassNameがそもそも型に存在せず、パターン2は明示的に除外する。
+
+### スタイル変更が必要な場合
+
 | 用途 | 対応方法 |
 |------|---------|
 | 余白変更 | variant prop（例: `noPadding`） |

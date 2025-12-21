@@ -24,29 +24,22 @@ UIプリミティブは**3つの種別（Leaf/Container/Composite）**に分類�
 ### 判断フローチャート
 
 ```
-コンポーネントは子要素を受け取るか？
+Q1: コンポーネントは children を受け取るか？
 │
-├─ No / 限定的（テキスト・アイコンのみ）
+├─ No、または children: string | ReactElement（単一要素）
 │   └─ 【Leaf】 → 20-leaf.md
 │
-└─ Yes（ReactNode）
+└─ Yes（children: ReactNode として任意のコンテンツ）
     │
-    └─ 複数のスロット（Props）を持ち、配置を内部で制御するか？
-        │
-        ├─ No（childrenのみ、配置は呼び出し側）
-        │   └─ 【Container】 → 30-container.md
-        │
-        └─ Yes（Header/Body/Footer等の構造）
-            └─ 【Composite】 → 40-composite.md
+    Q2: children 以外に構造を定義する Props があるか？
+    │   （例: icon, title, header, footer, action, label, error 等）
+    │
+    ├─ No（children のみ）
+    │   └─ 【Container】 → 30-container.md
+    │
+    └─ Yes（構造を定義する Props がある）
+        └─ 【Composite】 → 40-composite.md
 ```
-
-### 分類の例
-
-| 種別 | 例 |
-|------|-----|
-| Leaf | ボタン、バッジ、ローディングインジケーター等 |
-| Container | カード、パネル等 |
-| Composite | モーダル、アラート、空状態表示、フォームフィールド等 |
 
 ---
 
