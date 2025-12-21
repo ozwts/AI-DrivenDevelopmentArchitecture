@@ -135,28 +135,9 @@ export default function ProjectsIndexRoute() {
         onClose={() => {
           setDeletingProject(undefined);
         }}
-        title="プロジェクトの削除"
-        footer={
-          <div className="px-6 py-4 flex justify-end gap-2">
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setDeletingProject(undefined);
-              }}
-            >
-              キャンセル
-            </Button>
-            <Button
-              variant="danger"
-              onClick={handleDelete}
-              isLoading={deleteProject.isPending}
-            >
-              削除
-            </Button>
-          </div>
-        }
       >
-        <div className="p-6">
+        <Modal.Header>プロジェクトの削除</Modal.Header>
+        <Modal.Body>
           <p className="text-text-secondary">
             プロジェクト「{deletingProject?.name}」を削除してもよろしいですか？
             <br />
@@ -172,7 +153,24 @@ export default function ProjectsIndexRoute() {
             )}
             この操作は取り消せません。
           </p>
-        </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setDeletingProject(undefined);
+            }}
+          >
+            キャンセル
+          </Button>
+          <Button
+            variant="danger"
+            onClick={handleDelete}
+            isLoading={deleteProject.isPending}
+          >
+            削除
+          </Button>
+        </Modal.Footer>
       </Modal>
     </div>
   );

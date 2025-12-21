@@ -3,11 +3,12 @@ import { ButtonHTMLAttributes, forwardRef } from "react";
 type ButtonVariant = "primary" | "secondary" | "danger" | "ghost";
 type ButtonSize = "sm" | "md" | "lg";
 
-type ButtonProps = {
+type ButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "className"> & {
   readonly variant?: ButtonVariant;
   readonly size?: ButtonSize;
   readonly isLoading?: boolean;
-} & ButtonHTMLAttributes<HTMLButtonElement>;
+  readonly fullWidth?: boolean;
+};
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
@@ -32,8 +33,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       variant = "primary",
       size = "md",
       isLoading = false,
+      fullWidth = false,
       disabled,
-      className = "",
       children,
       ...props
     },
@@ -55,7 +56,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           disabled:cursor-not-allowed disabled:opacity-60
           ${variantStyles[variant]}
           ${sizeStyles[size]}
-          ${className}
+          ${fullWidth ? "w-full" : ""}
         `}
         {...props}
       >

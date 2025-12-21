@@ -1,13 +1,16 @@
 import { TextareaHTMLAttributes, forwardRef, useId } from "react";
 
-type TextareaProps = {
+type TextareaFieldProps = Omit<
+  TextareaHTMLAttributes<HTMLTextAreaElement>,
+  "className"
+> & {
   readonly label?: string;
   readonly error?: string;
   readonly helperText?: string;
-} & TextareaHTMLAttributes<HTMLTextAreaElement>;
+};
 
-export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ label, error, helperText, className = "", id, ...props }, ref) => {
+export const TextareaField = forwardRef<HTMLTextAreaElement, TextareaFieldProps>(
+  ({ label, error, helperText, id, ...props }, ref) => {
     const generatedId = useId();
     const textareaId = id ?? generatedId;
 
@@ -16,7 +19,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
         {label && (
           <label
             htmlFor={textareaId}
-            className="block text-sm font-medium text-text-primary"
+            className="block text-sm font-medium text-text-primary mb-1"
           >
             {label}
             {props.required && <span className="text-error-600 ml-1">*</span>}
@@ -34,22 +37,21 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
             disabled:bg-neutral-100 disabled:cursor-not-allowed
             resize-y
             ${error ? "border-error-600" : "border-border-light"}
-            ${className}
           `}
           rows={4}
           {...props}
         />
         {error && (
-          <p role="alert" className="text-sm text-error-600">
+          <p role="alert" className="mt-1 text-sm text-error-600">
             {error}
           </p>
         )}
         {helperText && !error && (
-          <p className="text-sm text-text-tertiary">{helperText}</p>
+          <p className="mt-1 text-sm text-text-tertiary">{helperText}</p>
         )}
       </div>
     );
   },
 );
 
-Textarea.displayName = "Textarea";
+TextareaField.displayName = "TextareaField";

@@ -221,9 +221,9 @@ export default function ProfileRoute() {
         onClose={() => {
           setIsEditModalOpen(false);
         }}
-        title="プロフィール編集"
       >
-        <div className="p-6">
+        <Modal.Header>プロフィール編集</Modal.Header>
+        <Modal.Body>
           <ProfileEditForm
             user={user}
             onSubmit={handleUpdate}
@@ -232,7 +232,7 @@ export default function ProfileRoute() {
             }}
             isLoading={updateUser.isPending}
           />
-        </div>
+        </Modal.Body>
       </Modal>
 
       {/* Delete Confirmation Modal */}
@@ -241,9 +241,9 @@ export default function ProfileRoute() {
         onClose={() => {
           setIsDeleteModalOpen(false);
         }}
-        title="アカウント削除の確認"
       >
-        <div className="p-6">
+        <Modal.Header>アカウント削除の確認</Modal.Header>
+        <Modal.Body>
           <DeleteAccountConfirmation
             user={user}
             onConfirm={handleDelete}
@@ -252,7 +252,7 @@ export default function ProfileRoute() {
             }}
             isDeleting={deleteUser.isPending}
           />
-        </div>
+        </Modal.Body>
       </Modal>
     </div>
   );

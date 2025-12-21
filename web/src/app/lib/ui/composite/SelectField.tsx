@@ -5,14 +5,14 @@ type SelectOption = {
   readonly label: string;
 };
 
-type SelectProps = {
+type SelectFieldProps = Omit<SelectHTMLAttributes<HTMLSelectElement>, "className"> & {
   readonly label?: string;
   readonly error?: string;
   readonly options: readonly SelectOption[];
-} & SelectHTMLAttributes<HTMLSelectElement>;
+};
 
-export const Select = forwardRef<HTMLSelectElement, SelectProps>(
-  ({ label, error, options, className = "", id, ...props }, ref) => {
+export const SelectField = forwardRef<HTMLSelectElement, SelectFieldProps>(
+  ({ label, error, options, id, ...props }, ref) => {
     const generatedId = useId();
     const selectId = id ?? generatedId;
 
@@ -21,7 +21,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         {label && (
           <label
             htmlFor={selectId}
-            className="block text-sm font-medium text-text-primary"
+            className="block text-sm font-medium text-text-primary mb-1"
           >
             {label}
             {props.required && <span className="text-error-600 ml-1">*</span>}
@@ -37,7 +37,6 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent
             disabled:bg-neutral-100 disabled:cursor-not-allowed
             ${error ? "border-error-600" : "border-border-light"}
-            ${className}
           `}
           {...props}
         >
@@ -48,7 +47,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           ))}
         </select>
         {error && (
-          <p role="alert" className="text-sm text-error-600">
+          <p role="alert" className="mt-1 text-sm text-error-600">
             {error}
           </p>
         )}
@@ -57,4 +56,4 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
   },
 );
 
-Select.displayName = "Select";
+SelectField.displayName = "SelectField";

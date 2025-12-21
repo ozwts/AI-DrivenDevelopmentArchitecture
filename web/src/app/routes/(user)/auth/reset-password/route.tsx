@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "@/app/features/auth";
 import { buildLogger } from "@/app/lib/logger";
-import { Button, Input } from "@/app/lib/ui";
+import { Button, TextField } from "@/app/lib/ui";
 
 const logger = buildLogger("ResetPasswordRoute");
 
@@ -170,7 +170,7 @@ export default function ResetPasswordRoute(): ReactNode {
             className="space-y-6"
           >
             <div>
-              <Input
+              <TextField
                 label="メールアドレス"
                 type="email"
                 {...requestForm.register("email")}
@@ -226,7 +226,7 @@ export default function ResetPasswordRoute(): ReactNode {
             className="space-y-6"
           >
             <div>
-              <Input
+              <TextField
                 label="確認コード"
                 type="text"
                 {...confirmForm.register("confirmationCode")}
@@ -241,7 +241,7 @@ export default function ResetPasswordRoute(): ReactNode {
             </div>
 
             <div>
-              <Input
+              <TextField
                 label="新しいパスワード"
                 type="password"
                 {...confirmForm.register("newPassword")}
@@ -254,7 +254,7 @@ export default function ResetPasswordRoute(): ReactNode {
               </p>
             </div>
 
-            <Input
+            <TextField
               label="新しいパスワード（確認）"
               type="password"
               {...confirmForm.register("confirmPassword")}

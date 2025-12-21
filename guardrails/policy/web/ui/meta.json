@@ -1,0 +1,5 @@
+{
+  "label": "UIプリミティブ",
+  "description": "Leaf/Container/Composite の3分類に基づくUIプリミティブ設計",
+  "dependencies": ["lib", "design"]
+}

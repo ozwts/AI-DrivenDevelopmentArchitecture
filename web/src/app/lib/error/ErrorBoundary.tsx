@@ -1,6 +1,5 @@
 import { Component, ReactNode, ErrorInfo } from "react";
-import { Alert } from "./Alert";
-import { Button } from "./Button";
+import { Alert, Button } from "@/app/lib/ui";
 import { buildLogger } from "@/app/lib/logger";
 
 const logger = buildLogger("ErrorBoundary");

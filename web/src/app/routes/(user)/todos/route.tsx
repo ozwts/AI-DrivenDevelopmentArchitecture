@@ -1,6 +1,6 @@
 import { Link, useSearchParams, useNavigate } from "react-router";
 import { PlusIcon, ListBulletIcon } from "@heroicons/react/24/outline";
-import { Button, LoadingPage, Alert, EmptyState, Select } from "@/app/lib/ui";
+import { Button, LoadingPage, Alert, EmptyState, SelectField } from "@/app/lib/ui";
 import { buildLogger } from "@/app/lib/logger";
 import { useToast } from "@/app/lib/contexts";
 import { useTodos, useUpdateTodo, useDeleteTodo } from "@/app/features/todo";
@@ -153,8 +153,8 @@ export default function TodosIndexRoute() {
             </p>
           </div>
           <Link to="/todos/new">
-            <Button variant="primary" className="flex items-center gap-2">
-              <PlusIcon className="h-5 w-5" />
+            <Button variant="primary">
+              <PlusIcon className="h-5 w-5 mr-2" />
               新規TODO
             </Button>
           </Link>
@@ -163,7 +163,7 @@ export default function TodosIndexRoute() {
         {/* Filters */}
         <div className="flex gap-4">
           <div className="w-48">
-            <Select
+            <SelectField
               options={statusFilterOptions}
               value={filterStatus}
               onChange={(e) => {
@@ -172,7 +172,7 @@ export default function TodosIndexRoute() {
             />
           </div>
           <div className="w-48">
-            <Select
+            <SelectField
               options={projectFilterOptions}
               value={filterProjectId}
               onChange={(e) => {

@@ -1,13 +1,13 @@
 import { InputHTMLAttributes, forwardRef, useId } from "react";
 
-type InputProps = {
+type TextFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, "className"> & {
   readonly label?: string;
   readonly error?: string;
   readonly helperText?: string;
-} & InputHTMLAttributes<HTMLInputElement>;
+};
 
-export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, helperText, className = "", id, ...props }, ref) => {
+export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
+  ({ label, error, helperText, id, ...props }, ref) => {
     const generatedId = useId();
     const inputId = id ?? generatedId;
     const errorId = `${inputId}-error`;
@@ -24,7 +24,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="block text-sm font-medium text-text-primary"
+            className="block text-sm font-medium text-text-primary mb-1"
           >
             {label}
             {props.required && <span className="text-error-600 ml-1">*</span>}
@@ -43,17 +43,16 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent
             disabled:bg-neutral-100 disabled:cursor-not-allowed
             ${hasError ? "border-error-600" : "border-border-light"}
-            ${className}
           `}
           {...props}
         />
         {hasError && (
-          <p id={errorId} role="alert" className="text-sm text-error-600">
+          <p id={errorId} role="alert" className="mt-1 text-sm text-error-600">
             {error}
           </p>
         )}
         {hasHelper && (
-          <p id={helperId} className="text-sm text-text-tertiary">
+          <p id={helperId} className="mt-1 text-sm text-text-tertiary">
             {helperText}
           </p>
         )}
@@ -62,4 +61,4 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
   },
 );
 
-Input.displayName = "Input";
+TextField.displayName = "TextField";

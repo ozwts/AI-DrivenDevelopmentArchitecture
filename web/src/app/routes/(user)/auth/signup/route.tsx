@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "@/app/features/auth";
 import { buildLogger } from "@/app/lib/logger";
-import { Button, Input } from "@/app/lib/ui";
+import { Button, TextField } from "@/app/lib/ui";
 
 const logger = buildLogger("SignupRoute");
 
@@ -89,7 +89,7 @@ export default function SignupRoute(): ReactNode {
         </h1>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <Input
+          <TextField
             label="メールアドレス"
             type="email"
             {...register("email")}
@@ -99,7 +99,7 @@ export default function SignupRoute(): ReactNode {
           />
 
           <div>
-            <Input
+            <TextField
               label="パスワード"
               type="password"
               {...register("password")}
@@ -112,7 +112,7 @@ export default function SignupRoute(): ReactNode {
             </p>
           </div>
 
-          <Input
+          <TextField
             label="パスワード（確認）"
             type="password"
             {...register("confirmPassword")}

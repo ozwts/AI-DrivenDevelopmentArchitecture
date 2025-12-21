@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Button, Input, Textarea, Select } from "@/app/lib/ui";
+import { Button, TextField, TextareaField, SelectField } from "@/app/lib/ui";
 import {
   STATUS_VALUE_LABEL_PAIRS,
   PRIORITY_VALUE_LABEL_PAIRS,
@@ -166,7 +166,7 @@ export const TodoForm = (props: TodoFormProps) => {
 
   return (
     <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
-      <Input
+      <TextField
         label="タイトル"
         {...register("title")}
         error={errors.title?.message}
@@ -174,7 +174,7 @@ export const TodoForm = (props: TodoFormProps) => {
         required
       />
 
-      <Textarea
+      <TextareaField
         label="説明"
         {...register("description")}
         error={errors.description?.message}
@@ -183,14 +183,14 @@ export const TodoForm = (props: TodoFormProps) => {
       />
 
       <div className="grid grid-cols-2 gap-4">
-        <Select
+        <SelectField
           label="ステータス"
           {...register("status")}
           options={statusOptions}
           error={errors.status?.message}
         />
 
-        <Select
+        <SelectField
           label="優先度"
           {...register("priority")}
           options={priorityOptions}
@@ -199,14 +199,14 @@ export const TodoForm = (props: TodoFormProps) => {
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <Select
+        <SelectField
           label="プロジェクト"
           {...register("projectId")}
           options={projectOptions}
           error={errors.projectId?.message}
         />
 
-        <Input
+        <TextField
           type="date"
           label="期限日"
           {...register("dueDate")}
@@ -214,7 +214,7 @@ export const TodoForm = (props: TodoFormProps) => {
         />
       </div>
 
-      <Select
+      <SelectField
         label="担当者"
         {...register("assigneeUserId")}
         options={assigneeOptions}

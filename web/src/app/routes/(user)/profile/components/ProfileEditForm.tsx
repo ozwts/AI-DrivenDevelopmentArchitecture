@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Button, Input } from "@/app/lib/ui";
+import { Button, TextField } from "@/app/lib/ui";
 import { schemas } from "@/generated/zod-schemas";
 
 type UserResponse = z.infer<typeof schemas.UserResponse>;
@@ -35,7 +35,7 @@ export const ProfileEditForm = ({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <Input
+      <TextField
         label="ユーザー名"
         {...register("name")}
         error={errors.name?.message}

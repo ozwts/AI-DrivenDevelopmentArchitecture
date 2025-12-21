@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowPathIcon } from "@heroicons/react/24/outline";
 import { z } from "zod";
 import { schemas } from "@/generated/zod-schemas";
-import { Button, Input, Textarea } from "@/app/lib/ui";
+import { Button, TextField, TextareaField } from "@/app/lib/ui";
 import { generateColorPalette } from "../utils/color";
 
 type ProjectResponse = z.infer<typeof schemas.ProjectResponse>;
@@ -59,7 +59,7 @@ export const ProjectForm = ({
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       {/* プロジェクト名 */}
-      <Input
+      <TextField
         label="プロジェクト名"
         {...register("name")}
         error={errors.name?.message}
@@ -67,7 +67,7 @@ export const ProjectForm = ({
       />
 
       {/* 説明 */}
-      <Textarea
+      <TextareaField
         label="説明"
         {...register("description")}
         error={errors.description?.message}

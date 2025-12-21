@@ -178,6 +178,11 @@ export default defineConfig(
 
       // ルート設計: route.tsxにroute.ss.test.tsが必須
       "local-rules/route/require-snapshot-test": "error",
+
+      // UIプリミティブ設計: Leaf/CompositeのProps型でclassName禁止
+      "local-rules/ui/no-classname-in-props": "error",
+      // UIプリミティブ設計: HTML属性型使用時はOmit<..., "className">必須
+      "local-rules/ui/require-omit-classname": "error",
     },
   },
 

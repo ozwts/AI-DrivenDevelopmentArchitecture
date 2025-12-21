@@ -10,6 +10,7 @@
  * - lib/: 技術基盤用ルール
  * - design/: デザイン用ルール
  * - route/: ルート設計用ルール
+ * - ui/: UIプリミティブ設計用ルール
  *
  * 参照: guardrails/policy/web/
  */
@@ -22,6 +23,7 @@ const featureRules = require("./eslint-local-rules/feature/index.cjs");
 const libRules = require("./eslint-local-rules/lib/index.cjs");
 const designRules = require("./eslint-local-rules/design/index.cjs");
 const routeRules = require("./eslint-local-rules/route/index.cjs");
+const uiRules = require("./eslint-local-rules/ui/index.cjs");
 
 module.exports = {
   // 共通ルール（プレフィックス: common/）
@@ -45,4 +47,8 @@ module.exports = {
   "route/require-outlet-context-type": routeRules["require-outlet-context-type"],
   "route/outlet-requires-context": routeRules["outlet-requires-context"],
   "route/require-snapshot-test": routeRules["require-snapshot-test"],
+
+  // UIプリミティブ設計用ルール（プレフィックス: ui/）
+  "ui/no-classname-in-props": uiRules["no-classname-in-props"],
+  "ui/require-omit-classname": uiRules["require-omit-classname"],
 };

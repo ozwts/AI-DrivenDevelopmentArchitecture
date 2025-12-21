@@ -102,7 +102,7 @@ export default function ProjectDetailRoute() {
       {/* TODOへのリンク */}
       <div className="mt-6">
         <Link to={`/todos?projectId=${project.id}`} className="block">
-          <Button variant="primary" className="w-full">
+          <Button variant="primary" fullWidth>
             このプロジェクトのTODOを見る
           </Button>
         </Link>

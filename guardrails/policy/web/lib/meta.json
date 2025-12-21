@@ -1,5 +1,5 @@
 {
   "label": "技術基盤",
-  "description": "UIプリミティブ、汎用Hook、純粋関数、APIクライアント基盤",
-  "dependencies": ["design"]
+  "description": "汎用Hook、純粋関数、APIクライアント基盤、Context/Provider",
+  "dependencies": []
 }

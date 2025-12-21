@@ -38,10 +38,11 @@ routes/ → features/ → lib/
 lib/
 ├── api/           # HTTP通信インフラ（エンドポイント定義は含まない）
 ├── contexts/      # Context + Provider + Hook（同一ファイル）
+├── error/         # エラーハンドリングインフラ（ErrorBoundary等）
 ├── hooks/         # Context以外の汎用カスタムフック
 ├── logger/        # ログ出力インフラ
 ├── services/      # 外部SDK連携の汎用抽象化（Facade Pattern）
-├── ui/            # UIプリミティブ
+├── ui/            # UIプリミティブ（Leaf/Container/Composite）
 └── utils/         # 純粋関数ユーティリティ
 ```
 
@@ -63,6 +64,19 @@ lib/
 **lib/services/ vs features/{feature}/services/**:
 - `lib/services/`: アプリケーション固有の概念を知らない汎用抽象化
 - `features/{feature}/services/`: Feature固有のSDK利用（設定、ビジネスロジックを含む）
+
+## error/ の役割
+
+`error/`はエラーハンドリングのインフラを配置する場所である。
+
+| コンポーネント | 説明 |
+|--------------|------|
+| `ErrorBoundary` | Reactエラー境界（render中のエラーをキャッチ） |
+
+**なぜ ui/ ではないのか**:
+- ErrorBoundaryは「視覚的プリミティブ」ではなく「エラー処理インフラ」
+- Reactの制約でクラスコンポーネント必須（他のUIプリミティブと設計が異なる）
+- Leaf/Container/Compositeの分類に当てはまらない
 
 ## 実施すること
 
@@ -120,7 +134,7 @@ export const todoApi = {
 
 ## 関連ドキュメント
 
-- `20-ui-primitives.md`: UIプリミティブ実装パターン
+- `../ui/10-ui-overview.md`: UIプリミティブ設計概要
 - `../api/10-api-overview.md`: API通信基盤とコロケーション
 - `../logger/10-logger-overview.md`: ログ出力基盤
 - `../feature/10-feature-overview.md`: Feature設計概要
