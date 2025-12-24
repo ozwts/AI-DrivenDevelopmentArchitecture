@@ -4,8 +4,6 @@
 
 Loggerは**ログ出力の抽象インターフェース**であり、**技術非依存**かつ**構造化ログ**をサポートする。
 
-**関連ドキュメント**: `../port/10-port-overview.md`
-
 ## 責務
 
 ### 実施すること
@@ -13,12 +11,16 @@ Loggerは**ログ出力の抽象インターフェース**であり、**技術�
 1. **ログ出力の抽象化**: 技術非依存のログインターフェースを提供
 2. **構造化ログのサポート**: 付加情報（AdditionalData）を受け取る
 3. **ログレベルの定義**: debug, info, warn, error
+4. **日本語でログメッセージを記述**: AIと人間が迅速に理解できる
 
 ### 実施しないこと
 
 1. **ログ出力先の決定** → Infrastructure層で実施
 2. **ログフォーマットの決定** → Infrastructure層で実施
 3. **ビジネスロジック** → UseCase層で実施
+4. **英語でのログメッセージ** → 日本語で記述する
+
+**参照**: `observability-principles.md`（可観測性の理念・ベネフィット）
 
 ## 型定義
 
@@ -36,12 +38,23 @@ export type Logger = {
 
 ## ログレベルの使い分け
 
-| レベル | 用途                                                   |
-| ------ | ------------------------------------------------------ |
-| debug  | デバッグのためのメッセージ                             |
-| info   | ユーザアクション、システム操作                         |
-| warn   | 将来的にエラーになる可能性（廃止警告、リソース不足等） |
-| error  | すべてのエラー状態                                     |
+| レベル | 用途 | 例 |
+|--------|------|-----|
+| debug | 開発時のデバッグ情報（**積極的に記録**） | リポジトリ操作詳細、クエリ結果 |
+| info | 正常系の重要イベント | ユースケース開始・完了、データ操作成功 |
+| warn | クライアント操作に起因する想定内エラー | バリデーション失敗、リソース未存在、認可失敗 |
+| error | 開発者対応が必要なシステム異常 | DB接続失敗、外部API障害、予期せぬ例外 |
+
+**詳細**: `11-log-level-strategy.md`
+
+## レイヤー別責務
+
+| レイヤー | ログ出力 | 内容 |
+|---------|---------|------|
+| Handler | ○ | リクエスト受信、レスポンス送信、入力バリデーション |
+| UseCase | ○ | ビジネスロジックの実行開始・完了・失敗 |
+| Repository | ○ | データ操作の詳細（DEBUG中心） |
+| Domain | × | **ログ出力しない**（純粋なビジネスルール） |
 
 ## 使用例
 
@@ -63,7 +76,7 @@ export class DeleteTodoUseCase {
     const result = await this.#todoRepository.delete({ id: input.todoId });
 
     if (!result.success) {
-      this.#logger.error("Todo削除失敗", result.error);
+      this.#logger.warn("Todo削除失敗", { error: result.error.type });
       return result;
     }
 
@@ -85,12 +98,9 @@ logger.info("処理開始");
 
 ## テストでの使用
 
-### 基本方針
-
-テストでは**常にLoggerDummyを使用**する。ログ出力はテストの検証対象ではないため、何も出力しないDummy実装で十分。
+テストでは**常にLoggerDummyを使用**する。
 
 ```typescript
-// ✅ テストでは常にLoggerDummyを使用
 const useCase = new CreateTodoUseCaseImpl({
   todoRepository: new TodoRepositoryDummy(),
   logger: new LoggerDummy(),
@@ -98,23 +108,7 @@ const useCase = new CreateTodoUseCaseImpl({
 });
 ```
 
-### デバッグ時の一時的なImpl使用
-
-テストが失敗してログを確認したい場合のみ、**一時的に**LoggerImpl（またはConsoleLogger）を使用する。デバッグ完了後は必ずLoggerDummyに戻す。
-
-```typescript
-// ⚠️ デバッグ時のみ一時的に使用（コミット前に戻すこと）
-const useCase = new CreateTodoUseCaseImpl({
-  todoRepository: new TodoRepositoryDummy(),
-  logger: new ConsoleLogger(), // デバッグ用
-  fetchNow: buildFetchNowDummy(),
-});
-```
-
-**理由**:
-- テストの実行速度を維持
-- テスト出力をクリーンに保つ
-- CI/CDでのログノイズを防ぐ
+**デバッグ時のみ**一時的にLoggerImpl使用可（コミット前に戻すこと）。
 
 ## Dummy実装
 
@@ -133,7 +127,7 @@ export class LoggerDummy implements Logger {
 ### ✅ Good
 
 ```typescript
-// 構造化ログ
+// 構造化ログ（日本語）
 logger.info("ユーザー作成", { userId: user.id, email: user.email });
 
 // エラーオブジェクトを渡す
@@ -141,6 +135,9 @@ logger.error("処理失敗", error);
 
 // appendKeysでコンテキスト追加
 logger.appendKeys({ traceId: context.traceId });
+
+// DEBUGログを積極的に記録
+logger.debug("リポジトリ操作開始", { operation: "save", entity: "todo" });
 ```
 
 ### ❌ Bad
@@ -151,4 +148,21 @@ logger.info(`ユーザー作成: ${user.id}`); // ❌ 構造化されていな�
 
 // console.logの直接使用
 console.log("処理開始"); // ❌ ロガー経由で出力すべき
+
+// 英語でログ
+logger.info("User created", { userId: user.id }); // ❌ 日本語で書く
+
+// ドメイン層でログ出力
+class TodoEntity {
+  complete() {
+    logger.info("完了"); // ❌ ドメイン層はログ出力しない
+  }
+}
 ```
+
+## 関連ドキュメント
+
+- `../port/10-port-overview.md`: Port層概要
+- `11-log-level-strategy.md`: ログレベル戦略
+- `../../web/logger/10-logger-overview.md`: Web側Logger
+- `../../../constitution/observability-principles.md`: 可観測性原則

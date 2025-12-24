@@ -254,4 +254,6 @@ export default function EditTodoRoute() {
 ## 関連ドキュメント
 
 - `10-feature-overview.md`: Feature設計概要
+- `../hooks/10-hooks-overview.md`: カスタムフック設計概要（Context/Provider配置の判断）
+- `../lib/10-lib-overview.md`: 技術基盤設計概要（lib/contexts/配置）
 - `../api/10-api-overview.md`: API通信基盤

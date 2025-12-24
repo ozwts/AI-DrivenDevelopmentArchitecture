@@ -59,11 +59,11 @@ app/features/product/components/ProductCard.tsx
 ```
 使用箇所の関係
     ↓
-同一ルート内 → app/routes/({role})/{feature}/components/
+同一route内 → app/routes/({role})/{feature}/components/
     ↓
-親子ルート間 → app/routes/({role})/{feature}/_shared/components/
+親子route間 → app/routes/({role})/{feature}/_shared/components/
     ↓
-複数機能横断（3+） → app/features/{feature}/
+3+route横断（アプリ固有概念あり） → app/features/{feature}/
     ↓
 全アプリ共通（純粋） → app/lib/
 ```
@@ -376,4 +376,6 @@ import { TodoList } from "@/routes/({role})/todos/components/TodoList"; // NG: �
 - `10-route-overview.md`: ルート設計概要
 - `15-role-design.md`: ロール設計（WHO）
 - `20-colocation-patterns.md`: コロケーション（HOW）
+- `../component/10-component-overview.md`: コンポーネント設計
+- `../hooks/10-hooks-overview.md`: カスタムフック設計
 - `../feature/10-feature-overview.md`: Feature設計概要

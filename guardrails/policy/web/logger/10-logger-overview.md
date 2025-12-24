@@ -4,35 +4,6 @@
 
 Loggerは**可観測性を実現するための技術基盤**であり、**AIと人間がシステムの動作を理解できる状態**を維持する。
 
-**根拠となる憲法**:
-- `observability-principles.md`: 動的可観測性の実現
-- `technology-selection-principles.md`: 実績と支援が豊富な技術を優先
-
-## 可観測性の積極的活用
-
-### なぜ積極的にログを出力するのか
-
-**AIの自己解決速度の最大化**:
-- AIがログから問題を自律的に診断・解決できる
-- エラーの原因特定から修正案提示までの時間を最小化
-- 人間の介入なしに開発を継続できる
-
-**人間によるシステム責任の担保**:
-- システムの動作履歴が保持され、事後検証が可能
-- 問題発生時の責任の所在を明確化
-
-### ログ出力の方針
-
-**積極的に出力すべき場面**:
-- ユーザー操作（フォーム送信、ボタンクリック、ページ遷移）
-- API通信（リクエスト開始、成功、失敗）
-- 状態変化（認証状態、重要なstate更新）
-- エラー発生（すべてのcatch節）
-
-**出力しない場面**:
-- 頻繁に発生するイベント（スクロール、マウス移動）
-- 機密情報を含む場面（パスワード、トークン、個人情報）
-
 ## 責務
 
 ### 実施すること
@@ -40,12 +11,16 @@ Loggerは**可観測性を実現するための技術基盤**であり、**AIと
 1. **構造化ログの出力**: メッセージ + 付加情報（key-value）
 2. **ログレベルの使い分け**: debug, info, warn, error
 3. **コンポーネント識別**: どのコンポーネントからのログか明示
+4. **日本語でログメッセージを記述**: AIと人間が迅速に理解できる
 
 ### 実施しないこと
 
-1. **機密情報の出力**: パスワード、トークン、個人情報
-2. **文字列連結によるログ**: 構造化データを使用
-3. **console.logの直接使用**: Logger経由で出力
+1. **機密情報の出力** → パスワード、トークン、個人情報は出力しない
+2. **文字列連結によるログ** → 構造化データを使用
+3. **console.logの直接使用** → Logger経由で出力
+4. **英語でのログメッセージ** → 日本語で記述する
+
+**参照**: `observability-principles.md`（可観測性の理念・ベネフィット）
 
 ## 型定義
 
@@ -57,6 +32,7 @@ export type Logger = {
   info(message: string, data?: AdditionalData): void;
   warn(message: string, data?: AdditionalData): void;
   error(message: string, data?: AdditionalData): void;
+  appendKeys(params: Record<string, unknown>): void;
 };
 ```
 
@@ -66,10 +42,12 @@ export type Logger = {
 
 | レベル | 用途 | 例 |
 |--------|------|-----|
-| debug | 開発時のデバッグ情報 | state変更、レンダリング |
-| info | ユーザー操作、正常系の処理 | フォーム送信、API成功 |
-| warn | 潜在的な問題、非推奨の使用 | リトライ、フォールバック |
-| error | エラー状態 | API失敗、バリデーションエラー |
+| debug | 開発時のデバッグ情報（**積極的に記録**） | state変更、レンダリング |
+| info | 正常系の重要イベント | フォーム送信、API成功 |
+| warn | ユーザー操作に起因する想定内エラー | バリデーション失敗、認証失敗、404 |
+| error | 開発者対応が必要なシステム異常 | ネットワーク障害、500エラー、予期せぬ例外 |
+
+**詳細**: `11-log-level-strategy.md`
 
 ## レイヤー別責務
 
@@ -79,15 +57,8 @@ export type Logger = {
 | Hooks (features) | ○ | ビジネスロジックの実行 |
 | API Client (lib) | ○ | 通信の開始・成功・失敗 |
 | Hooks (lib) | ○ | エラー発生時のみ（インフラ操作） |
-| UI Components (lib) | × | ログ出力しない |
-| Utils (lib) | × | ログ出力しない（純粋関数） |
-
-**補足**:
-- `Hooks (lib)`: ブラウザAPI操作（localStorage等）を行う汎用フック。副作用を伴うためエラーログは必須
-- `Utils (lib)`: 純粋関数のみ。副作用なし・catch節なしのため、ログ出力不要
-
-**根拠となる憲法**:
-- `observability-principles.md`: レイヤー別責務、「エラー発生（すべてのcatch節）」
+| UI Components (lib) | × | **ログ出力しない** |
+| Utils (lib) | × | **ログ出力しない**（純粋関数） |
 
 ## 使用例
 
@@ -132,28 +103,14 @@ export function useProjects() {
 }
 ```
 
-### API Client層での使用
+### appendKeysの使用
 
 ```typescript
-import { buildLogger } from "@/app/lib/logger";
+const logger = buildLogger("TodoList");
+logger.appendKeys({ sessionId: "sess-123" });
 
-const logger = buildLogger("ApiClient");
-
-export const apiClient = {
-  async get<T>(url: string): Promise<T> {
-    logger.debug("APIリクエスト開始", { method: "GET", url });
-
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      logger.error("APIエラー", { status: response.status, url });
-      throw new ApiError(response);
-    }
-
-    logger.debug("APIリクエスト成功", { method: "GET", url });
-    return response.json();
-  },
-};
+logger.info("一覧取得開始");  // sessionIdが自動付与される
+logger.info("一覧取得完了", { count: 10 });  // sessionIdが自動付与される
 ```
 
 ## 開発環境での出力
@@ -165,27 +122,24 @@ export const apiClient = {
 [web] [ResetPasswordRoute] 確認コード送信成功 { email: 'user@example.com' }
 ```
 
-**技術選定根拠**:
-- `technology-selection-principles.md`: 実績と支援が豊富な技術を優先
-- 作者はViteコアチームメンバー、定期的にメンテナンス
-- 本番ビルドで自動除去
-
 ## Do / Don't
 
 ### ✅ Do
 
 ```typescript
-// 構造化ログ
+// 構造化ログ（日本語）
 logger.info("ユーザー登録完了", { userId: user.id });
 
 // エラーオブジェクトを渡す
 logger.error("API呼び出し失敗", error);
 
+// DEBUGログを積極的に記録
+logger.debug("state更新", { prevState, nextState });
+
 // 適切なログレベル
-logger.debug("state更新", { prevState, nextState }); // 開発用
-logger.info("フォーム送信", { formId });             // 正常系
-logger.warn("リトライ実行", { attempt: 2 });         // 潜在問題
-logger.error("認証失敗", error);                     // エラー
+logger.info("フォーム送信", { formId });     // 正常系
+logger.warn("リトライ実行", { attempt: 2 }); // 想定内エラー
+logger.error("認証失敗", error);             // システム異常
 ```
 
 ### ❌ Don't
@@ -205,10 +159,13 @@ function Button({ onClick }) {
   logger.debug("Buttonレンダリング"); // NG: lib/ui はログ出力しない
   return <button onClick={onClick} />;
 }
+
+// 英語でログ（NG）
+logger.info("Form submitted", { formId }); // NG: 日本語で書く
 ```
 
 ## 関連ドキュメント
 
-- `10-lib-overview.md`: 技術基盤設計概要
+- `11-log-level-strategy.md`: ログレベル戦略
 - `../../server/logger/10-logger-overview.md`: サーバー側Logger
 - `../../../constitution/observability-principles.md`: 可観測性原則

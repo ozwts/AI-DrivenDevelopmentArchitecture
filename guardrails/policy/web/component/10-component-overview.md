@@ -2,7 +2,7 @@
 
 ## 核心原則
 
-コンポーネントは**ルート内にコロケーション**し、そのルートの機能に特化した実装とする。
+コンポーネントは**routeまたはfeature内にコロケーション**し、使用スコープに特化した実装とする。
 
 **根拠となる憲法**:
 - `module-cohesion-principles.md`: 機能的凝集、コロケーション
@@ -10,10 +10,12 @@
 
 ## 配置先
 
+### route内配置
+
 ```
 app/routes/({role})/{feature}/
 ├── route.tsx
-├── components/           # ルート固有コンポーネント
+├── components/           # route固有コンポーネント
 │   ├── TodoList.tsx
 │   ├── TodoItem.tsx
 │   └── TodoFilter.tsx
@@ -21,9 +23,19 @@ app/routes/({role})/{feature}/
     └── useTodoFilter.ts
 ```
 
+### feature内配置（3+route横断）
+
+```
+app/features/{feature}/
+├── components/           # 横断的コンポーネント
+│   └── AuthInitializer.tsx
+├── hooks/
+└── index.ts              # Public API
+```
+
 ## 実施すること
 
-1. **ルート内配置**: コンポーネントはそのルートの`components/`に配置
+1. **スコープに応じた配置**: コンポーネントは使用スコープに応じて`routes/`または`features/`の`components/`に配置
 2. **単一責務**: 1コンポーネント = 1つの明確な役割
 3. **Props型の明示**: `readonly`修飾子で不変性を表現
 4. **UIプリミティブの利用**: `app/lib/ui/`のButton, Input等を活用
@@ -31,7 +43,7 @@ app/routes/({role})/{feature}/
 
 ## 実施しないこと
 
-1. **横断的な`components/`配置** → ルート内にコロケーション
+1. **app/直下の横断的な`components/`配置** → route/feature内にコロケーション
 2. **早すぎる共通化** → 3回ルールを適用
 3. **ビジネスロジックの埋め込み** → hooks/に分離
 
@@ -74,13 +86,15 @@ export function TodoItem({ todo, onComplete, onDelete }: Props) {
 
 | 使用箇所 | 配置先 |
 |---------|--------|
-| 同一ルート内のみ | `routes/({role})/{feature}/components/` |
-| 親子ルート間 | `routes/({role})/{feature}/_shared/components/` |
-| 3+ルート横断 | `app/features/{feature}/components/` |
+| 同一route内のみ | `routes/({role})/{feature}/components/` |
+| 親子route間 | `routes/({role})/{feature}/_shared/components/` |
+| 3+route横断（アプリ固有概念あり） | `app/features/{feature}/components/` |
+
+**詳細**: 共通化の判断基準と依存方向は `../feature/10-feature-overview.md` を参照。
 
 ## UIプリミティブ化の判断
 
-ルート内コンポーネントから`app/lib/ui/`への移行を検討する判断基準。
+route内コンポーネントから`app/lib/ui/`への移行を検討する判断基準。
 
 ### 判断フロー
 
@@ -128,6 +142,7 @@ Q1: アプリケーション固有の概念（Todo, Project, User等）を知っ
 - `20-selector-strategy.md`: セレクタ戦略
 - `30-test-patterns.md`: コンポーネントテスト（CT）
 - `../route/10-route-overview.md`: ルート設計概要
+- `../feature/10-feature-overview.md`: Feature設計概要（共通化の判断基準）
 - `../ui/10-ui-overview.md`: UIプリミティブ設計概要
 - `../api/20-request-normalization.md`: PATCHリクエスト正規化（dirtyFields）
 - `../form/10-form-overview.md`: フォーム設計概要

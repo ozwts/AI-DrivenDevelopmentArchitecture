@@ -1,5 +1,5 @@
 {
   "label": "Feature設計",
-  "description": "3+ルートで共通利用される横断的機能、Provider/Context、Public API",
-  "dependencies": ["lib"]
+  "description": "3+routeで共通利用される横断的機能、Provider/Context、Public API",
+  "dependencies": ["lib", "component", "hooks", "api", "form", "logger"]
 }

@@ -2,7 +2,7 @@
 
 ## 核心原則
 
-カスタムフックは**TanStack Queryを基盤とし、最小限の責務**で実装する。独自の状態管理層を作らず、TanStack Queryが提供する機能を最大限活用する。
+カスタムフックは**TanStack Queryを基盤とし、最小限の責務**で実装する。独自の状態管理層を作らず、TanStack Queryが提供する機能を最大限活用する。フックは**routeまたはfeature内にコロケーション**し、使用スコープに特化した実装とする。
 
 **根拠となる憲法**:
 - `simplicity-principles.md`: Simple First（構造を先に決め、Easyは後から乗せる）
@@ -13,7 +13,7 @@
 
 1. **TanStack Query中心の設計**: useQuery/useMutationをラップし、API通信を抽象化
 2. **単一責務の維持**: 1フック = 1つの明確なデータ操作
-3. **配置場所の適切な選択**: 使用スコープに応じてroutes/features/libに配置
+3. **スコープに応じた配置**: 使用スコープに応じてroutes/features/libに配置
 4. **型安全な実装**: Zod生成型を直接使用
 5. **ログ出力の実施**: ビジネスロジックの実行をLoggerで記録（`../logger/10-logger-overview.md`）
 
@@ -40,7 +40,11 @@
 
 **注意**: 「認証されたユーザーのデータ取得」はHTTPリクエストなのでTanStack Queryで管理する。Context/Providerは「認証状態そのもの」の管理に限定すること。
 
-**配置**: Context/Provider を使う場合、**Context + Provider + Hook は同一ファイル（`contexts/`ディレクトリ）に配置**する。`hooks/` ディレクトリには配置しない。詳細は `../feature/20-provider-context-pattern.md` を参照。
+**配置**: Context/Provider を使う場合、**Context + Provider + Hook は同一ファイル（`contexts/`ディレクトリ）に配置**する。`hooks/` ディレクトリには配置しない。配置先はアプリケーション固有の概念を知っているかで決まる：
+- 固有概念あり → `features/{feature}/contexts/`
+- 固有概念なし（汎用） → `lib/contexts/`
+
+詳細は `../feature/20-provider-context-pattern.md` を参照。
 
 ## フックの分類と配置
 
@@ -48,10 +52,12 @@
 
 | 使用スコープ | 配置先 | 例 |
 |-------------|--------|-----|
-| 同一ルート内 | `app/routes/({role})/{feature}/hooks/` | ルート固有のデータ操作 |
-| 親子ルート間 | `app/routes/({role})/{feature}/_shared/hooks/` | 作成・編集で共通のミューテーション |
-| 3+ルート横断 | `app/features/{feature}/hooks/` | useTodos, useProjects |
+| 同一route内 | `app/routes/({role})/{feature}/hooks/` | route固有のデータ操作 |
+| 親子route間 | `app/routes/({role})/{feature}/_shared/hooks/` | 作成・編集で共通のミューテーション |
+| 3+route横断（アプリ固有概念あり） | `app/features/{feature}/hooks/` | useTodos, useProjects |
 | 全アプリ共通（純粋） | `app/lib/hooks/` | useDebounce, useLocalStorage |
+
+**詳細**: 共通化の判断基準と依存方向は `../feature/10-feature-overview.md` を参照。
 
 ### 分類
 
@@ -300,7 +306,7 @@ routes/hooks/ → features/hooks/ → lib/hooks/
 - `20-query-patterns.md`: TanStack Queryパターン
 - `30-state-patterns.md`: 複雑な状態管理パターン
 - `../route/20-colocation-patterns.md`: コロケーション
-- `../feature/10-feature-overview.md`: Feature設計概要
+- `../feature/10-feature-overview.md`: Feature設計概要（共通化の判断基準）
 - `../lib/10-lib-overview.md`: 技術基盤設計概要
 - `../logger/10-logger-overview.md`: ログ出力基盤（Hooksでのログ実装必須）
 - `../api/20-request-normalization.md`: PATCHリクエスト正規化（dirtyFields）

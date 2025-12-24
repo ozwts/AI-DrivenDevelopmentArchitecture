@@ -313,5 +313,6 @@ export function {Feature}Item({ item }: Props) {
 - `15-role-design.md`: ロール設計（WHO）
 - `30-shared-placement.md`: 配置基準（WHERE）
 - `../component/10-component-overview.md`: コンポーネント設計
+- `../hooks/10-hooks-overview.md`: カスタムフック設計
 - `../api/20-request-normalization.md`: PATCHリクエスト正規化（dirtyFields）
 - `../form/10-form-overview.md`: フォーム設計概要

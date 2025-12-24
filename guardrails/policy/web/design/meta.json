@@ -1,5 +1,5 @@
 {
   "label": "デザイン",
   "description": "デザイン4原則（整列・近接・対比・反復）に基づくスタイリング",
-  "dependencies": ["lib"]
+  "dependencies": []
 }
