@@ -207,7 +207,7 @@ UpdateTodoParams:
       description: 担当者のユーザーID（nullで"未割り当て"に設定）
 ```
 
-**注意**: `minLength: 1` は設定しない。詳細は `15-validation-constraints.md` を参照。
+**注意**: `minLength: 1` の設定基準は `15-validation-constraints.md` を参照。
 
 ## Do / Don't
 

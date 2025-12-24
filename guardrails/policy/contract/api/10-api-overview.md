@@ -202,7 +202,7 @@ properties:
     description: 作成日時（ISO 8601形式）
 ```
 
-**注意**: `minLength: 1` は設定しない。空文字列は境界層（フロントエンド: normalize.ts、サーバー: Handler層）で変換する。詳細は `15-validation-constraints.md` を参照。
+**注意**: `minLength: 1` の設定基準は `15-validation-constraints.md` を参照。
 
 ### 必須・オプショナル
 
@@ -292,7 +292,7 @@ title:
   pattern: "^[a-zA-Z0-9 ]+$" # 正規表現（必要な場合のみ）
 ```
 
-**注意**: `minLength: 1` は設定しない（`15-validation-constraints.md` 参照）。
+**注意**: `minLength: 1` の設定基準は `15-validation-constraints.md` を参照。
 
 ### 数値
 
@@ -370,9 +370,10 @@ tags:
 ### ✅ Good
 
 ```yaml
-# 文字列に制約と説明（minLength: 1は設定しない）
+# 文字列に制約と説明（minLength: 1は15-validation-constraints.md参照）
 name:
   type: string
+  minLength: 1  # 必須属性の場合
   maxLength: 200
   description: リソース名
 
@@ -395,10 +396,10 @@ status:
 title:
   type: string  # ❌ maxLengthがない
 
-# minLength: 1を設定
-name:
+# オプショナル属性にminLength: 1を設定
+description:
   type: string
-  minLength: 1  # ❌ 空文字列は境界層で変換するため不要
+  minLength: 1  # ❌ オプショナル属性には設定しない（15-validation-constraints.md参照）
 
 # マジックナンバー
 priority:

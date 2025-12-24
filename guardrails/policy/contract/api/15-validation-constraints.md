@@ -35,26 +35,38 @@ Zodは`z.string()`で空文字列を有効値とする（TypeScript型システ�
 
 ### 判断基準: ドメインで値の省略を許容するか
 
-| 属性種別 | Register*Params | Update*Params | 理由 |
-|---------|-----------------|---------------|------|
-| 必須属性（ドメインで必ず値が必要） | required + minLength:1 | minLength:1（requiredなし） | 値を指定するなら有効値必須 |
-| オプショナル属性（ドメインでundefined可） | minLengthなし | minLengthなし + nullable:true | 境界層で変換 |
+| 属性種別 | Register*Params | Update*Params |
+|---------|-----------------|---------------|
+| 必須属性（クライアント必須） | required + minLength:1 | minLength:1（requiredなし） |
+| 必須属性（サーバー自動生成あり） | minLength:1のみ（requiredなし） | minLength:1（requiredなし） |
+| オプショナル属性（ドメインでundefined可） | minLengthなし | minLengthなし + nullable:true |
 
-**ポイント**: Update*Paramsでは`required`をつけない（省略=変更しない）が、`minLength:1`は設定する（指定するなら有効値）。
+**省略時の動作**:
+
+| スキーマ | 省略時の動作 |
+|---------|-------------|
+| Register*Params（クライアント必須） | バリデーションエラー |
+| Register*Params（サーバー自動生成あり） | サーバーで値を自動生成 |
+| Update*Params | 既存の値を維持（変更しない） |
+
+**ポイント**:
+- `required`配列はschemas.yaml内のスキーマ定義に記載する（paths.yamlの`requestBody.required`とは別）
+- Update*Paramsでは`required`をつけない（省略=既存値維持）が、`minLength:1`は設定する（指定するなら有効値）
+- サーバー自動生成がある属性（例: User.name）は、Register*Paramsで`required`に含めない
 
 ## OpenAPI定義パターン
 
 ### 文字列フィールド
 
 ```yaml
-# 必須属性（ドメインでnull不可）: minLength: 1 を設定
+# 必須属性: minLength: 1 を設定
 title:
   type: string
   minLength: 1
   maxLength: 200
   description: タイトル
 
-# オプショナル属性（ドメインでnull可）: minLength なし
+# オプショナル属性: minLength なし
 description:
   type: string
   maxLength: 5000
@@ -97,11 +109,11 @@ status:
 ### OpenAPI定義例
 
 ```yaml
-# Register*Params（POST）
+# Register*Params（POST）- クライアント必須の場合
 RegisterTodoParams:
   type: object
   required:
-    - title            # ドメインで必須属性 → required配列に含める
+    - title            # クライアント必須 → required配列に含める
   properties:
     title:
       type: string
@@ -112,6 +124,16 @@ RegisterTodoParams:
       maxLength: 5000  # オプショナル属性: minLength なし
     projectId:
       type: string     # オプショナル属性: minLength なし
+
+# Register*Params（POST）- サーバー自動生成ありの場合
+RegisterUserParams:
+  type: object
+  # required なし（省略時はサーバーで自動生成）
+  properties:
+    name:
+      type: string
+      minLength: 1     # 必須属性だが、省略時は自動生成
+      maxLength: 100
 
 # Update*Params（PATCH）
 UpdateTodoParams:
@@ -187,13 +209,28 @@ const projectId =
 ### ✅ Do
 
 ```yaml
-# 必須属性（ドメインでnull不可）: minLength: 1 を設定
-title:
-  type: string
-  minLength: 1
-  maxLength: 200
+# Register*Paramsでクライアント必須: required配列 + minLength:1
+RegisterTodoParams:
+  type: object
+  required:
+    - title  # schemas.yaml内で定義（paths.yamlではない）
+  properties:
+    title:
+      type: string
+      minLength: 1
+      maxLength: 200
 
-# オプショナル属性（ドメインでnull可）: minLength なし
+# Register*Paramsでサーバー自動生成あり: minLength:1のみ
+RegisterUserParams:
+  type: object
+  # required なし（省略時はサーバーで自動生成）
+  properties:
+    name:
+      type: string
+      minLength: 1  # 指定するなら有効値必須
+      maxLength: 100
+
+# オプショナル属性: minLength なし
 description:
   type: string
   maxLength: 5000
