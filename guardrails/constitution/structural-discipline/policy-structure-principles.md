@@ -180,7 +180,7 @@ constructor(id: string, title: string) { ... } // ❌ 個別引数
 
 変更の影響範囲を静的に追跡可能にする。型システムで表現可能なことは型で表現する。
 
-**参照**: `constitution/analyzability-principles.md`
+**参照**: `../co-evolution/analyzability-principles.md`
 
 ## ディレクトリ構造の原則
 

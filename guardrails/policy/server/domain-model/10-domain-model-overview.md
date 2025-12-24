@@ -87,7 +87,7 @@ Entityインスタンス（常にvalid、Value Object内包）
 **フラットなディレクトリ構造 + 適切な境界**:
 
 - **アグリゲートごとに1ディレクトリ**: 集約単位でファイルをまとめる（`40-aggregate-overview.md`参照）
-- **ファイル数の抑制**: MECEなバリデーション戦略により、型レベルバリデーション用のValue Objectは不要（不変条件・ドメインルールを持つ場合のみValue Object化）。「将来必要になるかも」でVO化しない（`constitution/implementation-minimization-principles.md`参照）
+- **ファイル数の抑制**: MECEなバリデーション戦略により、型レベルバリデーション用のValue Objectは不要（不変条件・ドメインルールを持つ場合のみValue Object化）。「将来必要になるかも」でVO化しない（`constitution/co-evolution/implementation-minimization-principles.md`参照）
 - **ドット表記で種類を明示**: ディレクトリを深くせず、ファイル名で種類を判別
 
 ### 構成

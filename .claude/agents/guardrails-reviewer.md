@@ -36,7 +36,7 @@ color: green
 
 ```bash
 # 憲法を読み込み
-Glob: guardrails/constitution/*.md
+Glob: guardrails/constitution/**/*.md
 Read: 全ての憲法ファイルを読み込む
 ```
 

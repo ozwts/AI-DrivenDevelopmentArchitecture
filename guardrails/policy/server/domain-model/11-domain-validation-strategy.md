@@ -10,7 +10,7 @@
 | ---------------- | ------------------------------ |
 | Entity設計       | `20-entity-overview.md`        |
 | Value Object設計 | `25-value-object-overview.md`  |
-| 憲法             | `constitution/validation-principles.md` |
+| 憲法             | `constitution/structural-discipline/validation-principles.md` |
 
 ## 責務の階層（MECE原則）
 

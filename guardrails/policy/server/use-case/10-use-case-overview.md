@@ -13,7 +13,7 @@
 | ドメインモデル | `../domain-model/10-domain-model-overview.md` |
 | ポート | `../port/10-port-overview.md` |
 | ハンドラー | `../handler/10-handler-overview.md` |
-| バリデーション戦略 | `../../constitution/validation-principles.md` |
+| バリデーション戦略 | `../../constitution/structural-discipline/validation-principles.md` |
 
 ## UseCase層の責務
 
@@ -85,7 +85,7 @@ application/
 
 ## バリデーション階層（MECE原則）
 
-**参照**: `guardrails/constitution/validation-principles.md`
+**参照**: `guardrails/constitution/structural-discipline/validation-principles.md`
 
 ユースケース層は**第3階層：ビジネスルール**を担当する。
 

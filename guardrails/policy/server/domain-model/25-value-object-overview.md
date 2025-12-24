@@ -28,7 +28,7 @@ Value Objectは**識別子を持たず値で等価性を判断**する不変オ�
 
 ## Value Object化の判断基準
 
-**参照**: `11-domain-validation-strategy.md`, `constitution/implementation-minimization-principles.md`
+**参照**: `11-domain-validation-strategy.md`, `constitution/co-evolution/implementation-minimization-principles.md`
 
 | Tier   | 基準                             | Value Object化 | 例                                       |
 | ------ | -------------------------------- | -------------- | ---------------------------------------- |
