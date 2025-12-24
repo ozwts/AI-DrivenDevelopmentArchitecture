@@ -327,5 +327,5 @@ const { base, header, body, footer } = card({ tone: "elevated" });
 - `10-ui-overview.md`: UIプリミティブ設計概要
 - `20-leaf.md`: Leaf実装パターン
 - `30-composite.md`: Composite実装パターン
-- `../../../constitution/co-evolution/analyzability-principles.md`: 解析可能性の原則
-- `../../../constitution/user-first/design-principles.md`: デザイン原則
+- `../../../constitution/co-evolution/traceability-principles.md`: 追跡可能性原則
+- `../../../constitution/structural-discipline/design-principles.md`: デザイン原則

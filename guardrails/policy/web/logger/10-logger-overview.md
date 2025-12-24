@@ -168,4 +168,4 @@ logger.info("Form submitted", { formId }); // NG: 日本語で書く
 
 - `11-log-level-strategy.md`: ログレベル戦略
 - `../../server/logger/10-logger-overview.md`: サーバー側Logger
-- `../../../constitution/co-evolution/observability-principles.md`: 可観測性原則
+- `../../../constitution/co-evolution/traceability-principles.md`: 追跡可能性原則

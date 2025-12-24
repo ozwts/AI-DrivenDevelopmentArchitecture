@@ -165,4 +165,4 @@ class TodoEntity {
 - `../port/10-port-overview.md`: Port層概要
 - `11-log-level-strategy.md`: ログレベル戦略
 - `../../web/logger/10-logger-overview.md`: Web側Logger
-- `../../../constitution/co-evolution/observability-principles.md`: 可観測性原則
+- `../../../constitution/co-evolution/traceability-principles.md`: 追跡可能性原則

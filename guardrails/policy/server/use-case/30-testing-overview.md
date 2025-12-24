@@ -144,7 +144,7 @@ export class ProjectRepositoryDummy implements ProjectRepository {
 
 ## テストカバレッジ戦略
 
-**参照**: `guardrails/constitution/structural-discipline/validation-principles.md` - 第3階層：ビジネスルール
+**参照**: `guardrails/constitution/structural-discipline/responsibility-principles.md` - 第3階層：ビジネスルール
 
 UseCase層のテストは**ビジネスルール検証**に焦点を当てる。型レベル検証（Handler層）・ドメインルール検証（Domain層）のテストは各層で実施済みのため、重複しない（MECE原則）。
 

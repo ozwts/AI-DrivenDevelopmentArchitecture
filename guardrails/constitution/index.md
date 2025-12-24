@@ -2,13 +2,11 @@
 
 ## 3つの柱
 
-日本国憲法の3つの柱になぞらえ、AI駆動開発の憲法は以下の3つの柱で構成される。
-
-| 日本国憲法 | AI駆動開発の憲法 |
-|-----------|-----------------|
-| 国民主権 | **ユーザー第一主義** (User-First Principle) |
-| 基本的人権の尊重 | **構造的規律** (Structural Discipline) |
-| 平和主義 | **共進化主義** (Co-evolution) |
+| 柱 | 原則 |
+|----|------|
+| **ユーザー第一主義** | システムの都合ではなく、ユーザーの利便性を最大化する |
+| **構造的規律** | コードの構造に規律を持ち、秩序を守り続ける |
+| **共進化主義** | AIと人間、AIとAIが協調し、持続的に発展し続ける |
 
 ---
 
@@ -16,9 +14,9 @@
 
 **システムの都合ではなく、ユーザーの利便性を最大化する**
 
-| ファイル | 規律 |
-|---------|------|
-| [design-principles.md](./user-first/design-principles.md) | ユーザーを迷わせない |
+| ファイル | 最高原則 |
+|---------|---------|
+| [user-first-principles.md](./user-first/user-first-principles.md) | ユーザーの利便性を最大化する |
 
 ---
 
@@ -26,13 +24,13 @@
 
 **コードの構造に規律を持ち、秩序を守り続ける**
 
-| ファイル | 規律 |
-|---------|------|
-| [architecture-principles.md](./structural-discipline/architecture-principles.md) | レイヤー境界を守る |
-| [simplicity-principles.md](./structural-discipline/simplicity-principles.md) | Simpleを選び続ける |
-| [module-cohesion-principles.md](./structural-discipline/module-cohesion-principles.md) | 機能的凝集を維持する |
-| [validation-principles.md](./structural-discipline/validation-principles.md) | 責務を明確に分離する |
-| [policy-structure-principles.md](./structural-discipline/policy-structure-principles.md) | ポリシーの構造を守る |
+| ファイル | 最高原則 |
+|---------|---------|
+| [simplicity-principles.md](./structural-discipline/simplicity-principles.md) | Simpleを優先し、Easyに惑わされない |
+| [design-principles.md](./structural-discipline/design-principles.md) | デザイン4原則で視覚的秩序を作る |
+| [boundary-principles.md](./structural-discipline/boundary-principles.md) | 境界を設け、変更の波及を防ぐ |
+| [cohesion-principles.md](./structural-discipline/cohesion-principles.md) | 凝集により変更を1箇所に集約する |
+| [responsibility-principles.md](./structural-discipline/responsibility-principles.md) | 責務をMECEに分離する |
 
 ---
 
@@ -40,14 +38,10 @@
 
 **AIと人間、AIとAIが協調し、持続的に発展し続ける**
 
-| ファイル | 規律 |
-|---------|------|
-| [analyzability-principles.md](./co-evolution/analyzability-principles.md) | 追跡して改善し続ける |
-| [observability-principles.md](./co-evolution/observability-principles.md) | 観測して改善し続ける |
-| [distributed-collaboration-principles.md](./co-evolution/distributed-collaboration-principles.md) | AI同士・人間と協調して開発する |
-| [technology-selection-principles.md](./co-evolution/technology-selection-principles.md) | 実績ある技術を選ぶ |
-| [implementation-minimization-principles.md](./co-evolution/implementation-minimization-principles.md) | 都度リファクタリングする |
-| [guardrails-principles.md](./co-evolution/guardrails-principles.md) | AIと安全に協働する |
-| [infrastructure-principles.md](./co-evolution/infrastructure-principles.md) | インフラと協調する |
-| [credential-principles.md](./co-evolution/credential-principles.md) | セキュリティを守る |
-| [environment-interaction-principles.md](./co-evolution/environment-interaction-principles.md) | 環境と協調する |
+| ファイル | 最高原則 |
+|---------|---------|
+| [collaboration-principles.md](./co-evolution/collaboration-principles.md) | 自律と安全を両立し、協調を実現する |
+| [evolution-principles.md](./co-evolution/evolution-principles.md) | 持続的に進化できる状態を維持する |
+| [traceability-principles.md](./co-evolution/traceability-principles.md) | AIと人間がシステムを理解できる状態を維持する |
+| [scalability-principles.md](./co-evolution/scalability-principles.md) | 成長を前提として設計する |
+| [operations-principles.md](./co-evolution/operations-principles.md) | AIが安全に操作できる環境を構築する |

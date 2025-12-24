@@ -60,7 +60,7 @@ OpenAPI仕様は**システム境界の契約**であり、**型レベルバリ�
 
 ## Single Source of Truth原則
 
-**参照**: `guardrails/constitution/structural-discipline/validation-principles.md`
+**参照**: `guardrails/constitution/structural-discipline/responsibility-principles.md`
 
 ### バリデーション階層における位置付け
 

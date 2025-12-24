@@ -105,7 +105,8 @@
       "WebFetch(domain:playwright.dev)",
       "Bash(git -C:*)",
       "Skill(review)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(wc:*)"
     ],
     "deny": [],
     "ask": []

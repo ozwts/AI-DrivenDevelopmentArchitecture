@@ -299,4 +299,4 @@ class TodoEntity {
 
 - `10-logger-overview.md`: Logger基盤概要
 - `../../web/logger/11-log-level-strategy.md`: Web側Logger（同じ方針を適用）
-- `../../../constitution/co-evolution/observability-principles.md`: 可観測性原則
+- `../../../constitution/co-evolution/traceability-principles.md`: 追跡可能性原則
