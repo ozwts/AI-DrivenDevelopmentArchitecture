@@ -69,4 +69,4 @@ await page.waitForTimeout(2000);
 ## 関連ドキュメント
 
 - `10-e2e-overview.md`: E2Eテスト概要
-- `30-test-scenarios.md`: テストシナリオ設計
+- `30-test-patterns.md`: シナリオ設計パターン

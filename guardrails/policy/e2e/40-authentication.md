@@ -78,3 +78,4 @@ const password = "secret123";
 
 - `10-e2e-overview.md`: E2Eテスト概要
 - `20-page-object-pattern.md`: Page Objectパターン
+- `30-test-patterns.md`: シナリオ設計パターン

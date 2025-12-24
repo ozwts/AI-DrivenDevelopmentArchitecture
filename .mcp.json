@@ -1,17 +1,10 @@
 {
   "mcpServers": {
-    "guardrails": {
+    "playwright-test": {
       "command": "npx",
       "args": [
-        "tsx",
-        "guardrails/index.ts"
-      ]
-    },
-    "playwright": {
-      "command": "npx",
-      "args": [
-        "@playwright/mcp@latest",
-        "--headless"
+        "playwright",
+        "run-test-mcp-server"
       ]
     }
   }
