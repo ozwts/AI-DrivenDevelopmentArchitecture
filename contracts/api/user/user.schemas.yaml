@@ -1,0 +1,57 @@
+UserResponse:
+  type: object
+  required:
+    - id
+    - sub
+    - name
+    - email
+    - emailVerified
+    - createdAt
+    - updatedAt
+  properties:
+    id:
+      type: string
+      description: ユーザーID
+    sub:
+      type: string
+      description: Cognito User Sub (外部認証システムの識別子)
+    name:
+      type: string
+      description: ユーザー名
+    email:
+      type: string
+      description: メールアドレス
+    emailVerified:
+      type: boolean
+      description: メール検証済みフラグ
+    createdAt:
+      type: string
+      format: date-time
+      description: 作成日時
+    updatedAt:
+      type: string
+      format: date-time
+      description: 更新日時
+
+UsersResponse:
+  type: array
+  items:
+    $ref: "#/UserResponse"
+
+RegisterUserParams:
+  type: object
+  properties:
+    name:
+      type: string
+      description: ユーザー名（省略時はCognitoのメールアドレスから自動生成。値を送信する場合は1文字以上100文字以下）
+      minLength: 1
+      maxLength: 100
+
+UpdateUserParams:
+  type: object
+  properties:
+    name:
+      type: string
+      description: ユーザー名（省略可能。値を送信する場合は1文字以上100文字以下）
+      minLength: 1
+      maxLength: 100

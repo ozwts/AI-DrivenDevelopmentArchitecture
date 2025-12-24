@@ -1,0 +1,109 @@
+openapi: 3.0.2
+info:
+  title: Consultant TODO App API
+  version: 0.1.0
+  description: コンサルタント向けTODO管理アプリケーションのAPI
+
+tags:
+  - name: todos
+    description: TODOアイテム
+  - name: attachments
+    description: 添付ファイル
+  - name: projects
+    description: プロジェクト
+  - name: users
+    description: ユーザー
+
+paths:
+  # Todo
+  /todos:
+    $ref: "todo/todo.paths.yaml#/~1todos"
+  /todos/{todoId}:
+    $ref: "todo/todo.paths.yaml#/~1todos~1{todoId}"
+
+  # Attachment
+  /todos/{todoId}/attachments:
+    $ref: "todo/attachment.paths.yaml#/~1todos~1{todoId}~1attachments"
+  /todos/{todoId}/attachments/prepare:
+    $ref: "todo/attachment.paths.yaml#/~1todos~1{todoId}~1attachments~1prepare"
+  /todos/{todoId}/attachments/{attachmentId}:
+    $ref: "todo/attachment.paths.yaml#/~1todos~1{todoId}~1attachments~1{attachmentId}"
+  /todos/{todoId}/attachments/{attachmentId}/download-url:
+    $ref: "todo/attachment.paths.yaml#/~1todos~1{todoId}~1attachments~1{attachmentId}~1download-url"
+
+  # Project
+  /projects:
+    $ref: "project/project.paths.yaml#/~1projects"
+  /projects/{projectId}:
+    $ref: "project/project.paths.yaml#/~1projects~1{projectId}"
+
+  # User
+  /users:
+    $ref: "user/user.paths.yaml#/~1users"
+  /users/me:
+    $ref: "user/user.paths.yaml#/~1users~1me"
+  /users/{userId}:
+    $ref: "user/user.paths.yaml#/~1users~1{userId}"
+
+components:
+  securitySchemes:
+    CognitoAuthorizer:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: Cognito JWT トークン
+
+  schemas:
+    # Shared
+    ErrorResponse:
+      $ref: "shared/error.schemas.yaml#/ErrorResponse"
+
+    # Todo
+    TodoStatus:
+      $ref: "todo/todo.schemas.yaml#/TodoStatus"
+    TodoPriority:
+      $ref: "todo/todo.schemas.yaml#/TodoPriority"
+    TodoResponse:
+      $ref: "todo/todo.schemas.yaml#/TodoResponse"
+    TodosResponse:
+      $ref: "todo/todo.schemas.yaml#/TodosResponse"
+    RegisterTodoParams:
+      $ref: "todo/todo.schemas.yaml#/RegisterTodoParams"
+    UpdateTodoParams:
+      $ref: "todo/todo.schemas.yaml#/UpdateTodoParams"
+
+    # Attachment
+    AttachmentStatus:
+      $ref: "todo/attachment.schemas.yaml#/AttachmentStatus"
+    AttachmentResponse:
+      $ref: "todo/attachment.schemas.yaml#/AttachmentResponse"
+    AttachmentsResponse:
+      $ref: "todo/attachment.schemas.yaml#/AttachmentsResponse"
+    PrepareAttachmentParams:
+      $ref: "todo/attachment.schemas.yaml#/PrepareAttachmentParams"
+    PrepareAttachmentResponse:
+      $ref: "todo/attachment.schemas.yaml#/PrepareAttachmentResponse"
+    UpdateAttachmentParams:
+      $ref: "todo/attachment.schemas.yaml#/UpdateAttachmentParams"
+    DownloadUrlResponse:
+      $ref: "todo/attachment.schemas.yaml#/DownloadUrlResponse"
+
+    # Project
+    ProjectResponse:
+      $ref: "project/project.schemas.yaml#/ProjectResponse"
+    ProjectsResponse:
+      $ref: "project/project.schemas.yaml#/ProjectsResponse"
+    CreateProjectParams:
+      $ref: "project/project.schemas.yaml#/CreateProjectParams"
+    UpdateProjectParams:
+      $ref: "project/project.schemas.yaml#/UpdateProjectParams"
+
+    # User
+    UserResponse:
+      $ref: "user/user.schemas.yaml#/UserResponse"
+    UsersResponse:
+      $ref: "user/user.schemas.yaml#/UsersResponse"
+    RegisterUserParams:
+      $ref: "user/user.schemas.yaml#/RegisterUserParams"
+    UpdateUserParams:
+      $ref: "user/user.schemas.yaml#/UpdateUserParams"

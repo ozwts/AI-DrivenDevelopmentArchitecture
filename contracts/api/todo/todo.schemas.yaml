@@ -1,0 +1,137 @@
+TodoStatus:
+  type: string
+  enum:
+    - TODO
+    - IN_PROGRESS
+    - COMPLETED
+  description: TODOのステータス
+
+TodoPriority:
+  type: string
+  enum:
+    - LOW
+    - MEDIUM
+    - HIGH
+  description: TODOの優先度
+
+TodoResponse:
+  type: object
+  required:
+    - id
+    - title
+    - status
+    - priority
+    - assigneeUserId
+    - createdAt
+    - updatedAt
+    - attachments
+  properties:
+    id:
+      type: string
+      description: TODOの一意の識別子
+    title:
+      type: string
+      description: TODOのタイトル
+    description:
+      type: string
+      description: TODOの詳細説明
+    status:
+      $ref: "#/TodoStatus"
+    priority:
+      $ref: "#/TodoPriority"
+    dueDate:
+      type: string
+      format: date
+      description: 期限日
+    projectId:
+      type: string
+      description: プロジェクトID
+    assigneeUserId:
+      type: string
+      description: 担当者のユーザーID
+    attachments:
+      type: array
+      items:
+        $ref: "attachment.schemas.yaml#/AttachmentResponse"
+      description: 添付ファイルのリスト
+    createdAt:
+      type: string
+      format: date-time
+      description: 作成日時
+    updatedAt:
+      type: string
+      format: date-time
+      description: 更新日時
+
+TodosResponse:
+  type: array
+  items:
+    $ref: "#/TodoResponse"
+
+RegisterTodoParams:
+  type: object
+  required:
+    - title
+  properties:
+    title:
+      type: string
+      description: TODOのタイトル（1文字以上200文字以下）
+      minLength: 1
+      maxLength: 200
+    description:
+      type: string
+      minLength: 1
+      maxLength: 5000
+      description: TODOの詳細説明（省略可能。値を送信する場合は1文字以上5000文字以下）
+    status:
+      $ref: "#/TodoStatus"
+      description: TODOのステータス（省略時は TODO）
+    priority:
+      $ref: "#/TodoPriority"
+      description: TODOの優先度（省略時は MEDIUM）
+    dueDate:
+      type: string
+      format: date
+      description: 期限日
+    projectId:
+      type: string
+      minLength: 1
+      description: プロジェクトID（省略可能。値を送信する場合は1文字以上）
+    assigneeUserId:
+      type: string
+      minLength: 1
+      description: 担当者のユーザーID（省略時は作成者が担当者になる。値を送信する場合は1文字以上）
+
+UpdateTodoParams:
+  type: object
+  properties:
+    title:
+      type: string
+      description: TODOのタイトル（省略可能。値を送信する場合は1文字以上200文字以下）
+      minLength: 1
+      maxLength: 200
+    description:
+      type: string
+      minLength: 1
+      maxLength: 5000
+      nullable: true
+      description: TODOの詳細説明（省略可能、nullで"説明なし"に設定。値を送信する場合は1文字以上5000文字以下）
+    status:
+      $ref: "#/TodoStatus"
+    priority:
+      $ref: "#/TodoPriority"
+    dueDate:
+      type: string
+      format: date
+      nullable: true
+      description: 期限日（nullで"期限なし"に設定）
+    projectId:
+      type: string
+      minLength: 1
+      nullable: true
+      description: プロジェクトID（省略可能、nullで"未割り当て"に設定。値を送信する場合は1文字以上）
+    assigneeUserId:
+      type: string
+      minLength: 1
+      nullable: true
+      description: 担当者のユーザーID（省略可能、nullで"未割り当て"に設定。値を送信する場合は1文字以上）

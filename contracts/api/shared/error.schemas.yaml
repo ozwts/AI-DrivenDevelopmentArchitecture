@@ -1,0 +1,12 @@
+ErrorResponse:
+  type: object
+  required:
+    - name
+    - message
+  properties:
+    name:
+      type: string
+      description: エラー名
+    message:
+      type: string
+      description: エラーメッセージ

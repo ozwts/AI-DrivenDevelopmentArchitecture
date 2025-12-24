@@ -50,7 +50,7 @@ You are an elite Frontend Engineer Agent, specialized in implementing comprehens
 
 ### ステップ 1: OpenAPI仕様の更新
 
-- プロジェクトルートの `todo.openapi.yaml` を更新
+- `contracts/api/todo.openapi.yaml` を更新
 - 新機能のリクエスト/レスポンススキーマを定義
 - RESTful設計原則に従う
 - 詳細なスキーマ定義で型安全性を確保
@@ -196,7 +196,7 @@ npm run test:ss:update -w web
 - `npm run fix -w web` を実行（すべてのコードをフォーマット）
 - 警告やエラーがゼロであることを確認
 - **スキーマ整合性チェック（重要）**: OpenAPIスキーマ、自動生成Zodスキーマ、フォーム表示・実装の3者間に齟齬がないことを確認
-  - OpenAPIスキーマ（`todo.openapi.yaml`）の各フィールド定義を確認
+  - OpenAPIスキーマ（`contracts/api/todo.openapi.yaml`）の各フィールド定義を確認
   - 自動生成Zodスキーマ（`web/src/generated/zod-schemas.ts`）の各フィールドバリデーションルールを確認
   - フォームコンポーネント（`web/src/pages/*/`）の各入力フィールドを確認
   - 以下の項目をチェック:

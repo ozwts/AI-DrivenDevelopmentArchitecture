@@ -73,7 +73,7 @@ npm run dev
 # サーバーテスト実行
 npm test
 
-# コード生成（todo.openapi.yaml → 型定義・スキーマ）
+# コード生成（contracts/api/todo.openapi.yaml → 型定義・スキーマ）
 npm run codegen
 
 # バリデーション（全ワークスペース）
@@ -140,11 +140,11 @@ npm run destroy
 
 ## API仕様とコード生成
 
-このプロジェクトはOpenAPI 3.1仕様書（`todo.openapi.yaml`）を**唯一の信頼できる情報源（Single Source of Truth）**として、型安全なAPI通信を実現しています。
+このプロジェクトはOpenAPI 3.1仕様書（`contracts/api/todo.openapi.yaml`）を**唯一の信頼できる情報源（Single Source of Truth）**として、型安全なAPI通信を実現しています。
 
 ### OpenAPIファースト開発
 
-**仕様書**: `todo.openapi.yaml`
+**仕様書**: `contracts/api/todo.openapi.yaml`
 
 すべてのAPIエンドポイント、リクエスト/レスポンスの型定義を記述。
 
@@ -176,7 +176,7 @@ npm run codegen
 
 ```bash
 # 1. OpenAPI仕様を更新
-vim todo.openapi.yaml
+vim contracts/api/todo.openapi.yaml
 
 # 2. コード生成実行
 npm run codegen

@@ -1,0 +1,226 @@
+# TODO集約ルートのパス
+
+/todos:
+  get:
+    tags:
+      - todos
+    summary: TODOのリストを取得
+    security:
+      - CognitoAuthorizer: []
+    parameters:
+      - name: status
+        in: query
+        description: ステータスでフィルター
+        required: false
+        schema:
+          $ref: "todo.schemas.yaml#/TodoStatus"
+      - name: projectId
+        in: query
+        description: プロジェクトIDでフィルター
+        required: false
+        schema:
+          type: string
+    responses:
+      "200":
+        description: TODOリスト取得に成功
+        content:
+          application/json:
+            schema:
+              $ref: "todo.schemas.yaml#/TodosResponse"
+      "401":
+        description: 認証エラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "500":
+        description: サーバーエラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+  post:
+    tags:
+      - todos
+    summary: 新しいTODOを作成
+    security:
+      - CognitoAuthorizer: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "todo.schemas.yaml#/RegisterTodoParams"
+    responses:
+      "201":
+        description: TODO作成に成功
+        content:
+          application/json:
+            schema:
+              $ref: "todo.schemas.yaml#/TodoResponse"
+      "400":
+        description: バリデーションエラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "401":
+        description: 認証エラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "422":
+        description: ドメインルールエラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "500":
+        description: サーバーエラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+
+/todos/{todoId}:
+  get:
+    tags:
+      - todos
+    summary: TODOの詳細を取得
+    security:
+      - CognitoAuthorizer: []
+    parameters:
+      - name: todoId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: TODO ID
+    responses:
+      "200":
+        description: TODO詳細取得に成功
+        content:
+          application/json:
+            schema:
+              $ref: "todo.schemas.yaml#/TodoResponse"
+      "401":
+        description: 認証エラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "404":
+        description: TODOが存在しない
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "500":
+        description: サーバーエラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+  patch:
+    tags:
+      - todos
+    summary: TODOを更新
+    security:
+      - CognitoAuthorizer: []
+    parameters:
+      - name: todoId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: TODO ID
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "todo.schemas.yaml#/UpdateTodoParams"
+    responses:
+      "200":
+        description: TODO更新に成功
+        content:
+          application/json:
+            schema:
+              $ref: "todo.schemas.yaml#/TodoResponse"
+      "400":
+        description: バリデーションエラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "401":
+        description: 認証エラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "403":
+        description: アクセス拒否、権限エラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "404":
+        description: TODOが存在しない
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "422":
+        description: ドメインルールエラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "500":
+        description: サーバーエラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+  delete:
+    tags:
+      - todos
+    summary: TODOを削除
+    security:
+      - CognitoAuthorizer: []
+    parameters:
+      - name: todoId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: TODO ID
+    responses:
+      "204":
+        description: TODO削除に成功
+      "401":
+        description: 認証エラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "403":
+        description: アクセス拒否、権限エラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "404":
+        description: TODOが存在しない
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "500":
+        description: サーバーエラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"

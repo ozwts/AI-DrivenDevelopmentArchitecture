@@ -1,0 +1,103 @@
+AttachmentStatus:
+  type: string
+  enum:
+    - PREPARED
+    - UPLOADED
+  description: 添付ファイルのステータス（PREPARED=アップロード準備中、UPLOADED=アップロード完了）
+
+AttachmentResponse:
+  type: object
+  required:
+    - id
+    - todoId
+    - filename
+    - contentType
+    - filesize
+    - status
+    - createdAt
+    - updatedAt
+  properties:
+    id:
+      type: string
+      description: 添付ファイルの一意の識別子
+    todoId:
+      type: string
+      description: TODO ID
+    filename:
+      type: string
+      description: ファイル名
+    contentType:
+      type: string
+      description: MIMEタイプ（例：image/png, application/pdf）
+    filesize:
+      type: integer
+      format: int64
+      description: ファイルサイズ（バイト）
+    status:
+      $ref: "#/AttachmentStatus"
+    createdAt:
+      type: string
+      format: date-time
+      description: 作成日時
+    updatedAt:
+      type: string
+      format: date-time
+      description: 更新日時
+
+AttachmentsResponse:
+  type: array
+  items:
+    $ref: "#/AttachmentResponse"
+
+PrepareAttachmentParams:
+  type: object
+  required:
+    - filename
+    - contentType
+    - filesize
+  properties:
+    filename:
+      type: string
+      description: ファイル名（1文字以上255文字以下）
+      minLength: 1
+      maxLength: 255
+    contentType:
+      type: string
+      description: MIMEタイプ（1文字以上100文字以下、例：image/png, application/pdf）
+      minLength: 1
+      maxLength: 100
+      pattern: "^[a-zA-Z0-9]+/[a-zA-Z0-9\\-+.]+$"
+    filesize:
+      type: integer
+      format: int64
+      description: ファイルサイズ（バイト）
+      minimum: 1
+      maximum: 10485760
+
+PrepareAttachmentResponse:
+  type: object
+  required:
+    - attachment
+    - uploadUrl
+  properties:
+    attachment:
+      $ref: "#/AttachmentResponse"
+    uploadUrl:
+      type: string
+      description: 一時的なアップロードURL（有効期限：15分）
+
+UpdateAttachmentParams:
+  type: object
+  properties:
+    status:
+      $ref: "#/AttachmentStatus"
+      description: アップロード完了後、ステータスをUPLOADEDに更新する。PREPARED→UPLOADEDへの一方向遷移のみ許可。
+
+DownloadUrlResponse:
+  type: object
+  required:
+    - downloadUrl
+  properties:
+    downloadUrl:
+      type: string
+      description: 一時的なダウンロードURL（有効期限：15分）

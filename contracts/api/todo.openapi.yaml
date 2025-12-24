@@ -1,0 +1,1372 @@
+# 自動生成ファイル - 直接編集禁止
+# 編集は entry.yaml および参照先ファイルに対して行ってください
+
+openapi: 3.0.2
+info:
+  title: Consultant TODO App API
+  version: 0.1.0
+  description: コンサルタント向けTODO管理アプリケーションのAPI
+tags:
+  - name: todos
+    description: TODOアイテム
+  - name: attachments
+    description: 添付ファイル
+  - name: projects
+    description: プロジェクト
+  - name: users
+    description: ユーザー
+paths:
+  /todos:
+    get:
+      tags:
+        - todos
+      summary: TODOのリストを取得
+      security:
+        - CognitoAuthorizer: []
+      parameters:
+        - name: status
+          in: query
+          description: ステータスでフィルター
+          required: false
+          schema:
+            $ref: '#/components/schemas/TodoStatus'
+        - name: projectId
+          in: query
+          description: プロジェクトIDでフィルター
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: TODOリスト取得に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TodosResponse'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags:
+        - todos
+      summary: 新しいTODOを作成
+      security:
+        - CognitoAuthorizer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterTodoParams'
+      responses:
+        '201':
+          description: TODO作成に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TodoResponse'
+        '400':
+          description: バリデーションエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: ドメインルールエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /todos/{todoId}:
+    get:
+      tags:
+        - todos
+      summary: TODOの詳細を取得
+      security:
+        - CognitoAuthorizer: []
+      parameters:
+        - name: todoId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: TODO ID
+      responses:
+        '200':
+          description: TODO詳細取得に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TodoResponse'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: TODOが存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    patch:
+      tags:
+        - todos
+      summary: TODOを更新
+      security:
+        - CognitoAuthorizer: []
+      parameters:
+        - name: todoId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: TODO ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTodoParams'
+      responses:
+        '200':
+          description: TODO更新に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TodoResponse'
+        '400':
+          description: バリデーションエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: アクセス拒否、権限エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: TODOが存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: ドメインルールエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags:
+        - todos
+      summary: TODOを削除
+      security:
+        - CognitoAuthorizer: []
+      parameters:
+        - name: todoId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: TODO ID
+      responses:
+        '204':
+          description: TODO削除に成功
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: アクセス拒否、権限エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: TODOが存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /todos/{todoId}/attachments:
+    get:
+      tags:
+        - attachments
+      summary: TODOの添付ファイル一覧を取得
+      description: アップロード完了済みの添付ファイルのみを返す
+      security:
+        - CognitoAuthorizer: []
+      parameters:
+        - name: todoId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: TODO ID
+      responses:
+        '200':
+          description: 添付ファイル一覧取得に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttachmentsResponse'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: TODOが存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /todos/{todoId}/attachments/prepare:
+    post:
+      tags:
+        - attachments
+      summary: 添付ファイルをアップロード準備
+      description: |
+        ファイルメタデータを登録し、一時的なアップロードURLを取得する。
+        この時点でAttachmentはPREPAREDステータスで作成される。
+        実際のファイルアップロード後にPATCHでステータスをUPLOADEDに更新する必要がある。
+      security:
+        - CognitoAuthorizer: []
+      parameters:
+        - name: todoId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: TODO ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrepareAttachmentParams'
+      responses:
+        '201':
+          description: 添付ファイル準備に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrepareAttachmentResponse'
+        '400':
+          description: バリデーションエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: TODOが存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: ドメインルールエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /todos/{todoId}/attachments/{attachmentId}:
+    get:
+      tags:
+        - attachments
+      summary: 添付ファイルの詳細を取得
+      security:
+        - CognitoAuthorizer: []
+      parameters:
+        - name: todoId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: TODO ID
+        - name: attachmentId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 添付ファイルID
+      responses:
+        '200':
+          description: 添付ファイル詳細取得に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttachmentResponse'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 添付ファイルが存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    patch:
+      tags:
+        - attachments
+      summary: 添付ファイルのステータスを更新
+      description: アップロード完了後、ステータスをUPLOADEDに更新する
+      security:
+        - CognitoAuthorizer: []
+      parameters:
+        - name: todoId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: TODO ID
+        - name: attachmentId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 添付ファイルID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAttachmentParams'
+      responses:
+        '200':
+          description: 添付ファイル更新に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttachmentResponse'
+        '400':
+          description: バリデーションエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: アクセス拒否、権限エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 添付ファイルが存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: ドメインルールエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags:
+        - attachments
+      summary: 添付ファイルを削除
+      description: 添付ファイルとそのメタデータを削除する
+      security:
+        - CognitoAuthorizer: []
+      parameters:
+        - name: todoId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: TODO ID
+        - name: attachmentId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 添付ファイルID
+      responses:
+        '204':
+          description: 添付ファイル削除に成功
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: アクセス拒否、権限エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 添付ファイルが存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /todos/{todoId}/attachments/{attachmentId}/download-url:
+    get:
+      tags:
+        - attachments
+      summary: 添付ファイルのダウンロードURLを取得
+      description: 一時的なダウンロードURLを取得する
+      security:
+        - CognitoAuthorizer: []
+      parameters:
+        - name: todoId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: TODO ID
+        - name: attachmentId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 添付ファイルID
+      responses:
+        '200':
+          description: ダウンロードURL取得に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DownloadUrlResponse'
+        '401':
+          description: 認証エラー、認証が必要
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: アクセス拒否、権限エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 添付ファイルが存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /projects:
+    get:
+      tags:
+        - projects
+      summary: プロジェクトのリストを取得
+      security:
+        - CognitoAuthorizer: []
+      responses:
+        '200':
+          description: プロジェクトリスト取得に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectsResponse'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags:
+        - projects
+      summary: 新しいプロジェクトを作成
+      security:
+        - CognitoAuthorizer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProjectParams'
+      responses:
+        '201':
+          description: プロジェクト作成に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectResponse'
+        '400':
+          description: バリデーションエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: ドメインルールエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /projects/{projectId}:
+    get:
+      tags:
+        - projects
+      summary: プロジェクトの詳細を取得
+      security:
+        - CognitoAuthorizer: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: プロジェクトID
+      responses:
+        '200':
+          description: プロジェクト詳細取得に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectResponse'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: プロジェクトが存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    patch:
+      tags:
+        - projects
+      summary: プロジェクトを更新
+      security:
+        - CognitoAuthorizer: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: プロジェクトID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProjectParams'
+      responses:
+        '200':
+          description: プロジェクト更新に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectResponse'
+        '400':
+          description: バリデーションエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: アクセス拒否、権限エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: プロジェクトが存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: ドメインルールエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags:
+        - projects
+      summary: プロジェクトを削除
+      security:
+        - CognitoAuthorizer: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: プロジェクトID
+      responses:
+        '204':
+          description: プロジェクト削除に成功
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: アクセス拒否、権限エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: プロジェクトが存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /users:
+    get:
+      tags:
+        - users
+      summary: ユーザーのリストを取得
+      security:
+        - CognitoAuthorizer: []
+      responses:
+        '200':
+          description: ユーザーリスト取得に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsersResponse'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /users/me:
+    get:
+      tags:
+        - users
+      summary: 現在のユーザーの詳細を取得
+      description: 認証トークンから現在のユーザー情報を取得する
+      security:
+        - CognitoAuthorizer: []
+      responses:
+        '200':
+          description: ユーザー詳細取得に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: ユーザーが存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags:
+        - users
+      summary: 現在のユーザーを登録
+      description: Cognito認証後の初回ログイン時にユーザー情報をDBに同期する。認証トークンからsub/email/emailVerifiedを取得する。
+      security:
+        - CognitoAuthorizer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterUserParams'
+      responses:
+        '201':
+          description: ユーザー登録に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          description: バリデーションエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: ドメインルールエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    patch:
+      tags:
+        - users
+      summary: 現在のユーザー情報を更新
+      description: 認証トークンから現在のユーザーを特定して情報を更新する
+      security:
+        - CognitoAuthorizer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserParams'
+      responses:
+        '200':
+          description: ユーザー更新に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          description: バリデーションエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: アクセス拒否、権限エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: ユーザーが存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: ドメインルールエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags:
+        - users
+      summary: 現在のユーザーを削除
+      description: 認証トークンから現在のユーザーを特定して削除する。ユーザーは自分自身のアカウントのみ削除可能。
+      security:
+        - CognitoAuthorizer: []
+      responses:
+        '204':
+          description: ユーザー削除に成功
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: アクセス拒否、権限エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: ユーザーが存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /users/{userId}:
+    get:
+      tags:
+        - users
+      summary: ユーザーの詳細を取得
+      security:
+        - CognitoAuthorizer: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ユーザーID
+      responses:
+        '200':
+          description: ユーザー詳細取得に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: ユーザーが存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  securitySchemes:
+    CognitoAuthorizer:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: Cognito JWT トークン
+  schemas:
+    ErrorResponse:
+      type: object
+      required:
+        - name
+        - message
+      properties:
+        name:
+          type: string
+          description: エラー名
+        message:
+          type: string
+          description: エラーメッセージ
+    TodoStatus:
+      type: string
+      enum:
+        - TODO
+        - IN_PROGRESS
+        - COMPLETED
+      description: TODOのステータス
+    TodoPriority:
+      type: string
+      enum:
+        - LOW
+        - MEDIUM
+        - HIGH
+      description: TODOの優先度
+    TodoResponse:
+      type: object
+      required:
+        - id
+        - title
+        - status
+        - priority
+        - assigneeUserId
+        - createdAt
+        - updatedAt
+        - attachments
+      properties:
+        id:
+          type: string
+          description: TODOの一意の識別子
+        title:
+          type: string
+          description: TODOのタイトル
+        description:
+          type: string
+          description: TODOの詳細説明
+        status:
+          $ref: '#/components/schemas/TodoStatus'
+        priority:
+          $ref: '#/components/schemas/TodoPriority'
+        dueDate:
+          type: string
+          format: date
+          description: 期限日
+        projectId:
+          type: string
+          description: プロジェクトID
+        assigneeUserId:
+          type: string
+          description: 担当者のユーザーID
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttachmentResponse'
+          description: 添付ファイルのリスト
+        createdAt:
+          type: string
+          format: date-time
+          description: 作成日時
+        updatedAt:
+          type: string
+          format: date-time
+          description: 更新日時
+    TodosResponse:
+      type: array
+      items:
+        $ref: '#/components/schemas/TodoResponse'
+    RegisterTodoParams:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+          description: TODOのタイトル（1文字以上200文字以下）
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          minLength: 1
+          maxLength: 5000
+          description: TODOの詳細説明（省略可能。値を送信する場合は1文字以上5000文字以下）
+        status:
+          $ref: '#/components/schemas/TodoStatus'
+          description: TODOのステータス（省略時は TODO）
+        priority:
+          $ref: '#/components/schemas/TodoPriority'
+          description: TODOの優先度（省略時は MEDIUM）
+        dueDate:
+          type: string
+          format: date
+          description: 期限日
+        projectId:
+          type: string
+          minLength: 1
+          description: プロジェクトID（省略可能。値を送信する場合は1文字以上）
+        assigneeUserId:
+          type: string
+          minLength: 1
+          description: 担当者のユーザーID（省略時は作成者が担当者になる。値を送信する場合は1文字以上）
+    UpdateTodoParams:
+      type: object
+      properties:
+        title:
+          type: string
+          description: TODOのタイトル（省略可能。値を送信する場合は1文字以上200文字以下）
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          minLength: 1
+          maxLength: 5000
+          nullable: true
+          description: TODOの詳細説明（省略可能、nullで"説明なし"に設定。値を送信する場合は1文字以上5000文字以下）
+        status:
+          $ref: '#/components/schemas/TodoStatus'
+        priority:
+          $ref: '#/components/schemas/TodoPriority'
+        dueDate:
+          type: string
+          format: date
+          nullable: true
+          description: 期限日（nullで"期限なし"に設定）
+        projectId:
+          type: string
+          minLength: 1
+          nullable: true
+          description: プロジェクトID（省略可能、nullで"未割り当て"に設定。値を送信する場合は1文字以上）
+        assigneeUserId:
+          type: string
+          minLength: 1
+          nullable: true
+          description: 担当者のユーザーID（省略可能、nullで"未割り当て"に設定。値を送信する場合は1文字以上）
+    AttachmentStatus:
+      type: string
+      enum:
+        - PREPARED
+        - UPLOADED
+      description: 添付ファイルのステータス（PREPARED=アップロード準備中、UPLOADED=アップロード完了）
+    AttachmentResponse:
+      type: object
+      required:
+        - id
+        - todoId
+        - filename
+        - contentType
+        - filesize
+        - status
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: 添付ファイルの一意の識別子
+        todoId:
+          type: string
+          description: TODO ID
+        filename:
+          type: string
+          description: ファイル名
+        contentType:
+          type: string
+          description: MIMEタイプ（例：image/png, application/pdf）
+        filesize:
+          type: integer
+          format: int64
+          description: ファイルサイズ（バイト）
+        status:
+          $ref: '#/components/schemas/AttachmentStatus'
+        createdAt:
+          type: string
+          format: date-time
+          description: 作成日時
+        updatedAt:
+          type: string
+          format: date-time
+          description: 更新日時
+    AttachmentsResponse:
+      type: array
+      items:
+        $ref: '#/components/schemas/AttachmentResponse'
+    PrepareAttachmentParams:
+      type: object
+      required:
+        - filename
+        - contentType
+        - filesize
+      properties:
+        filename:
+          type: string
+          description: ファイル名（1文字以上255文字以下）
+          minLength: 1
+          maxLength: 255
+        contentType:
+          type: string
+          description: MIMEタイプ（1文字以上100文字以下、例：image/png, application/pdf）
+          minLength: 1
+          maxLength: 100
+          pattern: ^[a-zA-Z0-9]+/[a-zA-Z0-9\-+.]+$
+        filesize:
+          type: integer
+          format: int64
+          description: ファイルサイズ（バイト）
+          minimum: 1
+          maximum: 10485760
+    PrepareAttachmentResponse:
+      type: object
+      required:
+        - attachment
+        - uploadUrl
+      properties:
+        attachment:
+          $ref: '#/components/schemas/AttachmentResponse'
+        uploadUrl:
+          type: string
+          description: 一時的なアップロードURL（有効期限：15分）
+    UpdateAttachmentParams:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/AttachmentStatus'
+          description: アップロード完了後、ステータスをUPLOADEDに更新する。PREPARED→UPLOADEDへの一方向遷移のみ許可。
+    DownloadUrlResponse:
+      type: object
+      required:
+        - downloadUrl
+      properties:
+        downloadUrl:
+          type: string
+          description: 一時的なダウンロードURL（有効期限：15分）
+    ProjectResponse:
+      type: object
+      required:
+        - id
+        - name
+        - color
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: プロジェクトの一意の識別子
+        name:
+          type: string
+          description: プロジェクト名
+        description:
+          type: string
+          description: プロジェクトの説明
+        color:
+          type: string
+          description: プロジェクトのカラーコード（例：#001964）
+          pattern: ^#[0-9A-Fa-f]{6}$
+        createdAt:
+          type: string
+          format: date-time
+          description: 作成日時
+        updatedAt:
+          type: string
+          format: date-time
+          description: 更新日時
+    ProjectsResponse:
+      type: array
+      items:
+        $ref: '#/components/schemas/ProjectResponse'
+    CreateProjectParams:
+      type: object
+      required:
+        - name
+        - color
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: プロジェクト名（1文字以上100文字以下）
+        description:
+          type: string
+          minLength: 1
+          maxLength: 1000
+          description: プロジェクトの説明（省略可能。値を送信する場合は1文字以上1000文字以下）
+        color:
+          type: string
+          description: プロジェクトのカラーコード（#で始まる16進数6文字、例：#001964）
+          pattern: ^#[0-9A-Fa-f]{6}$
+    UpdateProjectParams:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: プロジェクト名（省略可能。値を送信する場合は1文字以上100文字以下）
+        description:
+          type: string
+          minLength: 1
+          maxLength: 1000
+          nullable: true
+          description: プロジェクトの説明（省略可能、nullで"説明なし"に設定。値を送信する場合は1文字以上1000文字以下）
+        color:
+          type: string
+          description: プロジェクトのカラーコード（省略可能。値を送信する場合は#で始まる16進数6文字、例：#001964）
+          pattern: ^#[0-9A-Fa-f]{6}$
+    UserResponse:
+      type: object
+      required:
+        - id
+        - sub
+        - name
+        - email
+        - emailVerified
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: ユーザーID
+        sub:
+          type: string
+          description: Cognito User Sub (外部認証システムの識別子)
+        name:
+          type: string
+          description: ユーザー名
+        email:
+          type: string
+          description: メールアドレス
+        emailVerified:
+          type: boolean
+          description: メール検証済みフラグ
+        createdAt:
+          type: string
+          format: date-time
+          description: 作成日時
+        updatedAt:
+          type: string
+          format: date-time
+          description: 更新日時
+    UsersResponse:
+      type: array
+      items:
+        $ref: '#/components/schemas/UserResponse'
+    RegisterUserParams:
+      type: object
+      properties:
+        name:
+          type: string
+          description: ユーザー名（省略時はCognitoのメールアドレスから自動生成。値を送信する場合は1文字以上100文字以下）
+          minLength: 1
+          maxLength: 100
+    UpdateUserParams:
+      type: object
+      properties:
+        name:
+          type: string
+          description: ユーザー名（省略可能。値を送信する場合は1文字以上100文字以下）
+          minLength: 1
+          maxLength: 100

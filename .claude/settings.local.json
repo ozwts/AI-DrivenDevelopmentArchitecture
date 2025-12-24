@@ -106,7 +106,13 @@
       "Bash(git -C:*)",
       "Skill(review)",
       "Bash(grep:*)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "WebFetch(domain:redocly.com)",
+      "WebFetch(domain:davidgarcia.dev)",
+      "WebFetch(domain:techdocs.studio)",
+      "WebFetch(domain:medium.com)",
+      "Bash(npx @apidevtools/swagger-cli:*)",
+      "Bash(npx redocly bundle:*)"
     ],
     "deny": [],
     "ask": []

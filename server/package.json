@@ -6,7 +6,7 @@
   "scripts": {
     "api:build": "npm run codegen && rm -rf dist/client-side-app && node esbuild.api.config.mjs",
     "build": "tsc",
-    "codegen": "rm -rf src/generated && mkdir -p src/generated && openapi-zod-client '../todo.openapi.yaml' --output './src/generated/zod-schemas.ts' --export-schemas",
+    "codegen": "rm -rf src/generated && mkdir -p src/generated && openapi-zod-client '../contracts/api/todo.openapi.yaml' --output './src/generated/zod-schemas.ts' --export-schemas",
     "dev": "SSM_PARAMETER_PATH=/sandbox-dev tsx watch src/handler/local-handler.ts",
     "fix": "run-s fix:*",
     "fix:format": "prettier --cache --write '**/*.{ts,json,yml,yaml,md}'",

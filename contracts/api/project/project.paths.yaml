@@ -1,0 +1,211 @@
+/projects:
+  get:
+    tags:
+      - projects
+    summary: プロジェクトのリストを取得
+    security:
+      - CognitoAuthorizer: []
+    responses:
+      "200":
+        description: プロジェクトリスト取得に成功
+        content:
+          application/json:
+            schema:
+              $ref: "project.schemas.yaml#/ProjectsResponse"
+      "401":
+        description: 認証エラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "500":
+        description: サーバーエラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+  post:
+    tags:
+      - projects
+    summary: 新しいプロジェクトを作成
+    security:
+      - CognitoAuthorizer: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "project.schemas.yaml#/CreateProjectParams"
+    responses:
+      "201":
+        description: プロジェクト作成に成功
+        content:
+          application/json:
+            schema:
+              $ref: "project.schemas.yaml#/ProjectResponse"
+      "400":
+        description: バリデーションエラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "401":
+        description: 認証エラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "422":
+        description: ドメインルールエラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "500":
+        description: サーバーエラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+
+/projects/{projectId}:
+  get:
+    tags:
+      - projects
+    summary: プロジェクトの詳細を取得
+    security:
+      - CognitoAuthorizer: []
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: プロジェクトID
+    responses:
+      "200":
+        description: プロジェクト詳細取得に成功
+        content:
+          application/json:
+            schema:
+              $ref: "project.schemas.yaml#/ProjectResponse"
+      "401":
+        description: 認証エラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "404":
+        description: プロジェクトが存在しない
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "500":
+        description: サーバーエラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+  patch:
+    tags:
+      - projects
+    summary: プロジェクトを更新
+    security:
+      - CognitoAuthorizer: []
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: プロジェクトID
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "project.schemas.yaml#/UpdateProjectParams"
+    responses:
+      "200":
+        description: プロジェクト更新に成功
+        content:
+          application/json:
+            schema:
+              $ref: "project.schemas.yaml#/ProjectResponse"
+      "400":
+        description: バリデーションエラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "401":
+        description: 認証エラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "403":
+        description: アクセス拒否、権限エラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "404":
+        description: プロジェクトが存在しない
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "422":
+        description: ドメインルールエラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "500":
+        description: サーバーエラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+  delete:
+    tags:
+      - projects
+    summary: プロジェクトを削除
+    security:
+      - CognitoAuthorizer: []
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: プロジェクトID
+    responses:
+      "204":
+        description: プロジェクト削除に成功
+      "401":
+        description: 認証エラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "403":
+        description: アクセス拒否、権限エラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "404":
+        description: プロジェクトが存在しない
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "500":
+        description: サーバーエラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"

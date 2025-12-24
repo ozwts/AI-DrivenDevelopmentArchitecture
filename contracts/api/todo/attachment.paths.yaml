@@ -1,0 +1,319 @@
+# Attachment（TODO集約の子エンティティ）のパス
+
+/todos/{todoId}/attachments:
+  get:
+    tags:
+      - attachments
+    summary: TODOの添付ファイル一覧を取得
+    description: アップロード完了済みの添付ファイルのみを返す
+    security:
+      - CognitoAuthorizer: []
+    parameters:
+      - name: todoId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: TODO ID
+    responses:
+      "200":
+        description: 添付ファイル一覧取得に成功
+        content:
+          application/json:
+            schema:
+              $ref: "attachment.schemas.yaml#/AttachmentsResponse"
+      "401":
+        description: 認証エラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "404":
+        description: TODOが存在しない
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "500":
+        description: サーバーエラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+
+/todos/{todoId}/attachments/prepare:
+  post:
+    tags:
+      - attachments
+    summary: 添付ファイルをアップロード準備
+    description: |
+      ファイルメタデータを登録し、一時的なアップロードURLを取得する。
+      この時点でAttachmentはPREPAREDステータスで作成される。
+      実際のファイルアップロード後にPATCHでステータスをUPLOADEDに更新する必要がある。
+    security:
+      - CognitoAuthorizer: []
+    parameters:
+      - name: todoId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: TODO ID
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "attachment.schemas.yaml#/PrepareAttachmentParams"
+    responses:
+      "201":
+        description: 添付ファイル準備に成功
+        content:
+          application/json:
+            schema:
+              $ref: "attachment.schemas.yaml#/PrepareAttachmentResponse"
+      "400":
+        description: バリデーションエラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "401":
+        description: 認証エラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "404":
+        description: TODOが存在しない
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "422":
+        description: ドメインルールエラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "500":
+        description: サーバーエラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+
+/todos/{todoId}/attachments/{attachmentId}:
+  get:
+    tags:
+      - attachments
+    summary: 添付ファイルの詳細を取得
+    security:
+      - CognitoAuthorizer: []
+    parameters:
+      - name: todoId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: TODO ID
+      - name: attachmentId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: 添付ファイルID
+    responses:
+      "200":
+        description: 添付ファイル詳細取得に成功
+        content:
+          application/json:
+            schema:
+              $ref: "attachment.schemas.yaml#/AttachmentResponse"
+      "401":
+        description: 認証エラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "404":
+        description: 添付ファイルが存在しない
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "500":
+        description: サーバーエラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+  patch:
+    tags:
+      - attachments
+    summary: 添付ファイルのステータスを更新
+    description: アップロード完了後、ステータスをUPLOADEDに更新する
+    security:
+      - CognitoAuthorizer: []
+    parameters:
+      - name: todoId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: TODO ID
+      - name: attachmentId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: 添付ファイルID
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "attachment.schemas.yaml#/UpdateAttachmentParams"
+    responses:
+      "200":
+        description: 添付ファイル更新に成功
+        content:
+          application/json:
+            schema:
+              $ref: "attachment.schemas.yaml#/AttachmentResponse"
+      "400":
+        description: バリデーションエラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "401":
+        description: 認証エラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "403":
+        description: アクセス拒否、権限エラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "404":
+        description: 添付ファイルが存在しない
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "422":
+        description: ドメインルールエラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "500":
+        description: サーバーエラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+  delete:
+    tags:
+      - attachments
+    summary: 添付ファイルを削除
+    description: 添付ファイルとそのメタデータを削除する
+    security:
+      - CognitoAuthorizer: []
+    parameters:
+      - name: todoId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: TODO ID
+      - name: attachmentId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: 添付ファイルID
+    responses:
+      "204":
+        description: 添付ファイル削除に成功
+      "401":
+        description: 認証エラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "403":
+        description: アクセス拒否、権限エラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "404":
+        description: 添付ファイルが存在しない
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "500":
+        description: サーバーエラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+
+/todos/{todoId}/attachments/{attachmentId}/download-url:
+  get:
+    tags:
+      - attachments
+    summary: 添付ファイルのダウンロードURLを取得
+    description: 一時的なダウンロードURLを取得する
+    security:
+      - CognitoAuthorizer: []
+    parameters:
+      - name: todoId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: TODO ID
+      - name: attachmentId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: 添付ファイルID
+    responses:
+      "200":
+        description: ダウンロードURL取得に成功
+        content:
+          application/json:
+            schema:
+              $ref: "attachment.schemas.yaml#/DownloadUrlResponse"
+      "401":
+        description: 認証エラー、認証が必要
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "403":
+        description: アクセス拒否、権限エラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "404":
+        description: 添付ファイルが存在しない
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+      "500":
+        description: サーバーエラー
+        content:
+          application/json:
+            schema:
+              $ref: "../shared/error.schemas.yaml#/ErrorResponse"

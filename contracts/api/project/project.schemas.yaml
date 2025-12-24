@@ -1,0 +1,75 @@
+ProjectResponse:
+  type: object
+  required:
+    - id
+    - name
+    - color
+    - createdAt
+    - updatedAt
+  properties:
+    id:
+      type: string
+      description: プロジェクトの一意の識別子
+    name:
+      type: string
+      description: プロジェクト名
+    description:
+      type: string
+      description: プロジェクトの説明
+    color:
+      type: string
+      description: プロジェクトのカラーコード（例：#001964）
+      pattern: "^#[0-9A-Fa-f]{6}$"
+    createdAt:
+      type: string
+      format: date-time
+      description: 作成日時
+    updatedAt:
+      type: string
+      format: date-time
+      description: 更新日時
+
+ProjectsResponse:
+  type: array
+  items:
+    $ref: "#/ProjectResponse"
+
+CreateProjectParams:
+  type: object
+  required:
+    - name
+    - color
+  properties:
+    name:
+      type: string
+      minLength: 1
+      maxLength: 100
+      description: プロジェクト名（1文字以上100文字以下）
+    description:
+      type: string
+      minLength: 1
+      maxLength: 1000
+      description: プロジェクトの説明（省略可能。値を送信する場合は1文字以上1000文字以下）
+    color:
+      type: string
+      description: プロジェクトのカラーコード（#で始まる16進数6文字、例：#001964）
+      pattern: "^#[0-9A-Fa-f]{6}$"
+
+UpdateProjectParams:
+  type: object
+  properties:
+    name:
+      type: string
+      minLength: 1
+      maxLength: 100
+      description: プロジェクト名（省略可能。値を送信する場合は1文字以上100文字以下）
+    description:
+      type: string
+      minLength: 1
+      maxLength: 1000
+      nullable: true
+      description: プロジェクトの説明（省略可能、nullで"説明なし"に設定。値を送信する場合は1文字以上1000文字以下）
+    color:
+      type: string
+      description: プロジェクトのカラーコード（省略可能。値を送信する場合は#で始まる16進数6文字、例：#001964）
+      pattern: "^#[0-9A-Fa-f]{6}$"

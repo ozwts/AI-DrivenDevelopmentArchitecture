@@ -877,9 +877,9 @@ export const UsersPage = () => {
 
 **スキーマ整合性:**
 
-- OpenAPIスキーマ（`todo.openapi.yaml`）から自動生成されたZodスキーマ（`generated/zod-schemas.ts`）を使用
+- OpenAPIスキーマ（`contracts/api/todo.openapi.yaml`）から自動生成されたZodスキーマ（`generated/zod-schemas.ts`）を使用
 - `assigneeUserId`フィールドは、TODO作成・更新の両スキーマに追加（オプショナル）
-- スキーマ変更は`todo.openapi.yaml`で行い、`npm run codegen`で自動反映
+- スキーマ変更は`contracts/api/todo.openapi.yaml`で行い、`npm run codegen`で自動反映
 
 ## 参考資料
 

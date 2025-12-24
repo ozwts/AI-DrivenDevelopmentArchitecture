@@ -93,33 +93,47 @@ Handler層（バリデーション実行）
 
 ## ファイル配置
 
-```
-プロジェクトルート/
-├── {resource}.openapi.yaml              # OpenAPI仕様書（単一ファイル）
-├── server/
-│   └── src/
-│       ├── generated/
-│       │   └── schemas.*                # 自動生成されたスキーマ
-│       └── handler/                     # バリデーション実行
-└── web/
-    └── src/
-        └── generated/
-            └── schemas.*                # 自動生成されたスキーマ
-```
+### ファイル構成
 
-**自動生成コマンド**:
-
-```bash
-npm run codegen  # server と web で実行
+```
+contracts/api/
+├── entry.yaml                  # エントリポイント
+├── {resource}.openapi.yaml     # バンドル後（自動生成）
+├── shared/
+│   └── error.schemas.yaml      # 共通スキーマ
+└── {aggregate}/
+    ├── {entity}.paths.yaml     # パス定義
+    └── {entity}.schemas.yaml   # スキーマ定義
 ```
 
-**実体**:
+### マルチファイル構造の原則
 
-```bash
-# server/package.json & web/package.json
-openapi-zod-client '../todo.openapi.yaml' \
-  --output './src/generated/zod-schemas.ts' \
-  --export-schemas
+OpenAPI仕様は**ドメイン単位で分割**し、バンドルツールで単一ファイルに結合する。
+
+**原則**:
+
+1. **エントリポイント**: 全体構造を定義し、`$ref` で各ドメインファイルを参照
+2. **ドメイン分割**: DDD集約単位でディレクトリを分割（子エンティティは親と同一ディレクトリ）
+3. **共通スキーマ**: 横断的に使用するスキーマ（ErrorResponse等）は shared ディレクトリに配置
+4. **自動生成**: バンドル後のファイルは直接編集禁止
+
+### $ref 参照の記法
+
+OpenAPIの `$ref` はJSON Pointer (RFC 6901) に従う。
+
+| 文字 | エスケープ | 例 |
+|------|-----------|-----|
+| `/`  | `~1`      | `/todos` → `~1todos` |
+| `~`  | `~0`      | |
+
+```yaml
+# パス参照（/todos → ~1todos）
+/todos:
+  $ref: "todo/todo.paths.yaml#/~1todos"
+
+# スキーマ参照
+TodoResponse:
+  $ref: "todo/todo.schemas.yaml#/TodoResponse"
 ```
 
 ## OpenAPI仕様の構造
@@ -131,23 +145,15 @@ openapi: 3.0.2
 info:
   title: アプリケーション名
   version: バージョン
-  description: 説明
 
 paths:
-  /{resource}:
-    get: ...
-    post: ...
+  /{resources}:
+    $ref: "{aggregate}/{entity}.paths.yaml#/~1{resources}"
 
 components:
   schemas:
     {Entity}Response:
-      type: object
-      required: [...]
-      properties: ...
-    {Action}{Entity}Params:
-      type: object
-      required: [...]
-      properties: ...
+      $ref: "{aggregate}/{entity}.schemas.yaml#/{Entity}Response"
 ```
 
 ## スキーマ命名規則
@@ -343,20 +349,16 @@ tags:
 ## OpenAPI-First開発フロー
 
 ```
-1. OpenAPI仕様書を更新
+1. OpenAPI仕様を更新
    ↓
-2. 自動生成コマンド実行
+2. スキーマ自動生成
    ↓
-3. スキーマが生成される
+3. 生成されたスキーマから型推論
    ↓
-4. Handler層で型推論
-   ↓
-5. スキーマでバリデーション実行
-   ↓
-6. 型安全な実装
+4. 型安全な実装
 ```
 
-**重要**:
+**原則**:
 
 - 仕様変更は必ずOpenAPIから開始する（コードから逆算しない）
 - 型定義は手動で作成せず、生成されたスキーマから推論
@@ -366,18 +368,12 @@ tags:
 ### ✅ Good
 
 ```yaml
-# OpenAPI仕様（明確な説明）
+# 文字列に制約と説明
 name:
   type: string
   minLength: 1
   maxLength: 200
-  description: リソース名（1文字以上200文字以下）
-
-# 適切なrequired指定
-required:
-  - id
-  - name
-  - createdAt
+  description: リソース名
 
 # enumで選択肢を制限（大文字スネークケース）
 status:
@@ -388,23 +384,15 @@ status:
 {ChildEntity}Response:
   properties:
     id: ...
-    {parentEntity}Id: ...  # 親ID
+    {parentEntity}Id: ...
 ```
 
 ### ❌ Bad
 
 ```yaml
-# 説明なし
-name:
-  type: string  # ❌ 制約や説明がない
-
 # 制約なし
 title:
   type: string  # ❌ minLength/maxLengthがない
-
-# requiredの過不足
-required: []    # ❌ すべてオプショナルは不自然
-required: [id, name, description]  # ❌ descriptionは通常オプショナル
 
 # マジックナンバー
 priority:
@@ -429,23 +417,3 @@ priority:
 | DELETE       | Delete   | 204 No Content   | リソース削除                                     |
 
 **詳細**: `20-endpoint-design.md` - HTTPメソッド統一ポリシーを参照
-
-## チェックリスト
-
-```
-[ ] OpenAPI 3.0.2以降を使用
-[ ] すべてのエンドポイントを定義
-[ ] リクエスト・レスポンススキーマを定義
-[ ] required/optionalを明示
-[ ] 文字列フィールドに型レベル制約を設定（minLength/maxLength/pattern/enum）
-[ ] 空文字列を禁止（15-validation-constraints.md参照）
-[ ] 値のクリアが必要なフィールドにnullableを設定（20-endpoint-design.md参照）
-[ ] ドメインロジックを含むバリデーションは実施しない
-[ ] enumで選択肢を制限（大文字スネークケース、ドメイン層の型定義と一致）
-[ ] enum型参照は直接$refを使用（allOfは使用しない）
-[ ] descriptionで説明を記載
-[ ] ネストされたリソースに親IDを含める
-[ ] PUTは使用しない（PATCHで統一）
-[ ] スキーマ自動生成が正常に動作
-[ ] ValidationErrorは400 Bad Requestで返す
-```

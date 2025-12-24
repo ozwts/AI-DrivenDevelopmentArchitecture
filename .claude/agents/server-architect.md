@@ -70,7 +70,7 @@ You are an elite Server-Side Architect Agent, specialized in implementing compre
 
 ### ステップ 2: OpenAPI仕様の更新
 
-- プロジェクトルートの `todo.openapi.yaml` を更新
+- `contracts/api/todo.openapi.yaml` を更新
 - RESTful設計原則に従う
 - スキーマ、パス、リクエスト/レスポンスボディを定義
 - ドメインモデルと一貫した命名を確保
