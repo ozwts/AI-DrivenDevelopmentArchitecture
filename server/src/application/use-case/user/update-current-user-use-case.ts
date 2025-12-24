@@ -73,7 +73,7 @@ export class UpdateCurrentUserUseCaseImpl implements UpdateCurrentUserUseCase {
 
     if (findResult.data === undefined) {
       const notFoundError = new NotFoundError("ユーザーが見つかりません");
-      logger.info("ユーザーが見つかりませんでした", { sub });
+      logger.warn("ユーザーが見つかりませんでした", { sub });
       return Result.err(notFoundError);
     }
 
@@ -93,7 +93,7 @@ export class UpdateCurrentUserUseCaseImpl implements UpdateCurrentUserUseCase {
     } catch (error) {
       logger.warn("Cognitoからのユーザー情報取得に失敗（続行）", {
         sub,
-        error: error instanceof Error ? error.message : String(error),
+        error,
       });
       // 取得失敗してもエラーにせず続行（既存のemail情報を保持）
     }

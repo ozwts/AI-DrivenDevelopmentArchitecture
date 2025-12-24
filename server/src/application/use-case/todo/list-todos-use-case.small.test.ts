@@ -1,8 +1,10 @@
 import { test, expect, describe } from "vitest";
 import { ListTodosUseCaseImpl } from "./list-todos-use-case";
 import { TodoRepositoryDummy } from "@/domain/model/todo/todo.repository.dummy";
-import { todoDummyFrom } from "@/domain/model/todo/todo.dummy";
+import { todoDummyFrom } from "@/domain/model/todo/todo.entity.dummy";
 import { UnexpectedError } from "@/util/error-util";
+import { LoggerDummy } from "@/application/port/logger/dummy";
+import { Result } from "@/util/result";
 
 describe("ListTodosUseCaseのテスト", () => {
   describe("execute", () => {
@@ -15,17 +17,15 @@ describe("ListTodosUseCaseのテスト", () => {
 
       const listTodosUseCase = new ListTodosUseCaseImpl({
         todoRepository: new TodoRepositoryDummy({
-          findAllReturnValue: {
-            success: true,
-            data: todos,
-          },
+          findAllReturnValue: Result.ok(todos),
         }),
+        logger: new LoggerDummy(),
       });
 
       const result = await listTodosUseCase.execute({});
 
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data).toHaveLength(3);
         expect(result.data).toEqual(todos);
       }
@@ -39,19 +39,17 @@ describe("ListTodosUseCaseのテスト", () => {
 
       const listTodosUseCase = new ListTodosUseCaseImpl({
         todoRepository: new TodoRepositoryDummy({
-          findByStatusReturnValue: {
-            success: true,
-            data: inProgressTodos,
-          },
+          findByStatusReturnValue: Result.ok(inProgressTodos),
         }),
+        logger: new LoggerDummy(),
       });
 
       const result = await listTodosUseCase.execute({
         status: "IN_PROGRESS",
       });
 
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data).toHaveLength(2);
         expect(result.data.every((todo) => todo.status === "IN_PROGRESS")).toBe(
           true,
@@ -68,19 +66,17 @@ describe("ListTodosUseCaseのテスト", () => {
 
       const listTodosUseCase = new ListTodosUseCaseImpl({
         todoRepository: new TodoRepositoryDummy({
-          findByProjectIdReturnValue: {
-            success: true,
-            data: projectTodos,
-          },
+          findByProjectIdReturnValue: Result.ok(projectTodos),
         }),
+        logger: new LoggerDummy(),
       });
 
       const result = await listTodosUseCase.execute({
         projectId: "project-123",
       });
 
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data).toHaveLength(3);
         expect(
           result.data.every((todo) => todo.projectId === "project-123"),
@@ -91,17 +87,15 @@ describe("ListTodosUseCaseのテスト", () => {
     test("TODOが0件の場合は空配列を返すこと", async () => {
       const listTodosUseCase = new ListTodosUseCaseImpl({
         todoRepository: new TodoRepositoryDummy({
-          findAllReturnValue: {
-            success: true,
-            data: [],
-          },
+          findAllReturnValue: Result.ok([]),
         }),
+        logger: new LoggerDummy(),
       });
 
       const result = await listTodosUseCase.execute({});
 
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data).toHaveLength(0);
         expect(result.data).toEqual([]);
       }
@@ -110,17 +104,15 @@ describe("ListTodosUseCaseのテスト", () => {
     test("リポジトリからエラーが返された場合はそのエラーを返すこと", async () => {
       const listTodosUseCase = new ListTodosUseCaseImpl({
         todoRepository: new TodoRepositoryDummy({
-          findAllReturnValue: {
-            success: false,
-            error: new UnexpectedError(),
-          },
+          findAllReturnValue: Result.err(new UnexpectedError()),
         }),
+        logger: new LoggerDummy(),
       });
 
       const result = await listTodosUseCase.execute({});
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
         expect(result.error).toBeInstanceOf(UnexpectedError);
       }
     });
@@ -141,19 +133,17 @@ describe("ListTodosUseCaseのテスト", () => {
 
       const listTodosUseCase = new ListTodosUseCaseImpl({
         todoRepository: new TodoRepositoryDummy({
-          findByStatusReturnValue: {
-            success: true,
-            data: doneTodos,
-          },
+          findByStatusReturnValue: Result.ok(doneTodos),
         }),
+        logger: new LoggerDummy(),
       });
 
       const result = await listTodosUseCase.execute({
         status: "COMPLETED",
       });
 
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data).toHaveLength(2);
         expect(result.data.every((todo) => todo.status === "COMPLETED")).toBe(
           true,

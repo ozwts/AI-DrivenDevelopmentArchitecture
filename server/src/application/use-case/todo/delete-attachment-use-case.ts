@@ -46,7 +46,7 @@ export class DeleteAttachmentUseCaseImpl implements DeleteAttachmentUseCase {
   ): Promise<DeleteAttachmentUseCaseResult> {
     const { todoRepository, storageClient, fetchNow, logger } = this.#props;
 
-    logger.debug("use-case: delete-attachment-use-case", {
+    logger.debug("ユースケース: 添付ファイル削除を開始", {
       todoId: input.todoId,
       attachmentId: input.attachmentId,
     });

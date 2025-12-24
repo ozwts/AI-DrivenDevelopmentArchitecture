@@ -1,8 +1,10 @@
 import { test, expect, describe } from "vitest";
 import { GetProjectUseCaseImpl } from "./get-project-use-case";
 import { ProjectRepositoryDummy } from "@/domain/model/project/project.repository.dummy";
-import { projectDummyFrom } from "@/domain/model/project/project.dummy";
+import { projectDummyFrom } from "@/domain/model/project/project.entity.dummy";
 import { UnexpectedError } from "@/util/error-util";
+import { LoggerDummy } from "@/application/port/logger/dummy";
+import { Result } from "@/util/result";
 
 describe("GetProjectUseCaseのテスト", () => {
   describe("execute", () => {
@@ -14,19 +16,17 @@ describe("GetProjectUseCaseのテスト", () => {
 
       const getProjectUseCase = new GetProjectUseCaseImpl({
         projectRepository: new ProjectRepositoryDummy({
-          findByIdReturnValue: {
-            success: true,
-            data: expectedProject,
-          },
+          findByIdReturnValue: Result.ok(expectedProject),
         }),
+        logger: new LoggerDummy(),
       });
 
       const result = await getProjectUseCase.execute({
         projectId: "test-project-id-123",
       });
 
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data).toEqual(expectedProject);
         expect(result.data?.id).toBe("test-project-id-123");
         expect(result.data?.name).toBe("テストプロジェクト");
@@ -36,19 +36,17 @@ describe("GetProjectUseCaseのテスト", () => {
     test("プロジェクトが見つからない場合はundefinedを返すこと", async () => {
       const getProjectUseCase = new GetProjectUseCaseImpl({
         projectRepository: new ProjectRepositoryDummy({
-          findByIdReturnValue: {
-            success: true,
-            data: undefined,
-          },
+          findByIdReturnValue: Result.ok(undefined),
         }),
+        logger: new LoggerDummy(),
       });
 
       const result = await getProjectUseCase.execute({
         projectId: "non-existent-id",
       });
 
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data).toBeUndefined();
       }
     });
@@ -56,19 +54,17 @@ describe("GetProjectUseCaseのテスト", () => {
     test("リポジトリからエラーが返された場合はそのエラーを返すこと", async () => {
       const getProjectUseCase = new GetProjectUseCaseImpl({
         projectRepository: new ProjectRepositoryDummy({
-          findByIdReturnValue: {
-            success: false,
-            error: new UnexpectedError(),
-          },
+          findByIdReturnValue: Result.err(new UnexpectedError()),
         }),
+        logger: new LoggerDummy(),
       });
 
       const result = await getProjectUseCase.execute({
         projectId: "test-project-id",
       });
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
         expect(result.error).toBeInstanceOf(UnexpectedError);
       }
     });
@@ -81,19 +77,17 @@ describe("GetProjectUseCaseのテスト", () => {
 
       const getProjectUseCase = new GetProjectUseCaseImpl({
         projectRepository: new ProjectRepositoryDummy({
-          findByIdReturnValue: {
-            success: true,
-            data: project,
-          },
+          findByIdReturnValue: Result.ok(project),
         }),
+        logger: new LoggerDummy(),
       });
 
       const result = await getProjectUseCase.execute({
         projectId: "project-1",
       });
 
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data?.name).toBe("別のプロジェクト");
       }
     });
@@ -107,19 +101,17 @@ describe("GetProjectUseCaseのテスト", () => {
 
       const getProjectUseCase = new GetProjectUseCaseImpl({
         projectRepository: new ProjectRepositoryDummy({
-          findByIdReturnValue: {
-            success: true,
-            data: projectWithDetails,
-          },
+          findByIdReturnValue: Result.ok(projectWithDetails),
         }),
+        logger: new LoggerDummy(),
       });
 
       const result = await getProjectUseCase.execute({
         projectId: "project-2",
       });
 
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data?.description).toBe("詳細な説明");
       }
     });

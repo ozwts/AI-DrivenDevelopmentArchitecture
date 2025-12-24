@@ -47,7 +47,7 @@ export class GetCurrentUserUseCaseImpl implements GetCurrentUserUseCase {
     const { userRepository, logger } = this.#props;
     const { sub } = input;
 
-    logger.debug("use-case: get-current-user-use-case", { sub });
+    logger.debug("ユースケース: 現在のユーザー取得を開始", { sub });
 
     // Cognito Subでユーザーを検索
     const findResult = await userRepository.findBySub({ sub });
@@ -59,9 +59,13 @@ export class GetCurrentUserUseCaseImpl implements GetCurrentUserUseCase {
 
     if (findResult.data === undefined) {
       const notFoundError = new NotFoundError("ユーザーが見つかりません");
-      logger.info("ユーザーが見つかりませんでした", { sub });
+      logger.warn("ユーザーが見つかりませんでした", { sub });
       return Result.err(notFoundError);
     }
+
+    logger.debug("現在のユーザー取得完了", {
+      userId: findResult.data.id,
+    });
 
     return Result.ok(findResult.data);
   }

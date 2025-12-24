@@ -106,7 +106,7 @@ export class RegisterCurrentUserUseCaseImpl
       const conflictError = new ConflictError(
         "このユーザーはすでに登録されています",
       );
-      logger.info("ユーザーがすでに存在します", { sub });
+      logger.warn("ユーザーがすでに存在します", { sub });
       return Result.err(conflictError);
     }
 

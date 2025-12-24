@@ -1,8 +1,10 @@
 import { test, expect, describe } from "vitest";
 import { ListProjectsUseCaseImpl } from "./list-projects-use-case";
 import { ProjectRepositoryDummy } from "@/domain/model/project/project.repository.dummy";
-import { projectDummyFrom } from "@/domain/model/project/project.dummy";
+import { projectDummyFrom } from "@/domain/model/project/project.entity.dummy";
 import { UnexpectedError } from "@/util/error-util";
+import { LoggerDummy } from "@/application/port/logger/dummy";
+import { Result } from "@/util/result";
 
 describe("ListProjectsUseCaseのテスト", () => {
   describe("execute", () => {
@@ -15,17 +17,15 @@ describe("ListProjectsUseCaseのテスト", () => {
 
       const listProjectsUseCase = new ListProjectsUseCaseImpl({
         projectRepository: new ProjectRepositoryDummy({
-          findAllReturnValue: {
-            success: true,
-            data: projects,
-          },
+          findAllReturnValue: Result.ok(projects),
         }),
+        logger: new LoggerDummy(),
       });
 
       const result = await listProjectsUseCase.execute({});
 
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data).toHaveLength(3);
         expect(result.data).toEqual(projects);
       }
@@ -34,17 +34,15 @@ describe("ListProjectsUseCaseのテスト", () => {
     test("プロジェクトが0件の場合は空配列を返すこと", async () => {
       const listProjectsUseCase = new ListProjectsUseCaseImpl({
         projectRepository: new ProjectRepositoryDummy({
-          findAllReturnValue: {
-            success: true,
-            data: [],
-          },
+          findAllReturnValue: Result.ok([]),
         }),
+        logger: new LoggerDummy(),
       });
 
       const result = await listProjectsUseCase.execute({});
 
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data).toHaveLength(0);
         expect(result.data).toEqual([]);
       }
@@ -53,17 +51,15 @@ describe("ListProjectsUseCaseのテスト", () => {
     test("リポジトリからエラーが返された場合はそのエラーを返すこと", async () => {
       const listProjectsUseCase = new ListProjectsUseCaseImpl({
         projectRepository: new ProjectRepositoryDummy({
-          findAllReturnValue: {
-            success: false,
-            error: new UnexpectedError(),
-          },
+          findAllReturnValue: Result.err(new UnexpectedError()),
         }),
+        logger: new LoggerDummy(),
       });
 
       const result = await listProjectsUseCase.execute({});
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
         expect(result.error).toBeInstanceOf(UnexpectedError);
       }
     });
@@ -84,17 +80,15 @@ describe("ListProjectsUseCaseのテスト", () => {
 
       const listProjectsUseCase = new ListProjectsUseCaseImpl({
         projectRepository: new ProjectRepositoryDummy({
-          findAllReturnValue: {
-            success: true,
-            data: projectsWithDetails,
-          },
+          findAllReturnValue: Result.ok(projectsWithDetails),
         }),
+        logger: new LoggerDummy(),
       });
 
       const result = await listProjectsUseCase.execute({});
 
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data).toHaveLength(2);
         expect(result.data[0].description).toBe("説明A");
         expect(result.data[1].description).toBe("説明B");
@@ -111,17 +105,15 @@ describe("ListProjectsUseCaseのテスト", () => {
 
       const listProjectsUseCase = new ListProjectsUseCaseImpl({
         projectRepository: new ProjectRepositoryDummy({
-          findAllReturnValue: {
-            success: true,
-            data: manyProjects,
-          },
+          findAllReturnValue: Result.ok(manyProjects),
         }),
+        logger: new LoggerDummy(),
       });
 
       const result = await listProjectsUseCase.execute({});
 
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data).toHaveLength(100);
       }
     });

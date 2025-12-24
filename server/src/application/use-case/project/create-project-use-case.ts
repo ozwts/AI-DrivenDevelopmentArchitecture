@@ -46,7 +46,7 @@ export class CreateProjectUseCaseImpl implements CreateProjectUseCase {
   ): Promise<CreateProjectUseCaseResult> {
     const { projectRepository, logger, fetchNow } = this.#props;
 
-    logger.debug("use-case: create-project-use-case");
+    logger.debug("ユースケース: プロジェクト作成を開始");
 
     const { name, description, color } = input;
 

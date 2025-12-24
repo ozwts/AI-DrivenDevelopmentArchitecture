@@ -52,7 +52,7 @@ export class GetAttachmentDownloadUrlUseCaseImpl
   ): Promise<GetAttachmentDownloadUrlUseCaseResult> {
     const { todoRepository, storageClient, logger } = this.#props;
 
-    logger.debug("use-case: get-attachment-download-url-use-case", {
+    logger.debug("ユースケース: 添付ファイルダウンロードURL取得を開始", {
       todoId: input.todoId,
       attachmentId: input.attachmentId,
     });

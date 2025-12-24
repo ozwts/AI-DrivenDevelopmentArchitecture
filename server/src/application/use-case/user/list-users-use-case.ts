@@ -42,7 +42,7 @@ export class ListUsersUseCaseImpl implements ListUsersUseCase {
   async execute(): Promise<ListUsersUseCaseResult> {
     const { userRepository, logger } = this.#props;
 
-    logger.debug("use-case: list-users-use-case");
+    logger.debug("ユースケース: ユーザー一覧取得を開始");
 
     // リポジトリから全ユーザーを取得
     const findAllResult = await userRepository.findAll();
@@ -51,6 +51,10 @@ export class ListUsersUseCaseImpl implements ListUsersUseCase {
       logger.error("ユーザー一覧の取得に失敗", findAllResult.error);
       return Result.err(findAllResult.error);
     }
+
+    logger.debug("ユーザー一覧取得完了", {
+      count: findAllResult.data.length,
+    });
 
     return Result.ok(findAllResult.data);
   }

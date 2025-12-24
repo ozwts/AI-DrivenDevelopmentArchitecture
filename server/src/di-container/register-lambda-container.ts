@@ -120,7 +120,7 @@ export const registerLambdaContainer = (): Container => {
     .toDynamicValue(
       () =>
         new LoggerImpl({
-          logLevel: "INFO",
+          logLevel: unwrapEnv("LOG_LEVEL") as "DEBUG" | "INFO" | "WARN" | "ERROR",
           serviceName: "todo-app",
         }),
     )
@@ -299,9 +299,11 @@ export const registerLambdaContainer = (): Container => {
       const todoRepository = ctx.container.get<TodoRepository>(
         serviceId.TODO_REPOSITORY,
       );
+      const logger = ctx.container.get<Logger>(serviceId.LOGGER);
 
       return new ListTodosUseCaseImpl({
         todoRepository,
+        logger,
       });
     })
     .inSingletonScope();
@@ -312,9 +314,11 @@ export const registerLambdaContainer = (): Container => {
       const todoRepository = ctx.container.get<TodoRepository>(
         serviceId.TODO_REPOSITORY,
       );
+      const logger = ctx.container.get<Logger>(serviceId.LOGGER);
 
       return new GetTodoUseCaseImpl({
         todoRepository,
+        logger,
       });
     })
     .inSingletonScope();
@@ -493,9 +497,11 @@ export const registerLambdaContainer = (): Container => {
       const projectRepository = ctx.container.get<ProjectRepository>(
         serviceId.PROJECT_REPOSITORY,
       );
+      const logger = ctx.container.get<Logger>(serviceId.LOGGER);
 
       return new ListProjectsUseCaseImpl({
         projectRepository,
+        logger,
       });
     })
     .inSingletonScope();
@@ -506,9 +512,11 @@ export const registerLambdaContainer = (): Container => {
       const projectRepository = ctx.container.get<ProjectRepository>(
         serviceId.PROJECT_REPOSITORY,
       );
+      const logger = ctx.container.get<Logger>(serviceId.LOGGER);
 
       return new GetProjectUseCaseImpl({
         projectRepository,
+        logger,
       });
     })
     .inSingletonScope();

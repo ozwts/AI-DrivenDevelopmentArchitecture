@@ -50,7 +50,7 @@ export class DeleteProjectUseCaseImpl implements DeleteProjectUseCase {
   ): Promise<DeleteProjectUseCaseResult> {
     const { logger, uowRunner } = this.#props;
 
-    logger.debug("use-case: delete-project-use-case", {
+    logger.debug("ユースケース: プロジェクト削除を開始", {
       projectId: input.projectId,
     });
 

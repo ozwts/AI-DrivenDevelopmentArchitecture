@@ -44,7 +44,7 @@ export class GetUserUseCaseImpl implements GetUserUseCase {
   async execute(input: GetUserUseCaseInput): Promise<GetUserUseCaseResult> {
     const { userRepository, logger } = this.#props;
 
-    logger.debug("use-case: get-user-use-case", { input });
+    logger.debug("ユースケース: ユーザー取得を開始", { input });
 
     const { id } = input;
 
@@ -57,7 +57,7 @@ export class GetUserUseCaseImpl implements GetUserUseCase {
 
     if (findResult.data === undefined) {
       const notFoundError = new NotFoundError("ユーザーが見つかりません");
-      logger.info("ユーザーが見つかりませんでした", { id });
+      logger.warn("ユーザーが見つかりませんでした", { id });
       return Result.err(notFoundError);
     }
 

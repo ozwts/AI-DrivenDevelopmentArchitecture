@@ -3,6 +3,7 @@ import type { TodoRepository } from "@/domain/model/todo/todo.repository";
 import type { Todo, TodoStatus } from "@/domain/model/todo/todo.entity";
 import { Result } from "@/util/result";
 import type { UseCase } from "../interfaces";
+import type { Logger } from "@/application/port/logger";
 
 export type ListTodosUseCaseInput = {
   status?: TodoStatus;
@@ -20,6 +21,7 @@ export type ListTodosUseCaseResult = Result<
 
 export type ListTodosUseCaseProps = {
   readonly todoRepository: TodoRepository;
+  readonly logger: Logger;
 };
 
 export type ListTodosUseCase = UseCase<
@@ -36,7 +38,9 @@ export class ListTodosUseCaseImpl implements ListTodosUseCase {
   }
 
   async execute(input: ListTodosUseCaseInput): Promise<ListTodosUseCaseResult> {
-    const { todoRepository } = this.#props;
+    const { todoRepository, logger } = this.#props;
+
+    logger.debug("ユースケース: TODO一覧取得を開始", { input });
 
     // projectIdが指定されている場合はfindByProjectId
     if (input.projectId !== undefined) {
@@ -44,8 +48,10 @@ export class ListTodosUseCaseImpl implements ListTodosUseCase {
         projectId: input.projectId,
       });
       if (result.isErr()) {
+        logger.error("TODO一覧の取得に失敗", result.error);
         return Result.err(result.error);
       }
+      logger.debug("TODO一覧取得完了", { count: result.data.length });
       return Result.ok(result.data);
     }
 
@@ -55,16 +61,20 @@ export class ListTodosUseCaseImpl implements ListTodosUseCase {
         status: input.status,
       });
       if (result.isErr()) {
+        logger.error("TODO一覧の取得に失敗", result.error);
         return Result.err(result.error);
       }
+      logger.debug("TODO一覧取得完了", { count: result.data.length });
       return Result.ok(result.data);
     }
 
     // どちらも指定されていない場合はfindAll
     const result = await todoRepository.findAll();
     if (result.isErr()) {
+      logger.error("TODO一覧の取得に失敗", result.error);
       return Result.err(result.error);
     }
+    logger.debug("TODO一覧取得完了", { count: result.data.length });
     return Result.ok(result.data);
   }
 }

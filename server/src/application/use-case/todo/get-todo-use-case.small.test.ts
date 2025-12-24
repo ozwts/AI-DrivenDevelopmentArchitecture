@@ -1,8 +1,10 @@
 import { test, expect, describe } from "vitest";
 import { GetTodoUseCaseImpl } from "./get-todo-use-case";
 import { TodoRepositoryDummy } from "@/domain/model/todo/todo.repository.dummy";
-import { todoDummyFrom } from "@/domain/model/todo/todo.dummy";
+import { todoDummyFrom } from "@/domain/model/todo/todo.entity.dummy";
 import { UnexpectedError } from "@/util/error-util";
+import { LoggerDummy } from "@/application/port/logger/dummy";
+import { Result } from "@/util/result";
 
 describe("GetTodoUseCaseのテスト", () => {
   describe("execute", () => {
@@ -14,19 +16,17 @@ describe("GetTodoUseCaseのテスト", () => {
 
       const getTodoUseCase = new GetTodoUseCaseImpl({
         todoRepository: new TodoRepositoryDummy({
-          findByIdReturnValue: {
-            success: true,
-            data: expectedTodo,
-          },
+          findByIdReturnValue: Result.ok(expectedTodo),
         }),
+        logger: new LoggerDummy(),
       });
 
       const result = await getTodoUseCase.execute({
         todoId: "test-todo-id-123",
       });
 
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data).toEqual(expectedTodo);
         expect(result.data.id).toBe("test-todo-id-123");
         expect(result.data.title).toBe("テストタスク");
@@ -36,19 +36,17 @@ describe("GetTodoUseCaseのテスト", () => {
     test("TODOが見つからない場合はNotFoundErrorを返すこと", async () => {
       const getTodoUseCase = new GetTodoUseCaseImpl({
         todoRepository: new TodoRepositoryDummy({
-          findByIdReturnValue: {
-            success: true,
-            data: undefined,
-          },
+          findByIdReturnValue: Result.ok(undefined),
         }),
+        logger: new LoggerDummy(),
       });
 
       const result = await getTodoUseCase.execute({
         todoId: "non-existent-id",
       });
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
         expect(result.error.name).toBe("NotFoundError");
         expect(result.error.message).toBe("TODOが見つかりません");
       }
@@ -57,19 +55,17 @@ describe("GetTodoUseCaseのテスト", () => {
     test("リポジトリからエラーが返された場合はそのエラーを返すこと", async () => {
       const getTodoUseCase = new GetTodoUseCaseImpl({
         todoRepository: new TodoRepositoryDummy({
-          findByIdReturnValue: {
-            success: false,
-            error: new UnexpectedError(),
-          },
+          findByIdReturnValue: Result.err(new UnexpectedError()),
         }),
+        logger: new LoggerDummy(),
       });
 
       const result = await getTodoUseCase.execute({
         todoId: "test-todo-id",
       });
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
         expect(result.error).toBeInstanceOf(UnexpectedError);
       }
     });
@@ -82,19 +78,17 @@ describe("GetTodoUseCaseのテスト", () => {
 
       const getTodoUseCase = new GetTodoUseCaseImpl({
         todoRepository: new TodoRepositoryDummy({
-          findByIdReturnValue: {
-            success: true,
-            data: todoInProgress,
-          },
+          findByIdReturnValue: Result.ok(todoInProgress),
         }),
+        logger: new LoggerDummy(),
       });
 
       const result = await getTodoUseCase.execute({
         todoId: "todo-1",
       });
 
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data.status).toBe("IN_PROGRESS");
       }
     });
@@ -107,19 +101,17 @@ describe("GetTodoUseCaseのテスト", () => {
 
       const getTodoUseCase = new GetTodoUseCaseImpl({
         todoRepository: new TodoRepositoryDummy({
-          findByIdReturnValue: {
-            success: true,
-            data: highPriorityTodo,
-          },
+          findByIdReturnValue: Result.ok(highPriorityTodo),
         }),
+        logger: new LoggerDummy(),
       });
 
       const result = await getTodoUseCase.execute({
         todoId: "todo-2",
       });
 
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data.priority).toBe("HIGH");
       }
     });

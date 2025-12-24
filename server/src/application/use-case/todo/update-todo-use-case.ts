@@ -55,7 +55,7 @@ export class UpdateTodoUseCaseImpl implements UpdateTodoUseCase {
   ): Promise<UpdateTodoUseCaseResult> {
     const { todoRepository, fetchNow, logger } = this.#props;
 
-    logger.debug("use-case: update-todo-use-case", {
+    logger.debug("ユースケース: TODO更新を開始", {
       todoId: input.todoId,
     });
 
@@ -71,7 +71,7 @@ export class UpdateTodoUseCaseImpl implements UpdateTodoUseCase {
 
     if (todoResult.data === undefined) {
       const notFoundError = new NotFoundError("TODOが見つかりません");
-      logger.error("TODOが存在しません", { todoId: input.todoId });
+      logger.warn("TODOが存在しません", { todoId: input.todoId });
       return Result.err(notFoundError);
     }
 

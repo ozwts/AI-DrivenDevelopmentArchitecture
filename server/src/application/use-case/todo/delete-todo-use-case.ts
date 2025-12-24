@@ -42,7 +42,7 @@ export class DeleteTodoUseCaseImpl implements DeleteTodoUseCase {
   ): Promise<DeleteTodoUseCaseResult> {
     const { todoRepository, storageClient, logger } = this.#props;
 
-    logger.debug("use-case: delete-todo-use-case", {
+    logger.debug("ユースケース: TODO削除を開始", {
       todoId: input.todoId,
     });
 

@@ -63,7 +63,7 @@ export class PrepareAttachmentUploadUseCaseImpl
     const { todoRepository, userRepository, storageClient, fetchNow, logger } =
       this.#props;
 
-    logger.debug("use-case: prepare-attachment-upload-use-case", {
+    logger.debug("ユースケース: 添付ファイルアップロード準備を開始", {
       todoId: input.todoId,
       fileName: input.fileName,
     });

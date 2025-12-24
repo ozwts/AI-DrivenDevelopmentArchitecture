@@ -57,7 +57,7 @@ export class RegisterTodoUseCaseImpl implements RegisterTodoUseCase {
   ): Promise<RegisterTodoUseCaseResult> {
     const { todoRepository, userRepository, logger, fetchNow } = this.#props;
 
-    logger.debug("use-case: register-todo-use-case");
+    logger.debug("ユースケース: TODO登録を開始");
 
     const {
       userSub,
@@ -79,7 +79,7 @@ export class RegisterTodoUseCaseImpl implements RegisterTodoUseCase {
 
     if (userResult.data === undefined) {
       const notFoundError = new NotFoundError("ユーザーが見つかりません");
-      logger.error("ユーザーが見つかりません", { userSub });
+      logger.warn("ユーザーが見つかりません", { userSub });
       return Result.err(notFoundError);
     }
 

@@ -53,7 +53,7 @@ export class UpdateAttachmentStatusUseCaseImpl
   ): Promise<UpdateAttachmentStatusUseCaseResult> {
     const { todoRepository, fetchNow, logger } = this.#props;
 
-    logger.debug("use-case: update-attachment-status-use-case", {
+    logger.debug("ユースケース: 添付ファイルステータス更新を開始", {
       todoId: input.todoId,
       attachmentId: input.attachmentId,
       status: input.status,

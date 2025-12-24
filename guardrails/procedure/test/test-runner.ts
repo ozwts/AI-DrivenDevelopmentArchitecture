@@ -28,19 +28,24 @@ export type TestFilter = {
 
 /**
  * 正規表現の特殊文字をエスケープ
- * Playwright/vitestはファイルパスを正規表現パターンとして解釈するため
  */
 const escapeRegexSpecialChars = (str: string): string =>
   str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /**
- * シェル用にファイルパスをエスケープ
- * 1. 正規表現の特殊文字をエスケープ（Playwright/vitest用）
- * 2. シングルクォートで囲む（シェル用）
+ * シェル用にシングルクォートで囲む（リテラルパス用）
+ * vitestなど、ファイルパスをリテラルとして解釈するツール向け
  */
-const escapeFilePath = (filePath: string): string => {
+const escapeForShell = (str: string): string =>
+  `'${str.replace(/'/g, "'\\''")}'`;
+
+/**
+ * 正規表現パターンとして解釈されるパスをエスケープ
+ * Playwrightなど、ファイルパスを正規表現パターンとして解釈するツール向け
+ */
+const escapeForRegexPattern = (filePath: string): string => {
   const regexEscaped = escapeRegexSpecialChars(filePath);
-  return `'${regexEscaped.replace(/'/g, "'\\''")}'`;
+  return escapeForShell(regexEscaped);
 };
 
 /**
@@ -106,7 +111,8 @@ class TestRunner {
     const args: string[] = [];
 
     if (filter?.file !== undefined && filter.file !== "") {
-      args.push(escapeFilePath(filter.file));
+      // vitest: ファイルパスはリテラルとして解釈される
+      args.push(escapeForShell(filter.file));
     }
     if (filter?.testName !== undefined && filter.testName !== "") {
       args.push(`-t "${filter.testName}"`);
@@ -142,7 +148,8 @@ class TestRunner {
     const args: string[] = [];
 
     if (filter?.file !== undefined && filter.file !== "") {
-      args.push(escapeFilePath(filter.file));
+      // Playwright: ファイルパスは正規表現パターンとして解釈される
+      args.push(escapeForRegexPattern(filter.file));
     }
     if (filter?.testName !== undefined && filter.testName !== "") {
       args.push(`--grep "${filter.testName}"`);
@@ -184,7 +191,8 @@ class TestRunner {
     const args: string[] = [];
 
     if (filter?.file !== undefined && filter.file !== "") {
-      args.push(escapeFilePath(filter.file));
+      // Playwright: ファイルパスは正規表現パターンとして解釈される
+      args.push(escapeForRegexPattern(filter.file));
     }
     if (filter?.testName !== undefined && filter.testName !== "") {
       args.push(`--grep "${filter.testName}"`);
@@ -272,7 +280,8 @@ class TestRunner {
     const args: string[] = [];
 
     if (filter?.file !== undefined && filter.file !== "") {
-      args.push(escapeFilePath(filter.file));
+      // Playwright: ファイルパスは正規表現パターンとして解釈される
+      args.push(escapeForRegexPattern(filter.file));
     }
     if (filter?.testName !== undefined && filter.testName !== "") {
       args.push(`--grep "${filter.testName}"`);

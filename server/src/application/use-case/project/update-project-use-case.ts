@@ -47,7 +47,7 @@ export class UpdateProjectUseCaseImpl implements UpdateProjectUseCase {
   ): Promise<UpdateProjectUseCaseResult> {
     const { projectRepository, logger, fetchNow } = this.#props;
 
-    logger.debug("use-case: update-project-use-case", {
+    logger.debug("ユースケース: プロジェクト更新を開始", {
       projectId: input.projectId,
     });
 

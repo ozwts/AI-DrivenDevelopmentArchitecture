@@ -64,7 +64,7 @@ export class DeleteCurrentUserUseCaseImpl implements DeleteCurrentUserUseCase {
 
     if (findResult.data === undefined) {
       const notFoundError = new NotFoundError("ユーザーが見つかりません");
-      logger.info("ユーザーが見つかりませんでした", { sub });
+      logger.warn("ユーザーが見つかりませんでした", { sub });
       return Result.err(notFoundError);
     }
 
