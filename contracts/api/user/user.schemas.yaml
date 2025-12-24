@@ -43,7 +43,7 @@ RegisterUserParams:
   properties:
     name:
       type: string
-      description: ユーザー名（省略時はCognitoのメールアドレスから自動生成。値を送信する場合は1文字以上100文字以下）
+      description: ユーザー名（省略時はCognitoのメールアドレスから自動生成。100文字以下）
       minLength: 1
       maxLength: 100
 
@@ -52,6 +52,6 @@ UpdateUserParams:
   properties:
     name:
       type: string
-      description: ユーザー名（省略可能。値を送信する場合は1文字以上100文字以下）
+      description: ユーザー名（省略可能。100文字以下）
       minLength: 1
       maxLength: 100

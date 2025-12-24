@@ -44,12 +44,11 @@ CreateProjectParams:
       type: string
       minLength: 1
       maxLength: 100
-      description: プロジェクト名（1文字以上100文字以下）
+      description: プロジェクト名（100文字以下）
     description:
       type: string
-      minLength: 1
       maxLength: 1000
-      description: プロジェクトの説明（省略可能。値を送信する場合は1文字以上1000文字以下）
+      description: プロジェクトの説明（省略可能。1000文字以下）
     color:
       type: string
       description: プロジェクトのカラーコード（#で始まる16進数6文字、例：#001964）
@@ -62,14 +61,13 @@ UpdateProjectParams:
       type: string
       minLength: 1
       maxLength: 100
-      description: プロジェクト名（省略可能。値を送信する場合は1文字以上100文字以下）
+      description: プロジェクト名（省略可能。100文字以下）
     description:
       type: string
-      minLength: 1
       maxLength: 1000
       nullable: true
-      description: プロジェクトの説明（省略可能、nullで"説明なし"に設定。値を送信する場合は1文字以上1000文字以下）
+      description: プロジェクトの説明（省略可能、nullで"説明なし"に設定。1000文字以下）
     color:
       type: string
-      description: プロジェクトのカラーコード（省略可能。値を送信する場合は#で始まる16進数6文字、例：#001964）
+      description: プロジェクトのカラーコード（省略可能。#で始まる16進数6文字、例：#001964）
       pattern: "^#[0-9A-Fa-f]{6}$"

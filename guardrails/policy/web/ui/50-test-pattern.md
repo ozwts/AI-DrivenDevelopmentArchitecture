@@ -207,4 +207,4 @@ test("スナップショット", async ({ mount }) => {
 - `20-leaf.md`: Leaf実装パターン
 - `30-composite.md`: Composite実装パターン
 - `../component/20-selector-strategy.md`: セレクタ戦略
-- `../component/30-test-patterns.md`: コンポーネントテストパターン
+- `../component/40-test-patterns.md`: コンポーネントテストパターン

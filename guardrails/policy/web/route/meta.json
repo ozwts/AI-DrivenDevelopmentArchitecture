@@ -1,5 +1,5 @@
 {
   "label": "ルート設計",
   "description": "機能境界としてのルート、コロケーション、共通化の配置基準",
-  "dependencies": ["feature", "lib", "component", "hooks", "api", "form", "logger"]
+  "dependencies": ["feature", "lib", "component", "hooks", "api", "logger"]
 }

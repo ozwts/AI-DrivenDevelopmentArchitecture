@@ -202,4 +202,4 @@ if (userSub === "") {
 - **HTTPハンドラー概要**: `20-http-handler-overview.md`
 - **実装詳細**: `21-http-handler-implementation.md`
 - **バリデーション戦略**: `policy/server/domain-model/11-domain-validation-strategy.md`
-- **API契約エラー定義**: `policy/contract/api/20-endpoint-design.md`
+- **API契約エラー定義**: `policy/contract/api/40-error-responses.md`

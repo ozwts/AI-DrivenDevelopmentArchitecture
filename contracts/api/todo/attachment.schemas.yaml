@@ -58,12 +58,12 @@ PrepareAttachmentParams:
   properties:
     filename:
       type: string
-      description: ファイル名（1文字以上255文字以下）
+      description: ファイル名（255文字以下）
       minLength: 1
       maxLength: 255
     contentType:
       type: string
-      description: MIMEタイプ（1文字以上100文字以下、例：image/png, application/pdf）
+      description: MIMEタイプ（100文字以下、例：image/png, application/pdf）
       minLength: 1
       maxLength: 100
       pattern: "^[a-zA-Z0-9]+/[a-zA-Z0-9\\-+.]+$"

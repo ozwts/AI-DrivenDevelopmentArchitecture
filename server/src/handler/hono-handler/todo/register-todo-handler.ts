@@ -56,6 +56,8 @@ export const buildRegisterTodoHandler =
       const body = parseResult.data;
 
       // 入力の正規化: 空文字列は意味を持たないのでundefinedに変換
+      const description =
+        body.description?.trim() === "" ? undefined : body.description;
       const projectId =
         body.projectId?.trim() === "" ? undefined : body.projectId;
       const assigneeUserId =
@@ -64,7 +66,7 @@ export const buildRegisterTodoHandler =
       const result = await useCase.execute({
         userSub,
         title: body.title,
-        description: body.description,
+        description,
         status: convertToTodoStatus(body.status),
         priority: body.priority,
         dueDate: body.dueDate,

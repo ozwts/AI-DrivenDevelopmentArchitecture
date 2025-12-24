@@ -4,9 +4,6 @@
 
 フォームの値に応じて動的にバリデーションルールを変更する場合は`superRefine`を使用する。
 
-**根拠となる憲法**:
-- `validation-principles.md`: Single Source of Truth
-
 ## パターン
 
 ```typescript
@@ -81,4 +78,4 @@ export function ProductForm({ onSubmit }: { onSubmit: (data: ProductFormData) =>
 
 ## 関連ドキュメント
 
-- `10-form-overview.md`: フォーム設計概要
+- `30-form-overview.md`: フォーム設計概要

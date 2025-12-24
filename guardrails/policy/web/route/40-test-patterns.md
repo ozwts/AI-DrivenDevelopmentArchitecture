@@ -325,6 +325,6 @@ app/routes/({role})/{feature}/[id]/
 
 - `10-route-overview.md`: ルート設計概要
 - `20-colocation-patterns.md`: コロケーション（HOW）- テスト配置
-- `../component/30-test-patterns.md`: コンポーネントテスト（CT）
+- `../component/40-test-patterns.md`: コンポーネントテスト（CT）
 - `../mock/10-mock-overview.md`: テストデータ命名規則
 - `../mock/20-msw-patterns.md`: MSWハンドラーパターン

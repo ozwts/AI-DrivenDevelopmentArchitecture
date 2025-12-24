@@ -58,7 +58,7 @@ export const buildPrepareAttachmentUploadHandler =
         userSub,
         fileName: body.filename,
         contentType: body.contentType,
-        fileSize: body.size as number,
+        fileSize: body.filesize,
       });
 
       if (!result.isOk()) {

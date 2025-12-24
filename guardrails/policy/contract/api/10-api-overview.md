@@ -165,7 +165,7 @@ components:
 | POST（作成）  | `{Action}{Entity}Params` | `Create{Entity}Params`, `Register{Entity}Params` |
 | PATCH（更新） | `Update{Entity}Params`   | `Update{Entity}Params`                           |
 
-**注**: PUTは使用しない（PATCH統一）。詳細は `20-endpoint-design.md` - HTTPメソッド統一ポリシーを参照。
+**注**: PUTは使用しない（PATCH統一）。詳細は `30-http-operations-overview.md` を参照。
 
 ### レスポンススキーマ
 
@@ -194,7 +194,6 @@ properties:
     description: 一意の識別子
   name:
     type: string
-    minLength: 1
     maxLength: 200
     description: 名前
   createdAt:
@@ -202,6 +201,8 @@ properties:
     format: date-time
     description: 作成日時（ISO 8601形式）
 ```
+
+**注意**: `minLength: 1` は設定しない。空文字列は境界層（フロントエンド: normalize.ts、サーバー: Handler層）で変換する。詳細は `15-validation-constraints.md` を参照。
 
 ### 必須・オプショナル
 
@@ -287,10 +288,11 @@ Create{Entity}Params:
 ```yaml
 title:
   type: string
-  minLength: 1
   maxLength: 200
   pattern: "^[a-zA-Z0-9 ]+$" # 正規表現（必要な場合のみ）
 ```
+
+**注意**: `minLength: 1` は設定しない（`15-validation-constraints.md` 参照）。
 
 ### 数値
 
@@ -368,10 +370,9 @@ tags:
 ### ✅ Good
 
 ```yaml
-# 文字列に制約と説明
+# 文字列に制約と説明（minLength: 1は設定しない）
 name:
   type: string
-  minLength: 1
   maxLength: 200
   description: リソース名
 
@@ -390,9 +391,14 @@ status:
 ### ❌ Bad
 
 ```yaml
-# 制約なし
+# maxLengthなし
 title:
-  type: string  # ❌ minLength/maxLengthがない
+  type: string  # ❌ maxLengthがない
+
+# minLength: 1を設定
+name:
+  type: string
+  minLength: 1  # ❌ 空文字列は境界層で変換するため不要
 
 # マジックナンバー
 priority:
@@ -407,13 +413,6 @@ priority:
 
 ## HTTPメソッド設計原則
 
-**PATCH統一原則**: 更新操作はPATCHのみを使用（PUTは使用しない）
+**参照**: `30-http-operations-overview.md`
 
-| HTTPメソッド | CRUD操作 | ステータスコード | 説明                                             |
-| ------------ | -------- | ---------------- | ------------------------------------------------ |
-| POST         | Create   | 201 Created      | リソース作成                                     |
-| GET          | Read     | 200 OK           | リソース取得                                     |
-| PATCH        | Update   | 200 OK           | **リソース更新（すべてオプショナルフィールド）** |
-| DELETE       | Delete   | 204 No Content   | リソース削除                                     |
-
-**詳細**: `20-endpoint-design.md` - HTTPメソッド統一ポリシーを参照
+**要約**: 更新操作はPATCHのみを使用（PUT不使用）。詳細は上記ドキュメントを参照。

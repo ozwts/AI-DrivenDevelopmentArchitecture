@@ -315,4 +315,4 @@ export function {Feature}Item({ item }: Props) {
 - `../component/10-component-overview.md`: コンポーネント設計
 - `../hooks/10-hooks-overview.md`: カスタムフック設計
 - `../api/20-request-normalization.md`: PATCHリクエスト正規化（dirtyFields）
-- `../form/10-form-overview.md`: フォーム設計概要
+- `../component/30-form-overview.md`: フォーム設計概要

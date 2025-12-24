@@ -121,4 +121,4 @@ export const sampleTodo: TodoResponse = { ... };
 
 - `20-msw-patterns.md`: MSWハンドラーパターン
 - `../route/40-test-patterns.md`: ルートテスト（SS）
-- `../component/30-test-patterns.md`: コンポーネントテスト（CT）
+- `../component/40-test-patterns.md`: コンポーネントテスト（CT）

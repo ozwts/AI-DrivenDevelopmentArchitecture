@@ -100,13 +100,16 @@ test.describe("ProfileEditForm", () => {
     expect(submittedData).toEqual({ name: "新しい名前" });
   });
 
-  test("フォーム送信時にバリデーションエラーが表示される（空文字列）", async ({
+  test("バリデーションエラー時、フォーム送信がブロックされる（空のユーザー名）", async ({
     mount,
   }) => {
+    let submitCalled = false;
     const component = await mount(
       <ProfileEditForm
         user={mockUser}
-        onSubmit={() => {}}
+        onSubmit={() => {
+          submitCalled = true;
+        }}
         onCancel={() => {}}
       />,
     );
@@ -117,6 +120,9 @@ test.describe("ProfileEditForm", () => {
 
     // フォームを送信（getByRole: 暗黙的a11y検証）
     await component.getByRole("button", { name: "更新" }).click();
+
+    // onSubmitが呼ばれていないことを確認
+    expect(submitCalled).toBe(false);
 
     // バリデーションエラーが表示されることを確認（getByRole: アクセシビリティ検証）
     const errorAlert = component.getByRole("alert");
@@ -237,4 +243,5 @@ test.describe("ProfileEditForm", () => {
     // ローディングスピナーが表示される
     await expect(component.getByRole("status")).toBeVisible();
   });
+
 });

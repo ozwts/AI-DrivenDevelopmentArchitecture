@@ -216,4 +216,4 @@ const response = await fetch("/api/todos");
 - `../route/30-shared-placement.md`: _shared配置基準
 - `../feature/10-feature-overview.md`: Feature設計概要
 - `../hooks/20-query-patterns.md`: React Queryパターン
-- `../../contract/api/20-endpoint-design.md`: PATCH操作の3値セマンティクス
+- `../../contract/api/31-patch-semantics.md`: PATCH操作の3値セマンティクス

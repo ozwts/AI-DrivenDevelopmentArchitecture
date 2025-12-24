@@ -75,14 +75,13 @@ RegisterTodoParams:
   properties:
     title:
       type: string
-      description: TODOのタイトル（1文字以上200文字以下）
+      description: TODOのタイトル（200文字以下）
       minLength: 1
       maxLength: 200
     description:
       type: string
-      minLength: 1
       maxLength: 5000
-      description: TODOの詳細説明（省略可能。値を送信する場合は1文字以上5000文字以下）
+      description: TODOの詳細説明（省略可能。5000文字以下）
     status:
       $ref: "#/TodoStatus"
       description: TODOのステータス（省略時は TODO）
@@ -95,27 +94,24 @@ RegisterTodoParams:
       description: 期限日
     projectId:
       type: string
-      minLength: 1
-      description: プロジェクトID（省略可能。値を送信する場合は1文字以上）
+      description: プロジェクトID（省略可能）
     assigneeUserId:
       type: string
-      minLength: 1
-      description: 担当者のユーザーID（省略時は作成者が担当者になる。値を送信する場合は1文字以上）
+      description: 担当者のユーザーID（省略時は作成者が担当者になる）
 
 UpdateTodoParams:
   type: object
   properties:
     title:
       type: string
-      description: TODOのタイトル（省略可能。値を送信する場合は1文字以上200文字以下）
+      description: TODOのタイトル（省略可能。200文字以下）
       minLength: 1
       maxLength: 200
     description:
       type: string
-      minLength: 1
       maxLength: 5000
       nullable: true
-      description: TODOの詳細説明（省略可能、nullで"説明なし"に設定。値を送信する場合は1文字以上5000文字以下）
+      description: TODOの詳細説明（省略可能、nullで"説明なし"に設定。5000文字以下）
     status:
       $ref: "#/TodoStatus"
     priority:
@@ -127,11 +123,9 @@ UpdateTodoParams:
       description: 期限日（nullで"期限なし"に設定）
     projectId:
       type: string
-      minLength: 1
       nullable: true
-      description: プロジェクトID（省略可能、nullで"未割り当て"に設定。値を送信する場合は1文字以上）
+      description: プロジェクトID（省略可能、nullで"未割り当て"に設定）
     assigneeUserId:
       type: string
-      minLength: 1
       nullable: true
-      description: 担当者のユーザーID（省略可能、nullで"未割り当て"に設定。値を送信する場合は1文字以上）
+      description: 担当者のユーザーID（省略可能、nullで"未割り当て"に設定）

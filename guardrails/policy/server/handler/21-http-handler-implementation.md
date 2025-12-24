@@ -204,7 +204,7 @@ async (c: AppContext) => {
 ### クライアント・サーバー間の責務分担
 
 **参照**:
-- `policy/contract/api/20-endpoint-design.md` - PATCH操作の3値セマンティクス
+- `policy/contract/api/31-patch-semantics.md` - PATCH操作の3値セマンティクス
 - `policy/web/api/20-request-normalization.md` - クライアント側の正規化
 
 | 層 | 責務 |
@@ -262,7 +262,7 @@ POSTリクエスト（新規作成）では、クライアントが空文字列�
 
 **根拠となる契約**:
 - `../../contract/api/15-validation-constraints.md`: Register*ParamsとUpdate*Paramsの違い
-- `../../contract/api/20-endpoint-design.md`: POST操作の2値セマンティクス
+- `../../contract/api/30-http-operations-overview.md`: POST操作の2値セマンティクス
 
 | HTTPメソッド | 許可される状態 | nullの扱い |
 |-------------|----------------|------------|
@@ -290,9 +290,32 @@ const result = await useCase.execute({
 
 **注意**:
 - `Register*Params` には `nullable: true` が設定されていない
-- 空文字列は `minLength: 1` でバリデーションエラー
 - クライアントは空文字列フィールドを省略して送信する
+- 万が一空文字列が送信された場合、Handler層で `undefined` に変換する
 - Handler側でnull→undefined変換は不要（POSTでnullは許可されない）
+
+### POSTリクエストの空文字列 → undefined 変換
+
+API契約では空文字列を許容しているため、Handler層で空文字列を `undefined` に変換する。
+
+**参照**: `../../contract/api/15-validation-constraints.md` - 空文字列の処理方針
+
+```typescript
+const body = parseResult.data;
+
+// 空文字列をundefinedに変換
+const projectId =
+  body.projectId?.trim() === "" ? undefined : body.projectId;
+const assigneeUserId =
+  body.assigneeUserId?.trim() === "" ? undefined : body.assigneeUserId;
+
+const result = await useCase.execute({
+  userSub,
+  title: body.title,
+  projectId,      // undefinedまたは有効なID
+  assigneeUserId, // undefinedまたは有効なID
+});
+```
 
 ## 禁止パターン
 
@@ -390,5 +413,5 @@ const useCase = container.get<UseCase>(serviceId.USE_CASE);
 ## 関連ドキュメント
 
 - `10-handler-overview.md`: ハンドラー設計概要
-- `../../contract/api/20-endpoint-design.md`: PATCH操作の3値セマンティクス（契約）
+- `../../contract/api/31-patch-semantics.md`: PATCH操作の3値セマンティクス（契約）
 - `../../web/api/20-request-normalization.md`: クライアント側のリクエスト正規化

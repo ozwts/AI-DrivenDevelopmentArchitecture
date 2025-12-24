@@ -383,4 +383,4 @@ const [state, dispatch] = useReducer(reducer, {
 
 - `10-hooks-overview.md`: カスタムフック設計概要
 - `20-query-patterns.md`: TanStack Queryパターン
-- `../form/10-form-overview.md`: フォーム設計概要
+- `../component/30-form-overview.md`: フォーム設計概要

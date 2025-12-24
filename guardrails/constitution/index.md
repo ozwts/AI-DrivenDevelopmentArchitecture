@@ -45,3 +45,4 @@
 | [traceability-principles.md](./co-evolution/traceability-principles.md) | AIと人間がシステムを理解できる状態を維持する |
 | [scalability-principles.md](./co-evolution/scalability-principles.md) | 成長を前提として設計する |
 | [operations-principles.md](./co-evolution/operations-principles.md) | AIが安全に操作できる環境を構築する |
+| [testing-principles.md](./co-evolution/testing-principles.md) | テストピラミッドで高速フィードバックと信頼性を両立する |

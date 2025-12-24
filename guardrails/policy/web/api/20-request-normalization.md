@@ -9,7 +9,7 @@
 - `architecture-principles.md`: 型による契約
 
 **根拠となる契約**:
-- `contract/api/20-endpoint-design.md`: PATCH操作の3値セマンティクス
+- `contract/api/31-patch-semantics.md`: PATCH操作の3値セマンティクス
 
 ## PATCHリクエストの3値セマンティクス
 
@@ -27,7 +27,7 @@
 
 1. **意図しないクリア**: 初期値が空のフィールドが `null` として送信される
 2. **同時編集時の上書き**: 後から保存した人が他者の変更を上書き
-3. **契約違反**: `contract/api/20-endpoint-design.md` の3値セマンティクスと不整合
+3. **契約違反**: `contract/api/31-patch-semantics.md` の3値セマンティクスと不整合
 
 ### 解決: dirtyFieldsによる変更検出
 
@@ -182,9 +182,9 @@ POSTリクエスト（新規作成）では `dirtyFields` は不要。
 
 **根拠となる契約**:
 - `contract/api/15-validation-constraints.md`: Register*ParamsとUpdate*Paramsの違い
-- `contract/api/20-endpoint-design.md`: POST操作の2値セマンティクス
+- `contract/api/30-http-operations-overview.md`: POST操作の2値セマンティクス
 
-**理由**: `Register*Params` には `nullable: true` が設定されていないため、`null` を送信するとバリデーションエラーになる。空文字列も `minLength: 1` でエラーになる。
+**理由**: `Register*Params` には `nullable: true` が設定されていないため、`null` を送信するとバリデーションエラーになる。空文字列は正規化層で除外する。
 
 | HTTPメソッド | 空文字列の扱い | 許可される状態 |
 |-------------|---------------|----------------|
@@ -276,7 +276,7 @@ const { formState: { dirtyFields } } = useForm({
 });
 
 // 空文字列をそのまま送信（NG）
-// → OpenAPIの minLength: 1 でバリデーションエラー
+// → 正規化せずに送信すると、サーバー側で空文字列がそのまま処理される
 await request("/todos", schema, {
   method: "POST",
   body: JSON.stringify({ title: "タイトル", description: "" }),
@@ -286,6 +286,6 @@ await request("/todos", schema, {
 ## 関連ドキュメント
 
 - `10-api-overview.md`: API配置のコロケーション
-- `../../contract/api/20-endpoint-design.md`: PATCH操作の3値セマンティクス
-- `../form/10-form-overview.md`: フォーム設計概要
+- `../../contract/api/31-patch-semantics.md`: PATCH操作の3値セマンティクス
+- `../component/30-form-overview.md`: フォーム設計概要
 - `../../server/handler/21-http-handler-implementation.md`: Handler層でのnull→undefined変換

@@ -166,4 +166,4 @@ export const buildCreateProjectHandler =
 - **実装詳細**: `21-http-handler-implementation.md`
 - **バリデーション・エラー**: `22-http-validation-error.md`
 - **ルーターパターン**: `23-http-router-patterns.md`
-- **API契約**: `policy/contract/api/20-endpoint-design.md`
+- **API契約**: `policy/contract/api/30-http-operations-overview.md`

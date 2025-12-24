@@ -38,9 +38,13 @@ export const buildCreateProjectHandler =
 
       const body = parseResult.data;
 
+      // 空文字列をundefinedに変換（POSTリクエストの正規化）
+      const description =
+        body.description?.trim() === "" ? undefined : body.description;
+
       const result = await useCase.execute({
         name: body.name,
-        description: body.description,
+        description,
         color: body.color,
       });
 

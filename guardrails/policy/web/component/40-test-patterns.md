@@ -166,6 +166,59 @@ test("編集ボタンをクリックするとonEditが呼ばれる", async ({ mo
 });
 ```
 
+### 5-1. フォーム送信値テスト（必須）
+
+**フォームコンポーネントでは、送信される値の検証が必須**。エラー表示だけでなく、実際に正しい値が渡されるか、エラー時に送信されないかを検証する。
+
+```typescript
+test("有効なデータでフォーム送信時、onSubmitに正しい値が渡される", async ({ mount }) => {
+  let submittedData = null;
+  const component = await mount(
+    <TodoForm
+      mode="create"
+      onSubmit={(data) => { submittedData = data; }}
+      onCancel={() => {}}
+    />
+  );
+
+  // フォームに値を入力
+  await component.getByLabel("タイトル").fill("新しいTODO");
+  await component.getByLabel("説明").fill("詳細な説明");
+  await component.getByLabel("優先度").selectOption("HIGH");
+
+  // フォームを送信
+  await component.getByRole("button", { name: "作成" }).click();
+
+  // onSubmitに正しい値が渡されたことを検証
+  expect(submittedData).toEqual({
+    title: "新しいTODO",
+    description: "詳細な説明",
+    priority: "HIGH",
+    // ...
+  });
+});
+
+test("バリデーションエラー時、onSubmitが呼ばれない", async ({ mount }) => {
+  let submitCalled = false;
+  const component = await mount(
+    <TodoForm
+      mode="create"
+      onSubmit={() => { submitCalled = true; }}
+      onCancel={() => {}}
+    />
+  );
+
+  // 無効なデータ（タイトル空）のまま送信
+  await component.getByRole("button", { name: "作成" }).click();
+
+  // onSubmitが呼ばれないことを検証
+  expect(submitCalled).toBe(false);
+
+  // エラーが表示されることを検証
+  await expect(component.getByRole("alert")).toBeVisible();
+});
+```
+
 ### 6. 状態ベーステスト
 
 ```typescript
@@ -249,7 +302,9 @@ await expect(component.getByRole("heading", { name: "タイトル" })).toBeVisib
 await expect(component.getByText("TODO")).toBeVisible(); // "TODO App"にもマッチ
 ```
 
-## バリデーションテストの網羅性
+## フォームテストの網羅性
+
+### バリデーション検証
 
 | 条件           | テスト内容               | 例                                   |
 | -------------- | ------------------------ | ------------------------------------ |
@@ -257,6 +312,69 @@ await expect(component.getByText("TODO")).toBeVisible(); // "TODO App"にもマ�
 | 境界値（最小） | 1文字で通過              | "境界値: 1文字のタイトル"            |
 | 境界値（最大） | 200文字で通過            | "境界値: 200文字のタイトル"          |
 | 成功条件       | エラーが出ないことを確認 | "有効なデータでエラーが表示されない" |
+
+### 送信値検証（必須）
+
+フォームの送信値テストでは、**等価分割**に基づき2つのテストで網羅する。
+
+| テスト | 必須フィールド | オプショナル | 目的 |
+|-------|--------------|-------------|-----|
+| **全フィールド入力** | 有効な値 | 有効な値 | 全値が正しく渡される |
+| **最小入力** | 有効な値 | 空 | 空でも送信可能、空値が渡される |
+| **送信阻止** | 無効な値 | - | エラー時にonSubmitが呼ばれない |
+
+```typescript
+// テスト1: 全フィールド入力（オプショナルに値あり）
+test("全フィールド入力でフォーム送信時、onSubmitに正しい値が渡される", async ({ mount }) => {
+  let submittedData: unknown = null;
+  const component = await mount(
+    <TodoForm mode="create" onSubmit={(data) => { submittedData = data; }} onCancel={() => {}} />
+  );
+
+  await component.getByLabel("タイトル").fill("新しいTODO");
+  await component.getByLabel("説明").fill("詳細な説明");
+  await component.getByLabel("期限日").fill("2025-12-31");
+  await component.getByRole("button", { name: "作成" }).click();
+
+  expect(submittedData).toEqual({
+    title: "新しいTODO",
+    description: "詳細な説明",  // オプショナル: 値あり
+    dueDate: "2025-12-31",       // オプショナル: 値あり
+    // ...
+  });
+});
+
+// テスト2: 最小入力（オプショナルは空）
+test("最小入力でフォーム送信時、オプショナルフィールドが空で渡される", async ({ mount }) => {
+  let submittedData: unknown = null;
+  const component = await mount(
+    <TodoForm mode="create" onSubmit={(data) => { submittedData = data; }} onCancel={() => {}} />
+  );
+
+  // 必須フィールドのみ入力
+  await component.getByLabel("タイトル").fill("最小TODO");
+  await component.getByRole("button", { name: "作成" }).click();
+
+  expect(submittedData).toEqual({
+    title: "最小TODO",
+    description: "",   // オプショナル: 空
+    dueDate: "",       // オプショナル: 空
+    // ...
+  });
+});
+
+// テスト3: 送信阻止
+test("バリデーションエラー時、onSubmitが呼ばれない", async ({ mount }) => {
+  let submitCalled = false;
+  const component = await mount(
+    <TodoForm mode="create" onSubmit={() => { submitCalled = true; }} onCancel={() => {}} />
+  );
+
+  await component.getByRole("button", { name: "作成" }).click();
+  expect(submitCalled).toBe(false);
+  await expect(component.getByRole("alert")).toBeVisible();
+});
+```
 
 ## ファイル配置
 

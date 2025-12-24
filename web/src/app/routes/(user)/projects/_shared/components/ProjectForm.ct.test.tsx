@@ -184,4 +184,92 @@ test.describe("ProjectForm", () => {
       component.getByRole("button", { name: "ランダムなカラーを生成" }),
     ).toBeVisible();
   });
+
+  // ============================================================
+  // 送信値検証テスト（必須）
+  // ============================================================
+
+  test("全フィールド入力でフォーム送信時、onSubmitに正しい値が渡される", async ({
+    mount,
+  }) => {
+    let submittedData: unknown = null;
+    const component = await mount(
+      <ProjectForm
+        onSubmit={async (data) => {
+          submittedData = data;
+        }}
+        onCancel={() => {}}
+      />,
+    );
+
+    // 全フィールドに値を入力
+    await component.getByLabel("プロジェクト名").fill("新プロジェクト");
+    await component.getByLabel("説明").fill("プロジェクトの詳細説明");
+
+    // カラーを選択
+    await component.getByTestId("color-option-2").click();
+
+    // フォームを送信
+    await component.getByRole("button", { name: "作成" }).click();
+
+    // onSubmitに正しい値が渡されたことを検証
+    expect(submittedData).toMatchObject({
+      name: "新プロジェクト",
+      description: "プロジェクトの詳細説明",
+    });
+    // colorはランダム生成されるため、存在のみ確認
+    expect((submittedData as { color: string }).color).toMatch(/^#[0-9A-Fa-f]{6}$/);
+  });
+
+  test("最小入力でフォーム送信時、オプショナルフィールドが空で渡される", async ({
+    mount,
+  }) => {
+    let submittedData: unknown = null;
+    const component = await mount(
+      <ProjectForm
+        onSubmit={async (data) => {
+          submittedData = data;
+        }}
+        onCancel={() => {}}
+      />,
+    );
+
+    // 必須フィールド（プロジェクト名）のみ入力
+    await component.getByLabel("プロジェクト名").fill("最小プロジェクト");
+
+    // フォームを送信
+    await component.getByRole("button", { name: "作成" }).click();
+
+    // onSubmitに正しい値が渡されたことを検証
+    expect(submittedData).toMatchObject({
+      name: "最小プロジェクト",
+      description: "",
+    });
+    // colorはデフォルト選択されているので存在する
+    expect((submittedData as { color: string }).color).toMatch(/^#[0-9A-Fa-f]{6}$/);
+  });
+
+  test("バリデーションエラー時、フォーム送信がブロックされる（空のプロジェクト名）", async ({
+    mount,
+  }) => {
+    let submitCalled = false;
+    const component = await mount(
+      <ProjectForm
+        onSubmit={async () => {
+          submitCalled = true;
+        }}
+        onCancel={() => {}}
+      />,
+    );
+
+    // プロジェクト名を空のまま送信ボタンをクリック
+    await component.getByRole("button", { name: "作成" }).click();
+
+    // onSubmitが呼ばれていないことを確認
+    expect(submitCalled).toBe(false);
+
+    // バリデーションエラーが表示されることを確認
+    await expect(component.getByRole("alert")).toBeVisible({ timeout: 3000 });
+  });
+
 });

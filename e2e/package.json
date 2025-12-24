@@ -1,0 +1,20 @@
+{
+  "name": "e2e",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "report": "playwright show-report",
+    "setup:browser": "playwright install --with-deps chromium",
+    "user:check": "USER_POOL_ID=$(aws ssm get-parameter --name /sandbox-dev/COGNITO_USER_POOL_ID --query Parameter.Value --output text) && aws cognito-idp admin-get-user --user-pool-id $USER_POOL_ID --username e2e-test@example.com",
+    "user:setup": "USER_POOL_ID=$(aws ssm get-parameter --name /sandbox-dev/COGNITO_USER_POOL_ID --query Parameter.Value --output text) && aws cognito-idp admin-create-user --user-pool-id $USER_POOL_ID --username e2e-test@example.com --user-attributes Name=email,Value=e2e-test@example.com Name=email_verified,Value=true --message-action SUPPRESS 2>/dev/null || true && aws cognito-idp admin-set-user-password --user-pool-id $USER_POOL_ID --username e2e-test@example.com --password 'E2eTest@123!' --permanent"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.1",
+    "typescript": "^5.5.3"
+  }
+}

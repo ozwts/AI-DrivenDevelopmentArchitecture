@@ -435,4 +435,120 @@ test.describe("TodoForm", () => {
     await expect(component.getByText("test.txt")).not.toBeVisible();
     await expect(component.getByText(/個のファイルを選択中/)).not.toBeVisible();
   });
+
+  // ============================================================
+  // 送信値検証テスト（必須）
+  // ============================================================
+
+  test("全フィールド入力でフォーム送信時、onSubmitに正しい値が渡される", async ({
+    mount,
+  }) => {
+    let submittedData: unknown = null;
+    let submittedFiles: File[] = [];
+    const component = await mount(
+      <TodoForm
+        mode="create"
+        onSubmit={(data, files) => {
+          submittedData = data;
+          submittedFiles = files;
+        }}
+        onCancel={() => {}}
+      />,
+    );
+
+    // 全フィールドに値を入力
+    await component.getByLabel("タイトル").fill("新しいTODO");
+    await component.getByLabel("説明").fill("詳細な説明文");
+    await component.getByLabel("ステータス").selectOption("IN_PROGRESS");
+    await component.getByLabel("優先度").selectOption("HIGH");
+    await component.getByLabel("期限日").fill("2025-12-31");
+
+    // ファイルを添付
+    const fileInput = component.locator("#file-upload-todo-form");
+    await fileInput.setInputFiles({
+      name: "test.txt",
+      mimeType: "text/plain",
+      buffer: Buffer.from("test content"),
+    });
+
+    // フォームを送信
+    await component.getByRole("button", { name: "作成" }).click();
+
+    // onSubmitに正しい値が渡されたことを検証
+    expect(submittedData).toEqual({
+      title: "新しいTODO",
+      description: "詳細な説明文",
+      status: "IN_PROGRESS",
+      priority: "HIGH",
+      dueDate: "2025-12-31",
+      projectId: "",
+      assigneeUserId: "",
+    });
+    // ファイルはPlaywright CTのシリアライズ制約により詳細検証が困難なため、配列長のみ確認
+    expect(submittedFiles).toHaveLength(1);
+  });
+
+  test("最小入力でフォーム送信時、オプショナルフィールドが空で渡される", async ({
+    mount,
+  }) => {
+    let submittedData: unknown = null;
+    let submittedFiles: File[] = [];
+    const component = await mount(
+      <TodoForm
+        mode="create"
+        onSubmit={(data, files) => {
+          submittedData = data;
+          submittedFiles = files;
+        }}
+        onCancel={() => {}}
+      />,
+    );
+
+    // 必須フィールド（タイトル）のみ入力
+    await component.getByLabel("タイトル").fill("最小TODO");
+
+    // フォームを送信
+    await component.getByRole("button", { name: "作成" }).click();
+
+    // onSubmitに正しい値が渡されたことを検証
+    expect(submittedData).toEqual({
+      title: "最小TODO",
+      description: "",
+      status: "TODO",
+      priority: "MEDIUM",
+      dueDate: "",
+      projectId: "",
+      assigneeUserId: "",
+    });
+    expect(submittedFiles).toHaveLength(0);
+  });
+
+  test("バリデーションエラー時、フォーム送信がブロックされる（空のタイトル）", async ({
+    mount,
+  }) => {
+    let submitCalled = false;
+    const component = await mount(
+      <TodoForm
+        mode="create"
+        onSubmit={() => {
+          submitCalled = true;
+        }}
+        onCancel={() => {}}
+      />,
+    );
+
+    // タイトルを空にする（touchedにする）
+    const titleInput = component.getByLabel("タイトル");
+    await titleInput.fill("");
+
+    // 送信ボタンをクリック
+    await component.getByRole("button", { name: "作成" }).click();
+
+    // onSubmitが呼ばれていないことを確認
+    expect(submitCalled).toBe(false);
+
+    // バリデーションエラーが表示されることを確認
+    await expect(component.getByRole("alert")).toBeVisible({ timeout: 3000 });
+  });
+
 });

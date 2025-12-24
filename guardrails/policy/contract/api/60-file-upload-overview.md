@@ -251,19 +251,3 @@ properties:
   id: ...
   # ❌ parentId がない
 ```
-
-## チェックリスト
-
-```
-[ ] Two-Phase Uploadパターン採用
-[ ] ステータスenum定義（PREPARED, UPLOADED）
-[ ] 準備エンドポイント（POST /prepare）
-[ ] 完了通知エンドポイント（PATCH）
-[ ] ダウンロードURLエンドポイント（GET /download-url）
-[ ] ファイルサイズ上限を型レベルバリデーション
-[ ] Pre-signed URL有効期限設定
-[ ] HTTPS通信強制
-[ ] 親リソースID包含
-[ ] ステート遷移検証
-[ ] プロパティ名は filesize を使用（size ではない）
-```

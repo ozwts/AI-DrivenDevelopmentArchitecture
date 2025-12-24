@@ -1088,14 +1088,13 @@ components:
       properties:
         title:
           type: string
-          description: TODOのタイトル（1文字以上200文字以下）
+          description: TODOのタイトル（200文字以下）
           minLength: 1
           maxLength: 200
         description:
           type: string
-          minLength: 1
           maxLength: 5000
-          description: TODOの詳細説明（省略可能。値を送信する場合は1文字以上5000文字以下）
+          description: TODOの詳細説明（省略可能。5000文字以下）
         status:
           $ref: '#/components/schemas/TodoStatus'
           description: TODOのステータス（省略時は TODO）
@@ -1108,26 +1107,23 @@ components:
           description: 期限日
         projectId:
           type: string
-          minLength: 1
-          description: プロジェクトID（省略可能。値を送信する場合は1文字以上）
+          description: プロジェクトID（省略可能）
         assigneeUserId:
           type: string
-          minLength: 1
-          description: 担当者のユーザーID（省略時は作成者が担当者になる。値を送信する場合は1文字以上）
+          description: 担当者のユーザーID（省略時は作成者が担当者になる）
     UpdateTodoParams:
       type: object
       properties:
         title:
           type: string
-          description: TODOのタイトル（省略可能。値を送信する場合は1文字以上200文字以下）
+          description: TODOのタイトル（省略可能。200文字以下）
           minLength: 1
           maxLength: 200
         description:
           type: string
-          minLength: 1
           maxLength: 5000
           nullable: true
-          description: TODOの詳細説明（省略可能、nullで"説明なし"に設定。値を送信する場合は1文字以上5000文字以下）
+          description: TODOの詳細説明（省略可能、nullで"説明なし"に設定。5000文字以下）
         status:
           $ref: '#/components/schemas/TodoStatus'
         priority:
@@ -1139,14 +1135,12 @@ components:
           description: 期限日（nullで"期限なし"に設定）
         projectId:
           type: string
-          minLength: 1
           nullable: true
-          description: プロジェクトID（省略可能、nullで"未割り当て"に設定。値を送信する場合は1文字以上）
+          description: プロジェクトID（省略可能、nullで"未割り当て"に設定）
         assigneeUserId:
           type: string
-          minLength: 1
           nullable: true
-          description: 担当者のユーザーID（省略可能、nullで"未割り当て"に設定。値を送信する場合は1文字以上）
+          description: 担当者のユーザーID（省略可能、nullで"未割り当て"に設定）
     AttachmentStatus:
       type: string
       enum:
@@ -1204,12 +1198,12 @@ components:
       properties:
         filename:
           type: string
-          description: ファイル名（1文字以上255文字以下）
+          description: ファイル名（255文字以下）
           minLength: 1
           maxLength: 255
         contentType:
           type: string
-          description: MIMEタイプ（1文字以上100文字以下、例：image/png, application/pdf）
+          description: MIMEタイプ（100文字以下、例：image/png, application/pdf）
           minLength: 1
           maxLength: 100
           pattern: ^[a-zA-Z0-9]+/[a-zA-Z0-9\-+.]+$
@@ -1288,12 +1282,11 @@ components:
           type: string
           minLength: 1
           maxLength: 100
-          description: プロジェクト名（1文字以上100文字以下）
+          description: プロジェクト名（100文字以下）
         description:
           type: string
-          minLength: 1
           maxLength: 1000
-          description: プロジェクトの説明（省略可能。値を送信する場合は1文字以上1000文字以下）
+          description: プロジェクトの説明（省略可能。1000文字以下）
         color:
           type: string
           description: プロジェクトのカラーコード（#で始まる16進数6文字、例：#001964）
@@ -1305,16 +1298,15 @@ components:
           type: string
           minLength: 1
           maxLength: 100
-          description: プロジェクト名（省略可能。値を送信する場合は1文字以上100文字以下）
+          description: プロジェクト名（省略可能。100文字以下）
         description:
           type: string
-          minLength: 1
           maxLength: 1000
           nullable: true
-          description: プロジェクトの説明（省略可能、nullで"説明なし"に設定。値を送信する場合は1文字以上1000文字以下）
+          description: プロジェクトの説明（省略可能、nullで"説明なし"に設定。1000文字以下）
         color:
           type: string
-          description: プロジェクトのカラーコード（省略可能。値を送信する場合は#で始まる16進数6文字、例：#001964）
+          description: プロジェクトのカラーコード（省略可能。#で始まる16進数6文字、例：#001964）
           pattern: ^#[0-9A-Fa-f]{6}$
     UserResponse:
       type: object
@@ -1359,7 +1351,7 @@ components:
       properties:
         name:
           type: string
-          description: ユーザー名（省略時はCognitoのメールアドレスから自動生成。値を送信する場合は1文字以上100文字以下）
+          description: ユーザー名（省略時はCognitoのメールアドレスから自動生成。100文字以下）
           minLength: 1
           maxLength: 100
     UpdateUserParams:
@@ -1367,6 +1359,6 @@ components:
       properties:
         name:
           type: string
-          description: ユーザー名（省略可能。値を送信する場合は1文字以上100文字以下）
+          description: ユーザー名（省略可能。100文字以下）
           minLength: 1
           maxLength: 100
