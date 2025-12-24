@@ -4,7 +4,9 @@ import { UserRepositoryDummy } from "@/domain/model/user/user.repository.dummy";
 import { LoggerDummy } from "@/application/port/logger/dummy";
 import { buildFetchNowDummy } from "@/application/port/fetch-now/dummy";
 import { ConflictError, UnexpectedError } from "@/util/error-util";
-import { userDummyFrom } from "@/domain/model/user/user.dummy";
+import { userDummyFrom } from "@/domain/model/user/user.entity.dummy";
+import { AuthClientDummy } from "@/application/port/auth-client/dummy";
+import { Result } from "@/util/result";
 
 describe("RegisterCurrentUserUseCaseImpl", () => {
   describe("execute", () => {
@@ -13,13 +15,15 @@ describe("RegisterCurrentUserUseCaseImpl", () => {
       const useCase = new RegisterCurrentUserUseCaseImpl({
         userRepository: new UserRepositoryDummy({
           userIdReturnValue: "test-user-id",
-          findBySubReturnValue: {
-            success: true,
-            data: undefined, // ユーザーが存在しない
-          },
-          saveReturnValue: {
-            success: true,
-            data: undefined,
+          findBySubReturnValue: Result.ok(undefined), // ユーザーが存在しない
+          saveReturnValue: Result.ok(undefined),
+        }),
+        authClient: new AuthClientDummy({
+          getUserByIdReturnValue: {
+            id: "test-sub",
+            email: "test@example.com",
+            emailVerified: true,
+            disabled: false,
           },
         }),
         logger: new LoggerDummy(),
@@ -29,13 +33,11 @@ describe("RegisterCurrentUserUseCaseImpl", () => {
       // Act
       const result = await useCase.execute({
         sub: "test-sub",
-        email: "test@example.com",
-        emailVerified: true,
       });
 
       // Assert
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data.id).toBe("test-user-id");
         expect(result.data.sub).toBe("test-sub");
         expect(result.data.email).toBe("test@example.com");
@@ -51,13 +53,15 @@ describe("RegisterCurrentUserUseCaseImpl", () => {
       const useCase = new RegisterCurrentUserUseCaseImpl({
         userRepository: new UserRepositoryDummy({
           userIdReturnValue: "test-user-id",
-          findBySubReturnValue: {
-            success: true,
-            data: undefined, // ユーザーが存在しない
-          },
-          saveReturnValue: {
-            success: true,
-            data: undefined,
+          findBySubReturnValue: Result.ok(undefined), // ユーザーが存在しない
+          saveReturnValue: Result.ok(undefined),
+        }),
+        authClient: new AuthClientDummy({
+          getUserByIdReturnValue: {
+            id: "test-sub",
+            email: "test@example.com",
+            emailVerified: false,
+            disabled: false,
           },
         }),
         logger: new LoggerDummy(),
@@ -67,13 +71,11 @@ describe("RegisterCurrentUserUseCaseImpl", () => {
       // Act
       const result = await useCase.execute({
         sub: "test-sub",
-        email: "test@example.com",
-        emailVerified: false,
       });
 
       // Assert
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data.emailVerified).toBe(false);
       }
     });
@@ -86,9 +88,14 @@ describe("RegisterCurrentUserUseCaseImpl", () => {
 
       const useCase = new RegisterCurrentUserUseCaseImpl({
         userRepository: new UserRepositoryDummy({
-          findBySubReturnValue: {
-            success: true,
-            data: existingUser, // 既存ユーザーが存在
+          findBySubReturnValue: Result.ok(existingUser), // 既存ユーザーが存在
+        }),
+        authClient: new AuthClientDummy({
+          getUserByIdReturnValue: {
+            id: "existing-sub",
+            email: "test@example.com",
+            emailVerified: true,
+            disabled: false,
           },
         }),
         logger: new LoggerDummy(),
@@ -98,13 +105,11 @@ describe("RegisterCurrentUserUseCaseImpl", () => {
       // Act
       const result = await useCase.execute({
         sub: "existing-sub",
-        email: "test@example.com",
-        emailVerified: true,
       });
 
       // Assert
-      expect(result.success).toBe(false);
-      if (!result.success) {
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
         expect(result.error).toBeInstanceOf(ConflictError);
         expect(result.error.message).toBe(
           "このユーザーはすでに登録されています",
@@ -116,9 +121,14 @@ describe("RegisterCurrentUserUseCaseImpl", () => {
       // Arrange
       const useCase = new RegisterCurrentUserUseCaseImpl({
         userRepository: new UserRepositoryDummy({
-          findBySubReturnValue: {
-            success: false,
-            error: new UnexpectedError("検索エラー"),
+          findBySubReturnValue: Result.err(new UnexpectedError("検索エラー")),
+        }),
+        authClient: new AuthClientDummy({
+          getUserByIdReturnValue: {
+            id: "test-sub",
+            email: "test@example.com",
+            emailVerified: true,
+            disabled: false,
           },
         }),
         logger: new LoggerDummy(),
@@ -128,13 +138,11 @@ describe("RegisterCurrentUserUseCaseImpl", () => {
       // Act
       const result = await useCase.execute({
         sub: "test-sub",
-        email: "test@example.com",
-        emailVerified: true,
       });
 
       // Assert
-      expect(result.success).toBe(false);
-      if (!result.success) {
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
         expect(result.error).toBeInstanceOf(UnexpectedError);
         expect(result.error.message).toBe("検索エラー");
       }
@@ -144,13 +152,15 @@ describe("RegisterCurrentUserUseCaseImpl", () => {
       // Arrange
       const useCase = new RegisterCurrentUserUseCaseImpl({
         userRepository: new UserRepositoryDummy({
-          findBySubReturnValue: {
-            success: true,
-            data: undefined, // ユーザーが存在しない
-          },
-          saveReturnValue: {
-            success: false,
-            error: new UnexpectedError("保存エラー"),
+          findBySubReturnValue: Result.ok(undefined), // ユーザーが存在しない
+          saveReturnValue: Result.err(new UnexpectedError("保存エラー")),
+        }),
+        authClient: new AuthClientDummy({
+          getUserByIdReturnValue: {
+            id: "test-sub",
+            email: "test@example.com",
+            emailVerified: true,
+            disabled: false,
           },
         }),
         logger: new LoggerDummy(),
@@ -160,13 +170,11 @@ describe("RegisterCurrentUserUseCaseImpl", () => {
       // Act
       const result = await useCase.execute({
         sub: "test-sub",
-        email: "test@example.com",
-        emailVerified: true,
       });
 
       // Assert
-      expect(result.success).toBe(false);
-      if (!result.success) {
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
         expect(result.error).toBeInstanceOf(UnexpectedError);
         expect(result.error.message).toBe("保存エラー");
       }
@@ -177,13 +185,15 @@ describe("RegisterCurrentUserUseCaseImpl", () => {
       const useCase = new RegisterCurrentUserUseCaseImpl({
         userRepository: new UserRepositoryDummy({
           userIdReturnValue: "test-user-id",
-          findBySubReturnValue: {
-            success: true,
-            data: undefined,
-          },
-          saveReturnValue: {
-            success: true,
-            data: undefined,
+          findBySubReturnValue: Result.ok(undefined),
+          saveReturnValue: Result.ok(undefined),
+        }),
+        authClient: new AuthClientDummy({
+          getUserByIdReturnValue: {
+            id: "test-sub",
+            email: "invalid-email",
+            emailVerified: false,
+            disabled: false,
           },
         }),
         logger: new LoggerDummy(),
@@ -193,13 +203,11 @@ describe("RegisterCurrentUserUseCaseImpl", () => {
       // Act
       const result = await useCase.execute({
         sub: "test-sub",
-        email: "invalid-email",
-        emailVerified: false,
       });
 
       // Assert
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data.name).toBe("invalid-email"); // @がない場合はそのまま使用
       }
     });

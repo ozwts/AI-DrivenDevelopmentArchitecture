@@ -1,11 +1,12 @@
 import { test, expect, describe } from "vitest";
 import { DeleteTodoUseCaseImpl } from "./delete-todo-use-case";
 import { TodoRepositoryDummy } from "@/domain/model/todo/todo.repository.dummy";
-import { todoDummyFrom } from "@/domain/model/todo/todo.dummy";
-import { attachmentDummyFrom } from "@/domain/model/attachment/attachment.dummy";
+import { todoDummyFrom } from "@/domain/model/todo/todo.entity.dummy";
+import { attachmentDummyFrom } from "@/domain/model/todo/attachment.entity.dummy";
 import { StorageClientDummy } from "@/application/port/storage-client/dummy";
 import { LoggerDummy } from "@/application/port/logger/dummy";
 import { UnexpectedError } from "@/util/error-util";
+import { Result } from "@/util/result";
 
 describe("DeleteTodoUseCaseのテスト", () => {
   describe("execute", () => {
@@ -19,14 +20,8 @@ describe("DeleteTodoUseCaseのテスト", () => {
 
       const deleteTodoUseCase = new DeleteTodoUseCaseImpl({
         todoRepository: new TodoRepositoryDummy({
-          findByIdReturnValue: {
-            success: true,
-            data: todo,
-          },
-          removeReturnValue: {
-            success: true,
-            data: undefined,
-          },
+          findByIdReturnValue: Result.ok(todo),
+          removeReturnValue: Result.ok(undefined),
         }),
         storageClient: new StorageClientDummy(),
         logger: new LoggerDummy(),
@@ -36,8 +31,8 @@ describe("DeleteTodoUseCaseのテスト", () => {
         todoId,
       });
 
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data).toBeUndefined();
       }
     });
@@ -45,17 +40,13 @@ describe("DeleteTodoUseCaseのテスト", () => {
     test("削除に失敗した場合はUnexpectedErrorを返すこと", async () => {
       const deleteTodoUseCase = new DeleteTodoUseCaseImpl({
         todoRepository: new TodoRepositoryDummy({
-          findByIdReturnValue: {
-            success: true,
-            data: todoDummyFrom({
+          findByIdReturnValue: Result.ok(
+            todoDummyFrom({
               id: "todo-to-delete",
               attachments: [],
             }),
-          },
-          removeReturnValue: {
-            success: false,
-            error: new UnexpectedError(),
-          },
+          ),
+          removeReturnValue: Result.err(new UnexpectedError()),
         }),
         storageClient: new StorageClientDummy(),
         logger: new LoggerDummy(),
@@ -65,8 +56,8 @@ describe("DeleteTodoUseCaseのテスト", () => {
         todoId: "todo-to-delete",
       });
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
         expect(result.error).toBeInstanceOf(UnexpectedError);
       }
     });
@@ -74,17 +65,13 @@ describe("DeleteTodoUseCaseのテスト", () => {
     test("複数回の削除操作を実行できること", async () => {
       const deleteTodoUseCase = new DeleteTodoUseCaseImpl({
         todoRepository: new TodoRepositoryDummy({
-          findByIdReturnValue: {
-            success: true,
-            data: todoDummyFrom({
+          findByIdReturnValue: Result.ok(
+            todoDummyFrom({
               id: "todo-1",
               attachments: [],
             }),
-          },
-          removeReturnValue: {
-            success: true,
-            data: undefined,
-          },
+          ),
+          removeReturnValue: Result.ok(undefined),
         }),
         storageClient: new StorageClientDummy(),
         logger: new LoggerDummy(),
@@ -94,9 +81,9 @@ describe("DeleteTodoUseCaseのテスト", () => {
       const result2 = await deleteTodoUseCase.execute({ todoId: "todo-2" });
       const result3 = await deleteTodoUseCase.execute({ todoId: "todo-3" });
 
-      expect(result1.success).toBe(true);
-      expect(result2.success).toBe(true);
-      expect(result3.success).toBe(true);
+      expect(result1.isOk()).toBe(true);
+      expect(result2.isOk()).toBe(true);
+      expect(result3.isOk()).toBe(true);
     });
 
     test("異なるTODO IDで削除できること", async () => {
@@ -105,41 +92,33 @@ describe("DeleteTodoUseCaseのテスト", () => {
       for (const todoId of todoIds) {
         const deleteTodoUseCase = new DeleteTodoUseCaseImpl({
           todoRepository: new TodoRepositoryDummy({
-            findByIdReturnValue: {
-              success: true,
-              data: todoDummyFrom({
+            findByIdReturnValue: Result.ok(
+              todoDummyFrom({
                 id: todoId,
                 attachments: [],
               }),
-            },
-            removeReturnValue: {
-              success: true,
-              data: undefined,
-            },
+            ),
+            removeReturnValue: Result.ok(undefined),
           }),
           storageClient: new StorageClientDummy(),
           logger: new LoggerDummy(),
         });
 
         const result = await deleteTodoUseCase.execute({ todoId });
-        expect(result.success).toBe(true);
+        expect(result.isOk()).toBe(true);
       }
     });
 
     test("削除処理が正しく完了することを確認", async () => {
       const deleteTodoUseCase = new DeleteTodoUseCaseImpl({
         todoRepository: new TodoRepositoryDummy({
-          findByIdReturnValue: {
-            success: true,
-            data: todoDummyFrom({
+          findByIdReturnValue: Result.ok(
+            todoDummyFrom({
               id: "final-todo",
               attachments: [],
             }),
-          },
-          removeReturnValue: {
-            success: true,
-            data: undefined,
-          },
+          ),
+          removeReturnValue: Result.ok(undefined),
         }),
         storageClient: new StorageClientDummy(),
         logger: new LoggerDummy(),
@@ -149,8 +128,8 @@ describe("DeleteTodoUseCaseのテスト", () => {
         todoId: "final-todo",
       });
 
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data).toBeUndefined();
       }
     });
@@ -174,28 +153,19 @@ describe("DeleteTodoUseCaseのテスト", () => {
 
       const deleteTodoUseCase = new DeleteTodoUseCaseImpl({
         todoRepository: new TodoRepositoryDummy({
-          findByIdReturnValue: {
-            success: true,
-            data: todo,
-          },
-          removeReturnValue: {
-            success: true,
-            data: undefined,
-          },
+          findByIdReturnValue: Result.ok(todo),
+          removeReturnValue: Result.ok(undefined),
         }),
         storageClient: new StorageClientDummy({
-          deleteObjectReturnValue: {
-            success: true,
-            data: undefined,
-          },
+          deleteObjectReturnValue: Result.ok(undefined),
         }),
         logger: new LoggerDummy(),
       });
 
       const result = await deleteTodoUseCase.execute({ todoId });
 
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data).toBeUndefined();
       }
     });
@@ -214,24 +184,18 @@ describe("DeleteTodoUseCaseのテスト", () => {
 
       const deleteTodoUseCase = new DeleteTodoUseCaseImpl({
         todoRepository: new TodoRepositoryDummy({
-          findByIdReturnValue: {
-            success: true,
-            data: todo,
-          },
+          findByIdReturnValue: Result.ok(todo),
         }),
         storageClient: new StorageClientDummy({
-          deleteObjectReturnValue: {
-            success: false,
-            error: new UnexpectedError(),
-          },
+          deleteObjectReturnValue: Result.err(new UnexpectedError()),
         }),
         logger: new LoggerDummy(),
       });
 
       const result = await deleteTodoUseCase.execute({ todoId });
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
         expect(result.error).toBeInstanceOf(UnexpectedError);
       }
     });
@@ -239,10 +203,7 @@ describe("DeleteTodoUseCaseのテスト", () => {
     test("存在しないTODOを削除しようとした場合は成功を返すこと（冪等性）", async () => {
       const deleteTodoUseCase = new DeleteTodoUseCaseImpl({
         todoRepository: new TodoRepositoryDummy({
-          findByIdReturnValue: {
-            success: true,
-            data: undefined, // TODOが存在しない
-          },
+          findByIdReturnValue: Result.ok(undefined), // TODOが存在しない
         }),
         storageClient: new StorageClientDummy(),
         logger: new LoggerDummy(),
@@ -252,8 +213,8 @@ describe("DeleteTodoUseCaseのテスト", () => {
         todoId: "non-existent-todo",
       });
 
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data).toBeUndefined();
       }
     });
@@ -261,10 +222,7 @@ describe("DeleteTodoUseCaseのテスト", () => {
     test("TODO取得に失敗した場合はエラーを返すこと", async () => {
       const deleteTodoUseCase = new DeleteTodoUseCaseImpl({
         todoRepository: new TodoRepositoryDummy({
-          findByIdReturnValue: {
-            success: false,
-            error: new UnexpectedError(),
-          },
+          findByIdReturnValue: Result.err(new UnexpectedError()),
         }),
         storageClient: new StorageClientDummy(),
         logger: new LoggerDummy(),
@@ -274,8 +232,8 @@ describe("DeleteTodoUseCaseのテスト", () => {
         todoId: "todo-id",
       });
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
         expect(result.error).toBeInstanceOf(UnexpectedError);
       }
     });

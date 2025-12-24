@@ -1,10 +1,7 @@
 import { UnexpectedError, NotFoundError } from "@/util/error-util";
 import type { TodoRepository } from "@/domain/model/todo/todo.repository";
-import type {
-  Todo,
-  TodoStatus,
-  TodoPriority,
-} from "@/domain/model/todo/todo.entity";
+import type { Todo, TodoPriority } from "@/domain/model/todo/todo.entity";
+import type { TodoStatus } from "@/domain/model/todo/todo-status.vo";
 import type { FetchNow } from "@/application/port/fetch-now";
 import type { Logger } from "@/application/port/logger";
 import { Result } from "@/util/result";

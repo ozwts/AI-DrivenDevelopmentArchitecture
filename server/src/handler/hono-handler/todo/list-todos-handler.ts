@@ -4,7 +4,7 @@ import { schemas } from "@/generated/zod-schemas";
 import { serviceId } from "@/di-container/service-id";
 import type { Logger } from "@/application/port/logger";
 import type { ListTodosUseCase } from "@/application/use-case/todo/list-todos-use-case";
-import { TodoStatus } from "@/domain/model/todo/todo.entity";
+import { TodoStatus } from "@/domain/model/todo/todo-status.vo";
 import { UnexpectedError, unexpectedErrorMessage } from "@/util/error-util";
 import { handleError } from "../../hono-handler-util/error-handler";
 import { convertToTodoResponse } from "./todo-response-mapper";

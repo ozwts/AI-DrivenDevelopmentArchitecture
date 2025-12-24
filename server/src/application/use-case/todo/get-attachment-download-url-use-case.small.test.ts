@@ -1,11 +1,13 @@
 import { test, expect, describe } from "vitest";
 import { GetAttachmentDownloadUrlUseCaseImpl } from "./get-attachment-download-url-use-case";
 import { TodoRepositoryDummy } from "@/domain/model/todo/todo.repository.dummy";
-import { todoDummyFrom } from "@/domain/model/todo/todo.dummy";
-import { attachmentDummyFrom } from "@/domain/model/attachment/attachment.dummy";
+import { todoDummyFrom } from "@/domain/model/todo/todo.entity.dummy";
+import { attachmentDummyFrom } from "@/domain/model/todo/attachment.entity.dummy";
+import { AttachmentStatus } from "@/domain/model/todo/attachment-status.vo";
 import { StorageClientDummy } from "@/application/port/storage-client/dummy";
 import { LoggerDummy } from "@/application/port/logger/dummy";
 import { UnexpectedError } from "@/util/error-util";
+import { Result } from "@/util/result";
 
 describe("GetAttachmentDownloadUrlUseCaseのテスト", () => {
   describe("execute", () => {
@@ -18,7 +20,7 @@ describe("GetAttachmentDownloadUrlUseCaseのテスト", () => {
         contentType: "application/pdf",
         fileSize: 1024,
         storageKey: "attachments/todo-1/attachment-1/document.pdf",
-        status: "UPLOADED",
+        status: AttachmentStatus.uploaded(),
       });
       const existingTodo = todoDummyFrom({
         id: todoId,
@@ -28,10 +30,7 @@ describe("GetAttachmentDownloadUrlUseCaseのテスト", () => {
       const getAttachmentDownloadUrlUseCase =
         new GetAttachmentDownloadUrlUseCaseImpl({
           todoRepository: new TodoRepositoryDummy({
-            findByIdReturnValue: {
-              success: true,
-              data: existingTodo,
-            },
+            findByIdReturnValue: Result.ok(existingTodo),
           }),
           storageClient: new StorageClientDummy(),
           logger: new LoggerDummy(),
@@ -42,8 +41,8 @@ describe("GetAttachmentDownloadUrlUseCaseのテスト", () => {
         attachmentId,
       });
 
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data.downloadUrl).toBe(
           "https://example.com/download-url?signature=dummy",
         );
@@ -57,10 +56,7 @@ describe("GetAttachmentDownloadUrlUseCaseのテスト", () => {
       const getAttachmentDownloadUrlUseCase =
         new GetAttachmentDownloadUrlUseCaseImpl({
           todoRepository: new TodoRepositoryDummy({
-            findByIdReturnValue: {
-              success: true,
-              data: undefined,
-            },
+            findByIdReturnValue: Result.ok(undefined),
           }),
           storageClient: new StorageClientDummy(),
           logger: new LoggerDummy(),
@@ -71,8 +67,8 @@ describe("GetAttachmentDownloadUrlUseCaseのテスト", () => {
         attachmentId: "attachment-1",
       });
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
         expect(result.error.name).toBe("NotFoundError");
         expect(result.error.message).toBe("TODOが見つかりません");
       }
@@ -88,10 +84,7 @@ describe("GetAttachmentDownloadUrlUseCaseのテスト", () => {
       const getAttachmentDownloadUrlUseCase =
         new GetAttachmentDownloadUrlUseCaseImpl({
           todoRepository: new TodoRepositoryDummy({
-            findByIdReturnValue: {
-              success: true,
-              data: existingTodo,
-            },
+            findByIdReturnValue: Result.ok(existingTodo),
           }),
           storageClient: new StorageClientDummy(),
           logger: new LoggerDummy(),
@@ -102,8 +95,8 @@ describe("GetAttachmentDownloadUrlUseCaseのテスト", () => {
         attachmentId: "non-existent-attachment-id",
       });
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
         expect(result.error.name).toBe("NotFoundError");
         expect(result.error.message).toBe("添付ファイルが見つかりません");
       }
@@ -113,10 +106,7 @@ describe("GetAttachmentDownloadUrlUseCaseのテスト", () => {
       const getAttachmentDownloadUrlUseCase =
         new GetAttachmentDownloadUrlUseCaseImpl({
           todoRepository: new TodoRepositoryDummy({
-            findByIdReturnValue: {
-              success: false,
-              error: new UnexpectedError(),
-            },
+            findByIdReturnValue: Result.err(new UnexpectedError()),
           }),
           storageClient: new StorageClientDummy(),
           logger: new LoggerDummy(),
@@ -127,8 +117,8 @@ describe("GetAttachmentDownloadUrlUseCaseのテスト", () => {
         attachmentId: "attachment-1",
       });
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
         expect(result.error).toBeInstanceOf(UnexpectedError);
       }
     });
@@ -138,7 +128,7 @@ describe("GetAttachmentDownloadUrlUseCaseのテスト", () => {
       const attachmentId = "attachment-1";
       const attachment = attachmentDummyFrom({
         id: attachmentId,
-        status: "UPLOADED",
+        status: AttachmentStatus.uploaded(),
       });
       const existingTodo = todoDummyFrom({
         id: todoId,
@@ -148,16 +138,12 @@ describe("GetAttachmentDownloadUrlUseCaseのテスト", () => {
       const getAttachmentDownloadUrlUseCase =
         new GetAttachmentDownloadUrlUseCaseImpl({
           todoRepository: new TodoRepositoryDummy({
-            findByIdReturnValue: {
-              success: true,
-              data: existingTodo,
-            },
+            findByIdReturnValue: Result.ok(existingTodo),
           }),
           storageClient: new StorageClientDummy({
-            generatePresignedDownloadUrlReturnValue: {
-              success: false,
-              error: new UnexpectedError("URL generation failed"),
-            },
+            generatePresignedDownloadUrlReturnValue: Result.err(
+              new UnexpectedError("URL generation failed"),
+            ),
           }),
           logger: new LoggerDummy(),
         });
@@ -167,8 +153,8 @@ describe("GetAttachmentDownloadUrlUseCaseのテスト", () => {
         attachmentId,
       });
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
         expect(result.error).toBeInstanceOf(UnexpectedError);
       }
     });
@@ -198,10 +184,7 @@ describe("GetAttachmentDownloadUrlUseCaseのテスト", () => {
       const getAttachmentDownloadUrlUseCase =
         new GetAttachmentDownloadUrlUseCaseImpl({
           todoRepository: new TodoRepositoryDummy({
-            findByIdReturnValue: {
-              success: true,
-              data: existingTodo,
-            },
+            findByIdReturnValue: Result.ok(existingTodo),
           }),
           storageClient: new StorageClientDummy(),
           logger: new LoggerDummy(),
@@ -212,8 +195,8 @@ describe("GetAttachmentDownloadUrlUseCaseのテスト", () => {
         attachmentId: attachmentId2,
       });
 
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data.fileName).toBe("file2.jpg");
       }
     });
@@ -242,10 +225,7 @@ describe("GetAttachmentDownloadUrlUseCaseのテスト", () => {
         const getAttachmentDownloadUrlUseCase =
           new GetAttachmentDownloadUrlUseCaseImpl({
             todoRepository: new TodoRepositoryDummy({
-              findByIdReturnValue: {
-                success: true,
-                data: existingTodo,
-              },
+              findByIdReturnValue: Result.ok(existingTodo),
             }),
             storageClient: new StorageClientDummy(),
             logger: new LoggerDummy(),
@@ -256,8 +236,8 @@ describe("GetAttachmentDownloadUrlUseCaseのテスト", () => {
           attachmentId,
         });
 
-        expect(result.success).toBe(true);
-        if (result.success) {
+        expect(result.isOk()).toBe(true);
+        if (result.isOk()) {
           expect(result.data.contentType).toBe(type);
           expect(result.data.fileSize).toBe(size);
         }
@@ -269,7 +249,7 @@ describe("GetAttachmentDownloadUrlUseCaseのテスト", () => {
       const attachmentId = "attachment-1";
       const attachment = attachmentDummyFrom({
         id: attachmentId,
-        status: "PREPARED",
+        status: AttachmentStatus.prepared(),
       });
       const existingTodo = todoDummyFrom({
         id: todoId,
@@ -279,10 +259,7 @@ describe("GetAttachmentDownloadUrlUseCaseのテスト", () => {
       const getAttachmentDownloadUrlUseCase =
         new GetAttachmentDownloadUrlUseCaseImpl({
           todoRepository: new TodoRepositoryDummy({
-            findByIdReturnValue: {
-              success: true,
-              data: existingTodo,
-            },
+            findByIdReturnValue: Result.ok(existingTodo),
           }),
           storageClient: new StorageClientDummy(),
           logger: new LoggerDummy(),
@@ -293,7 +270,7 @@ describe("GetAttachmentDownloadUrlUseCaseのテスト", () => {
         attachmentId,
       });
 
-      expect(result.success).toBe(true);
+      expect(result.isOk()).toBe(true);
     });
   });
 });

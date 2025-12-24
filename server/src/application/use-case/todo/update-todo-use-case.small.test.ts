@@ -1,9 +1,13 @@
 import { test, expect, describe } from "vitest";
 import { UpdateTodoUseCaseImpl } from "./update-todo-use-case";
 import { TodoRepositoryDummy } from "@/domain/model/todo/todo.repository.dummy";
-import { todoDummyFrom } from "@/domain/model/todo/todo.dummy";
+import { todoDummyFrom } from "@/domain/model/todo/todo.entity.dummy";
+import { TodoStatus } from "@/domain/model/todo/todo-status.vo";
+import { LoggerDummy } from "@/application/port/logger/dummy";
 import { buildFetchNowDummy } from "@/application/port/fetch-now/dummy";
 import { UnexpectedError } from "@/util/error-util";
+import { Result } from "@/util/result";
+import { dateToIsoString } from "@/util/date-util";
 
 describe("UpdateTodoUseCaseのテスト", () => {
   const now = new Date("2024-01-01T00:00:00+09:00");
@@ -20,16 +24,11 @@ describe("UpdateTodoUseCaseのテスト", () => {
 
       const updateTodoUseCase = new UpdateTodoUseCaseImpl({
         todoRepository: new TodoRepositoryDummy({
-          findByIdReturnValue: {
-            success: true,
-            data: existingTodo,
-          },
-          saveReturnValue: {
-            success: true,
-            data: undefined,
-          },
+          findByIdReturnValue: Result.ok(existingTodo),
+          saveReturnValue: Result.ok(undefined),
         }),
         fetchNow,
+        logger: new LoggerDummy(),
       });
 
       const result = await updateTodoUseCase.execute({
@@ -37,41 +36,36 @@ describe("UpdateTodoUseCaseのテスト", () => {
         title: "新しいタイトル",
       });
 
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data.title).toBe("新しいタイトル");
-        expect(result.data.updatedAt).toBe(updatedAt.toISOString());
+        expect(result.data.updatedAt).toBe(dateToIsoString(updatedAt));
       }
     });
 
     test("TODOのステータスを更新できること", async () => {
       const existingTodo = todoDummyFrom({
         id: "todo-2",
-        status: "TODO",
+        status: TodoStatus.todo(),
       });
 
       const updateTodoUseCase = new UpdateTodoUseCaseImpl({
         todoRepository: new TodoRepositoryDummy({
-          findByIdReturnValue: {
-            success: true,
-            data: existingTodo,
-          },
-          saveReturnValue: {
-            success: true,
-            data: undefined,
-          },
+          findByIdReturnValue: Result.ok(existingTodo),
+          saveReturnValue: Result.ok(undefined),
         }),
         fetchNow,
+        logger: new LoggerDummy(),
       });
 
       const result = await updateTodoUseCase.execute({
         todoId: "todo-2",
-        status: "IN_PROGRESS",
+        status: TodoStatus.inProgress(),
       });
 
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.data.status).toBe("IN_PROGRESS");
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
+        expect(result.data.status.isInProgress()).toBe(true);
       }
     });
 
@@ -83,16 +77,11 @@ describe("UpdateTodoUseCaseのテスト", () => {
 
       const updateTodoUseCase = new UpdateTodoUseCaseImpl({
         todoRepository: new TodoRepositoryDummy({
-          findByIdReturnValue: {
-            success: true,
-            data: existingTodo,
-          },
-          saveReturnValue: {
-            success: true,
-            data: undefined,
-          },
+          findByIdReturnValue: Result.ok(existingTodo),
+          saveReturnValue: Result.ok(undefined),
         }),
         fetchNow,
+        logger: new LoggerDummy(),
       });
 
       const result = await updateTodoUseCase.execute({
@@ -100,8 +89,8 @@ describe("UpdateTodoUseCaseのテスト", () => {
         priority: "HIGH",
       });
 
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data.priority).toBe("HIGH");
       }
     });
@@ -110,37 +99,32 @@ describe("UpdateTodoUseCaseのテスト", () => {
       const existingTodo = todoDummyFrom({
         id: "todo-4",
         title: "古いタイトル",
-        status: "TODO",
+        status: TodoStatus.todo(),
         priority: "LOW",
         description: "古い説明",
       });
 
       const updateTodoUseCase = new UpdateTodoUseCaseImpl({
         todoRepository: new TodoRepositoryDummy({
-          findByIdReturnValue: {
-            success: true,
-            data: existingTodo,
-          },
-          saveReturnValue: {
-            success: true,
-            data: undefined,
-          },
+          findByIdReturnValue: Result.ok(existingTodo),
+          saveReturnValue: Result.ok(undefined),
         }),
         fetchNow,
+        logger: new LoggerDummy(),
       });
 
       const result = await updateTodoUseCase.execute({
         todoId: "todo-4",
         title: "新しいタイトル",
-        status: "COMPLETED",
+        status: TodoStatus.completed(),
         priority: "HIGH",
         description: "新しい説明",
       });
 
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data.title).toBe("新しいタイトル");
-        expect(result.data.status).toBe("COMPLETED");
+        expect(result.data.status.isCompleted()).toBe(true);
         expect(result.data.priority).toBe("HIGH");
         expect(result.data.description).toBe("新しい説明");
       }
@@ -149,12 +133,10 @@ describe("UpdateTodoUseCaseのテスト", () => {
     test("TODOが見つからない場合はNotFoundErrorを返すこと", async () => {
       const updateTodoUseCase = new UpdateTodoUseCaseImpl({
         todoRepository: new TodoRepositoryDummy({
-          findByIdReturnValue: {
-            success: true,
-            data: undefined,
-          },
+          findByIdReturnValue: Result.ok(undefined),
         }),
         fetchNow,
+        logger: new LoggerDummy(),
       });
 
       const result = await updateTodoUseCase.execute({
@@ -162,8 +144,8 @@ describe("UpdateTodoUseCaseのテスト", () => {
         title: "新しいタイトル",
       });
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
         expect(result.error.name).toBe("NotFoundError");
         expect(result.error.message).toBe("TODOが見つかりません");
       }
@@ -172,12 +154,10 @@ describe("UpdateTodoUseCaseのテスト", () => {
     test("findByIdでエラーが発生した場合はそのエラーを返すこと", async () => {
       const updateTodoUseCase = new UpdateTodoUseCaseImpl({
         todoRepository: new TodoRepositoryDummy({
-          findByIdReturnValue: {
-            success: false,
-            error: new UnexpectedError(),
-          },
+          findByIdReturnValue: Result.err(new UnexpectedError()),
         }),
         fetchNow,
+        logger: new LoggerDummy(),
       });
 
       const result = await updateTodoUseCase.execute({
@@ -185,8 +165,8 @@ describe("UpdateTodoUseCaseのテスト", () => {
         title: "新しいタイトル",
       });
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
         expect(result.error).toBeInstanceOf(UnexpectedError);
       }
     });
@@ -198,16 +178,11 @@ describe("UpdateTodoUseCaseのテスト", () => {
 
       const updateTodoUseCase = new UpdateTodoUseCaseImpl({
         todoRepository: new TodoRepositoryDummy({
-          findByIdReturnValue: {
-            success: true,
-            data: existingTodo,
-          },
-          saveReturnValue: {
-            success: false,
-            error: new UnexpectedError(),
-          },
+          findByIdReturnValue: Result.ok(existingTodo),
+          saveReturnValue: Result.err(new UnexpectedError()),
         }),
         fetchNow,
+        logger: new LoggerDummy(),
       });
 
       const result = await updateTodoUseCase.execute({
@@ -215,8 +190,8 @@ describe("UpdateTodoUseCaseのテスト", () => {
         title: "新しいタイトル",
       });
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
         expect(result.error).toBeInstanceOf(UnexpectedError);
       }
     });
@@ -233,16 +208,11 @@ describe("UpdateTodoUseCaseのテスト", () => {
 
       const updateTodoUseCase = new UpdateTodoUseCaseImpl({
         todoRepository: new TodoRepositoryDummy({
-          findByIdReturnValue: {
-            success: true,
-            data: existingTodo,
-          },
-          saveReturnValue: {
-            success: true,
-            data: undefined,
-          },
+          findByIdReturnValue: Result.ok(existingTodo),
+          saveReturnValue: Result.ok(undefined),
         }),
         fetchNow,
+        logger: new LoggerDummy(),
       });
 
       const result = await updateTodoUseCase.execute({
@@ -251,8 +221,8 @@ describe("UpdateTodoUseCaseのテスト", () => {
         projectId: newProjectId,
       });
 
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data.dueDate).toBe(newDueDate);
         expect(result.data.projectId).toBe(newProjectId);
       }
@@ -268,16 +238,11 @@ describe("UpdateTodoUseCaseのテスト", () => {
 
       const updateTodoUseCase = new UpdateTodoUseCaseImpl({
         todoRepository: new TodoRepositoryDummy({
-          findByIdReturnValue: {
-            success: true,
-            data: existingTodo,
-          },
-          saveReturnValue: {
-            success: true,
-            data: undefined,
-          },
+          findByIdReturnValue: Result.ok(existingTodo),
+          saveReturnValue: Result.ok(undefined),
         }),
         fetchNow,
+        logger: new LoggerDummy(),
       });
 
       const result = await updateTodoUseCase.execute({
@@ -285,8 +250,8 @@ describe("UpdateTodoUseCaseのテスト", () => {
         title: "新しいタイトル",
       });
 
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data.createdAt).toBe(createdAt);
         expect(result.data.updatedAt).not.toBe(createdAt);
       }

@@ -9,8 +9,8 @@ describe("AttachmentStatus", () => {
       const result = AttachmentStatus.from({ status: "PREPARED" });
 
       // Assert
-      expect(result.success).toBe(true);
-      if (!result.success) return;
+      expect(result.isOk()).toBe(true);
+      if (result.isErr()) return;
       expect(result.data.status).toBe("PREPARED");
     });
 
@@ -19,8 +19,8 @@ describe("AttachmentStatus", () => {
       const result = AttachmentStatus.from({ status: "UPLOADED" });
 
       // Assert
-      expect(result.success).toBe(true);
-      if (!result.success) return;
+      expect(result.isOk()).toBe(true);
+      if (result.isErr()) return;
       expect(result.data.status).toBe("UPLOADED");
     });
 
@@ -29,8 +29,8 @@ describe("AttachmentStatus", () => {
       const result = AttachmentStatus.from({ status: "INVALID" });
 
       // Assert
-      expect(result.success).toBe(false);
-      if (result.success) return;
+      expect(result.isErr()).toBe(true);
+      if (result.isOk()) return;
       expect(result.error).toBeInstanceOf(DomainError);
       expect(result.error.message).toContain("Invalid AttachmentStatus");
     });
@@ -68,7 +68,7 @@ describe("AttachmentStatus", () => {
       const result = prepared.canTransitionTo(uploaded);
 
       // Assert
-      expect(result.success).toBe(true);
+      expect(result.isOk()).toBe(true);
     });
 
     it("UPLOADED -> PREPAREDへの遷移は不可", () => {
@@ -80,8 +80,8 @@ describe("AttachmentStatus", () => {
       const result = uploaded.canTransitionTo(prepared);
 
       // Assert
-      expect(result.success).toBe(false);
-      if (result.success) return;
+      expect(result.isErr()).toBe(true);
+      if (result.isOk()) return;
       expect(result.error).toBeInstanceOf(DomainError);
       expect(result.error.message).toContain(
         "Cannot transition from UPLOADED to PREPARED",
@@ -97,7 +97,7 @@ describe("AttachmentStatus", () => {
       const result = prepared1.canTransitionTo(prepared2);
 
       // Assert
-      expect(result.success).toBe(true);
+      expect(result.isOk()).toBe(true);
     });
 
     it("同じステータスへの遷移は許可される（UPLOADED -> UPLOADED）", () => {
@@ -109,7 +109,7 @@ describe("AttachmentStatus", () => {
       const result = uploaded1.canTransitionTo(uploaded2);
 
       // Assert
-      expect(result.success).toBe(true);
+      expect(result.isOk()).toBe(true);
     });
   });
 

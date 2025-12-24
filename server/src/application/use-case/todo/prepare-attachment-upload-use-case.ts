@@ -5,10 +5,8 @@ import type { StorageClient } from "@/application/port/storage-client";
 import type { FetchNow } from "@/application/port/fetch-now";
 import type { Logger } from "@/application/port/logger";
 import { Result } from "@/util/result";
-import {
-  Attachment,
-  AttachmentStatus,
-} from "@/domain/model/todo/attachment.entity";
+import { Attachment } from "@/domain/model/todo/attachment.entity";
+import { AttachmentStatus } from "@/domain/model/todo/attachment-status.vo";
 import { dateToIsoString } from "@/util/date-util";
 import type { UseCase } from "../interfaces";
 

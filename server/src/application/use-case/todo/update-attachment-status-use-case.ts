@@ -2,10 +2,8 @@ import { UnexpectedError, NotFoundError } from "@/util/error-util";
 import type { TodoRepository } from "@/domain/model/todo/todo.repository";
 import type { FetchNow } from "@/application/port/fetch-now";
 import type { Logger } from "@/application/port/logger";
-import {
-  Attachment,
-  type AttachmentStatus,
-} from "@/domain/model/todo/attachment.entity";
+import { Attachment } from "@/domain/model/todo/attachment.entity";
+import type { AttachmentStatus } from "@/domain/model/todo/attachment-status.vo";
 import { Result } from "@/util/result";
 import { dateToIsoString } from "@/util/date-util";
 import type { UseCase } from "../interfaces";

@@ -11,11 +11,8 @@ import {
 import { LoggerDummy } from "@/application/port/logger/dummy";
 import { TodoRepositoryImpl } from "@/infrastructure/repository/todo-repository";
 import { ProjectRepositoryImpl } from "@/infrastructure/repository/project-repository";
-import type { TodoRepository } from "@/domain/model/todo/todo.repository";
-import type { ProjectRepository } from "@/domain/model/project/project.repository";
-import { todoDummyFrom } from "@/domain/model/todo/todo.dummy";
-import { projectDummyFrom } from "@/domain/model/project/project.dummy";
-import { ProjectColor } from "@/domain/model/project/project-color";
+import { todoDummyFrom } from "@/domain/model/todo/todo.entity.dummy";
+import { projectDummyFrom } from "@/domain/model/project/project.entity.dummy";
 import { DynamoDBUnitOfWorkRunner } from "@/infrastructure/unit-of-work/dynamodb-unit-of-work-runner";
 import {
   DeleteProjectUseCaseImpl,
@@ -122,13 +119,10 @@ describe("DeleteProjectUseCaseのミディアムテスト", () => {
       const projectId = "medium-test-project-1";
 
       // プロジェクトを作成
-      const colorResult = ProjectColor.fromString("#FF5733");
-      if (!colorResult.success) throw colorResult.error;
-
       const project = projectDummyFrom({
         id: projectId,
         name: "削除対象プロジェクト",
-        color: colorResult.data,
+        color: "#FF5733",
         createdAt: "2024-01-01T00:00:00.000+09:00",
         updatedAt: "2024-01-01T00:00:00.000+09:00",
       });
@@ -159,10 +153,12 @@ describe("DeleteProjectUseCaseのミディアムテスト", () => {
       const todosBeforeDelete = await todoRepository.findByProjectId({
         projectId,
       });
-      expect(projectBeforeDelete.success).toBe(true);
-      expect(projectBeforeDelete.data).toBeDefined();
-      expect(todosBeforeDelete.success).toBe(true);
-      if (todosBeforeDelete.success) {
+      expect(projectBeforeDelete.isOk()).toBe(true);
+      if (projectBeforeDelete.isOk()) {
+        expect(projectBeforeDelete.data).toBeDefined();
+      }
+      expect(todosBeforeDelete.isOk()).toBe(true);
+      if (todosBeforeDelete.isOk()) {
         expect(todosBeforeDelete.data).toHaveLength(2);
       }
 
@@ -171,8 +167,8 @@ describe("DeleteProjectUseCaseのミディアムテスト", () => {
         projectId,
       });
 
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data).toBeUndefined();
       }
 
@@ -180,8 +176,8 @@ describe("DeleteProjectUseCaseのミディアムテスト", () => {
       const projectAfterDelete = await projectRepository.findById({
         id: projectId,
       });
-      expect(projectAfterDelete.success).toBe(true);
-      if (projectAfterDelete.success) {
+      expect(projectAfterDelete.isOk()).toBe(true);
+      if (projectAfterDelete.isOk()) {
         expect(projectAfterDelete.data).toBeUndefined();
       }
 
@@ -192,12 +188,12 @@ describe("DeleteProjectUseCaseのミディアムテスト", () => {
       const todo2AfterDelete = await todoRepository.findById({
         id: todo2.id,
       });
-      expect(todo1AfterDelete.success).toBe(true);
-      if (todo1AfterDelete.success) {
+      expect(todo1AfterDelete.isOk()).toBe(true);
+      if (todo1AfterDelete.isOk()) {
         expect(todo1AfterDelete.data).toBeUndefined();
       }
-      expect(todo2AfterDelete.success).toBe(true);
-      if (todo2AfterDelete.success) {
+      expect(todo2AfterDelete.isOk()).toBe(true);
+      if (todo2AfterDelete.isOk()) {
         expect(todo2AfterDelete.data).toBeUndefined();
       }
     });
@@ -209,13 +205,10 @@ describe("DeleteProjectUseCaseのミディアムテスト", () => {
       const projectId = "medium-test-project-limit";
 
       // プロジェクトを作成
-      const colorResult = ProjectColor.fromString("#4CAF50");
-      if (!colorResult.success) throw colorResult.error;
-
       const project = projectDummyFrom({
         id: projectId,
         name: "複数TODO紐付きプロジェクト",
-        color: colorResult.data,
+        color: "#4CAF50",
         createdAt: "2024-01-02T00:00:00.000+09:00",
         updatedAt: "2024-01-02T00:00:00.000+09:00",
       });
@@ -242,8 +235,8 @@ describe("DeleteProjectUseCaseのミディアムテスト", () => {
       const todosBeforeDelete = await todoRepository.findByProjectId({
         projectId,
       });
-      expect(todosBeforeDelete.success).toBe(true);
-      if (todosBeforeDelete.success) {
+      expect(todosBeforeDelete.isOk()).toBe(true);
+      if (todosBeforeDelete.isOk()) {
         expect(todosBeforeDelete.data).toHaveLength(todoCount);
       }
 
@@ -252,14 +245,14 @@ describe("DeleteProjectUseCaseのミディアムテスト", () => {
         projectId,
       });
 
-      expect(result.success).toBe(true);
+      expect(result.isOk()).toBe(true);
 
       // プロジェクトが削除されていることを確認
       const projectAfterDelete = await projectRepository.findById({
         id: projectId,
       });
-      expect(projectAfterDelete.success).toBe(true);
-      if (projectAfterDelete.success) {
+      expect(projectAfterDelete.isOk()).toBe(true);
+      if (projectAfterDelete.isOk()) {
         expect(projectAfterDelete.data).toBeUndefined();
       }
 
@@ -267,8 +260,8 @@ describe("DeleteProjectUseCaseのミディアムテスト", () => {
       const todosAfterDelete = await todoRepository.findByProjectId({
         projectId,
       });
-      expect(todosAfterDelete.success).toBe(true);
-      if (todosAfterDelete.success) {
+      expect(todosAfterDelete.isOk()).toBe(true);
+      if (todosAfterDelete.isOk()) {
         expect(todosAfterDelete.data).toHaveLength(0);
       }
     });
@@ -280,13 +273,10 @@ describe("DeleteProjectUseCaseのミディアムテスト", () => {
       const projectId = "medium-test-project-rollback";
 
       // 事前にプロジェクトとTODOを作成（これは削除されないことを確認する）
-      const colorResult = ProjectColor.fromString("#E91E63");
-      if (!colorResult.success) throw colorResult.error;
-
       const project = projectDummyFrom({
         id: projectId,
         name: "ロールバックテストプロジェクト",
-        color: colorResult.data,
+        color: "#E91E63",
         createdAt: "2024-01-03T00:00:00.000+09:00",
         updatedAt: "2024-01-03T00:00:00.000+09:00",
       });
@@ -315,8 +305,8 @@ describe("DeleteProjectUseCaseのミディアムテスト", () => {
       });
 
       // NotFoundErrorが返されることを確認
-      expect(result.success).toBe(false);
-      if (!result.success) {
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
         expect(result.error).toBeInstanceOf(NotFoundError);
         expect(result.error.message).toBe("プロジェクトが見つかりませんでした");
       }
@@ -325,8 +315,8 @@ describe("DeleteProjectUseCaseのミディアムテスト", () => {
       const projectAfterError = await projectRepository.findById({
         id: projectId,
       });
-      expect(projectAfterError.success).toBe(true);
-      if (projectAfterError.success) {
+      expect(projectAfterError.isOk()).toBe(true);
+      if (projectAfterError.isOk()) {
         expect(projectAfterError.data).toBeDefined();
         expect(projectAfterError.data?.name).toBe(
           "ロールバックテストプロジェクト",
@@ -340,13 +330,13 @@ describe("DeleteProjectUseCaseのミディアムテスト", () => {
       const todo2AfterError = await todoRepository.findById({
         id: todo2.id,
       });
-      expect(todo1AfterError.success).toBe(true);
-      if (todo1AfterError.success) {
+      expect(todo1AfterError.isOk()).toBe(true);
+      if (todo1AfterError.isOk()) {
         expect(todo1AfterError.data).toBeDefined();
         expect(todo1AfterError.data?.title).toBe("ロールバックテストTODO1");
       }
-      expect(todo2AfterError.success).toBe(true);
-      if (todo2AfterError.success) {
+      expect(todo2AfterError.isOk()).toBe(true);
+      if (todo2AfterError.isOk()) {
         expect(todo2AfterError.data).toBeDefined();
         expect(todo2AfterError.data?.title).toBe("ロールバックテストTODO2");
       }

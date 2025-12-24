@@ -1,8 +1,5 @@
 import { AttachmentStatus } from "./attachment-status.vo";
 
-// AttachmentStatusを再エクスポート
-export { AttachmentStatus };
-
 /**
  * Attachment コンストラクタのProps型
  */

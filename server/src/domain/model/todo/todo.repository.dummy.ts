@@ -10,7 +10,7 @@ import type {
   FindByProjectIdResult,
   RemoveResult,
 } from "./todo.repository";
-import type { TodoStatus } from "./todo.entity";
+import type { TodoStatus } from "./todo-status.vo";
 
 export type TodoRepositoryDummyProps = {
   todoIdReturnValue?: string | undefined;

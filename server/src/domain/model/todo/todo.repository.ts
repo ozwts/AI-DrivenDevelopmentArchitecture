@@ -1,6 +1,7 @@
 import { Result } from "@/util/result";
 import type { UnexpectedError } from "@/util/error-util";
-import type { Todo, TodoStatus } from "./todo.entity";
+import type { Todo } from "./todo.entity";
+import type { TodoStatus } from "./todo-status.vo";
 
 export type SaveResult = Result<void, UnexpectedError>;
 export type FindByIdResult = Result<Todo | undefined, UnexpectedError>;

@@ -1,6 +1,7 @@
 import { UnexpectedError } from "@/util/error-util";
 import type { TodoRepository } from "@/domain/model/todo/todo.repository";
-import type { Todo, TodoStatus } from "@/domain/model/todo/todo.entity";
+import type { Todo } from "@/domain/model/todo/todo.entity";
+import type { TodoStatus } from "@/domain/model/todo/todo-status.vo";
 import { Result } from "@/util/result";
 import type { UseCase } from "../interfaces";
 import type { Logger } from "@/application/port/logger";

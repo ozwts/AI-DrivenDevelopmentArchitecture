@@ -1,22 +1,14 @@
-import { beforeEach, describe, expect, it } from "vitest";
-import { ListUsersUseCase } from "./list-users-use-case";
-import type { UserRepository } from "@/domain/model/user/user.repository";
+import { describe, expect, test } from "vitest";
+import { ListUsersUseCaseImpl } from "./list-users-use-case";
 import { UserRepositoryDummy } from "@/domain/model/user/user.repository.dummy";
-import { userDummyFrom } from "@/domain/model/user/user.dummy";
+import { userDummyFrom } from "@/domain/model/user/user.entity.dummy";
 import { UnexpectedError } from "@/util/error-util";
+import { LoggerDummy } from "@/application/port/logger/dummy";
+import { Result } from "@/util/result";
 
 describe("ListUsersUseCase", () => {
-  let useCase: ListUsersUseCase;
-  let userRepository: UserRepository;
-
-  beforeEach(() => {
-    userRepository = new UserRepositoryDummy();
-    useCase = new ListUsersUseCase(userRepository);
-  });
-
   describe("正常系", () => {
-    it("全ユーザーを取得できる", async () => {
-      // Arrange
+    test("全ユーザーを取得できる", async () => {
       const user1 = userDummyFrom({
         id: "user-1",
         name: "User 1",
@@ -33,20 +25,17 @@ describe("ListUsersUseCase", () => {
         email: "user3@example.com",
       });
 
-      userRepository = new UserRepositoryDummy({
-        findAllReturnValue: {
-          success: true,
-          data: [user1, user2, user3],
-        },
+      const useCase = new ListUsersUseCaseImpl({
+        userRepository: new UserRepositoryDummy({
+          findAllReturnValue: Result.ok([user1, user2, user3]),
+        }),
+        logger: new LoggerDummy(),
       });
-      useCase = new ListUsersUseCase(userRepository);
 
-      // Act
       const result = await useCase.execute();
 
-      // Assert
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data).toHaveLength(3);
         expect(result.data.map((u) => u.id)).toContain("user-1");
         expect(result.data.map((u) => u.id)).toContain("user-2");
@@ -54,22 +43,18 @@ describe("ListUsersUseCase", () => {
       }
     });
 
-    it("ユーザーが0件の場合は空配列を返す", async () => {
-      // Arrange
-      userRepository = new UserRepositoryDummy({
-        findAllReturnValue: {
-          success: true,
-          data: [],
-        },
+    test("ユーザーが0件の場合は空配列を返す", async () => {
+      const useCase = new ListUsersUseCaseImpl({
+        userRepository: new UserRepositoryDummy({
+          findAllReturnValue: Result.ok([]),
+        }),
+        logger: new LoggerDummy(),
       });
-      useCase = new ListUsersUseCase(userRepository);
 
-      // Act
       const result = await useCase.execute();
 
-      // Assert
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data).toHaveLength(0);
         expect(result.data).toEqual([]);
       }
@@ -77,22 +62,18 @@ describe("ListUsersUseCase", () => {
   });
 
   describe("異常系", () => {
-    it("リポジトリがエラーを返す場合はUnexpectedErrorを返す", async () => {
-      // Arrange
-      userRepository = new UserRepositoryDummy({
-        findAllReturnValue: {
-          success: false,
-          error: new UnexpectedError(),
-        },
+    test("リポジトリがエラーを返す場合はUnexpectedErrorを返す", async () => {
+      const useCase = new ListUsersUseCaseImpl({
+        userRepository: new UserRepositoryDummy({
+          findAllReturnValue: Result.err(new UnexpectedError()),
+        }),
+        logger: new LoggerDummy(),
       });
-      useCase = new ListUsersUseCase(userRepository);
 
-      // Act
       const result = await useCase.execute();
 
-      // Assert
-      expect(result.success).toBe(false);
-      if (!result.success) {
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
         expect(result.error).toBeInstanceOf(UnexpectedError);
       }
     });

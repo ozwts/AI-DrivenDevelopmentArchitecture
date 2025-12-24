@@ -1,11 +1,11 @@
 import { test, expect, describe } from "vitest";
 import { UpdateProjectUseCaseImpl } from "./update-project-use-case";
 import { ProjectRepositoryDummy } from "@/domain/model/project/project.repository.dummy";
-import { projectDummyFrom } from "@/domain/model/project/project.dummy";
-import { ProjectColor } from "@/domain/model/project/project-color";
+import { projectDummyFrom } from "@/domain/model/project/project.entity.dummy";
 import { LoggerDummy } from "@/application/port/logger/dummy";
 import { buildFetchNowDummy } from "@/application/port/fetch-now/dummy";
 import { UnexpectedError, NotFoundError } from "@/util/error-util";
+import { Result } from "@/util/result";
 
 describe("UpdateProjectUseCaseのテスト", () => {
   const now = new Date("2024-01-01T00:00:00+09:00");
@@ -14,26 +14,17 @@ describe("UpdateProjectUseCaseのテスト", () => {
 
   describe("execute", () => {
     test("プロジェクト名を更新できること", async () => {
-      const colorResult = ProjectColor.fromString("#FF5733");
-      if (!colorResult.success) throw colorResult.error;
-
       const existingProject = projectDummyFrom({
         id: "project-1",
         name: "古い名前",
-        color: colorResult.data,
+        color: "#FF5733",
         createdAt: now.toISOString(),
       });
 
       const updateProjectUseCase = new UpdateProjectUseCaseImpl({
         projectRepository: new ProjectRepositoryDummy({
-          findByIdReturnValue: {
-            success: true,
-            data: existingProject,
-          },
-          saveReturnValue: {
-            success: true,
-            data: undefined,
-          },
+          findByIdReturnValue: Result.ok(existingProject),
+          saveReturnValue: Result.ok(undefined),
         }),
         logger: new LoggerDummy(),
         fetchNow,
@@ -44,31 +35,22 @@ describe("UpdateProjectUseCaseのテスト", () => {
         name: "新しい名前",
       });
 
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data.name).toBe("新しい名前");
       }
     });
 
     test("プロジェクトカラーを更新できること", async () => {
-      const oldColorResult = ProjectColor.fromString("#FF5733");
-      if (!oldColorResult.success) throw oldColorResult.error;
-
       const existingProject = projectDummyFrom({
         id: "project-2",
-        color: oldColorResult.data,
+        color: "#FF5733",
       });
 
       const updateProjectUseCase = new UpdateProjectUseCaseImpl({
         projectRepository: new ProjectRepositoryDummy({
-          findByIdReturnValue: {
-            success: true,
-            data: existingProject,
-          },
-          saveReturnValue: {
-            success: true,
-            data: undefined,
-          },
+          findByIdReturnValue: Result.ok(existingProject),
+          saveReturnValue: Result.ok(undefined),
         }),
         logger: new LoggerDummy(),
         fetchNow,
@@ -79,33 +61,24 @@ describe("UpdateProjectUseCaseのテスト", () => {
         color: "#3498DB",
       });
 
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.data.color.value).toBe("#3498DB");
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
+        expect(result.data.color).toBe("#3498DB");
       }
     });
 
     test("複数のフィールドを同時に更新できること", async () => {
-      const colorResult = ProjectColor.fromString("#FF5733");
-      if (!colorResult.success) throw colorResult.error;
-
       const existingProject = projectDummyFrom({
         id: "project-3",
         name: "古い名前",
         description: "古い説明",
-        color: colorResult.data,
+        color: "#FF5733",
       });
 
       const updateProjectUseCase = new UpdateProjectUseCaseImpl({
         projectRepository: new ProjectRepositoryDummy({
-          findByIdReturnValue: {
-            success: true,
-            data: existingProject,
-          },
-          saveReturnValue: {
-            success: true,
-            data: undefined,
-          },
+          findByIdReturnValue: Result.ok(existingProject),
+          saveReturnValue: Result.ok(undefined),
         }),
         logger: new LoggerDummy(),
         fetchNow,
@@ -118,21 +91,18 @@ describe("UpdateProjectUseCaseのテスト", () => {
         color: "#E74C3C",
       });
 
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data.name).toBe("新しい名前");
         expect(result.data.description).toBe("新しい説明");
-        expect(result.data.color.value).toBe("#E74C3C");
+        expect(result.data.color).toBe("#E74C3C");
       }
     });
 
     test("プロジェクトが見つからない場合はNotFoundErrorを返すこと", async () => {
       const updateProjectUseCase = new UpdateProjectUseCaseImpl({
         projectRepository: new ProjectRepositoryDummy({
-          findByIdReturnValue: {
-            success: true,
-            data: undefined,
-          },
+          findByIdReturnValue: Result.ok(undefined),
         }),
         logger: new LoggerDummy(),
         fetchNow,
@@ -143,8 +113,8 @@ describe("UpdateProjectUseCaseのテスト", () => {
         name: "新しい名前",
       });
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
         expect(result.error).toBeInstanceOf(NotFoundError);
         expect(result.error.message).toBe("プロジェクトが見つかりませんでした");
       }
@@ -153,10 +123,7 @@ describe("UpdateProjectUseCaseのテスト", () => {
     test("findByIdでエラーが発生した場合はそのエラーを返すこと", async () => {
       const updateProjectUseCase = new UpdateProjectUseCaseImpl({
         projectRepository: new ProjectRepositoryDummy({
-          findByIdReturnValue: {
-            success: false,
-            error: new UnexpectedError(),
-          },
+          findByIdReturnValue: Result.err(new UnexpectedError()),
         }),
         logger: new LoggerDummy(),
         fetchNow,
@@ -167,8 +134,8 @@ describe("UpdateProjectUseCaseのテスト", () => {
         name: "新しい名前",
       });
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
         expect(result.error).toBeInstanceOf(UnexpectedError);
       }
     });
@@ -180,14 +147,8 @@ describe("UpdateProjectUseCaseのテスト", () => {
 
       const updateProjectUseCase = new UpdateProjectUseCaseImpl({
         projectRepository: new ProjectRepositoryDummy({
-          findByIdReturnValue: {
-            success: true,
-            data: existingProject,
-          },
-          saveReturnValue: {
-            success: false,
-            error: new UnexpectedError(),
-          },
+          findByIdReturnValue: Result.ok(existingProject),
+          saveReturnValue: Result.err(new UnexpectedError()),
         }),
         logger: new LoggerDummy(),
         fetchNow,
@@ -198,8 +159,8 @@ describe("UpdateProjectUseCaseのテスト", () => {
         name: "新しい名前",
       });
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
         expect(result.error).toBeInstanceOf(UnexpectedError);
       }
     });
@@ -214,14 +175,8 @@ describe("UpdateProjectUseCaseのテスト", () => {
 
       const updateProjectUseCase = new UpdateProjectUseCaseImpl({
         projectRepository: new ProjectRepositoryDummy({
-          findByIdReturnValue: {
-            success: true,
-            data: existingProject,
-          },
-          saveReturnValue: {
-            success: true,
-            data: undefined,
-          },
+          findByIdReturnValue: Result.ok(existingProject),
+          saveReturnValue: Result.ok(undefined),
         }),
         logger: new LoggerDummy(),
         fetchNow,
@@ -232,8 +187,8 @@ describe("UpdateProjectUseCaseのテスト", () => {
         name: "新しい名前",
       });
 
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data.createdAt).toBe(createdAt);
         expect(result.data.updatedAt).not.toBe(createdAt);
       }

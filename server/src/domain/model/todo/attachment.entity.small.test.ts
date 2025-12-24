@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { AttachmentStatus } from "./attachment-status.vo";
 import { attachmentDummyFrom } from "./attachment.entity.dummy";
-import { attachmentStatusDummyFrom } from "./attachment-status.vo.dummy";
 
 describe("Attachment", () => {
   describe("constructor", () => {

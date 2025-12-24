@@ -49,8 +49,8 @@ describe("DeleteProjectUseCaseのテスト", () => {
         projectId: "project-1",
       });
 
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data).toBeUndefined();
       }
     });
@@ -76,8 +76,8 @@ describe("DeleteProjectUseCaseのテスト", () => {
         projectId: "non-existent-id",
       });
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
         expect(result.error).toBeInstanceOf(NotFoundError);
         expect(result.error.message).toBe("プロジェクトが見つかりませんでした");
       }
@@ -104,8 +104,8 @@ describe("DeleteProjectUseCaseのテスト", () => {
         projectId: "project-2",
       });
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
         expect(result.error).toBeInstanceOf(UnexpectedError);
       }
     });
@@ -137,8 +137,8 @@ describe("DeleteProjectUseCaseのテスト", () => {
         projectId: "project-3",
       });
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
         expect(result.error).toBeInstanceOf(UnexpectedError);
       }
     });
@@ -175,8 +175,8 @@ describe("DeleteProjectUseCaseのテスト", () => {
         projectId: "project-4",
       });
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
         expect(result.error).toBeInstanceOf(UnexpectedError);
       }
     });
@@ -209,8 +209,8 @@ describe("DeleteProjectUseCaseのテスト", () => {
         projectId: "project-5",
       });
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
         expect(result.error).toBeInstanceOf(UnexpectedError);
       }
     });
@@ -244,7 +244,7 @@ describe("DeleteProjectUseCaseのテスト", () => {
         projectId: "project-6",
       });
 
-      expect(result.success).toBe(true);
+      expect(result.isOk()).toBe(true);
     });
   });
 });

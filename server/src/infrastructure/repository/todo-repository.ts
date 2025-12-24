@@ -19,11 +19,8 @@ import {
   type FindByProjectIdResult,
   type TodoRepository,
 } from "@/domain/model/todo/todo.repository";
-import {
-  Todo,
-  TodoStatus,
-  type TodoPriority,
-} from "@/domain/model/todo/todo.entity";
+import { Todo, type TodoPriority } from "@/domain/model/todo/todo.entity";
+import { TodoStatus } from "@/domain/model/todo/todo-status.vo";
 import { Attachment } from "@/domain/model/todo/attachment.entity";
 import { AttachmentStatus } from "@/domain/model/todo/attachment-status.vo";
 import { UnexpectedError } from "@/util/error-util";
@@ -369,7 +366,7 @@ export class TodoRepositoryImpl implements TodoRepository {
             "#status": "status",
           },
           ExpressionAttributeValues: {
-            ":status": props.status,
+            ":status": props.status.status,
           },
         },
       );

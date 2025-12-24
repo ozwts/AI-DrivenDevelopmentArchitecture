@@ -1,4 +1,5 @@
-import { Todo, TodoStatus, type TodoPriority } from "./todo.entity";
+import { Todo, type TodoPriority } from "./todo.entity";
+import { TodoStatus } from "./todo-status.vo";
 import type { Attachment } from "./attachment.entity";
 import { todoStatusDummyFrom } from "./todo-status.vo.dummy";
 import {

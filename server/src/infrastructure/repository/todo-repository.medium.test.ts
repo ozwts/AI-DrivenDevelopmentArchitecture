@@ -11,8 +11,10 @@ import { LoggerDummy } from "@/application/port/logger/dummy";
 import { TodoRepositoryImpl } from "./todo-repository";
 import type { TodoRepository } from "@/domain/model/todo/todo.repository";
 import { Todo } from "@/domain/model/todo/todo.entity";
-import { todoDummyFrom } from "@/domain/model/todo/todo.dummy";
-import { attachmentDummyFrom } from "@/domain/model/attachment/attachment.dummy";
+import { TodoStatus } from "@/domain/model/todo/todo-status.vo";
+import { todoDummyFrom } from "@/domain/model/todo/todo.entity.dummy";
+import { attachmentDummyFrom } from "@/domain/model/todo/attachment.entity.dummy";
+import { AttachmentStatus } from "@/domain/model/todo/attachment-status.vo";
 
 const { ddb, ddbDoc } = buildDdbClients();
 const todosTableName = getRandomIdentifier();
@@ -93,7 +95,7 @@ describe("TodoRepositoryImpl", () => {
         id: todoId,
         title: "要件定義書の作成",
         description: "顧客要件をまとめた要件定義書を作成する",
-        status: "IN_PROGRESS",
+        status: TodoStatus.inProgress(),
         priority: "HIGH",
         dueDate: "2024-01-31T23:59:59.999+09:00",
         createdAt: "2024-01-01T00:00:00.000+09:00",
@@ -101,17 +103,14 @@ describe("TodoRepositoryImpl", () => {
       });
 
       const saveResult = await todoRepository.save({ todo });
-      expect(saveResult).toStrictEqual({
-        success: true,
-        data: undefined,
-      });
+      expect(saveResult.isOk()).toBe(true);
 
       // 2. 保存したTODOを取得して確認
       const findResult = await todoRepository.findById({
         id: todoId,
       });
-      expect(findResult.success).toBe(true);
-      if (findResult.success) {
+      expect(findResult.isOk()).toBe(true);
+      if (findResult.isOk()) {
         expect(findResult.data).toStrictEqual(todo);
       }
     });
@@ -123,26 +122,23 @@ describe("TodoRepositoryImpl", () => {
       const todo = todoDummyFrom({
         id: todoId,
         title: "最小限TODO",
-        status: "TODO",
+        status: TodoStatus.todo(),
         priority: "MEDIUM",
         createdAt: "2024-01-02T00:00:00.000+09:00",
         updatedAt: "2024-01-02T00:00:00.000+09:00",
       });
 
       const saveResult = await todoRepository.save({ todo });
-      expect(saveResult).toStrictEqual({
-        success: true,
-        data: undefined,
-      });
+      expect(saveResult.isOk()).toBe(true);
 
       const findResult = await todoRepository.findById({
         id: todoId,
       });
-      expect(findResult.success).toBe(true);
-      if (findResult.success) {
+      expect(findResult.isOk()).toBe(true);
+      if (findResult.isOk()) {
         expect(findResult.data).toStrictEqual(todo);
         // デフォルト値の確認
-        expect(findResult.data?.status).toBe("TODO");
+        expect(findResult.data?.status.isTodo()).toBe(true);
         expect(findResult.data?.priority).toBe("MEDIUM");
       }
     });
@@ -154,7 +150,7 @@ describe("TodoRepositoryImpl", () => {
       const originalTodo = todoDummyFrom({
         id: todoId,
         title: "元のTODO",
-        status: "TODO",
+        status: TodoStatus.todo(),
         createdAt: "2024-01-03T00:00:00.000+09:00",
         updatedAt: "2024-01-03T00:00:00.000+09:00",
       });
@@ -162,24 +158,18 @@ describe("TodoRepositoryImpl", () => {
       await todoRepository.save({ todo: originalTodo });
 
       // ステータスを変更
-      const updatedTodo = originalTodo.changeStatus(
-        "IN_PROGRESS",
-        "2024-01-03T12:00:00.000+09:00",
-      );
+      const updatedTodo = originalTodo.start("2024-01-03T12:00:00.000+09:00");
 
       const updateResult = await todoRepository.save({ todo: updatedTodo });
-      expect(updateResult).toStrictEqual({
-        success: true,
-        data: undefined,
-      });
+      expect(updateResult.isOk()).toBe(true);
 
       const findResult = await todoRepository.findById({
         id: todoId,
       });
-      expect(findResult.success).toBe(true);
-      if (findResult.success) {
+      expect(findResult.isOk()).toBe(true);
+      if (findResult.isOk()) {
         expect(findResult.data).toStrictEqual(updatedTodo);
-        expect(findResult.data?.status).toBe("IN_PROGRESS");
+        expect(findResult.data?.status.isInProgress()).toBe(true);
         expect(findResult.data?.updatedAt).toBe(
           "2024-01-03T12:00:00.000+09:00",
         );
@@ -199,7 +189,7 @@ describe("TodoRepositoryImpl", () => {
         storageKey: `attachments/${todoId}/${attachmentId1}`,
         contentType: "application/pdf",
         fileSize: 1024,
-        status: "UPLOADED",
+        status: AttachmentStatus.uploaded(),
         uploadedBy: "user-sub-123",
         createdAt: "2024-01-03T10:00:00.000+09:00",
         updatedAt: "2024-01-03T10:00:00.000+09:00",
@@ -211,7 +201,7 @@ describe("TodoRepositoryImpl", () => {
         storageKey: `attachments/${todoId}/${attachmentId2}`,
         contentType: "image/png",
         fileSize: 2048,
-        status: "UPLOADED",
+        status: AttachmentStatus.uploaded(),
         uploadedBy: "user-sub-123",
         createdAt: "2024-01-03T10:01:00.000+09:00",
         updatedAt: "2024-01-03T10:01:00.000+09:00",
@@ -220,7 +210,7 @@ describe("TodoRepositoryImpl", () => {
       const todo = todoDummyFrom({
         id: todoId,
         title: "添付ファイル付きTODO",
-        status: "TODO",
+        status: TodoStatus.todo(),
         attachments: [attachment1, attachment2],
         createdAt: "2024-01-03T10:00:00.000+09:00",
         updatedAt: "2024-01-03T10:00:00.000+09:00",
@@ -228,17 +218,14 @@ describe("TodoRepositoryImpl", () => {
 
       // 保存
       const saveResult = await todoRepository.save({ todo });
-      expect(saveResult).toStrictEqual({
-        success: true,
-        data: undefined,
-      });
+      expect(saveResult.isOk()).toBe(true);
 
       // 取得して添付ファイルが復元されることを確認
       const findResult = await todoRepository.findById({
         id: todoId,
       });
-      expect(findResult.success).toBe(true);
-      if (findResult.success) {
+      expect(findResult.isOk()).toBe(true);
+      if (findResult.isOk()) {
         expect(findResult.data?.id).toBe(todo.id);
         expect(findResult.data?.title).toBe(todo.title);
         expect(findResult.data?.attachments).toHaveLength(2);
@@ -266,7 +253,7 @@ describe("TodoRepositoryImpl", () => {
         storageKey: `attachments/${todoId}/${attachmentId1}`,
         contentType: "application/pdf",
         fileSize: 1024,
-        status: "UPLOADED",
+        status: AttachmentStatus.uploaded(),
         uploadedBy: "user-sub-123",
         createdAt: "2024-01-06T10:00:00.000+09:00",
         updatedAt: "2024-01-06T10:00:00.000+09:00",
@@ -278,7 +265,7 @@ describe("TodoRepositoryImpl", () => {
         storageKey: `attachments/${todoId}/${attachmentId2}`,
         contentType: "image/png",
         fileSize: 2048,
-        status: "UPLOADED",
+        status: AttachmentStatus.uploaded(),
         uploadedBy: "user-sub-123",
         createdAt: "2024-01-06T10:01:00.000+09:00",
         updatedAt: "2024-01-06T10:01:00.000+09:00",
@@ -287,7 +274,7 @@ describe("TodoRepositoryImpl", () => {
       const todoWithTwoAttachments = todoDummyFrom({
         id: todoId,
         title: "添付ファイル削除テスト",
-        status: "TODO",
+        status: TodoStatus.todo(),
         attachments: [attachment1, attachment2],
         createdAt: "2024-01-06T10:00:00.000+09:00",
         updatedAt: "2024-01-06T10:00:00.000+09:00",
@@ -295,8 +282,8 @@ describe("TodoRepositoryImpl", () => {
 
       await todoRepository.save({ todo: todoWithTwoAttachments });
 
-      // 2. 1つの添付ファイルを削除（removeAttachmentメソッド使用）
-      const todoWithOneAttachment = todoWithTwoAttachments.removeAttachment(
+      // 2. 1つの添付ファイルを削除（detachメソッド使用）
+      const todoWithOneAttachment = todoWithTwoAttachments.detach(
         attachmentId1,
         "2024-01-06T11:00:00.000+09:00",
       );
@@ -304,15 +291,12 @@ describe("TodoRepositoryImpl", () => {
       const updateResult = await todoRepository.save({
         todo: todoWithOneAttachment,
       });
-      expect(updateResult).toStrictEqual({
-        success: true,
-        data: undefined,
-      });
+      expect(updateResult.isOk()).toBe(true);
 
       // 3. DBから取得して、削除された添付ファイルが存在しないことを確認
       const findResult = await todoRepository.findById({ id: todoId });
-      expect(findResult.success).toBe(true);
-      if (findResult.success) {
+      expect(findResult.isOk()).toBe(true);
+      if (findResult.isOk()) {
         expect(findResult.data?.attachments).toHaveLength(1);
         expect(findResult.data?.attachments[0].id).toBe(attachmentId2);
         expect(findResult.data?.attachments[0].fileName).toBe("file2.png");
@@ -337,7 +321,7 @@ describe("TodoRepositoryImpl", () => {
         storageKey: `attachments/${todoId}/${attachmentId1}`,
         contentType: "application/pdf",
         fileSize: 1024,
-        status: "UPLOADED",
+        status: AttachmentStatus.uploaded(),
         uploadedBy: "user-sub-123",
         createdAt: "2024-01-07T10:00:00.000+09:00",
         updatedAt: "2024-01-07T10:00:00.000+09:00",
@@ -346,7 +330,7 @@ describe("TodoRepositoryImpl", () => {
       const todoWithOneAttachment = todoDummyFrom({
         id: todoId,
         title: "添付ファイル追加テスト",
-        status: "TODO",
+        status: TodoStatus.todo(),
         attachments: [attachment1],
         createdAt: "2024-01-07T10:00:00.000+09:00",
         updatedAt: "2024-01-07T10:00:00.000+09:00",
@@ -361,29 +345,26 @@ describe("TodoRepositoryImpl", () => {
         storageKey: `attachments/${todoId}/${attachmentId2}`,
         contentType: "image/png",
         fileSize: 2048,
-        status: "UPLOADED",
+        status: AttachmentStatus.uploaded(),
         uploadedBy: "user-sub-123",
         createdAt: "2024-01-07T11:00:00.000+09:00",
         updatedAt: "2024-01-07T11:00:00.000+09:00",
       });
 
-      const todoWithTwoAttachments = todoWithOneAttachment.update({
-        attachments: [attachment1, attachment2],
-        updatedAt: "2024-01-07T11:00:00.000+09:00",
-      });
+      const todoWithTwoAttachments = todoWithOneAttachment.attach(
+        attachment2,
+        "2024-01-07T11:00:00.000+09:00",
+      );
 
       const updateResult = await todoRepository.save({
         todo: todoWithTwoAttachments,
       });
-      expect(updateResult).toStrictEqual({
-        success: true,
-        data: undefined,
-      });
+      expect(updateResult.isOk()).toBe(true);
 
       // 3. DBから取得して、新しい添付ファイルが追加されていることを確認
       const findResult = await todoRepository.findById({ id: todoId });
-      expect(findResult.success).toBe(true);
-      if (findResult.success) {
+      expect(findResult.isOk()).toBe(true);
+      if (findResult.isOk()) {
         expect(findResult.data?.attachments).toHaveLength(2);
         expect(findResult.data?.attachments).toEqual(
           expect.arrayContaining([
@@ -407,7 +388,7 @@ describe("TodoRepositoryImpl", () => {
         storageKey: `attachments/${todoId}/${attachmentId}`,
         contentType: "application/pdf",
         fileSize: 1024,
-        status: "UPLOADED",
+        status: AttachmentStatus.uploaded(),
         uploadedBy: "user-sub-123",
         createdAt: "2024-01-08T10:00:00.000+09:00",
         updatedAt: "2024-01-08T10:00:00.000+09:00",
@@ -416,7 +397,7 @@ describe("TodoRepositoryImpl", () => {
       const todoWithAttachment = todoDummyFrom({
         id: todoId,
         title: "全添付ファイル削除テスト",
-        status: "TODO",
+        status: TodoStatus.todo(),
         attachments: [attachment],
         createdAt: "2024-01-08T10:00:00.000+09:00",
         updatedAt: "2024-01-08T10:00:00.000+09:00",
@@ -425,7 +406,7 @@ describe("TodoRepositoryImpl", () => {
       await todoRepository.save({ todo: todoWithAttachment });
 
       // 2. 全ての添付ファイルを削除
-      const todoWithoutAttachments = todoWithAttachment.removeAttachment(
+      const todoWithoutAttachments = todoWithAttachment.detach(
         attachmentId,
         "2024-01-08T11:00:00.000+09:00",
       );
@@ -433,15 +414,12 @@ describe("TodoRepositoryImpl", () => {
       const updateResult = await todoRepository.save({
         todo: todoWithoutAttachments,
       });
-      expect(updateResult).toStrictEqual({
-        success: true,
-        data: undefined,
-      });
+      expect(updateResult.isOk()).toBe(true);
 
       // 3. DBから取得して、添付ファイルが空配列であることを確認
       const findResult = await todoRepository.findById({ id: todoId });
-      expect(findResult.success).toBe(true);
-      if (findResult.success) {
+      expect(findResult.isOk()).toBe(true);
+      if (findResult.isOk()) {
         expect(findResult.data?.attachments).toHaveLength(0);
         expect(findResult.data?.attachments).toEqual([]);
       }
@@ -460,7 +438,7 @@ describe("TodoRepositoryImpl", () => {
         storageKey: `attachments/${todoId}/${attachmentId}`,
         contentType: "application/pdf",
         fileSize: 1024,
-        status: "PREPARED",
+        status: AttachmentStatus.prepared(),
         uploadedBy: "user-sub-123",
         createdAt: "2024-01-09T10:00:00.000+09:00",
         updatedAt: "2024-01-09T10:00:00.000+09:00",
@@ -469,7 +447,7 @@ describe("TodoRepositoryImpl", () => {
       const todoWithPreparedAttachment = todoDummyFrom({
         id: todoId,
         title: "添付ファイルステータス更新テスト",
-        status: "TODO",
+        status: TodoStatus.todo(),
         attachments: [preparedAttachment],
         createdAt: "2024-01-09T10:00:00.000+09:00",
         updatedAt: "2024-01-09T10:00:00.000+09:00",
@@ -478,32 +456,27 @@ describe("TodoRepositoryImpl", () => {
       await todoRepository.save({ todo: todoWithPreparedAttachment });
 
       // 2. 添付ファイルのステータスをUPLOADEDに更新
-      const uploadedAttachment = attachmentDummyFrom({
-        ...preparedAttachment,
-        status: "UPLOADED",
-        updatedAt: "2024-01-09T11:00:00.000+09:00",
-      });
+      const uploadedAttachment = preparedAttachment.markAsUploaded(
+        "2024-01-09T11:00:00.000+09:00",
+      );
 
-      const todoWithUploadedAttachment = todoWithPreparedAttachment.update({
-        attachments: [uploadedAttachment],
-        updatedAt: "2024-01-09T11:00:00.000+09:00",
-      });
+      const todoWithUploadedAttachment = todoWithPreparedAttachment.replaceAttachment(
+        uploadedAttachment,
+        "2024-01-09T11:00:00.000+09:00",
+      );
 
       const updateResult = await todoRepository.save({
         todo: todoWithUploadedAttachment,
       });
-      expect(updateResult).toStrictEqual({
-        success: true,
-        data: undefined,
-      });
+      expect(updateResult.isOk()).toBe(true);
 
       // 3. DBから取得して、ステータスが更新されていることを確認
       const findResult = await todoRepository.findById({ id: todoId });
-      expect(findResult.success).toBe(true);
-      if (findResult.success) {
+      expect(findResult.isOk()).toBe(true);
+      if (findResult.isOk()) {
         expect(findResult.data?.attachments).toHaveLength(1);
         expect(findResult.data?.attachments[0].id).toBe(attachmentId);
-        expect(findResult.data?.attachments[0].status).toBe("UPLOADED");
+        expect(findResult.data?.attachments[0].status.isUploaded()).toBe(true);
         expect(findResult.data?.attachments[0].updatedAt).toBe(
           "2024-01-09T11:00:00.000+09:00",
         );
@@ -544,10 +517,10 @@ describe("TodoRepositoryImpl", () => {
       const findResult = await todoRepository.findById({
         id: todoId,
       });
-      expect(findResult).toStrictEqual({
-        success: true,
-        data: todo,
-      });
+      expect(findResult.isOk()).toBe(true);
+      if (findResult.isOk()) {
+        expect(findResult.data).toStrictEqual(todo);
+      }
     });
 
     test("[正常系] 存在しないTodoを検索するとundefinedを返す", async () => {
@@ -556,10 +529,10 @@ describe("TodoRepositoryImpl", () => {
       const findResult = await todoRepository.findById({
         id: "non-existent-id",
       });
-      expect(findResult).toStrictEqual({
-        success: true,
-        data: undefined,
-      });
+      expect(findResult.isOk()).toBe(true);
+      if (findResult.isOk()) {
+        expect(findResult.data).toBeUndefined();
+      }
     });
 
     test("[正常系] 添付ファイル付きTodoをIDで取得する", async () => {
@@ -574,7 +547,7 @@ describe("TodoRepositoryImpl", () => {
         storageKey: `attachments/${todoId}/${attachmentId}`,
         contentType: "application/pdf",
         fileSize: 2048,
-        status: "UPLOADED",
+        status: AttachmentStatus.uploaded(),
         uploadedBy: "user-sub-456",
         createdAt: "2024-01-04T10:00:00.000+09:00",
         updatedAt: "2024-01-04T10:00:00.000+09:00",
@@ -593,8 +566,8 @@ describe("TodoRepositoryImpl", () => {
       const findResult = await todoRepository.findById({
         id: todoId,
       });
-      expect(findResult.success).toBe(true);
-      if (findResult.success) {
+      expect(findResult.isOk()).toBe(true);
+      if (findResult.isOk()) {
         expect(findResult.data?.id).toBe(todo.id);
         expect(findResult.data?.title).toBe(todo.title);
         expect(findResult.data?.attachments).toHaveLength(1);
@@ -627,8 +600,8 @@ describe("TodoRepositoryImpl", () => {
       await todoRepository.save({ todo: todo2 });
 
       const findAllResult = await todoRepository.findAll();
-      expect(findAllResult.success).toBe(true);
-      if (findAllResult.success) {
+      expect(findAllResult.isOk()).toBe(true);
+      if (findAllResult.isOk()) {
         expect(findAllResult.data).toHaveLength(2);
         expect(findAllResult.data.map((t: Todo) => t.id)).toContain(todo1.id);
         expect(findAllResult.data.map((t: Todo) => t.id)).toContain(todo2.id);
@@ -648,7 +621,7 @@ describe("TodoRepositoryImpl", () => {
         storageKey: `attachments/${todoId1}/${attachmentId}`,
         contentType: "application/pdf",
         fileSize: 1024,
-        status: "UPLOADED",
+        status: AttachmentStatus.uploaded(),
         uploadedBy: "user-sub-123",
         createdAt: "2024-01-10T00:00:00.000+09:00",
         updatedAt: "2024-01-10T00:00:00.000+09:00",
@@ -673,8 +646,8 @@ describe("TodoRepositoryImpl", () => {
       await todoRepository.save({ todo: todo2 });
 
       const findAllResult = await todoRepository.findAll();
-      expect(findAllResult.success).toBe(true);
-      if (findAllResult.success) {
+      expect(findAllResult.isOk()).toBe(true);
+      if (findAllResult.isOk()) {
         expect(findAllResult.data).toHaveLength(2);
         const foundTodo1 = findAllResult.data.find(
           (t: Todo) => t.id === todoId1,
@@ -692,10 +665,10 @@ describe("TodoRepositoryImpl", () => {
       const { todoRepository } = setUpDependencies();
 
       const findAllResult = await todoRepository.findAll();
-      expect(findAllResult).toStrictEqual({
-        success: true,
-        data: [],
-      });
+      expect(findAllResult.isOk()).toBe(true);
+      if (findAllResult.isOk()) {
+        expect(findAllResult.data).toEqual([]);
+      }
     });
   });
 
@@ -706,14 +679,14 @@ describe("TodoRepositoryImpl", () => {
       const todo1 = todoDummyFrom({
         id: todoRepository.todoId(),
         title: "TODO状態のタスク",
-        status: "TODO",
+        status: TodoStatus.todo(),
         createdAt: "2024-01-11T00:00:00.000+09:00",
         updatedAt: "2024-01-11T00:00:00.000+09:00",
       });
       const todo2 = todoDummyFrom({
         id: todoRepository.todoId(),
         title: "IN_PROGRESS状態のタスク",
-        status: "IN_PROGRESS",
+        status: TodoStatus.inProgress(),
         createdAt: "2024-01-11T01:00:00.000+09:00",
         updatedAt: "2024-01-11T01:00:00.000+09:00",
       });
@@ -721,12 +694,12 @@ describe("TodoRepositoryImpl", () => {
       await todoRepository.save({ todo: todo1 });
       await todoRepository.save({ todo: todo2 });
 
-      const findResult = await todoRepository.findByStatus({ status: "TODO" });
-      expect(findResult.success).toBe(true);
-      if (findResult.success) {
+      const findResult = await todoRepository.findByStatus({ status: TodoStatus.todo() });
+      expect(findResult.isOk()).toBe(true);
+      if (findResult.isOk()) {
         expect(findResult.data).toHaveLength(1);
         expect(findResult.data[0].id).toBe(todo1.id);
-        expect(findResult.data[0].status).toBe("TODO");
+        expect(findResult.data[0].status.isTodo()).toBe(true);
       }
     });
 
@@ -742,7 +715,7 @@ describe("TodoRepositoryImpl", () => {
         storageKey: `attachments/${todoId}/${attachmentId}`,
         contentType: "application/pdf",
         fileSize: 1024,
-        status: "UPLOADED",
+        status: AttachmentStatus.uploaded(),
         uploadedBy: "user-sub-789",
         createdAt: "2024-01-11T10:00:00.000+09:00",
         updatedAt: "2024-01-11T10:00:00.000+09:00",
@@ -751,7 +724,7 @@ describe("TodoRepositoryImpl", () => {
       const todo = todoDummyFrom({
         id: todoId,
         title: "ステータス検索用添付ファイル付きTODO",
-        status: "IN_PROGRESS",
+        status: TodoStatus.inProgress(),
         attachments: [attachment],
         createdAt: "2024-01-11T10:00:00.000+09:00",
         updatedAt: "2024-01-11T10:00:00.000+09:00",
@@ -760,10 +733,10 @@ describe("TodoRepositoryImpl", () => {
       await todoRepository.save({ todo });
 
       const findResult = await todoRepository.findByStatus({
-        status: "IN_PROGRESS",
+        status: TodoStatus.inProgress(),
       });
-      expect(findResult.success).toBe(true);
-      if (findResult.success) {
+      expect(findResult.isOk()).toBe(true);
+      if (findResult.isOk()) {
         const foundTodo = findResult.data.find((t: Todo) => t.id === todoId);
         expect(foundTodo?.attachments).toHaveLength(1);
         expect(foundTodo?.attachments[0].id).toBe(attachment.id);
@@ -803,8 +776,8 @@ describe("TodoRepositoryImpl", () => {
       await todoRepository.save({ todo: todo3 });
 
       const findResult = await todoRepository.findByProjectId({ projectId });
-      expect(findResult.success).toBe(true);
-      if (findResult.success) {
+      expect(findResult.isOk()).toBe(true);
+      if (findResult.isOk()) {
         expect(findResult.data).toHaveLength(2);
         expect(findResult.data.map((t: Todo) => t.id)).toContain(todo1.id);
         expect(findResult.data.map((t: Todo) => t.id)).toContain(todo2.id);
@@ -824,7 +797,7 @@ describe("TodoRepositoryImpl", () => {
         storageKey: `attachments/${todoId}/${attachmentId}`,
         contentType: "application/pdf",
         fileSize: 3072,
-        status: "UPLOADED",
+        status: AttachmentStatus.uploaded(),
         uploadedBy: "user-sub-012",
         createdAt: "2024-01-12T10:00:00.000+09:00",
         updatedAt: "2024-01-12T10:00:00.000+09:00",
@@ -842,8 +815,8 @@ describe("TodoRepositoryImpl", () => {
       await todoRepository.save({ todo });
 
       const findResult = await todoRepository.findByProjectId({ projectId });
-      expect(findResult.success).toBe(true);
-      if (findResult.success) {
+      expect(findResult.isOk()).toBe(true);
+      if (findResult.isOk()) {
         const foundTodo = findResult.data.find((t: Todo) => t.id === todoId);
         expect(foundTodo?.attachments).toHaveLength(1);
         expect(foundTodo?.attachments[0].id).toBe(attachment.id);
@@ -868,18 +841,15 @@ describe("TodoRepositoryImpl", () => {
       const removeResult = await todoRepository.remove({
         id: todoId,
       });
-      expect(removeResult).toStrictEqual({
-        success: true,
-        data: undefined,
-      });
+      expect(removeResult.isOk()).toBe(true);
 
       const findResult = await todoRepository.findById({
         id: todoId,
       });
-      expect(findResult).toStrictEqual({
-        success: true,
-        data: undefined,
-      });
+      expect(findResult.isOk()).toBe(true);
+      if (findResult.isOk()) {
+        expect(findResult.data).toBeUndefined();
+      }
     });
   });
 });

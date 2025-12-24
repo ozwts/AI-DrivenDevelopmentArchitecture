@@ -3,7 +3,8 @@ import { GetUserUseCaseImpl } from "./get-user-use-case";
 import { UserRepositoryDummy } from "@/domain/model/user/user.repository.dummy";
 import { LoggerDummy } from "@/application/port/logger/dummy";
 import { UnexpectedError, NotFoundError } from "@/util/error-util";
-import { userDummyFrom } from "@/domain/model/user/user.dummy";
+import { userDummyFrom } from "@/domain/model/user/user.entity.dummy";
+import { Result } from "@/util/result";
 
 describe("GetUserUseCaseのテスト", () => {
   describe("execute", () => {
@@ -15,15 +16,15 @@ describe("GetUserUseCaseのテスト", () => {
 
       const getUserUseCase = new GetUserUseCaseImpl({
         userRepository: new UserRepositoryDummy({
-          findByIdReturnValue: { success: true, data: user },
+          findByIdReturnValue: Result.ok(user),
         }),
         logger: new LoggerDummy(),
       });
 
       const result = await getUserUseCase.execute({ id: "user-123" });
 
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data.id).toBe("user-123");
         expect(result.data.email).toBe("test@example.com");
       }
@@ -32,15 +33,15 @@ describe("GetUserUseCaseのテスト", () => {
     test("[異常系] ユーザーが見つからない場合はNotFoundErrorを返すこと", async () => {
       const getUserUseCase = new GetUserUseCaseImpl({
         userRepository: new UserRepositoryDummy({
-          findByIdReturnValue: { success: true, data: undefined },
+          findByIdReturnValue: Result.ok(undefined),
         }),
         logger: new LoggerDummy(),
       });
 
       const result = await getUserUseCase.execute({ id: "non-existent-id" });
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
         expect(result.error).toBeInstanceOf(NotFoundError);
       }
     });
@@ -48,18 +49,15 @@ describe("GetUserUseCaseのテスト", () => {
     test("[異常系] リポジトリエラーの場合はエラーを返すこと", async () => {
       const getUserUseCase = new GetUserUseCaseImpl({
         userRepository: new UserRepositoryDummy({
-          findByIdReturnValue: {
-            success: false,
-            error: new UnexpectedError(),
-          },
+          findByIdReturnValue: Result.err(new UnexpectedError()),
         }),
         logger: new LoggerDummy(),
       });
 
       const result = await getUserUseCase.execute({ id: "user-123" });
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
         expect(result.error).toBeInstanceOf(UnexpectedError);
       }
     });

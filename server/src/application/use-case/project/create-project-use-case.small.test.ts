@@ -5,7 +5,6 @@ import { LoggerDummy } from "@/application/port/logger/dummy";
 import { buildFetchNowDummy } from "@/application/port/fetch-now/dummy";
 import { UnexpectedError } from "@/util/error-util";
 import { Project } from "@/domain/model/project/project.entity";
-import { ProjectColor } from "@/domain/model/project/project-color";
 import { dateToIsoString } from "@/util/date-util";
 import { Result } from "@/util/result";
 
@@ -31,11 +30,11 @@ describe("CreateProjectUseCaseのテスト", () => {
         color: "#FF5733",
       });
 
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data.id).toBe(projectId);
         expect(result.data.name).toBe("テストプロジェクト");
-        expect(result.data.color.value).toBe("#FF5733");
+        expect(result.data.color).toBe("#FF5733");
         expect(result.data.description).toBeUndefined();
         expect(result.data.createdAt).toBe(nowString);
         expect(result.data.updatedAt).toBe(nowString);
@@ -59,12 +58,12 @@ describe("CreateProjectUseCaseのテスト", () => {
         color: "#3498DB",
       });
 
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data.id).toBe(projectId);
         expect(result.data.name).toBe("完全なプロジェクト");
         expect(result.data.description).toBe("詳細な説明");
-        expect(result.data.color.value).toBe("#3498DB");
+        expect(result.data.color).toBe("#3498DB");
       }
     });
 
@@ -82,8 +81,8 @@ describe("CreateProjectUseCaseのテスト", () => {
         color: "#FF5733",
       });
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
         expect(result.error).toBeInstanceOf(UnexpectedError);
       }
     });
@@ -100,10 +99,7 @@ describe("CreateProjectUseCaseのテスト", () => {
       for (const color of validColors) {
         const createProjectUseCase = new CreateProjectUseCaseImpl({
           projectRepository: new ProjectRepositoryDummy({
-            saveReturnValue: {
-              success: true,
-              data: undefined,
-            },
+            saveReturnValue: Result.ok(undefined),
           }),
           logger: new LoggerDummy(),
           fetchNow,
@@ -114,9 +110,9 @@ describe("CreateProjectUseCaseのテスト", () => {
           color,
         });
 
-        expect(result.success).toBe(true);
-        if (result.success) {
-          expect(result.data.color.value).toBe(color);
+        expect(result.isOk()).toBe(true);
+        if (result.isOk()) {
+          expect(result.data.color).toBe(color);
         }
       }
     });
@@ -137,12 +133,12 @@ describe("CreateProjectUseCaseのテスト", () => {
         color: "#E74C3C",
       });
 
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data).toBeInstanceOf(Project);
-        expect(result.data.color).toBeInstanceOf(ProjectColor);
         expect(typeof result.data.id).toBe("string");
         expect(typeof result.data.name).toBe("string");
+        expect(typeof result.data.color).toBe("string");
         expect(typeof result.data.createdAt).toBe("string");
         expect(typeof result.data.updatedAt).toBe("string");
       }

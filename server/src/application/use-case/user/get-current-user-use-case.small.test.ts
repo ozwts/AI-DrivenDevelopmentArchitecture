@@ -1,42 +1,31 @@
-import { beforeEach, describe, expect, it } from "vitest";
-import { GetCurrentUserUseCase } from "./get-current-user-use-case";
-import type { UserRepository } from "@/domain/model/user/user.repository";
+import { describe, expect, test } from "vitest";
+import { GetCurrentUserUseCaseImpl } from "./get-current-user-use-case";
 import { UserRepositoryDummy } from "@/domain/model/user/user.repository.dummy";
-import { userDummyFrom } from "@/domain/model/user/user.dummy";
+import { userDummyFrom } from "@/domain/model/user/user.entity.dummy";
 import { NotFoundError } from "@/util/error-util";
+import { LoggerDummy } from "@/application/port/logger/dummy";
+import { Result } from "@/util/result";
 
 describe("GetCurrentUserUseCase", () => {
-  let useCase: GetCurrentUserUseCase;
-  let userRepository: UserRepository;
-
-  beforeEach(() => {
-    userRepository = new UserRepositoryDummy();
-    useCase = new GetCurrentUserUseCase(userRepository);
-  });
-
   describe("正常系", () => {
-    it("Cognito Subからユーザーを取得できる", async () => {
-      // Arrange
+    test("Cognito Subからユーザーを取得できる", async () => {
       const user = userDummyFrom({
         id: "user-1",
         sub: "cognito-sub-123",
         name: "Test User",
         email: "test@example.com",
       });
-      userRepository = new UserRepositoryDummy({
-        findBySubReturnValue: {
-          success: true,
-          data: user,
-        },
+      const useCase = new GetCurrentUserUseCaseImpl({
+        userRepository: new UserRepositoryDummy({
+          findBySubReturnValue: Result.ok(user),
+        }),
+        logger: new LoggerDummy(),
       });
-      useCase = new GetCurrentUserUseCase(userRepository);
 
-      // Act
       const result = await useCase.execute({ sub: "cognito-sub-123" });
 
-      // Assert
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data.id).toBe("user-1");
         expect(result.data.sub).toBe("cognito-sub-123");
         expect(result.data.name).toBe("Test User");
@@ -46,22 +35,18 @@ describe("GetCurrentUserUseCase", () => {
   });
 
   describe("異常系", () => {
-    it("ユーザーが存在しない場合はNotFoundErrorを返す", async () => {
-      // Arrange
-      userRepository = new UserRepositoryDummy({
-        findBySubReturnValue: {
-          success: true,
-          data: undefined,
-        },
+    test("ユーザーが存在しない場合はNotFoundErrorを返す", async () => {
+      const useCase = new GetCurrentUserUseCaseImpl({
+        userRepository: new UserRepositoryDummy({
+          findBySubReturnValue: Result.ok(undefined),
+        }),
+        logger: new LoggerDummy(),
       });
-      useCase = new GetCurrentUserUseCase(userRepository);
 
-      // Act
       const result = await useCase.execute({ sub: "non-existent-sub" });
 
-      // Assert
-      expect(result.success).toBe(false);
-      if (!result.success) {
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
         expect(result.error).toBeInstanceOf(NotFoundError);
         expect(result.error.message).toBe("ユーザーが見つかりません");
       }

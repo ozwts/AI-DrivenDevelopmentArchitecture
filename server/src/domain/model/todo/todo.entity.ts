@@ -1,9 +1,6 @@
 import type { Attachment } from "./attachment.entity";
 import { TodoStatus } from "./todo-status.vo";
 
-// TodoStatusを再エクスポート
-export { TodoStatus };
-
 /**
  * TODO優先度
  *

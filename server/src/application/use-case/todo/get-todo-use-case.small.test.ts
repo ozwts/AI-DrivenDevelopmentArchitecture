@@ -2,6 +2,7 @@ import { test, expect, describe } from "vitest";
 import { GetTodoUseCaseImpl } from "./get-todo-use-case";
 import { TodoRepositoryDummy } from "@/domain/model/todo/todo.repository.dummy";
 import { todoDummyFrom } from "@/domain/model/todo/todo.entity.dummy";
+import { TodoStatus } from "@/domain/model/todo/todo-status.vo";
 import { UnexpectedError } from "@/util/error-util";
 import { LoggerDummy } from "@/application/port/logger/dummy";
 import { Result } from "@/util/result";
@@ -73,7 +74,7 @@ describe("GetTodoUseCaseのテスト", () => {
     test("異なるステータスのTODOを取得できること", async () => {
       const todoInProgress = todoDummyFrom({
         id: "todo-1",
-        status: "IN_PROGRESS",
+        status: TodoStatus.inProgress(),
       });
 
       const getTodoUseCase = new GetTodoUseCaseImpl({
@@ -89,7 +90,7 @@ describe("GetTodoUseCaseのテスト", () => {
 
       expect(result.isOk()).toBe(true);
       if (result.isOk()) {
-        expect(result.data.status).toBe("IN_PROGRESS");
+        expect(result.data.status.isInProgress()).toBe(true);
       }
     });
 

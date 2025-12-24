@@ -4,11 +4,8 @@ import type { UseCase } from "../interfaces";
 import { UnexpectedError, NotFoundError } from "@/util/error-util";
 import type { TodoRepository } from "@/domain/model/todo/todo.repository";
 import type { UserRepository } from "@/domain/model/user/user.repository";
-import {
-  Todo,
-  TodoStatus,
-  type TodoPriority,
-} from "@/domain/model/todo/todo.entity";
+import { Todo, type TodoPriority } from "@/domain/model/todo/todo.entity";
+import { TodoStatus } from "@/domain/model/todo/todo-status.vo";
 import type { FetchNow } from "@/application/port/fetch-now";
 import { dateToIsoString } from "@/util/date-util";
 

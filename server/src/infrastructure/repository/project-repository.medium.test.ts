@@ -9,9 +9,7 @@ import {
 import { LoggerDummy } from "@/application/port/logger/dummy";
 import { ProjectRepositoryImpl } from "./project-repository";
 import type { ProjectRepository } from "@/domain/model/project/project.repository";
-import { ProjectColor } from "@/domain/model/project/project-color";
-import { projectDummyFrom } from "@/domain/model/project/project.dummy";
-import { UnexpectedError } from "@/util/error-util";
+import { projectDummyFrom } from "@/domain/model/project/project.entity.dummy";
 
 const { ddb, ddbDoc } = buildDdbClients();
 const projectsTableName = getRandomIdentifier();
@@ -75,30 +73,25 @@ describe("ProjectRepositoryImpl", () => {
 
       // 1. 包括的なプロジェクトを作成・保存
       const projectId = projectRepository.projectId();
-      const colorResult = ProjectColor.fromString("#FF5733");
-      if (!colorResult.success) throw colorResult.error;
 
       const project = projectDummyFrom({
         id: projectId,
         name: "要件定義プロジェクト",
         description: "新システムの要件定義を行うプロジェクト",
-        color: colorResult.data,
+        color: "#FF5733",
         createdAt: "2024-01-01T00:00:00.000+09:00",
         updatedAt: "2024-01-01T00:00:00.000+09:00",
       });
 
       const saveResult = await projectRepository.save({ project });
-      expect(saveResult).toStrictEqual({
-        success: true,
-        data: undefined,
-      });
+      expect(saveResult.isOk()).toBe(true);
 
       // 2. 保存したプロジェクトを取得して確認
       const findResult = await projectRepository.findById({
         id: projectId,
       });
-      expect(findResult.success).toBe(true);
-      if (findResult.success) {
+      expect(findResult.isOk()).toBe(true);
+      if (findResult.isOk()) {
         expect(findResult.data).toStrictEqual(project);
       }
     });
@@ -107,28 +100,23 @@ describe("ProjectRepositoryImpl", () => {
       const { projectRepository } = setUpDependencies();
 
       const projectId = projectRepository.projectId();
-      const colorResult = ProjectColor.fromString("#3498DB");
-      if (!colorResult.success) throw colorResult.error;
 
       const project = projectDummyFrom({
         id: projectId,
         name: "最小限プロジェクト",
-        color: colorResult.data,
+        color: "#3498DB",
         createdAt: "2024-01-02T00:00:00.000+09:00",
         updatedAt: "2024-01-02T00:00:00.000+09:00",
       });
 
       const saveResult = await projectRepository.save({ project });
-      expect(saveResult).toStrictEqual({
-        success: true,
-        data: undefined,
-      });
+      expect(saveResult.isOk()).toBe(true);
 
       const findResult = await projectRepository.findById({
         id: projectId,
       });
-      expect(findResult.success).toBe(true);
-      if (findResult.success) {
+      expect(findResult.isOk()).toBe(true);
+      if (findResult.isOk()) {
         expect(findResult.data).toStrictEqual(project);
         // descriptionは常に設定される（ランダムなダミー値）
         expect(findResult.data?.description).toBeDefined();
@@ -139,13 +127,11 @@ describe("ProjectRepositoryImpl", () => {
       const { projectRepository } = setUpDependencies();
 
       const projectId = projectRepository.projectId();
-      const colorResult = ProjectColor.fromString("#2ECC71");
-      if (!colorResult.success) throw colorResult.error;
 
       const originalProject = projectDummyFrom({
         id: projectId,
         name: "元のプロジェクト",
-        color: colorResult.data,
+        color: "#2ECC71",
         createdAt: "2024-01-03T00:00:00.000+09:00",
         updatedAt: "2024-01-03T00:00:00.000+09:00",
       });
@@ -153,26 +139,20 @@ describe("ProjectRepositoryImpl", () => {
       await projectRepository.save({ project: originalProject });
 
       // 名前と説明を更新
-      const updatedProject = originalProject.update({
-        name: "更新後のプロジェクト",
-        description: "新しい説明",
-        updatedAt: "2024-01-03T12:00:00.000+09:00",
-      });
+      const updatedProject = originalProject
+        .rename("更新後のプロジェクト", "2024-01-03T12:00:00.000+09:00")
+        .clarify("新しい説明", "2024-01-03T12:00:00.000+09:00");
 
       const updateResult = await projectRepository.save({
         project: updatedProject,
       });
-      expect(updateResult).toStrictEqual({
-        success: true,
-        data: undefined,
-      });
+      expect(updateResult.isOk()).toBe(true);
 
       const findResult = await projectRepository.findById({
         id: projectId,
       });
-      expect(findResult.success).toBe(true);
-      if (findResult.success) {
-        expect(findResult.data).toStrictEqual(updatedProject);
+      expect(findResult.isOk()).toBe(true);
+      if (findResult.isOk()) {
         expect(findResult.data?.name).toBe("更新後のプロジェクト");
         expect(findResult.data?.description).toBe("新しい説明");
         expect(findResult.data?.updatedAt).toBe(
@@ -187,13 +167,11 @@ describe("ProjectRepositoryImpl", () => {
       const { projectRepository } = setUpDependencies();
 
       const projectId = projectRepository.projectId();
-      const colorResult = ProjectColor.fromString("#9B59B6");
-      if (!colorResult.success) throw colorResult.error;
 
       const project = projectDummyFrom({
         id: projectId,
         name: "検索テストプロジェクト",
-        color: colorResult.data,
+        color: "#9B59B6",
         createdAt: "2024-01-04T00:00:00.000+09:00",
         updatedAt: "2024-01-04T00:00:00.000+09:00",
       });
@@ -203,10 +181,10 @@ describe("ProjectRepositoryImpl", () => {
       const findResult = await projectRepository.findById({
         id: projectId,
       });
-      expect(findResult).toStrictEqual({
-        success: true,
-        data: project,
-      });
+      expect(findResult.isOk()).toBe(true);
+      if (findResult.isOk()) {
+        expect(findResult.data).toStrictEqual(project);
+      }
     });
 
     test("[正常系] 存在しないProjectを検索するとundefinedを返す", async () => {
@@ -215,10 +193,10 @@ describe("ProjectRepositoryImpl", () => {
       const findResult = await projectRepository.findById({
         id: "non-existent-id",
       });
-      expect(findResult).toStrictEqual({
-        success: true,
-        data: undefined,
-      });
+      expect(findResult.isOk()).toBe(true);
+      if (findResult.isOk()) {
+        expect(findResult.data).toBeUndefined();
+      }
     });
   });
 
@@ -226,22 +204,17 @@ describe("ProjectRepositoryImpl", () => {
     test("[正常系] 全てのProjectを取得する", async () => {
       const { projectRepository } = setUpDependencies();
 
-      const color1Result = ProjectColor.fromString("#E74C3C");
-      if (!color1Result.success) throw color1Result.error;
-      const color2Result = ProjectColor.fromString("#F39C12");
-      if (!color2Result.success) throw color2Result.error;
-
       const project1 = projectDummyFrom({
         id: projectRepository.projectId(),
         name: "全件検索プロジェクト1",
-        color: color1Result.data,
+        color: "#E74C3C",
         createdAt: "2024-01-10T00:00:00.000+09:00",
         updatedAt: "2024-01-10T00:00:00.000+09:00",
       });
       const project2 = projectDummyFrom({
         id: projectRepository.projectId(),
         name: "全件検索プロジェクト2",
-        color: color2Result.data,
+        color: "#F39C12",
         createdAt: "2024-01-10T01:00:00.000+09:00",
         updatedAt: "2024-01-10T01:00:00.000+09:00",
       });
@@ -250,8 +223,8 @@ describe("ProjectRepositoryImpl", () => {
       await projectRepository.save({ project: project2 });
 
       const findAllResult = await projectRepository.findAll();
-      expect(findAllResult.success).toBe(true);
-      if (findAllResult.success) {
+      expect(findAllResult.isOk()).toBe(true);
+      if (findAllResult.isOk()) {
         expect(findAllResult.data).toHaveLength(2);
         expect(findAllResult.data.map((p) => p.id)).toContain(project1.id);
         expect(findAllResult.data.map((p) => p.id)).toContain(project2.id);
@@ -262,10 +235,10 @@ describe("ProjectRepositoryImpl", () => {
       const { projectRepository } = setUpDependencies();
 
       const findAllResult = await projectRepository.findAll();
-      expect(findAllResult).toStrictEqual({
-        success: true,
-        data: [],
-      });
+      expect(findAllResult.isOk()).toBe(true);
+      if (findAllResult.isOk()) {
+        expect(findAllResult.data).toEqual([]);
+      }
     });
   });
 
@@ -274,13 +247,11 @@ describe("ProjectRepositoryImpl", () => {
       const { projectRepository } = setUpDependencies();
 
       const projectId = projectRepository.projectId();
-      const colorResult = ProjectColor.fromString("#1ABC9C");
-      if (!colorResult.success) throw colorResult.error;
 
       const project = projectDummyFrom({
         id: projectId,
         name: "削除テストプロジェクト",
-        color: colorResult.data,
+        color: "#1ABC9C",
         createdAt: "2024-01-12T00:00:00.000+09:00",
         updatedAt: "2024-01-12T00:00:00.000+09:00",
       });
@@ -290,18 +261,15 @@ describe("ProjectRepositoryImpl", () => {
       const removeResult = await projectRepository.remove({
         id: projectId,
       });
-      expect(removeResult).toStrictEqual({
-        success: true,
-        data: undefined,
-      });
+      expect(removeResult.isOk()).toBe(true);
 
       const findResult = await projectRepository.findById({
         id: projectId,
       });
-      expect(findResult).toStrictEqual({
-        success: true,
-        data: undefined,
-      });
+      expect(findResult.isOk()).toBe(true);
+      if (findResult.isOk()) {
+        expect(findResult.data).toBeUndefined();
+      }
     });
   });
 });

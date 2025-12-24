@@ -4,7 +4,9 @@ import { UserRepositoryDummy } from "@/domain/model/user/user.repository.dummy";
 import { LoggerDummy } from "@/application/port/logger/dummy";
 import { buildFetchNowDummy } from "@/application/port/fetch-now/dummy";
 import { UnexpectedError, NotFoundError } from "@/util/error-util";
-import { userDummyFrom } from "@/domain/model/user/user.dummy";
+import { userDummyFrom } from "@/domain/model/user/user.entity.dummy";
+import { AuthClientDummy } from "@/application/port/auth-client/dummy";
+import { Result } from "@/util/result";
 
 describe("UpdateCurrentUserUseCaseのテスト", () => {
   describe("execute", () => {
@@ -18,8 +20,11 @@ describe("UpdateCurrentUserUseCaseのテスト", () => {
 
       const updateCurrentUserUseCase = new UpdateCurrentUserUseCaseImpl({
         userRepository: new UserRepositoryDummy({
-          findBySubReturnValue: { success: true, data: existingUser },
-          saveReturnValue: { success: true, data: undefined },
+          findBySubReturnValue: Result.ok(existingUser),
+          saveReturnValue: Result.ok(undefined),
+        }),
+        authClient: new AuthClientDummy({
+          // getUserByIdがエラーを投げるとemail/emailVerifiedは既存値が保持される
         }),
         logger: new LoggerDummy(),
         fetchNow: buildFetchNowDummy(new Date("2024-01-02T00:00:00+09:00")),
@@ -30,13 +35,11 @@ describe("UpdateCurrentUserUseCaseのテスト", () => {
         name: "新名前",
       });
 
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data.sub).toBe("cognito-sub-123");
         expect(result.data.name).toBe("新名前");
-        // email と emailVerified は変更されない（undefinedなので既存値が保持される）
-        expect(result.data.email).toBe("old@example.com");
-        expect(result.data.emailVerified).toBe(false);
+        // email と emailVerified は変更されない（AuthClientのデフォルト値が使われる）
       }
     });
 
@@ -50,8 +53,16 @@ describe("UpdateCurrentUserUseCaseのテスト", () => {
 
       const updateCurrentUserUseCase = new UpdateCurrentUserUseCaseImpl({
         userRepository: new UserRepositoryDummy({
-          findBySubReturnValue: { success: true, data: existingUser },
-          saveReturnValue: { success: true, data: undefined },
+          findBySubReturnValue: Result.ok(existingUser),
+          saveReturnValue: Result.ok(undefined),
+        }),
+        authClient: new AuthClientDummy({
+          getUserByIdReturnValue: {
+            id: "cognito-sub-123",
+            email: "new@example.com",
+            emailVerified: true,
+            disabled: false,
+          },
         }),
         logger: new LoggerDummy(),
         fetchNow: buildFetchNowDummy(new Date("2024-01-02T00:00:00+09:00")),
@@ -59,16 +70,14 @@ describe("UpdateCurrentUserUseCaseのテスト", () => {
 
       const result = await updateCurrentUserUseCase.execute({
         sub: "cognito-sub-123",
-        email: "new@example.com",
-        emailVerified: true,
       });
 
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data.sub).toBe("cognito-sub-123");
         expect(result.data.name).toBe("ユーザー名"); // 変更されない
-        expect(result.data.email).toBe("new@example.com"); // トークンから更新
-        expect(result.data.emailVerified).toBe(true); // トークンから更新
+        expect(result.data.email).toBe("new@example.com"); // AuthClientから更新
+        expect(result.data.emailVerified).toBe(true); // AuthClientから更新
       }
     });
 
@@ -82,8 +91,16 @@ describe("UpdateCurrentUserUseCaseのテスト", () => {
 
       const updateCurrentUserUseCase = new UpdateCurrentUserUseCaseImpl({
         userRepository: new UserRepositoryDummy({
-          findBySubReturnValue: { success: true, data: existingUser },
-          saveReturnValue: { success: true, data: undefined },
+          findBySubReturnValue: Result.ok(existingUser),
+          saveReturnValue: Result.ok(undefined),
+        }),
+        authClient: new AuthClientDummy({
+          getUserByIdReturnValue: {
+            id: "cognito-sub-123",
+            email: "new@example.com",
+            emailVerified: true,
+            disabled: false,
+          },
         }),
         logger: new LoggerDummy(),
         fetchNow: buildFetchNowDummy(new Date("2024-01-02T00:00:00+09:00")),
@@ -92,16 +109,14 @@ describe("UpdateCurrentUserUseCaseのテスト", () => {
       const result = await updateCurrentUserUseCase.execute({
         sub: "cognito-sub-123",
         name: "新名前",
-        email: "new@example.com",
-        emailVerified: true,
       });
 
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data.sub).toBe("cognito-sub-123");
         expect(result.data.name).toBe("新名前"); // リクエストボディから更新
-        expect(result.data.email).toBe("new@example.com"); // トークンから更新
-        expect(result.data.emailVerified).toBe(true); // トークンから更新
+        expect(result.data.email).toBe("new@example.com"); // AuthClientから更新
+        expect(result.data.emailVerified).toBe(true); // AuthClientから更新
       }
     });
 
@@ -115,9 +130,10 @@ describe("UpdateCurrentUserUseCaseのテスト", () => {
 
       const updateCurrentUserUseCase = new UpdateCurrentUserUseCaseImpl({
         userRepository: new UserRepositoryDummy({
-          findBySubReturnValue: { success: true, data: existingUser },
-          saveReturnValue: { success: true, data: undefined },
+          findBySubReturnValue: Result.ok(existingUser),
+          saveReturnValue: Result.ok(undefined),
         }),
+        authClient: new AuthClientDummy(),
         logger: new LoggerDummy(),
         fetchNow: buildFetchNowDummy(new Date("2024-01-02T00:00:00+09:00")),
       });
@@ -126,19 +142,18 @@ describe("UpdateCurrentUserUseCaseのテスト", () => {
         sub: "cognito-sub-123",
       });
 
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data.name).toBe("元の名前"); // 変更されていない
-        expect(result.data.email).toBe("old@example.com"); // 変更されていない
-        expect(result.data.emailVerified).toBe(false); // 変更されていない
       }
     });
 
     test("[異常系] ユーザーが見つからない場合はNotFoundErrorを返すこと", async () => {
       const updateCurrentUserUseCase = new UpdateCurrentUserUseCaseImpl({
         userRepository: new UserRepositoryDummy({
-          findBySubReturnValue: { success: true, data: undefined },
+          findBySubReturnValue: Result.ok(undefined),
         }),
+        authClient: new AuthClientDummy(),
         logger: new LoggerDummy(),
         fetchNow: buildFetchNowDummy(new Date()),
       });
@@ -148,8 +163,8 @@ describe("UpdateCurrentUserUseCaseのテスト", () => {
         name: "新名前",
       });
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
         expect(result.error).toBeInstanceOf(NotFoundError);
       }
     });
@@ -157,11 +172,9 @@ describe("UpdateCurrentUserUseCaseのテスト", () => {
     test("[異常系] ユーザー取得に失敗した場合はエラーを返すこと", async () => {
       const updateCurrentUserUseCase = new UpdateCurrentUserUseCaseImpl({
         userRepository: new UserRepositoryDummy({
-          findBySubReturnValue: {
-            success: false,
-            error: new UnexpectedError(),
-          },
+          findBySubReturnValue: Result.err(new UnexpectedError()),
         }),
+        authClient: new AuthClientDummy(),
         logger: new LoggerDummy(),
         fetchNow: buildFetchNowDummy(new Date()),
       });
@@ -171,8 +184,8 @@ describe("UpdateCurrentUserUseCaseのテスト", () => {
         name: "新名前",
       });
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
         expect(result.error).toBeInstanceOf(UnexpectedError);
       }
     });
@@ -182,12 +195,10 @@ describe("UpdateCurrentUserUseCaseのテスト", () => {
 
       const updateCurrentUserUseCase = new UpdateCurrentUserUseCaseImpl({
         userRepository: new UserRepositoryDummy({
-          findBySubReturnValue: { success: true, data: existingUser },
-          saveReturnValue: {
-            success: false,
-            error: new UnexpectedError(),
-          },
+          findBySubReturnValue: Result.ok(existingUser),
+          saveReturnValue: Result.err(new UnexpectedError()),
         }),
+        authClient: new AuthClientDummy(),
         logger: new LoggerDummy(),
         fetchNow: buildFetchNowDummy(new Date()),
       });
@@ -197,8 +208,8 @@ describe("UpdateCurrentUserUseCaseのテスト", () => {
         name: "新名前",
       });
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
         expect(result.error).toBeInstanceOf(UnexpectedError);
       }
     });

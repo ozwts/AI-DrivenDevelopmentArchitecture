@@ -1,12 +1,14 @@
 import { test, expect, describe } from "vitest";
 import { DeleteAttachmentUseCaseImpl } from "./delete-attachment-use-case";
 import { TodoRepositoryDummy } from "@/domain/model/todo/todo.repository.dummy";
-import { todoDummyFrom } from "@/domain/model/todo/todo.dummy";
-import { attachmentDummyFrom } from "@/domain/model/attachment/attachment.dummy";
+import { todoDummyFrom } from "@/domain/model/todo/todo.entity.dummy";
+import { attachmentDummyFrom } from "@/domain/model/todo/attachment.entity.dummy";
+import { AttachmentStatus } from "@/domain/model/todo/attachment-status.vo";
 import { StorageClientDummy } from "@/application/port/storage-client/dummy";
 import { LoggerDummy } from "@/application/port/logger/dummy";
 import { buildFetchNowDummy } from "@/application/port/fetch-now/dummy";
 import { UnexpectedError } from "@/util/error-util";
+import { Result } from "@/util/result";
 
 describe("DeleteAttachmentUseCaseのテスト", () => {
   const now = new Date("2024-01-01T00:00:00+09:00");
@@ -27,14 +29,8 @@ describe("DeleteAttachmentUseCaseのテスト", () => {
 
       const deleteAttachmentUseCase = new DeleteAttachmentUseCaseImpl({
         todoRepository: new TodoRepositoryDummy({
-          findByIdReturnValue: {
-            success: true,
-            data: existingTodo,
-          },
-          saveReturnValue: {
-            success: true,
-            data: undefined,
-          },
+          findByIdReturnValue: Result.ok(existingTodo),
+          saveReturnValue: Result.ok(undefined),
         }),
         storageClient: new StorageClientDummy(),
         fetchNow,
@@ -46,8 +42,8 @@ describe("DeleteAttachmentUseCaseのテスト", () => {
         attachmentId,
       });
 
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data).toBeUndefined();
       }
     });
@@ -55,10 +51,7 @@ describe("DeleteAttachmentUseCaseのテスト", () => {
     test("TODOが見つからない場合はNotFoundErrorを返すこと", async () => {
       const deleteAttachmentUseCase = new DeleteAttachmentUseCaseImpl({
         todoRepository: new TodoRepositoryDummy({
-          findByIdReturnValue: {
-            success: true,
-            data: undefined,
-          },
+          findByIdReturnValue: Result.ok(undefined),
         }),
         storageClient: new StorageClientDummy(),
         fetchNow,
@@ -70,8 +63,8 @@ describe("DeleteAttachmentUseCaseのテスト", () => {
         attachmentId: "attachment-1",
       });
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
         expect(result.error.name).toBe("NotFoundError");
         expect(result.error.message).toBe("TODOが見つかりません");
       }
@@ -86,10 +79,7 @@ describe("DeleteAttachmentUseCaseのテスト", () => {
 
       const deleteAttachmentUseCase = new DeleteAttachmentUseCaseImpl({
         todoRepository: new TodoRepositoryDummy({
-          findByIdReturnValue: {
-            success: true,
-            data: existingTodo,
-          },
+          findByIdReturnValue: Result.ok(existingTodo),
         }),
         storageClient: new StorageClientDummy(),
         fetchNow,
@@ -101,8 +91,8 @@ describe("DeleteAttachmentUseCaseのテスト", () => {
         attachmentId: "non-existent-attachment-id",
       });
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
         expect(result.error.name).toBe("NotFoundError");
         expect(result.error.message).toBe("添付ファイルが見つかりません");
       }
@@ -111,10 +101,7 @@ describe("DeleteAttachmentUseCaseのテスト", () => {
     test("TODO取得に失敗した場合はエラーを返すこと", async () => {
       const deleteAttachmentUseCase = new DeleteAttachmentUseCaseImpl({
         todoRepository: new TodoRepositoryDummy({
-          findByIdReturnValue: {
-            success: false,
-            error: new UnexpectedError(),
-          },
+          findByIdReturnValue: Result.err(new UnexpectedError()),
         }),
         storageClient: new StorageClientDummy(),
         fetchNow,
@@ -126,8 +113,8 @@ describe("DeleteAttachmentUseCaseのテスト", () => {
         attachmentId: "attachment-1",
       });
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
         expect(result.error).toBeInstanceOf(UnexpectedError);
       }
     });
@@ -145,16 +132,12 @@ describe("DeleteAttachmentUseCaseのテスト", () => {
 
       const deleteAttachmentUseCase = new DeleteAttachmentUseCaseImpl({
         todoRepository: new TodoRepositoryDummy({
-          findByIdReturnValue: {
-            success: true,
-            data: existingTodo,
-          },
+          findByIdReturnValue: Result.ok(existingTodo),
         }),
         storageClient: new StorageClientDummy({
-          deleteObjectReturnValue: {
-            success: false,
-            error: new UnexpectedError("S3 deletion failed"),
-          },
+          deleteObjectReturnValue: Result.err(
+            new UnexpectedError("S3 deletion failed"),
+          ),
         }),
         fetchNow,
         logger: new LoggerDummy(),
@@ -165,8 +148,8 @@ describe("DeleteAttachmentUseCaseのテスト", () => {
         attachmentId,
       });
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
         expect(result.error).toBeInstanceOf(UnexpectedError);
       }
     });
@@ -184,14 +167,8 @@ describe("DeleteAttachmentUseCaseのテスト", () => {
 
       const deleteAttachmentUseCase = new DeleteAttachmentUseCaseImpl({
         todoRepository: new TodoRepositoryDummy({
-          findByIdReturnValue: {
-            success: true,
-            data: existingTodo,
-          },
-          saveReturnValue: {
-            success: false,
-            error: new UnexpectedError(),
-          },
+          findByIdReturnValue: Result.ok(existingTodo),
+          saveReturnValue: Result.err(new UnexpectedError()),
         }),
         storageClient: new StorageClientDummy(),
         fetchNow,
@@ -203,8 +180,8 @@ describe("DeleteAttachmentUseCaseのテスト", () => {
         attachmentId,
       });
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
         expect(result.error).toBeInstanceOf(UnexpectedError);
       }
     });
@@ -230,14 +207,8 @@ describe("DeleteAttachmentUseCaseのテスト", () => {
 
       const deleteAttachmentUseCase = new DeleteAttachmentUseCaseImpl({
         todoRepository: new TodoRepositoryDummy({
-          findByIdReturnValue: {
-            success: true,
-            data: existingTodo,
-          },
-          saveReturnValue: {
-            success: true,
-            data: undefined,
-          },
+          findByIdReturnValue: Result.ok(existingTodo),
+          saveReturnValue: Result.ok(undefined),
         }),
         storageClient: new StorageClientDummy(),
         fetchNow,
@@ -249,7 +220,7 @@ describe("DeleteAttachmentUseCaseのテスト", () => {
         attachmentId: attachmentId2,
       });
 
-      expect(result.success).toBe(true);
+      expect(result.isOk()).toBe(true);
     });
 
     test("PREPAREDステータスのファイルも削除できること", async () => {
@@ -257,7 +228,7 @@ describe("DeleteAttachmentUseCaseのテスト", () => {
       const attachmentId = "attachment-1";
       const attachment = attachmentDummyFrom({
         id: attachmentId,
-        status: "PREPARED",
+        status: AttachmentStatus.prepared(),
       });
       const existingTodo = todoDummyFrom({
         id: todoId,
@@ -266,14 +237,8 @@ describe("DeleteAttachmentUseCaseのテスト", () => {
 
       const deleteAttachmentUseCase = new DeleteAttachmentUseCaseImpl({
         todoRepository: new TodoRepositoryDummy({
-          findByIdReturnValue: {
-            success: true,
-            data: existingTodo,
-          },
-          saveReturnValue: {
-            success: true,
-            data: undefined,
-          },
+          findByIdReturnValue: Result.ok(existingTodo),
+          saveReturnValue: Result.ok(undefined),
         }),
         storageClient: new StorageClientDummy(),
         fetchNow,
@@ -285,7 +250,7 @@ describe("DeleteAttachmentUseCaseのテスト", () => {
         attachmentId,
       });
 
-      expect(result.success).toBe(true);
+      expect(result.isOk()).toBe(true);
     });
 
     test("UPLOADEDステータスのファイルも削除できること", async () => {
@@ -293,7 +258,7 @@ describe("DeleteAttachmentUseCaseのテスト", () => {
       const attachmentId = "attachment-1";
       const attachment = attachmentDummyFrom({
         id: attachmentId,
-        status: "UPLOADED",
+        status: AttachmentStatus.uploaded(),
       });
       const existingTodo = todoDummyFrom({
         id: todoId,
@@ -302,14 +267,8 @@ describe("DeleteAttachmentUseCaseのテスト", () => {
 
       const deleteAttachmentUseCase = new DeleteAttachmentUseCaseImpl({
         todoRepository: new TodoRepositoryDummy({
-          findByIdReturnValue: {
-            success: true,
-            data: existingTodo,
-          },
-          saveReturnValue: {
-            success: true,
-            data: undefined,
-          },
+          findByIdReturnValue: Result.ok(existingTodo),
+          saveReturnValue: Result.ok(undefined),
         }),
         storageClient: new StorageClientDummy(),
         fetchNow,
@@ -321,7 +280,7 @@ describe("DeleteAttachmentUseCaseのテスト", () => {
         attachmentId,
       });
 
-      expect(result.success).toBe(true);
+      expect(result.isOk()).toBe(true);
     });
 
     test("すべての添付ファイルを削除できること", async () => {
@@ -337,14 +296,8 @@ describe("DeleteAttachmentUseCaseのテスト", () => {
 
       const deleteAttachmentUseCase = new DeleteAttachmentUseCaseImpl({
         todoRepository: new TodoRepositoryDummy({
-          findByIdReturnValue: {
-            success: true,
-            data: existingTodo,
-          },
-          saveReturnValue: {
-            success: true,
-            data: undefined,
-          },
+          findByIdReturnValue: Result.ok(existingTodo),
+          saveReturnValue: Result.ok(undefined),
         }),
         storageClient: new StorageClientDummy(),
         fetchNow,
@@ -356,7 +309,7 @@ describe("DeleteAttachmentUseCaseのテスト", () => {
         attachmentId,
       });
 
-      expect(result.success).toBe(true);
+      expect(result.isOk()).toBe(true);
     });
   });
 });

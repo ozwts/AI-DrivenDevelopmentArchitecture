@@ -16,11 +16,12 @@ import { UserRepositoryImpl } from "@/infrastructure/repository/user-repository"
 import type { TodoRepository } from "@/domain/model/todo/todo.repository";
 import type { ProjectRepository } from "@/domain/model/project/project.repository";
 import type { UserRepository } from "@/domain/model/user/user.repository";
-import { todoDummyFrom } from "@/domain/model/todo/todo.dummy";
-import { ProjectColor } from "@/domain/model/project/project-color";
-import { projectDummyFrom } from "@/domain/model/project/project.dummy";
-import { userDummyFrom } from "@/domain/model/user/user.dummy";
+import { todoDummyFrom } from "@/domain/model/todo/todo.entity.dummy";
+import { TodoStatus } from "@/domain/model/todo/todo-status.vo";
+import { projectDummyFrom } from "@/domain/model/project/project.entity.dummy";
+import { userDummyFrom } from "@/domain/model/user/user.entity.dummy";
 import { DynamoDBUnitOfWorkRunner } from "./dynamodb-unit-of-work-runner";
+import { Result } from "@/util/result";
 
 const { ddb, ddbDoc } = buildDdbClients();
 const todosTableName = getRandomIdentifier();
@@ -153,10 +154,13 @@ describe("DynamoDBUnitOfWorkRunner", () => {
         });
 
         await uow.todoRepository.save({ todo });
-        return todo;
+        return Result.ok(todo);
       });
 
-      expect(result.id).toBe(todoId);
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
+        expect(result.data.id).toBe(todoId);
+      }
 
       // トランザクション外のリポジトリで確認
       const findResult = await todoRepository.findById({ id: todoId });
@@ -191,7 +195,7 @@ describe("DynamoDBUnitOfWorkRunner", () => {
         await uow.todoRepository.save({ todo: todo1 });
         await uow.todoRepository.save({ todo: todo2 });
 
-        return { todo1, todo2 };
+        return Result.ok({ todo1, todo2 });
       });
 
       // 両方のTODOが保存されていることを確認
@@ -218,7 +222,7 @@ describe("DynamoDBUnitOfWorkRunner", () => {
       const existingTodo = todoDummyFrom({
         id: todoId2,
         title: "既存TODO",
-        status: "TODO",
+        status: TodoStatus.todo(),
         createdAt: "2024-01-07T00:00:00.000+09:00",
         updatedAt: "2024-01-07T00:00:00.000+09:00",
       });
@@ -229,7 +233,7 @@ describe("DynamoDBUnitOfWorkRunner", () => {
         const newTodo = todoDummyFrom({
           id: todoId1,
           title: "新規TODO",
-          status: "TODO",
+          status: TodoStatus.todo(),
           createdAt: "2024-01-07T10:00:00.000+09:00",
           updatedAt: "2024-01-07T10:00:00.000+09:00",
         });
@@ -237,14 +241,13 @@ describe("DynamoDBUnitOfWorkRunner", () => {
         await uow.todoRepository.save({ todo: newTodo });
 
         // 既存のTODOを更新
-        const updatedTodo = existingTodo.changeStatus(
-          "IN_PROGRESS",
+        const updatedTodo = existingTodo.start(
           "2024-01-07T12:00:00.000+09:00",
         );
 
         await uow.todoRepository.save({ todo: updatedTodo });
 
-        return { newTodo, updatedTodo };
+        return Result.ok({ newTodo, updatedTodo });
       });
 
       // 両方のTODOが正しく保存されていることを確認
@@ -257,7 +260,7 @@ describe("DynamoDBUnitOfWorkRunner", () => {
         expect(findResult1.data?.title).toBe("新規TODO");
       }
       if (findResult2.isOk()) {
-        expect(findResult2.data?.status).toBe("IN_PROGRESS");
+        expect(findResult2.data?.status.isInProgress()).toBe(true);
         expect(findResult2.data?.updatedAt).toBe(
           "2024-01-07T12:00:00.000+09:00",
         );
@@ -288,7 +291,9 @@ describe("DynamoDBUnitOfWorkRunner", () => {
       // ロールバックされているため、todo1は保存されていないはず
       const findResult1 = await todoRepository.findById({ id: todoId1 });
       expect(findResult1.isOk()).toBe(true);
-      expect(findResult1.data).toBeUndefined();
+      if (findResult1.isOk()) {
+        expect(findResult1.data).toBeUndefined();
+      }
     });
 
     test("[正常系] TODOの削除もトランザクション内で実行できる", async () => {
@@ -308,12 +313,15 @@ describe("DynamoDBUnitOfWorkRunner", () => {
       // トランザクション内で削除
       await runner.run(async (uow) => {
         await uow.todoRepository.remove({ id: todoId });
+        return Result.ok(undefined);
       });
 
       // 削除されていることを確認
       const findResult = await todoRepository.findById({ id: todoId });
       expect(findResult.isOk()).toBe(true);
-      expect(findResult.data).toBeUndefined();
+      if (findResult.isOk()) {
+        expect(findResult.data).toBeUndefined();
+      }
     });
 
     test("[正常系] ProjectRepositoryを使用した単一の操作がトランザクション内で実行される", async () => {
@@ -321,23 +329,23 @@ describe("DynamoDBUnitOfWorkRunner", () => {
 
       const projectId = "runner-project-test-id-1";
 
-      const colorResult = ProjectColor.fromString("#E91E63");
-      if (!colorResult.isOk()) throw colorResult.error;
-
       const result = await runner.run(async (uow) => {
         const project = projectDummyFrom({
           id: projectId,
           name: "UoWテストプロジェクト",
-          color: colorResult.data,
+          color: "#E91E63",
           createdAt: "2024-01-10T00:00:00.000+09:00",
           updatedAt: "2024-01-10T00:00:00.000+09:00",
         });
 
         await uow.projectRepository.save({ project });
-        return project;
+        return Result.ok(project);
       });
 
-      expect(result.id).toBe(projectId);
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
+        expect(result.data.id).toBe(projectId);
+      }
 
       // トランザクション外のリポジトリで確認
       const findResult = await projectRepository.findById({ id: projectId });
@@ -354,15 +362,12 @@ describe("DynamoDBUnitOfWorkRunner", () => {
       const projectId = "runner-project-test-id-2";
       const todoId = "runner-todo-test-id-8";
 
-      const colorResult = ProjectColor.fromString("#673AB7");
-      if (!colorResult.isOk()) throw colorResult.error;
-
       await runner.run(async (uow) => {
         // プロジェクトを作成
         const project = projectDummyFrom({
           id: projectId,
           name: "複合トランザクションプロジェクト",
-          color: colorResult.data,
+          color: "#673AB7",
           createdAt: "2024-01-11T00:00:00.000+09:00",
           updatedAt: "2024-01-11T00:00:00.000+09:00",
         });
@@ -380,7 +385,7 @@ describe("DynamoDBUnitOfWorkRunner", () => {
 
         await uow.todoRepository.save({ todo });
 
-        return { project, todo };
+        return Result.ok({ project, todo });
       });
 
       // 両方が保存されていることを確認
@@ -410,13 +415,10 @@ describe("DynamoDBUnitOfWorkRunner", () => {
       const todoId2 = "runner-todo-test-id-10";
 
       // 事前にプロジェクトとTODOを作成
-      const colorResult = ProjectColor.fromString("#00BCD4");
-      if (!colorResult.isOk()) throw colorResult.error;
-
       const project = projectDummyFrom({
         id: projectId,
         name: "削除テストプロジェクト",
-        color: colorResult.data,
+        color: "#00BCD4",
         createdAt: "2024-01-12T00:00:00.000+09:00",
         updatedAt: "2024-01-12T00:00:00.000+09:00",
       });
@@ -444,6 +446,7 @@ describe("DynamoDBUnitOfWorkRunner", () => {
         await uow.todoRepository.remove({ id: todoId1 });
         await uow.todoRepository.remove({ id: todoId2 });
         await uow.projectRepository.remove({ id: projectId });
+        return Result.ok(undefined);
       });
 
       // すべて削除されていることを確認
@@ -454,11 +457,17 @@ describe("DynamoDBUnitOfWorkRunner", () => {
       const todo2FindResult = await todoRepository.findById({ id: todoId2 });
 
       expect(projectFindResult.isOk()).toBe(true);
-      expect(projectFindResult.data).toBeUndefined();
+      if (projectFindResult.isOk()) {
+        expect(projectFindResult.data).toBeUndefined();
+      }
       expect(todo1FindResult.isOk()).toBe(true);
-      expect(todo1FindResult.data).toBeUndefined();
+      if (todo1FindResult.isOk()) {
+        expect(todo1FindResult.data).toBeUndefined();
+      }
       expect(todo2FindResult.isOk()).toBe(true);
-      expect(todo2FindResult.data).toBeUndefined();
+      if (todo2FindResult.isOk()) {
+        expect(todo2FindResult.data).toBeUndefined();
+      }
     });
 
     test("[異常系] ProjectとTodoの複合トランザクションでエラーが発生した場合、すべてロールバックされる", async () => {
@@ -467,15 +476,12 @@ describe("DynamoDBUnitOfWorkRunner", () => {
       const projectId = "runner-project-test-id-4";
       const todoId = "runner-todo-test-id-11";
 
-      const colorResult = ProjectColor.fromString("#4CAF50");
-      if (!colorResult.isOk()) throw colorResult.error;
-
       await expect(
         runner.run(async (uow) => {
           const project = projectDummyFrom({
             id: projectId,
             name: "ロールバックテストプロジェクト",
-            color: colorResult.data,
+            color: "#4CAF50",
             createdAt: "2024-01-13T00:00:00.000+09:00",
             updatedAt: "2024-01-13T00:00:00.000+09:00",
           });
@@ -504,9 +510,13 @@ describe("DynamoDBUnitOfWorkRunner", () => {
       const todoFindResult = await todoRepository.findById({ id: todoId });
 
       expect(projectFindResult.isOk()).toBe(true);
-      expect(projectFindResult.data).toBeUndefined();
+      if (projectFindResult.isOk()) {
+        expect(projectFindResult.data).toBeUndefined();
+      }
       expect(todoFindResult.isOk()).toBe(true);
-      expect(todoFindResult.data).toBeUndefined();
+      if (todoFindResult.isOk()) {
+        expect(todoFindResult.data).toBeUndefined();
+      }
     });
 
     test("[正常系] UserRepositoryを使用した単一の操作がトランザクション内で実行される", async () => {
@@ -526,10 +536,13 @@ describe("DynamoDBUnitOfWorkRunner", () => {
         });
 
         await uow.userRepository.save({ user });
-        return user;
+        return Result.ok(user);
       });
 
-      expect(result.id).toBe(userId);
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
+        expect(result.data.id).toBe(userId);
+      }
 
       // トランザクション外のリポジトリで確認
       const findResult = await userRepository.findById({ id: userId });
@@ -547,7 +560,7 @@ describe("DynamoDBUnitOfWorkRunner", () => {
       const userId = "runner-user-test-id-2";
       const todoId = "runner-todo-test-id-12";
 
-      const result = await runner.run(async (uow) => {
+      await runner.run(async (uow) => {
         const user = userDummyFrom({
           id: userId,
           sub: "cognito-sub-test-2",
@@ -569,7 +582,7 @@ describe("DynamoDBUnitOfWorkRunner", () => {
 
         await uow.todoRepository.save({ todo });
 
-        return { user, todo };
+        return Result.ok({ user, todo });
       });
 
       // 両方が保存されていることを確認

@@ -22,7 +22,7 @@ describe("ListProjectsUseCaseのテスト", () => {
         logger: new LoggerDummy(),
       });
 
-      const result = await listProjectsUseCase.execute({});
+      const result = await listProjectsUseCase.execute();
 
       expect(result.isOk()).toBe(true);
       if (result.isOk()) {
@@ -39,7 +39,7 @@ describe("ListProjectsUseCaseのテスト", () => {
         logger: new LoggerDummy(),
       });
 
-      const result = await listProjectsUseCase.execute({});
+      const result = await listProjectsUseCase.execute();
 
       expect(result.isOk()).toBe(true);
       if (result.isOk()) {
@@ -56,7 +56,7 @@ describe("ListProjectsUseCaseのテスト", () => {
         logger: new LoggerDummy(),
       });
 
-      const result = await listProjectsUseCase.execute({});
+      const result = await listProjectsUseCase.execute();
 
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
@@ -85,7 +85,7 @@ describe("ListProjectsUseCaseのテスト", () => {
         logger: new LoggerDummy(),
       });
 
-      const result = await listProjectsUseCase.execute({});
+      const result = await listProjectsUseCase.execute();
 
       expect(result.isOk()).toBe(true);
       if (result.isOk()) {
@@ -110,7 +110,7 @@ describe("ListProjectsUseCaseのテスト", () => {
         logger: new LoggerDummy(),
       });
 
-      const result = await listProjectsUseCase.execute({});
+      const result = await listProjectsUseCase.execute();
 
       expect(result.isOk()).toBe(true);
       if (result.isOk()) {

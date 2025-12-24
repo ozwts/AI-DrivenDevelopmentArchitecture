@@ -3,8 +3,9 @@ import { DeleteCurrentUserUseCaseImpl } from "./delete-current-user-use-case";
 import { UserRepositoryDummy } from "@/domain/model/user/user.repository.dummy";
 import { LoggerDummy } from "@/application/port/logger/dummy";
 import { UnexpectedError, NotFoundError } from "@/util/error-util";
-import { userDummyFrom } from "@/domain/model/user/user.dummy";
+import { userDummyFrom } from "@/domain/model/user/user.entity.dummy";
 import { AuthClientDummy } from "@/application/port/auth-client/dummy";
+import { Result } from "@/util/result";
 
 describe("DeleteCurrentUserUseCaseのテスト", () => {
   describe("execute", () => {
@@ -16,11 +17,11 @@ describe("DeleteCurrentUserUseCaseのテスト", () => {
 
       const deleteCurrentUserUseCase = new DeleteCurrentUserUseCaseImpl({
         userRepository: new UserRepositoryDummy({
-          findBySubReturnValue: { success: true, data: existingUser },
-          removeReturnValue: { success: true, data: undefined },
+          findBySubReturnValue: Result.ok(existingUser),
+          removeReturnValue: Result.ok(undefined),
         }),
         authClient: new AuthClientDummy({
-          deleteUserReturnValue: { success: true, data: undefined },
+          deleteUserReturnValue: Result.ok(undefined),
         }),
         logger: new LoggerDummy(),
       });
@@ -29,8 +30,8 @@ describe("DeleteCurrentUserUseCaseのテスト", () => {
         sub: "cognito-sub-123",
       });
 
-      expect(result.success).toBe(true);
-      if (result.success) {
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
         expect(result.data).toBeUndefined();
       }
     });
@@ -38,7 +39,7 @@ describe("DeleteCurrentUserUseCaseのテスト", () => {
     test("[異常系] ユーザーが見つからない場合はNotFoundErrorを返すこと", async () => {
       const deleteCurrentUserUseCase = new DeleteCurrentUserUseCaseImpl({
         userRepository: new UserRepositoryDummy({
-          findBySubReturnValue: { success: true, data: undefined },
+          findBySubReturnValue: Result.ok(undefined),
         }),
         authClient: new AuthClientDummy(),
         logger: new LoggerDummy(),
@@ -48,8 +49,8 @@ describe("DeleteCurrentUserUseCaseのテスト", () => {
         sub: "non-existent-sub",
       });
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
         expect(result.error).toBeInstanceOf(NotFoundError);
       }
     });
@@ -57,10 +58,7 @@ describe("DeleteCurrentUserUseCaseのテスト", () => {
     test("[異常系] ユーザー取得に失敗した場合はエラーを返すこと", async () => {
       const deleteCurrentUserUseCase = new DeleteCurrentUserUseCaseImpl({
         userRepository: new UserRepositoryDummy({
-          findBySubReturnValue: {
-            success: false,
-            error: new UnexpectedError(),
-          },
+          findBySubReturnValue: Result.err(new UnexpectedError()),
         }),
         authClient: new AuthClientDummy(),
         logger: new LoggerDummy(),
@@ -70,8 +68,8 @@ describe("DeleteCurrentUserUseCaseのテスト", () => {
         sub: "cognito-sub-123",
       });
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
         expect(result.error).toBeInstanceOf(UnexpectedError);
       }
     });
@@ -81,13 +79,10 @@ describe("DeleteCurrentUserUseCaseのテスト", () => {
 
       const deleteCurrentUserUseCase = new DeleteCurrentUserUseCaseImpl({
         userRepository: new UserRepositoryDummy({
-          findBySubReturnValue: { success: true, data: existingUser },
+          findBySubReturnValue: Result.ok(existingUser),
         }),
         authClient: new AuthClientDummy({
-          deleteUserReturnValue: {
-            success: false,
-            error: new UnexpectedError(),
-          },
+          deleteUserReturnValue: Result.err(new UnexpectedError()),
         }),
         logger: new LoggerDummy(),
       });
@@ -96,8 +91,8 @@ describe("DeleteCurrentUserUseCaseのテスト", () => {
         sub: "cognito-sub-123",
       });
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
         expect(result.error).toBeInstanceOf(UnexpectedError);
       }
     });
@@ -107,14 +102,11 @@ describe("DeleteCurrentUserUseCaseのテスト", () => {
 
       const deleteCurrentUserUseCase = new DeleteCurrentUserUseCaseImpl({
         userRepository: new UserRepositoryDummy({
-          findBySubReturnValue: { success: true, data: existingUser },
-          removeReturnValue: {
-            success: false,
-            error: new UnexpectedError(),
-          },
+          findBySubReturnValue: Result.ok(existingUser),
+          removeReturnValue: Result.err(new UnexpectedError()),
         }),
         authClient: new AuthClientDummy({
-          deleteUserReturnValue: { success: true, data: undefined },
+          deleteUserReturnValue: Result.ok(undefined),
         }),
         logger: new LoggerDummy(),
       });
@@ -123,8 +115,8 @@ describe("DeleteCurrentUserUseCaseのテスト", () => {
         sub: "cognito-sub-123",
       });
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
         expect(result.error).toBeInstanceOf(UnexpectedError);
       }
     });

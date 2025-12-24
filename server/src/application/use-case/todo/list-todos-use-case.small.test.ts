@@ -2,6 +2,7 @@ import { test, expect, describe } from "vitest";
 import { ListTodosUseCaseImpl } from "./list-todos-use-case";
 import { TodoRepositoryDummy } from "@/domain/model/todo/todo.repository.dummy";
 import { todoDummyFrom } from "@/domain/model/todo/todo.entity.dummy";
+import { TodoStatus } from "@/domain/model/todo/todo-status.vo";
 import { UnexpectedError } from "@/util/error-util";
 import { LoggerDummy } from "@/application/port/logger/dummy";
 import { Result } from "@/util/result";
@@ -33,8 +34,8 @@ describe("ListTodosUseCaseのテスト", () => {
 
     test("ステータスを指定してTODOを取得できること", async () => {
       const inProgressTodos = [
-        todoDummyFrom({ id: "todo-1", status: "IN_PROGRESS" }),
-        todoDummyFrom({ id: "todo-2", status: "IN_PROGRESS" }),
+        todoDummyFrom({ id: "todo-1", status: TodoStatus.inProgress() }),
+        todoDummyFrom({ id: "todo-2", status: TodoStatus.inProgress() }),
       ];
 
       const listTodosUseCase = new ListTodosUseCaseImpl({
@@ -45,13 +46,13 @@ describe("ListTodosUseCaseのテスト", () => {
       });
 
       const result = await listTodosUseCase.execute({
-        status: "IN_PROGRESS",
+        status: TodoStatus.inProgress(),
       });
 
       expect(result.isOk()).toBe(true);
       if (result.isOk()) {
         expect(result.data).toHaveLength(2);
-        expect(result.data.every((todo) => todo.status === "IN_PROGRESS")).toBe(
+        expect(result.data.every((todo) => todo.status.isInProgress())).toBe(
           true,
         );
       }
@@ -121,12 +122,12 @@ describe("ListTodosUseCaseのテスト", () => {
       const doneTodos = [
         todoDummyFrom({
           id: "todo-1",
-          status: "COMPLETED",
+          status: TodoStatus.completed(),
           title: "完了タスク1",
         }),
         todoDummyFrom({
           id: "todo-2",
-          status: "COMPLETED",
+          status: TodoStatus.completed(),
           title: "完了タスク2",
         }),
       ];
@@ -139,13 +140,13 @@ describe("ListTodosUseCaseのテスト", () => {
       });
 
       const result = await listTodosUseCase.execute({
-        status: "COMPLETED",
+        status: TodoStatus.completed(),
       });
 
       expect(result.isOk()).toBe(true);
       if (result.isOk()) {
         expect(result.data).toHaveLength(2);
-        expect(result.data.every((todo) => todo.status === "COMPLETED")).toBe(
+        expect(result.data.every((todo) => todo.status.isCompleted())).toBe(
           true,
         );
       }

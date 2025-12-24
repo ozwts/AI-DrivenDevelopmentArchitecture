@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { TodoStatus } from "./todo-status.vo";
 import { todoDummyFrom } from "./todo.entity.dummy";
-import { todoStatusDummyFrom } from "./todo-status.vo.dummy";
 import { attachmentDummyFrom } from "./attachment.entity.dummy";
 
 describe("Todo", () => {

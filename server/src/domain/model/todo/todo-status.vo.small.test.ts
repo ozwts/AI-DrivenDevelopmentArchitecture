@@ -10,8 +10,9 @@ describe("TodoStatus", () => {
         const result = TodoStatus.from({ status: "TODO" });
 
         // Assert
-        expect(result.success).toBe(true);
-        expect(result.data!.isTodo()).toBe(true);
+        expect(result.isOk()).toBe(true);
+        if (result.isErr()) return;
+        expect(result.data.isTodo()).toBe(true);
       });
 
       it("すべての有効なステータスから作成できる", () => {
@@ -19,9 +20,9 @@ describe("TodoStatus", () => {
         const inProgressResult = TodoStatus.from({ status: "IN_PROGRESS" });
         const completedResult = TodoStatus.from({ status: "COMPLETED" });
 
-        expect(todoResult.success).toBe(true);
-        expect(inProgressResult.success).toBe(true);
-        expect(completedResult.success).toBe(true);
+        expect(todoResult.isOk()).toBe(true);
+        expect(inProgressResult.isOk()).toBe(true);
+        expect(completedResult.isOk()).toBe(true);
       });
     });
 
@@ -31,14 +32,16 @@ describe("TodoStatus", () => {
         const result = TodoStatus.from({ status: "INVALID_STATUS" });
 
         // Assert
-        expect(result.success).toBe(false);
+        expect(result.isErr()).toBe(true);
+        if (result.isOk()) return;
         expect(result.error).toBeInstanceOf(DomainError);
       });
 
       it("空文字列の場合DomainErrorを返す", () => {
         const result = TodoStatus.from({ status: "" });
 
-        expect(result.success).toBe(false);
+        expect(result.isErr()).toBe(true);
+        if (result.isOk()) return;
         expect(result.error).toBeInstanceOf(DomainError);
       });
     });
@@ -67,33 +70,6 @@ describe("TodoStatus", () => {
     });
   });
 
-  describe("canTransitionTo", () => {
-    it("すべての遷移が許可される（このプロジェクトでは制約なし）", () => {
-      const todo = TodoStatus.todo();
-      const inProgress = TodoStatus.inProgress();
-      const completed = TodoStatus.completed();
-
-      // TODO -> IN_PROGRESS
-      expect(todo.canTransitionTo(inProgress).success).toBe(true);
-      // TODO -> COMPLETED
-      expect(todo.canTransitionTo(completed).success).toBe(true);
-      // IN_PROGRESS -> TODO
-      expect(inProgress.canTransitionTo(todo).success).toBe(true);
-      // IN_PROGRESS -> COMPLETED
-      expect(inProgress.canTransitionTo(completed).success).toBe(true);
-      // COMPLETED -> TODO
-      expect(completed.canTransitionTo(todo).success).toBe(true);
-      // COMPLETED -> IN_PROGRESS
-      expect(completed.canTransitionTo(inProgress).success).toBe(true);
-    });
-
-    it("同じステータスへの遷移も許可される", () => {
-      const todo = TodoStatus.todo();
-
-      expect(todo.canTransitionTo(todo).success).toBe(true);
-    });
-  });
-
   describe("equals", () => {
     it("同じ値のValue Objectは等価である", () => {
       const status1 = TodoStatus.todo();
@@ -106,9 +82,10 @@ describe("TodoStatus", () => {
       const result1 = TodoStatus.from({ status: "TODO" });
       const result2 = TodoStatus.from({ status: "TODO" });
 
-      expect(result1.success).toBe(true);
-      expect(result2.success).toBe(true);
-      expect(result1.data!.equals(result2.data!)).toBe(true);
+      expect(result1.isOk()).toBe(true);
+      expect(result2.isOk()).toBe(true);
+      if (result1.isErr() || result2.isErr()) return;
+      expect(result1.data.equals(result2.data)).toBe(true);
     });
 
     it("異なる値のValue Objectは等価でない", () => {

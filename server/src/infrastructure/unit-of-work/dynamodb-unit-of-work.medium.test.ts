@@ -9,7 +9,7 @@ import {
 } from "@/util/testing-util/dynamodb";
 import { LoggerDummy } from "@/application/port/logger/dummy";
 import { TodoRepositoryImpl } from "@/infrastructure/repository/todo-repository";
-import { todoDummyFrom } from "@/domain/model/todo/todo.dummy";
+import { todoDummyFrom } from "@/domain/model/todo/todo.entity.dummy";
 import { DynamoDBUnitOfWork } from "./dynamodb-unit-of-work";
 
 const { ddb, ddbDoc } = buildDdbClients();
@@ -141,7 +141,7 @@ describe("DynamoDBUnitOfWork", () => {
             todoId: todo.id,
             title: todo.title,
             description: todo.description,
-            status: todo.status,
+            status: todo.status.status,
             priority: todo.priority,
             dueDate: todo.dueDate,
             projectId: todo.projectId,
@@ -156,8 +156,8 @@ describe("DynamoDBUnitOfWork", () => {
 
       // コミット後にデータが存在することを確認
       const findResult = await todoRepository.findById({ id: todoId });
-      expect(findResult.success).toBe(true);
-      if (findResult.success) {
+      expect(findResult.isOk()).toBe(true);
+      if (findResult.isOk()) {
         expect(findResult.data?.id).toBe(todoId);
         expect(findResult.data?.title).toBe("コミットテスト");
       }
