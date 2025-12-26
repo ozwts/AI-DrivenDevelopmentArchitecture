@@ -117,7 +117,8 @@
       "mcp__playwright-test__planner_save_plan",
       "Bash(npx playwright:*)",
       "mcp__playwright-test__test_run",
-      "mcp__playwright-test__generator_setup_page"
+      "mcp__playwright-test__generator_setup_page",
+      "Bash(lsof:*)"
     ],
     "deny": [],
     "ask": []

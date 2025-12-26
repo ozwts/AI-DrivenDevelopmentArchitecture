@@ -121,6 +121,8 @@ export const DEV_SERVER_RESPONSIBILITIES: ProcedureResponsibility[] = [
         "- **状態**: 稼働中",
         `- **モード**: ${status.mode}`,
         `- **PID**: ${status.pid}`,
+        `- **APIポート**: ${status.apiPort}`,
+        `- **Webポート**: ${status.webPort}`,
         `- **起動時刻**: ${status.startedAt?.toLocaleString("ja-JP")}`,
         `- **稼働時間**: ${uptimeStr}`,
       ].join("\n");

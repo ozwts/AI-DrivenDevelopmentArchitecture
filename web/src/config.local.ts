@@ -3,11 +3,14 @@ import { Config } from "./config-type";
 /**
  * ローカル開発用の設定
  *
- * ローカルサーバー（localhost:3000）+ 実際のAWSリソース（Cognito認証）を使用
+ * ローカルサーバー + 実際のAWSリソース（Cognito認証）を使用
  * サーバー側: npm run dev でローカルサーバーを起動
+ *
+ * 環境変数でポートを変更可能:
+ * - VITE_API_URL: APIサーバーのURL（デフォルト: http://localhost:3000）
  */
 export const config: Config = {
-  apiUrl: "http://localhost:3000",
+  apiUrl: import.meta.env.VITE_API_URL ?? "http://localhost:3000",
   mockedApi: false,
   auth: {
     userPoolId: "ap-northeast-1_0ZkOnmBdP",

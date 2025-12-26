@@ -5,7 +5,7 @@ import { buildApp } from "./hono-handler/client-side-app";
 import { initHandler } from "./init-handler";
 import { unwrapEnv } from "@/di-container/env-util";
 
-const PORT = 3000;
+const PORT = parseInt(process.env.PORT ?? "3000", 10);
 
 const loadEnvFromSSM = async (parameterPath: string): Promise<void> => {
   const ssmClient = new SSMClient({ region: "ap-northeast-1" });
