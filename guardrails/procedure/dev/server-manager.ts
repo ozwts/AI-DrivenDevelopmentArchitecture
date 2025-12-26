@@ -44,8 +44,10 @@ const findAvailablePort = async (
   startPort: number,
   maxAttempts = 10,
 ): Promise<number> => {
-  for (let i = 0; i < maxAttempts; i++) {
+  // 最初に見つかった利用可能なポートを返すため、順次チェックが必要
+  for (let i = 0; i < maxAttempts; i += 1) {
     const port = startPort + i;
+    // eslint-disable-next-line no-await-in-loop
     if (await isPortAvailable(port)) {
       return port;
     }

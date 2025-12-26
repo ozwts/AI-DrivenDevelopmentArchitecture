@@ -4,10 +4,10 @@
 import type { TestResult } from "./test-runner";
 
 /**
- * 最大出力文字数（約20,000トークン相当）
+ * 最大出力文字数（約20,000トークン相当、日本語前提）
  * MCPレスポンスの上限を考慮し、安全マージンを持たせる
  */
-const MAX_OUTPUT_CHARS = 80_000;
+const MAX_OUTPUT_CHARS = 20_000;
 
 /**
  * 末尾に確保する文字数の割合（テスト結果サマリーが末尾にあるため優先）

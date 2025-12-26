@@ -1,0 +1,5 @@
+{
+  "label": "検証戦略",
+  "description": "TFLint/Trivyによる静的検証、カスタムポリシー",
+  "dependencies": ["protection"]
+}

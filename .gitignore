@@ -170,3 +170,6 @@ tsconfig.tsbuildinfo
 
 # Codegen
 generated/*
+
+# Claude Code local settings
+.claude/settings.local.json

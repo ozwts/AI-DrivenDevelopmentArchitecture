@@ -1,0 +1,5 @@
+{
+  "label": "環境設計",
+  "description": "dev/stg/prd環境の分離、エントリーポイント設計",
+  "dependencies": ["module"]
+}

@@ -42,3 +42,15 @@ export {
   createUnusedExportsHandler,
   type UnusedExportsHandlerInput,
 } from "./unused-exports";
+
+// ========================================
+// Infra Static Analysis Review（インフラ静的解析）
+// ========================================
+export {
+  // 責務定義
+  type InfraAnalysisResponsibility,
+  INFRA_ANALYSIS_RESPONSIBILITIES,
+  // ハンドラー
+  createInfraAnalysisHandler,
+  type InfraAnalysisHandlerInput,
+} from "./static-analysis-infra";
