@@ -31,6 +31,7 @@ build
 
 # Config files (generated from config/*.ts)
 src/config/config.ts
+src/config/generated/
 
 # Code Generated
 src/generated

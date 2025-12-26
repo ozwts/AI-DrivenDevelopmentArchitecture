@@ -279,11 +279,13 @@ const main = async (): Promise<void> => {
         try {
           const action = input.action as DeployAction;
           const target = (input.target as DeployTarget | undefined) ?? "all";
+          const useBranchEnv = (input.useBranchEnv as boolean | undefined) ?? false;
 
           const result = await executeDeploy({
             action,
             target,
             projectRoot: PROJECT_ROOT,
+            useBranchEnv,
           });
 
           return {

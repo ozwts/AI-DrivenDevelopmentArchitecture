@@ -57,7 +57,12 @@ output "cognito_user_pool_endpoint" {
 }
 
 # SSM Parameter Store Outputs
-output "ssm_parameter_path" {
-  description = "SSM Parameter Store path prefix for local development"
-  value       = module.shared_parameters.parameter_path_prefix
+output "server_params_path" {
+  description = "サーバー用SSM Parameter Storeパスプレフィックス（ローカル開発用）"
+  value       = module.server_params.parameter_path_prefix
+}
+
+output "web_params_path" {
+  description = "Web用SSM Parameter Storeパスプレフィックス（ビルド時のconfig生成用）"
+  value       = module.web_params.parameter_path_prefix
 }

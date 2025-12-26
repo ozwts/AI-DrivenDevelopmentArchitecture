@@ -163,4 +163,61 @@ export const TEST_RESPONSIBILITIES: ProcedureResponsibility[] = [
       return formatTestResult(result);
     },
   },
+
+  // ----- E2Eユーザーセットアップ -----
+  {
+    id: "procedure_e2e_user_setup",
+    toolDescription:
+      "E2Eテスト用ユーザーをCognitoに作成し、認証情報をSSM Parameter Storeに保存します。useBranchEnv=trueでブランチ環境用、falseで共有dev環境用。",
+    inputSchema: {
+      useBranchEnv: z
+        .boolean()
+        .optional()
+        .default(true)
+        .describe(
+          "ブランチ環境を使用するか。true: ブランチ固有の環境（デフォルト）、false: 共有dev環境",
+        ),
+    },
+    handler: async (input, projectRoot): Promise<string> => {
+      const runner = getTestRunner(projectRoot);
+      const useBranchEnv = (input.useBranchEnv as boolean | undefined) ?? true;
+      const result = await runner.setupE2EUser(useBranchEnv);
+      return formatTestResult(result);
+    },
+  },
+
+  // ----- E2Eユーザー削除 -----
+  {
+    id: "procedure_e2e_user_destroy",
+    toolDescription:
+      "E2Eテスト用ユーザーをCognitoから削除し、SSM Parameter Storeから認証情報を削除します。useBranchEnv=trueでブランチ環境用、falseで共有dev環境用。",
+    inputSchema: {
+      useBranchEnv: z
+        .boolean()
+        .optional()
+        .default(true)
+        .describe(
+          "ブランチ環境を使用するか。true: ブランチ固有の環境（デフォルト）、false: 共有dev環境",
+        ),
+    },
+    handler: async (input, projectRoot): Promise<string> => {
+      const runner = getTestRunner(projectRoot);
+      const useBranchEnv = (input.useBranchEnv as boolean | undefined) ?? true;
+      const result = await runner.destroyE2EUser(useBranchEnv);
+      return formatTestResult(result);
+    },
+  },
+
+  // ----- ブラウザセットアップ -----
+  {
+    id: "procedure_e2e_browser_setup",
+    toolDescription:
+      "E2Eテスト用のChromiumブラウザをインストールします。初回セットアップ時やブラウザ更新時に実行してください。",
+    inputSchema: {},
+    handler: async (_input, projectRoot): Promise<string> => {
+      const runner = getTestRunner(projectRoot);
+      const result = await runner.setupBrowser();
+      return formatTestResult(result);
+    },
+  },
 ];

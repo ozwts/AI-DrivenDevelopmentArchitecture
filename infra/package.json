@@ -3,8 +3,10 @@
   "version": "0.0.0",
   "scripts": {
     "build": "cd .. && npm run build -w web && npm run api:build -w server",
+    "build:branch": "cd .. && npm run build:branch -w web && npm run api:build -w server",
     "api:build": "cd .. && npm run api:build -w server",
     "web:build": "cd .. && npm run build -w web",
+    "web:build:branch": "cd .. && npm run build:branch -w web",
 
     "fix": "terraform fmt -recursive terraform/",
     "fix:format": "npm run fix",
@@ -30,22 +32,29 @@
     "config:dev": "terraform -chdir=terraform/environments/dev init --reconfigure",
     "config:stg": "terraform -chdir=terraform/environments/stg init --reconfigure",
     "config:prd": "terraform -chdir=terraform/environments/prd init --reconfigure",
+    "config:branch:dev": "terraform -chdir=terraform/environments/dev init -reconfigure -backend-config=\"key=terraform/dev-$(git branch --show-current | shasum | cut -c1-7).tfstate\"",
     "config:upgrade:dev": "terraform -chdir=terraform/environments/dev init -upgrade",
     "config:upgrade:stg": "terraform -chdir=terraform/environments/stg init -upgrade",
     "config:upgrade:prd": "terraform -chdir=terraform/environments/prd init -upgrade",
+    "config:upgrade:branch:dev": "terraform -chdir=terraform/environments/dev init -upgrade -backend-config=\"key=terraform/dev-$(git branch --show-current | shasum | cut -c1-7).tfstate\"",
 
     "diff:dev": "npm run build && npm run validate:dev && npm run config:dev && terraform -chdir=terraform/environments/dev plan",
     "diff:stg": "npm run build && npm run validate:stg && npm run config:stg && terraform -chdir=terraform/environments/stg plan",
     "diff:prd": "npm run build && npm run validate:prd && npm run config:prd && terraform -chdir=terraform/environments/prd plan",
+    "diff:branch:dev": "npm run build:branch && npm run validate:dev && npm run config:branch:dev && terraform -chdir=terraform/environments/dev plan -var=\"branch_suffix=$(git branch --show-current | shasum | cut -c1-7)\"",
 
     "deploy:dev": "npm run build && npm run validate:dev && npm run config:dev && terraform -chdir=terraform/environments/dev apply --auto-approve",
     "deploy:stg": "npm run build && npm run validate:stg && npm run config:stg && terraform -chdir=terraform/environments/stg apply --auto-approve",
     "deploy:prd": "npm run build && npm run validate:prd && npm run config:prd && terraform -chdir=terraform/environments/prd apply",
     "deploy:api:dev": "npm run api:build && terraform -chdir=terraform/environments/dev apply -target=module.db -target=module.server --auto-approve",
     "deploy:web:dev": "npm run web:build && terraform -chdir=terraform/environments/dev apply -target=module.static_site --auto-approve",
+    "deploy:branch:dev": "npm run build:branch && npm run validate:dev && npm run config:branch:dev && terraform -chdir=terraform/environments/dev apply -var=\"branch_suffix=$(git branch --show-current | shasum | cut -c1-7)\" --auto-approve",
+    "deploy:branch:api:dev": "npm run api:build && npm run config:branch:dev && terraform -chdir=terraform/environments/dev apply -target=module.db -target=module.server -target=module.server_params -var=\"branch_suffix=$(git branch --show-current | shasum | cut -c1-7)\" --auto-approve",
+    "deploy:branch:web:dev": "npm run web:build:branch && npm run config:branch:dev && terraform -chdir=terraform/environments/dev apply -target=module.static_site -target=module.web_params -var=\"branch_suffix=$(git branch --show-current | shasum | cut -c1-7)\" --auto-approve",
 
     "destroy:dev": "terraform -chdir=terraform/environments/dev destroy",
     "destroy:stg": "terraform -chdir=terraform/environments/stg destroy",
-    "destroy:prd": "terraform -chdir=terraform/environments/prd destroy"
+    "destroy:prd": "terraform -chdir=terraform/environments/prd destroy",
+    "destroy:branch:dev": "cd .. && npm run user:destroy:branch -w e2e && cd infra && npm run config:branch:dev && terraform -chdir=terraform/environments/dev destroy -var=\"branch_suffix=$(git branch --show-current | shasum | cut -c1-7)\" --auto-approve"
   }
 }

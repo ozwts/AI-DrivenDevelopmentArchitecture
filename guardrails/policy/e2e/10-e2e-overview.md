@@ -16,6 +16,7 @@ E2Eテストは**他のテスト層でカバーできない領域**を検証す�
 | `20-page-object-pattern.md` | Page Object | 汎用 |
 | `30-test-patterns.md` | シナリオ設計パターン | 汎用 |
 | `40-authentication.md` | 認証の扱い方 | 汎用 |
+| `50-test-repair.md` | テスト修復の判断基準 | 汎用 |
 
 ## E2E追加の判断基準
 
@@ -108,3 +109,4 @@ web/src/routes/{route}/  →  e2e/tests/{route}/  →  e2e/pages/{route}/
 - `20-page-object-pattern.md`: Page Objectパターン
 - `30-test-patterns.md`: シナリオ設計パターン
 - `40-authentication.md`: 認証の扱い方
+- `50-test-repair.md`: テスト修復の判断基準

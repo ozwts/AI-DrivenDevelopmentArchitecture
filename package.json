@@ -5,11 +5,12 @@
   "workspaces": [
     "web",
     "server",
-    "infra"
+    "infra",
+    "e2e"
   ],
   "scripts": {
     "sort": "sort-package-json",
-    "dev": "concurrently -n api,web -c blue,green \"npm run dev -w server\" \"npm run dev:local -w web\"",
+    "dev": "concurrently -n api,web -c blue,green \"npm run dev:branch -w server\" \"npm run dev:local -w web\"",
     "dev:mock": "npm run dev:mock -w web",
     "fix": "npm run fix -w web -w server -w infra",
     "fix:format": "npm run fix:format -w web -w server -w infra",

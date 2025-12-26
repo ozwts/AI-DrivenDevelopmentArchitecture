@@ -32,6 +32,7 @@ const getActionLabel = (action: string): string => {
     diff: "差分確認 (Plan)",
     deploy: "デプロイ (Apply)",
     destroy: "削除 (Destroy)",
+    upgrade: "プロバイダ更新 (Upgrade)",
   };
   return labels[action] ?? action;
 };
@@ -80,7 +81,10 @@ export const formatDeployResult = (result: DeployResult): string => {
 
   // サマリー
   lines.push("### サマリー");
-  lines.push(`- **環境**: ${result.environment}`);
+  const envLabel = result.branchSuffix
+    ? `${result.environment} (ブランチ環境: ${result.branchSuffix})`
+    : result.environment;
+  lines.push(`- **環境**: ${envLabel}`);
   lines.push(`- **ターゲット**: ${targetLabel}`);
   lines.push(`- **アクション**: ${actionLabel}`);
   lines.push(`- **ステータス**: ${result.success ? "成功" : "失敗"}`);

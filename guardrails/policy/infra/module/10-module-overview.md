@@ -40,6 +40,7 @@ modules/
 |-----|------|-----|
 | 安全なデフォルト | 保護系は `true` をデフォルト | `default = true` |
 | description必須 | 全変数に説明を付与 | TFLintで強制 |
+| 日本語で記述 | `description`、`error_message` は日本語 | チーム共通言語 |
 | 型明示 | `type` を必ず指定 | `type = bool` |
 
 ## Do / Don't

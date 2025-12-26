@@ -24,3 +24,14 @@ variable "aws_project_region" {
   type        = string
   default     = "ap-northeast-1"
 }
+
+variable "branch_suffix" {
+  description = "開発者ごとの分離環境用ブランチハッシュ。設定時はリソース名にこのサフィックスが付与され、開発者間の競合を回避する。"
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = var.branch_suffix == "" || can(regex("^[a-z0-9]{1,12}$", var.branch_suffix))
+    error_message = "branch_suffixは空文字、または1〜12文字の小文字英数字（例: gitの短縮ハッシュ）である必要があります。"
+  }
+}

@@ -4,18 +4,24 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "playwright test",
-    "test:ui": "playwright test --ui",
-    "test:headed": "playwright test --headed",
-    "test:debug": "playwright test --debug",
+    "test": "SSM_E2E_PREFIX=/sandbox-dev/e2e playwright test",
+    "test:branch": "SSM_E2E_PREFIX=/sandbox-dev-$(git branch --show-current | shasum | cut -c1-7)/e2e playwright test",
+    "test:ui": "SSM_E2E_PREFIX=/sandbox-dev/e2e playwright test --ui",
+    "test:headed": "SSM_E2E_PREFIX=/sandbox-dev/e2e playwright test --headed",
+    "test:debug": "SSM_E2E_PREFIX=/sandbox-dev/e2e playwright test --debug",
     "report": "playwright show-report",
     "setup:browser": "playwright install --with-deps chromium",
-    "user:check": "USER_POOL_ID=$(aws ssm get-parameter --name /sandbox-dev/COGNITO_USER_POOL_ID --query Parameter.Value --output text) && aws cognito-idp admin-get-user --user-pool-id $USER_POOL_ID --username e2e-test@example.com",
-    "user:setup": "PASSWORD=\"$(openssl rand -base64 12 | tr -d '/+=' | head -c 8)Aa1!$(openssl rand -base64 8 | tr -d '/+=' | head -c 6)\" && USER_POOL_ID=$(aws ssm get-parameter --name /sandbox-dev/COGNITO_USER_POOL_ID --query Parameter.Value --output text) && aws cognito-idp admin-create-user --user-pool-id $USER_POOL_ID --username e2e-test@example.com --user-attributes Name=email,Value=e2e-test@example.com Name=email_verified,Value=true --message-action SUPPRESS 2>/dev/null || true && aws cognito-idp admin-set-user-password --user-pool-id $USER_POOL_ID --username e2e-test@example.com --password \"$PASSWORD\" --permanent && echo \"export const E2E_USER = { email: \\\"e2e-test@example.com\\\", password: \\\"$PASSWORD\\\" } as const;\" > fixtures/auth.ts && echo 'auth.ts generated with new password'",
-    "user:destroy": "USER_POOL_ID=$(aws ssm get-parameter --name /sandbox-dev/COGNITO_USER_POOL_ID --query Parameter.Value --output text) && aws cognito-idp admin-delete-user --user-pool-id $USER_POOL_ID --username e2e-test@example.com && rm -f fixtures/auth.ts && echo 'E2E user deleted'"
+    "user:check": "PREFIX=${SSM_PREFIX:-/sandbox-dev} && USER_POOL_ID=$(aws ssm get-parameter --name $PREFIX/server/COGNITO_USER_POOL_ID --query Parameter.Value --output text) && aws cognito-idp admin-get-user --user-pool-id $USER_POOL_ID --username e2e-test@example.com",
+    "user:setup": "PREFIX=${SSM_PREFIX:-/sandbox-dev} && PASSWORD=\"$(openssl rand -base64 12 | tr -d '/+=' | head -c 8)Aa1!$(openssl rand -base64 8 | tr -d '/+=' | head -c 6)\" && USER_POOL_ID=$(aws ssm get-parameter --name $PREFIX/server/COGNITO_USER_POOL_ID --query Parameter.Value --output text) && aws cognito-idp admin-create-user --user-pool-id $USER_POOL_ID --username e2e-test@example.com --user-attributes Name=email,Value=e2e-test@example.com Name=email_verified,Value=true --message-action SUPPRESS 2>/dev/null || true && aws cognito-idp admin-set-user-password --user-pool-id $USER_POOL_ID --username e2e-test@example.com --password \"$PASSWORD\" --permanent && aws ssm put-parameter --name $PREFIX/e2e/E2E_USER_EMAIL --value e2e-test@example.com --type String --overwrite && aws ssm put-parameter --name $PREFIX/e2e/E2E_USER_PASSWORD --value \"$PASSWORD\" --type SecureString --overwrite && echo 'E2E user created and credentials stored in SSM'",
+    "user:setup:branch": "SSM_PREFIX=/sandbox-dev-$(git branch --show-current | shasum | cut -c1-7) npm run user:setup",
+    "user:destroy": "PREFIX=${SSM_PREFIX:-/sandbox-dev} && (USER_POOL_ID=$(aws ssm get-parameter --name $PREFIX/server/COGNITO_USER_POOL_ID --query Parameter.Value --output text 2>/dev/null) && aws cognito-idp admin-delete-user --user-pool-id $USER_POOL_ID --username e2e-test@example.com 2>/dev/null) || true && aws ssm delete-parameter --name $PREFIX/e2e/E2E_USER_EMAIL 2>/dev/null || true && aws ssm delete-parameter --name $PREFIX/e2e/E2E_USER_PASSWORD 2>/dev/null || true && echo 'E2E user cleanup completed'",
+    "user:destroy:branch": "SSM_PREFIX=/sandbox-dev-$(git branch --show-current | shasum | cut -c1-7) npm run user:destroy"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1",
     "typescript": "^5.5.3"
+  },
+  "dependencies": {
+    "@aws-sdk/client-ssm": "^3.958.0"
   }
 }

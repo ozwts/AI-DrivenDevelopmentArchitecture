@@ -14,6 +14,8 @@ export {
 // 実行
 export {
   executeDeploy,
+  getCurrentBranchName,
+  getBranchNameHash,
   type DeployInput,
   type DeployResult,
   type DeployAction,

@@ -20,9 +20,9 @@ provider "aws" {
 
   default_tags {
     tags = {
-      Project     = var.aws_project_prefix
+      Project     = local.resource_prefix
       Env         = var.env
-      Environment = var.environment
+      Environment = local.effective_environment
     }
   }
 }

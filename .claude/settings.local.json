@@ -125,7 +125,9 @@
       "WebFetch(domain:trivy.dev)",
       "Bash(trivy:*)",
       "Bash(tflint:*)",
-      "Bash(npx msw:*)"
+      "Bash(npx msw:*)",
+      "WebFetch(domain:scalefactory.com)",
+      "WebFetch(domain:www.env0.com)"
     ],
     "deny": [],
     "ask": []

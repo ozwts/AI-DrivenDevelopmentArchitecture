@@ -13,7 +13,8 @@ export type TestTarget =
   | "web:component"
   | "web:snapshot"
   | "e2e"
-  | "all";
+  | "all"
+  | "setup";
 
 export type TestResult = {
   success: boolean;
@@ -228,19 +229,21 @@ class TestRunner {
   /**
    * E2Eテスト実行 (Playwright E2E Test)
    *
-   * npm scripts: npm run test -- [options]
-   * - file: npm run test -- <file>
-   * - testName: npm run test -- --grep "<testName>"
+   * npm scripts: npm run test:branch -- [options]
+   * - file: npm run test:branch -- <file>
+   * - testName: npm run test:branch -- --grep "<testName>"
    *
    * environment variables:
    * - E2E_BASE_URL: フロントエンドのベースURL
    * - API_BASE_URL: APIサーバーのベースURL
+   *
+   * 注意: ブランチ環境のSSMパラメータを使用するためtest:branchを使用
    */
   async runE2ETests(options?: E2ETestOptions): Promise<TestResult> {
     const startTime = Date.now();
     const filter = options?.filter;
 
-    let command = "npm run test -- --project=chromium";
+    let command = "npm run test:branch -w e2e -- --project=chromium";
     const args: string[] = [];
     const envVars: string[] = [];
 
@@ -261,7 +264,7 @@ class TestRunner {
     }
 
     if (args.length > 0) {
-      command = `npm run test -- --project=chromium ${args.join(" ")}`;
+      command = `npm run test:branch -w e2e -- --project=chromium ${args.join(" ")}`;
     }
 
     // 環境変数をコマンドの前に付加
@@ -269,8 +272,7 @@ class TestRunner {
       command = `${envVars.join(" ")} ${command}`;
     }
 
-    const e2eDir = `${this.projectRoot}/e2e`;
-    const result = await runCommand(command, e2eDir);
+    const result = await runCommand(command, this.projectRoot);
 
     return {
       success: result.success,
@@ -375,6 +377,69 @@ class TestRunner {
     return {
       success: result.success,
       target: "web:snapshot",
+      output: result.output,
+      duration: Date.now() - startTime,
+    };
+  }
+
+  /**
+   * E2Eユーザーセットアップ
+   *
+   * Cognitoにテストユーザーを作成し、認証情報をSSM Parameter Storeに保存
+   * - useBranchEnv=true: ブランチ環境用（/sandbox-dev-{hash}/e2e/...）
+   * - useBranchEnv=false: 共有dev環境用（/sandbox-dev/e2e/...）
+   */
+  async setupE2EUser(useBranchEnv: boolean): Promise<TestResult> {
+    const startTime = Date.now();
+
+    const script = useBranchEnv ? "user:setup:branch" : "user:setup";
+    const command = `npm run ${script} -w e2e`;
+    const result = await runCommand(command, this.projectRoot);
+
+    return {
+      success: result.success,
+      target: "setup",
+      output: result.output,
+      duration: Date.now() - startTime,
+    };
+  }
+
+  /**
+   * E2Eユーザー削除
+   *
+   * Cognitoのテストユーザーを削除し、SSM Parameter Storeから認証情報を削除
+   * - useBranchEnv=true: ブランチ環境用
+   * - useBranchEnv=false: 共有dev環境用
+   */
+  async destroyE2EUser(useBranchEnv: boolean): Promise<TestResult> {
+    const startTime = Date.now();
+
+    const script = useBranchEnv ? "user:destroy:branch" : "user:destroy";
+    const command = `npm run ${script} -w e2e`;
+    const result = await runCommand(command, this.projectRoot);
+
+    return {
+      success: result.success,
+      target: "setup",
+      output: result.output,
+      duration: Date.now() - startTime,
+    };
+  }
+
+  /**
+   * ブラウザセットアップ
+   *
+   * Playwright用のChromiumブラウザをインストール
+   */
+  async setupBrowser(): Promise<TestResult> {
+    const startTime = Date.now();
+
+    const command = "npm run setup:browser -w e2e";
+    const result = await runCommand(command, this.projectRoot);
+
+    return {
+      success: result.success,
+      target: "setup",
       output: result.output,
       duration: Date.now() - startTime,
     };

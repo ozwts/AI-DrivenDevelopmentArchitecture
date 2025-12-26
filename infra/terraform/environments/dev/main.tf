@@ -2,6 +2,15 @@
 # Locals
 ##################################################
 locals {
+  # リソースプレフィックス（ブランチサフィックスがあれば付与）
+  # 共有dev環境: sandbox-dev
+  # 開発者環境: sandbox-dev-abc123f
+  resource_prefix = join("-", compact([var.aws_project_prefix, var.branch_suffix]))
+
+  # 実効environment（タグ用、ブランチ環境では識別子を付与）
+  # compact: 空文字を除外 → join: ハイフンで結合
+  effective_environment = join("-", compact([var.environment, var.branch_suffix]))
+
   static_site_url = "https://${module.static_site.cloudfront_domain_name}"
 
   # ビルド成果物ディレクトリ
@@ -13,9 +22,8 @@ locals {
   # 例: cors_allowed_origins = [local.static_site_url]
   cors_allowed_origins = ["*"]
 
-  # アプリケーション共通環境変数
-  # Lambda環境変数とSSM Parameter Store（ローカル開発用）で使いまわす
-  app_env_vars = merge(
+  # サーバー設定（Lambda環境変数 + SSM Parameter Store）
+  server_config = merge(
     # DynamoDBテーブル名
     module.db.app_env_vars,
     # Cognito設定
@@ -43,36 +51,80 @@ locals {
 }
 
 ##################################################
-# Modules
+# Modules - 基盤層（依存なし）
 ##################################################
 
-# ローカル開発用パラメータ（SSM Parameter Store）
-# ローカルから `npm run dev` で AWS リソースに接続するための設定
-module "shared_parameters" {
-  source = "../../modules/aws/parameter"
+# DynamoDB Tables
+module "db" {
+  source = "../../modules/aws/db"
 
-  parameter_path_prefix = var.aws_project_prefix
+  environment        = local.effective_environment
+  env                = var.env
+  aws_project_prefix = local.resource_prefix
 
-  parameters = {
-    for key, value in local.app_env_vars : key => {
-      value       = value
-      description = "App environment variable: ${key}"
-      secure      = false
-    }
-  }
+  deletion_protection_enabled = false # ハンズオン環境用: destroyで完全削除可能
+  point_in_time_recovery      = false # ハンズオン環境用: バックアップ不要
+  server_side_encryption      = true
+}
 
-  tags = {
-    Service = "local-dev-parameters"
-  }
+# 認証（Cognito）
+module "auth" {
+  source = "../../modules/aws/auth"
+
+  project_name = local.resource_prefix
+  identifier   = var.env
+  environment  = local.effective_environment
+
+  # MFA設定（開発環境では無効）
+  enable_mfa = false
+
+  # 削除保護（ハンズオン環境用: destroyで完全削除可能）
+  deletion_protection = false
+
+  # トークンの有効期限
+  access_token_validity_minutes = 60 # 60分
+  id_token_validity_minutes     = 60 # 60分
+  refresh_token_validity_days   = 30 # 30日
+
+  # 読み取り・書き込み可能な属性
+  read_attributes  = ["email", "email_verified"]
+  write_attributes = ["email"]
+
+  # OAuth設定（カスタムログインフォームでは不要）
+  oauth_flows  = []
+  oauth_scopes = []
+}
+
+# 添付ファイル用S3バケット
+module "attachments_bucket" {
+  source = "../../modules/aws/storage"
+
+  environment        = local.effective_environment
+  env                = var.env
+  aws_project_prefix = local.resource_prefix
+
+  # バケットの用途を指定
+  bucket_purpose = "attachments"
+
+  # CORS設定（local.cors_allowed_originsを参照）
+  enable_cors          = true
+  cors_allowed_origins = local.cors_allowed_origins
+
+  # バージョニングとライフサイクル設定
+  enable_versioning = false
+  enable_lifecycle  = false
+
+  # ハンズオン環境用: destroyで完全削除可能
+  force_destroy = true
 }
 
 # 静的サイトホスティング（S3 + CloudFront）
 module "static_site" {
   source = "../../modules/aws/static-site"
 
-  environment        = var.environment
+  environment        = local.effective_environment
   env                = var.env
-  aws_project_prefix = var.aws_project_prefix
+  aws_project_prefix = local.resource_prefix
 
   # CloudFront設定
   cloudfront_price_class = "PriceClass_200" # アジア・ヨーロッパ・北米
@@ -108,80 +160,20 @@ module "static_site" {
   }
 }
 
-# DynamoDB Tables
-module "db" {
-  source = "../../modules/aws/db"
-
-  environment        = var.environment
-  env                = var.env
-  aws_project_prefix = var.aws_project_prefix
-
-  deletion_protection_enabled = false # ハンズオン環境用: destroyで完全削除可能
-  point_in_time_recovery      = false # ハンズオン環境用: バックアップ不要
-  server_side_encryption      = true
-}
-
-# 認証（Cognito）
-module "auth" {
-  source = "../../modules/aws/auth"
-
-  project_name = var.aws_project_prefix
-  identifier   = var.env
-  environment  = var.environment
-
-  # MFA設定（開発環境では無効）
-  enable_mfa = false
-
-  # 削除保護（ハンズオン環境用: destroyで完全削除可能）
-  deletion_protection = false
-
-  # トークンの有効期限
-  access_token_validity_minutes = 60 # 60分
-  id_token_validity_minutes     = 60 # 60分
-  refresh_token_validity_days   = 30 # 30日
-
-  # 読み取り・書き込み可能な属性
-  read_attributes  = ["email", "email_verified"]
-  write_attributes = ["email"]
-
-  # OAuth設定（カスタムログインフォームでは不要）
-  oauth_flows  = []
-  oauth_scopes = []
-}
-
-# 添付ファイル用S3バケット
-module "attachments_bucket" {
-  source = "../../modules/aws/storage"
-
-  environment        = var.environment
-  env                = var.env
-  aws_project_prefix = var.aws_project_prefix
-
-  # バケットの用途を指定
-  bucket_purpose = "attachments"
-
-  # CORS設定（local.cors_allowed_originsを参照）
-  enable_cors          = true
-  cors_allowed_origins = local.cors_allowed_origins
-
-  # バージョニングとライフサイクル設定
-  enable_versioning = false
-  enable_lifecycle  = false
-
-  # ハンズオン環境用: destroyで完全削除可能
-  force_destroy = true
-}
+##################################################
+# Modules - アプリケーション層（基盤に依存）
+##################################################
 
 # APIサーバー（Lambda + API Gateway）
 module "server" {
   source = "../../modules/aws/server"
 
-  environment        = var.environment
+  environment        = local.effective_environment
   env                = var.env
-  aws_project_prefix = var.aws_project_prefix
+  aws_project_prefix = local.resource_prefix
 
   # API設定
-  api_name = "${var.aws_project_prefix}-api"
+  api_name = "${local.resource_prefix}-api"
 
   # Lambda設定
   handler     = "index.handler"
@@ -192,11 +184,10 @@ module "server" {
   # デプロイ設定
   source_dir = local.api_build_dir
 
-  # 環境変数（local.app_env_varsを使いまわし + Lambda専用の設定を追加）
+  # 環境変数（local.server_configを使いまわし + Lambda専用の設定を追加）
   environment_variables = merge(
-    local.app_env_vars,
+    local.server_config,
     {
-      NODE_ENV        = var.environment
       STATIC_SITE_URL = local.static_site_url
     }
   )
@@ -225,3 +216,63 @@ module "server" {
   }
 }
 
+##################################################
+# Modules - 設定層（アプリケーション層に依存）
+##################################################
+
+# サーバー用パラメータ（SSM Parameter Store）
+# Lambda環境変数 + ローカル開発時のnpm run dev用
+module "server_params" {
+  source = "../../modules/aws/parameter"
+
+  parameter_path_prefix = "${local.resource_prefix}/server"
+
+  parameters = {
+    for key, value in local.server_config : key => {
+      value       = value
+      description = "サーバー環境変数: ${key}"
+      secure      = false
+    }
+  }
+
+  tags = {
+    Service     = "server-parameters"
+    Environment = local.effective_environment
+  }
+}
+
+# Web用パラメータ（SSM Parameter Store）
+# ビルド時にfetch-config.tsで取得してconfig生成
+module "web_params" {
+  source = "../../modules/aws/parameter"
+
+  parameter_path_prefix = "${local.resource_prefix}/web"
+
+  parameters = {
+    API_URL = {
+      value       = module.server.api_endpoint
+      description = "API Gateway エンドポイントURL"
+      secure      = false
+    }
+    COGNITO_USER_POOL_ID = {
+      value       = module.auth.user_pool_id
+      description = "Cognito User Pool ID"
+      secure      = false
+    }
+    COGNITO_CLIENT_ID = {
+      value       = module.auth.app_client_id
+      description = "Cognito App Client ID"
+      secure      = false
+    }
+    COGNITO_REGION = {
+      value       = var.aws_project_region
+      description = "Cognito リージョン"
+      secure      = false
+    }
+  }
+
+  tags = {
+    Service     = "web-parameters"
+    Environment = local.effective_environment
+  }
+}

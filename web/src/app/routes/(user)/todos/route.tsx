@@ -208,15 +208,7 @@ export default function TodosIndexRoute() {
         <EmptyState
           icon={<ListBulletIcon className="h-16 w-16 text-neutral-400" />}
           title="TODOがありません"
-          description="新しいTODOを作成して始めましょう"
-          action={
-            <Link to="/todos/new">
-              <Button variant="primary">
-                <PlusIcon className="h-5 w-5 mr-2" />
-                新規TODO
-              </Button>
-            </Link>
-          }
+          description="右上の「新規TODO」ボタンから作成できます"
         />
       )}
     </div>

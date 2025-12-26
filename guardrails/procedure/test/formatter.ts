@@ -65,17 +65,34 @@ const truncateOutput = (output: string): string => {
 };
 
 /**
+ * ターゲットのラベルを取得
+ */
+const getTargetLabel = (target: string): string => {
+  const labels: Record<string, string> = {
+    server: "サーバー",
+    web: "Web（全体）",
+    "web:component": "Webコンポーネント",
+    "web:snapshot": "Webスナップショット",
+    e2e: "E2E",
+    all: "全テスト",
+    setup: "セットアップ",
+  };
+  return labels[target] ?? target;
+};
+
+/**
  * テスト結果をフォーマット
  */
 export const formatTestResult = (result: TestResult): string => {
   const status = result.success ? "✅ 成功" : "❌ 失敗";
   const duration = formatDuration(result.duration);
   const truncatedOutput = truncateOutput(result.output);
+  const targetLabel = getTargetLabel(result.target);
 
   return [
     `## テスト結果: ${status}`,
     "",
-    `- **対象**: ${result.target}`,
+    `- **対象**: ${targetLabel}`,
     `- **実行時間**: ${duration}`,
     "",
     "### 出力",
