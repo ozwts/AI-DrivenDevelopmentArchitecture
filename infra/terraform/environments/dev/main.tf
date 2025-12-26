@@ -1,31 +1,4 @@
 ##################################################
-# Variables
-##################################################
-variable "environment" {
-  description = "This environment name."
-  type        = string
-  default     = "development"
-}
-
-variable "env" {
-  description = "Short form of this environment."
-  type        = string
-  default     = "dev"
-}
-
-variable "aws_project_prefix" {
-  description = "The prefix name of the project deployed in this AWS account."
-  type        = string
-  default     = "sandbox-dev"
-}
-
-variable "aws_project_region" {
-  description = "AWS region name to be used as primary."
-  type        = string
-  default     = "ap-northeast-1"
-}
-
-##################################################
 # Locals
 ##################################################
 locals {
@@ -153,6 +126,7 @@ module "auth" {
 
   project_name = var.aws_project_prefix
   identifier   = var.env
+  environment  = var.environment
 
   # MFA設定（開発環境では無効）
   enable_mfa = false

@@ -88,4 +88,9 @@ plugin "aws" {
 rule "aws_resource_missing_tags" {
   enabled = true
   tags    = ["Environment", "Name"]
+
+  # タグをサポートしないリソースを除外
+  exclude = [
+    "aws_cognito_user_pool_client",
+  ]
 }

@@ -58,6 +58,7 @@ resource "aws_cognito_user_pool" "main" {
 
   tags = {
     Name        = "${var.project_name}-${var.identifier}-user-pool"
+    Environment = var.environment
     ProjectName = var.project_name
     Identifier  = var.identifier
   }

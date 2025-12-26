@@ -8,6 +8,11 @@ variable "identifier" {
   type        = string
 }
 
+variable "environment" {
+  description = "環境名（Environment タグ用）"
+  type        = string
+}
+
 variable "enable_mfa" {
   description = "MFAを有効にするか"
   type        = bool
