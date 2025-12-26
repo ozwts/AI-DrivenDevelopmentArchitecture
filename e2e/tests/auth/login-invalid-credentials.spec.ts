@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { LoginPage } from "../../pages/LoginPage";
+import { LoginPage } from "../../pages/auth/LoginPage";
 
 /**
  * 認証異常系テスト

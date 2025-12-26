@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { ProjectsPage } from "../../pages/ProjectsPage";
+import { ProjectsPage } from "../../pages/projects/ProjectsPage";
 
 /**
  * プロジェクトでTODOをフィルタリングするテスト

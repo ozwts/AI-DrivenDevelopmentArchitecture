@@ -101,12 +101,26 @@ export const TEST_RESPONSIBILITIES: ProcedureResponsibility[] = [
   {
     id: "procedure_test_e2e",
     toolDescription:
-      "E2Eテストを実行します（Playwright E2E Test）。fileでファイル指定、testNameでテスト名フィルタができます。",
-    inputSchema: filterSchema,
+      "E2Eテストを実行します（Playwright E2E Test）。fileでファイル指定、testNameでテスト名フィルタ、baseUrl/apiBaseUrlで対象環境を指定できます。URL未指定時はローカル環境（フロント: localhost:5173、API: localhost:3000）に接続します。",
+    inputSchema: {
+      ...filterSchema,
+      baseUrl: z
+        .string()
+        .optional()
+        .describe(
+          "フロントエンドのベースURL（省略時: http://localhost:5173）",
+        ),
+      apiBaseUrl: z
+        .string()
+        .optional()
+        .describe("APIサーバーのベースURL（省略時: http://localhost:3000）"),
+    },
     handler: async (input, projectRoot): Promise<string> => {
       const runner = getTestRunner(projectRoot);
       const filter = buildFilter(input);
-      const result = await runner.runE2ETests(filter);
+      const baseUrl = input.baseUrl as string | undefined;
+      const apiBaseUrl = input.apiBaseUrl as string | undefined;
+      const result = await runner.runE2ETests({ filter, baseUrl, apiBaseUrl });
       return formatTestResult(result);
     },
   },

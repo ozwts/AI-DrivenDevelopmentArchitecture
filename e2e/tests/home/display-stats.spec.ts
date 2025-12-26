@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { HomePage } from "../../pages/HomePage";
+import { HomePage } from "../../pages/home/HomePage";
 
 /**
  * ホーム画面の統計情報表示テスト

@@ -1,6 +1,6 @@
 import { test as setup, expect } from "@playwright/test";
 import { E2E_USER } from "../fixtures/auth";
-import { LoginPage } from "../pages/LoginPage";
+import { LoginPage } from "../pages/auth/LoginPage";
 
 const authFile = "playwright/.auth/user.json";
 

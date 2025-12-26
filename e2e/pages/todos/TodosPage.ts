@@ -53,20 +53,6 @@ export class TodosPage {
       .first();
   }
 
-  getDeleteButton(todoTitle: string): Locator {
-    // 見出しから近い位置にある削除ボタンを取得
-    // 同じTODOカード内の削除ボタンを特定するため、見出しの後続要素を探索
-    const heading = this.page
-      .getByRole("heading", { name: todoTitle, level: 3 })
-      .first();
-    // 見出しの親要素（TODOカード）内の削除ボタンを取得
-    return heading.locator('..').getByRole("button", { name: "削除" });
-  }
-
-  async deleteTodo(todoTitle: string) {
-    await this.getDeleteButton(todoTitle).click();
-  }
-
   /**
    * 説明文からTODOカードを特定
    * 説明文を含むarticle要素（Card）を検索

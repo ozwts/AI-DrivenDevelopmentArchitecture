@@ -69,21 +69,39 @@ E2E追加なし（Small/Medium/CT/SSで網羅）
 ```
 e2e/
 ├── playwright.config.ts
-├── package.json
-├── seed.spec.ts          # シードファイル
-├── plans/                # テストプラン
-├── tests/                # テストファイル
-├── pages/                # Page Object
-└── fixtures/             # テストデータ
+├── seed.spec.ts              # シードファイル
+├── tests/                    # テストファイル（ルート別）
+│   ├── auth.setup.ts         # 認証セットアップ
+│   └── {route}/              # ルート別ディレクトリ
+├── pages/                    # Page Object（ルート別）
+│   └── {route}/{Feature}Page.ts
+└── fixtures/                 # テストデータ・ユーティリティ
+    ├── auth.ts               # E2Eユーザー認証情報
+    └── api-client.ts         # クリーンアップ用APIクライアント
+```
+
+### ルート別配置の原則
+
+`tests/`と`pages/`はフロントエンドのルート構造に準拠する。
+
+```
+web/src/routes/{route}/  →  e2e/tests/{route}/  →  e2e/pages/{route}/
 ```
 
 ## 命名規則
 
 | 対象 | パターン | 例 |
 |------|---------|-----|
-| テストファイル | `{feature}.spec.ts` | `auth.spec.ts` |
+| テストファイル | `{action}-{target}.spec.ts` | `create-item.spec.ts` |
 | セットアップ | `{purpose}.setup.ts` | `auth.setup.ts` |
-| Page Object | `{Feature}Page.ts` | `LoginPage.ts` |
+| Page Object | `{Feature}Page.ts` | `ItemsPage.ts` |
+
+## Fixtures
+
+| ファイル | 用途 |
+|---------|------|
+| `auth.ts` | E2Eユーザーの認証情報（email, password） |
+| `api-client.ts` | テストデータクリーンアップ用APIクライアント |
 
 ## 関連ドキュメント
 

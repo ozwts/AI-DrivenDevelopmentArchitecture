@@ -20,13 +20,17 @@ color: green
 
 `guardrails/policy/e2e/` ディレクトリ内のすべてのポリシーファイルを読み込んでください。
 
-## 3. 既存のPage Object
+## 3. ビジネス仕様
+
+`contracts/business/` ディレクトリ内のビジネス仕様を読み込み、テスト対象のドメインルールやユースケースを理解してください。
+
+## 4. 既存のPage Object
 
 `e2e/pages/` ディレクトリ内の既存Page Objectを確認し、テスト可能な操作を把握してください。
 
 # 作業手順
 
-1. **憲法・ポリシー読み込み**: 上記のすべてのファイルを読み込む
+1. **憲法・ポリシー・ビジネス仕様読み込み**: 上記のすべてのファイルを読み込む
 2. **サーバー状態確認**: `mcp__guardrails__procedure_dev_status` でサーバーが起動しているか確認
    - 停止中の場合: `mcp__guardrails__procedure_dev_start` で起動
 3. **既存Page Object確認**: `e2e/pages/` 内のPage Objectを読み込み、利用可能なメソッドを把握

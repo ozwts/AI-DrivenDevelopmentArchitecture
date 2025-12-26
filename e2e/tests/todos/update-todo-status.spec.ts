@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { TodosPage } from "../../pages/TodosPage";
+import { TodosPage } from "../../pages/todos/TodosPage";
+import { apiClient } from "../../fixtures/api-client";
 
 /**
  * TODOステータス変更テスト
@@ -11,17 +12,39 @@ import { TodosPage } from "../../pages/TodosPage";
  * - Page Objectのメソッドを使用してカードを特定
  */
 test.describe("TODOステータス変更", () => {
+  let createdTodoId: string | undefined;
+
+  test.afterEach(async () => {
+    if (createdTodoId) {
+      await apiClient.delete(`/todos/${createdTodoId}`);
+      createdTodoId = undefined;
+    }
+  });
+
   test("正常系 - TODOのステータスを変更できる", async ({ page }) => {
     const todosPage = new TodosPage(page);
     const uniqueId = Date.now();
     const todoTitle = `ステータステストTODO_${uniqueId}`;
     const todoDescription = `ステータス変更テスト用_${uniqueId}`;
 
+    // 作成APIのレスポンスをキャプチャ
+    const responsePromise = page.waitForResponse(
+      (res) =>
+        res.url().includes("/todos") &&
+        !res.url().includes("/todos/") &&
+        res.request().method() === "POST"
+    );
+
     // 1. TODOを作成
     await todosPage.goto();
     await todosPage.clickNewTodo();
     await todosPage.fillTodoForm(todoTitle, todoDescription);
     await todosPage.submitForm();
+
+    // レスポンスからIDを取得
+    const response = await responsePromise;
+    const responseBody = await response.json();
+    createdTodoId = responseBody.id;
 
     // 作成成功を確認
     const createToast = todosPage.getToastWithText("TODOを作成しました");

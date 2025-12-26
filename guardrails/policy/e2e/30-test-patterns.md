@@ -7,6 +7,85 @@
 **根拠となる憲法**:
 - `testing-principles.md`: 1テスト = 1検証
 
+### 検証の完結原則
+
+E2Eテストでは、**操作の結果がユーザーに見える形で正しく反映されているか**まで確認する。中間状態（トースト、URL変化、ローディング）だけで終わらせない。
+
+```
+操作実行 → 中間フィードバック確認 → 最終結果の検証（必須）
+```
+
+| 操作カテゴリ | 中間確認（不十分） | 最終確認（必須） |
+|-------------|-------------------|-----------------|
+| データ変更（CRUD） | トースト表示、URL遷移 | 変更後のデータが画面に反映 |
+| フィルタリング・検索 | URL変化、ローディング | 絞り込まれた結果の内容 |
+| ナビゲーション | URL遷移 | 遷移先の主要コンテンツ表示 |
+| 状態変更 | ボタン状態変化 | 変更後の状態がUIに反映 |
+| モーダル・ダイアログ | モーダル表示/非表示 | 操作結果が親画面に反映 |
+| ファイル操作 | アップロード完了通知 | ファイル一覧に表示 |
+
+### テストの独立性原則
+
+各テストは**自分でテストデータを作成**し、他のテストや既存データに依存しない。
+
+```typescript
+// ✅ Good: ユニークなデータを作成
+const uniqueId = Date.now();
+const title = `テストデータ_${uniqueId}`;
+
+// ❌ Bad: 既存データに依存
+const firstItem = page.getByRole("listitem").first();
+```
+
+### テストデータのクリーンアップ
+
+テストで作成したデータは**afterEach/afterAllでAPIを直接呼び出して削除**する。
+
+```typescript
+import { apiClient } from "../../fixtures/api-client";
+
+test.describe("TODO作成", () => {
+  let createdTodoId: string | undefined;
+
+  test.afterEach(async () => {
+    if (createdTodoId) {
+      await apiClient.delete(`/todos/${createdTodoId}`);
+      createdTodoId = undefined;
+    }
+  });
+
+  test("新規TODOを作成できる", async ({ page }) => {
+    // 1. waitForResponseはトリガーアクションより前に設定
+    const responsePromise = page.waitForResponse(
+      (res) =>
+        res.url().includes("/todos") &&
+        !res.url().includes("/todos/") &&  // 詳細取得を除外
+        res.request().method() === "POST"
+    );
+
+    // 2. フォーム入力・送信（トリガーアクション）
+    await todosPage.goto();
+    await todosPage.clickNewTodo();
+    await todosPage.fillTodoForm(title, description);
+    await todosPage.submitForm();
+
+    // 3. レスポンスを待機してIDを取得
+    const response = await responsePromise;
+    const responseBody = await response.json();
+    createdTodoId = responseBody.id;
+
+    // 4. 検証...
+  });
+});
+```
+
+| ポイント | 説明 |
+|---------|------|
+| waitForResponse配置 | **トリガーアクションより前**に設定（リスナー登録） |
+| URL除外パターン | `/todos/`を除外して作成APIのみキャプチャ |
+| APIクライアント | `fixtures/api-client.ts`で認証トークンを自動取得 |
+| クリーンアップ | afterEachで作成したリソースを削除 |
+
 ## シナリオパターン
 
 テストシナリオは以下のパターンで設計する。
@@ -48,7 +127,11 @@ nullable フィールド（日付、外部ID、説明文など）に対しては
 
 詳細は `contract/api/31-patch-semantics.md` を参照。
 
-## CRUD操作の検証
+## 検証の完結パターン（具体例）
+
+以下は「検証の完結原則」の具体的な適用パターン。
+
+### CRUD操作の検証
 
 CRUD操作後は必ず結果を検証する。操作完了のトースト確認だけでなく、**実際のデータが正しく反映されているか**まで確認する。
 
@@ -59,7 +142,7 @@ CRUD操作後は必ず結果を検証する。操作完了のトースト確認�
 | Update | 更新後に変更した値が反映されていることを確認 |
 | Delete | 削除後にリストから該当データが消えていることを確認 |
 
-### ✅ Good
+#### ✅ Good
 
 ```typescript
 test("Todoを作成すると一覧に表示される", async ({ page }) => {
@@ -76,7 +159,7 @@ test("Todoを作成すると一覧に表示される", async ({ page }) => {
 });
 ```
 
-### ❌ Bad
+#### ❌ Bad
 
 ```typescript
 test("Todoを作成する", async ({ page }) => {
@@ -84,6 +167,50 @@ test("Todoを作成する", async ({ page }) => {
 
   // トーストだけ確認して終わり - データが正しく保存されたか不明
   await expect(page.getByRole("status")).toBeVisible();
+});
+```
+
+### フィルタリング・検索操作の検証
+
+フィルタリングや検索操作後は、**結果が正しく絞り込まれているか**まで確認する。URLやUIの状態変化だけでなく、表示されるデータの内容を検証する。
+
+| 操作 | 検証内容 |
+|------|----------|
+| フィルタリング | 条件に合致するデータが表示されることを確認 |
+| 検索 | 検索キーワードに一致するデータが表示されることを確認 |
+| ソート | データが期待通りの順序で表示されることを確認 |
+
+#### ✅ Good
+
+```typescript
+test("プロジェクトでTODOをフィルタリングできる", async ({ page }) => {
+  const uniqueId = Date.now();
+  const projectName = `フィルタテストプロジェクト_${uniqueId}`;
+  const todoTitle = `フィルタテストTODO_${uniqueId}`;
+
+  // 1. テスト用プロジェクトを作成
+  await projectsPage.createProject(projectName);
+
+  // 2. そのプロジェクトにTODOを作成
+  await todosPage.createTodo({ title: todoTitle, projectId: projectId });
+
+  // 3. プロジェクトでフィルタリング
+  await projectsPage.clickProject(projectName);
+
+  // 4. フィルタリング結果に作成したTODOが表示されることを確認
+  await expect(page.getByRole("heading", { name: todoTitle })).toBeVisible();
+});
+```
+
+#### ❌ Bad
+
+```typescript
+test("プロジェクトでTODOをフィルタリングできる", async ({ page }) => {
+  // 既存プロジェクトに依存
+  await projectHeading.click();
+
+  // URLだけ確認して終わり - 実際にフィルタリングされたか不明
+  await expect(page).toHaveURL(/projectId=/);
 });
 ```
 

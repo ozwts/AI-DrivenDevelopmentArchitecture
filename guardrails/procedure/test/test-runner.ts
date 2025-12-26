@@ -27,6 +27,12 @@ export type TestFilter = {
   testName?: string; // テスト名またはdescribe名
 };
 
+export type E2ETestOptions = {
+  filter?: TestFilter;
+  baseUrl?: string; // フロントエンドのベースURL（省略時: http://localhost:5173）
+  apiBaseUrl?: string; // APIサーバーのベースURL（省略時: http://localhost:3000）
+};
+
 /**
  * 正規表現の特殊文字をエスケープ
  */
@@ -225,12 +231,18 @@ class TestRunner {
    * playwright options:
    * - file: playwright test <file>
    * - testName: playwright test --grep "<testName>"
+   *
+   * environment variables:
+   * - E2E_BASE_URL: フロントエンドのベースURL
+   * - API_BASE_URL: APIサーバーのベースURL
    */
-  async runE2ETests(filter?: TestFilter): Promise<TestResult> {
+  async runE2ETests(options?: E2ETestOptions): Promise<TestResult> {
     const startTime = Date.now();
+    const filter = options?.filter;
 
     let command = "npx playwright test --project=chromium";
     const args: string[] = [];
+    const envVars: string[] = [];
 
     if (filter?.file !== undefined && filter.file !== "") {
       // Playwright: ファイルパスは正規表現パターンとして解釈される
@@ -240,8 +252,21 @@ class TestRunner {
       args.push(`--grep "${filter.testName}"`);
     }
 
+    // 環境変数でURLを指定
+    if (options?.baseUrl !== undefined && options.baseUrl !== "") {
+      envVars.push(`E2E_BASE_URL="${options.baseUrl}"`);
+    }
+    if (options?.apiBaseUrl !== undefined && options.apiBaseUrl !== "") {
+      envVars.push(`API_BASE_URL="${options.apiBaseUrl}"`);
+    }
+
     if (args.length > 0) {
       command = `npx playwright test --project=chromium ${args.join(" ")}`;
+    }
+
+    // 環境変数をコマンドの前に付加
+    if (envVars.length > 0) {
+      command = `${envVars.join(" ")} ${command}`;
     }
 
     const e2eDir = `${this.projectRoot}/e2e`;

@@ -13,6 +13,7 @@ export {
   type TestTarget,
   type TestResult,
   type TestFilter,
+  type E2ETestOptions,
 } from "./test-runner";
 
 // フォーマッター

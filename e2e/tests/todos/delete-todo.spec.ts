@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { TodosPage } from "../../pages/TodosPage";
+import { TodosPage } from "../../pages/todos/TodosPage";
 
 /**
  * TODO削除テスト

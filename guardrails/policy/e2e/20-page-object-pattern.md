@@ -35,6 +35,45 @@ Page Objectは**ページのUI構造とテストロジックを分離**し、UI�
 
 - セマンティックなセレクタで特定できない場合のみ
 
+### 要素の絞り込みパターン
+
+同種の要素が複数存在する場合、`filter()`で特定する。
+
+#### カード要素の特定
+
+```typescript
+// 説明文でカードを特定
+getTodoCard(description: string): Locator {
+  return this.page
+    .getByRole("article")
+    .filter({ has: this.page.getByText(description, { exact: true }) });
+}
+
+// カード内のボタンを取得
+getDeleteButton(description: string): Locator {
+  return this.getTodoCard(description).getByRole("button", { name: "削除" });
+}
+```
+
+#### トースト要素の特定
+
+```typescript
+// 特定メッセージのトーストを取得
+getToastWithText(text: string): Locator {
+  return this.page.getByRole("alert").filter({ hasText: text });
+}
+```
+
+### 禁止パターン
+
+```typescript
+// ❌ 親要素への遡り（XPath相当）
+heading.locator('..').getByRole("button");
+
+// ❌ CSSセレクタ
+page.locator(".card-delete-button");
+```
+
 ## Do / Don't
 
 ### ✅ Good

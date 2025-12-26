@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { TodosPage } from "../../pages/TodosPage";
+import { TodosPage } from "../../pages/todos/TodosPage";
+import { apiClient } from "../../fixtures/api-client";
 
 /**
  * PATCH 3値セマンティクステスト - 期限をクリアできる
@@ -11,11 +12,28 @@ import { TodosPage } from "../../pages/TodosPage";
  * - Page Objectのメソッドを使用してカードを特定
  */
 test.describe("PATCH 3値セマンティクス", () => {
+  let createdTodoId: string | undefined;
+
+  test.afterEach(async () => {
+    if (createdTodoId) {
+      await apiClient.delete(`/todos/${createdTodoId}`);
+      createdTodoId = undefined;
+    }
+  });
+
   test("エッジケース - 期限をクリアできる", async ({ page }) => {
     const todosPage = new TodosPage(page);
     const uniqueId = Date.now();
     const todoTitle = `期限テストTODO_${uniqueId}`;
     const todoDescription = `期限クリアテスト用_${uniqueId}`;
+
+    // 作成APIのレスポンスをキャプチャ
+    const responsePromise = page.waitForResponse(
+      (res) =>
+        res.url().includes("/todos") &&
+        !res.url().includes("/todos/") &&
+        res.request().method() === "POST"
+    );
 
     // 1. TODOを作成（期限日付き）
     await todosPage.goto();
@@ -23,6 +41,11 @@ test.describe("PATCH 3値セマンティクス", () => {
     await todosPage.fillTodoForm(todoTitle, todoDescription);
     await todosPage.fillDueDate("2025-12-31");
     await todosPage.submitForm();
+
+    // レスポンスからIDを取得
+    const response = await responsePromise;
+    const responseBody = await response.json();
+    createdTodoId = responseBody.id;
 
     // 作成成功を確認
     const createToast = todosPage.getToastWithText("TODOを作成しました");
