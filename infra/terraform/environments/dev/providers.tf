@@ -1,10 +1,11 @@
 terraform {
-  required_version = ">= 1.0"
+  required_version = ">= 1.10"
 
   backend "s3" {
-    bucket = "sandbox-dev-secrets"
-    key    = "terraform/dev.tfstate"
-    region = "ap-southeast-2"
+    bucket       = "sandbox-dev-secrets"
+    key          = "terraform/dev.tfstate"
+    region       = "ap-southeast-2"
+    use_lockfile = true
   }
 
   required_providers {
