@@ -34,7 +34,7 @@ Mock Service Worker (MSW) で開発環境のAPIをモック。`main.tsx`で自�
 - `HAS_ALL`: サンプルデータあり（デフォルト）
 - `EMPTY`: データなし
 
-**開発環境:** `src/config.local.ts` の `mockType` で設定
+**開発環境:** `src/config/config.local.ts` の `mockType` で設定
 
 **テストでのモード指定:**
 

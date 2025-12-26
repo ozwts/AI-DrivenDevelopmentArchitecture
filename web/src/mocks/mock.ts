@@ -1,7 +1,7 @@
 import { rest } from "msw";
 import urlJoin from "url-join";
 import { z } from "zod";
-import { config } from "../config";
+import { config } from "../config/config";
 import { schemas } from "../generated/zod-schemas";
 import {
   UserDummy1,

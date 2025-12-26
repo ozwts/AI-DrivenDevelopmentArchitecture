@@ -3,7 +3,7 @@
  * HTTP通信の基盤機能を提供（エンドポイントは各featureに配置）
  */
 import { type ZodType } from "zod";
-import { config } from "@/config";
+import { config } from "@/config/config";
 import { buildLogger } from "@/app/lib/logger";
 import { type GetAccessTokenFn, createAuthHeader } from "./auth-handler";
 import { handleHttpError, handleValidationError } from "./error-handler";

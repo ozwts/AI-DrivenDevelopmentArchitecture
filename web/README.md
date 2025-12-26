@@ -29,7 +29,7 @@ web/
 │   ├── pages/          # ページコンポーネント（ページ固有コンポーネント含む）
 │   ├── routes/         # React Router設定
 │   ├── testing-utils/  # MSW モックハンドラ
-│   ├── config*.ts      # 環境別設定（dev, local）
+│   ├── config/         # 環境別設定（dev, local, mock）
 │   └── main.tsx        # エントリーポイント
 └── package.json
 ```
@@ -113,7 +113,7 @@ npm run fix:lint
 
 **特徴:**
 
-- `config.local.ts` を使用（`mockType: "HAS_ALL"`）
+- `config/config.local.ts` を使用（`mockType: "HAS_ALL"`）
 - `testing-utils/mock.ts` のMSWハンドラでAPIをモック
 - バックエンド不要で完全に独立して開発可能
 - ブラウザの開発者ツールでMSWのログが確認できる
@@ -139,14 +139,14 @@ const TodoDummy1: TodoResponse = {
 
 **特徴:**
 
-- `config.dev.ts` を使用（AWS API GatewayのURLを指定）
+- `config/config.dev.ts` を使用（AWS API GatewayのURLを指定）
 - 実際のバックエンドAPIに接続
 - DynamoDBの実データを使用
 
 **API URLの設定:**
 
 ```typescript
-// src/config.dev.ts
+// src/config/config.dev.ts
 export const config: Config = {
   apiUrl: "https://xxxxx.execute-api.ap-northeast-1.amazonaws.com",
 };

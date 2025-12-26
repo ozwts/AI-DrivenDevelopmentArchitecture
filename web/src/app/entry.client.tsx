@@ -5,7 +5,7 @@ import { z } from "zod";
 import { makeZodI18nMap } from "zod-i18n-map";
 import translation from "zod-i18n-map/locales/ja/zod.json";
 import i18next from "i18next";
-import { config } from "@/config";
+import { config } from "@/config/config";
 import { startMockServer } from "@/mocks/mock";
 
 // Initialize i18next for Zod

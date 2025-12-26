@@ -8,7 +8,7 @@ import {
   ReactNode,
 } from "react";
 import { type AuthUser } from "aws-amplify/auth";
-import { config } from "@/config";
+import { config } from "@/config/config";
 import { buildLogger, setUserSub } from "@/app/lib/logger";
 import { authService, configureAuth } from "../services/auth-service";
 

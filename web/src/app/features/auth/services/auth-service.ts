@@ -11,7 +11,7 @@ import {
   fetchAuthSession as amplifyFetchAuthSession,
   type AuthUser,
 } from "aws-amplify/auth";
-import { config } from "@/config";
+import { config } from "@/config/config";
 
 // --- Types ---
 

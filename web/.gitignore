@@ -29,8 +29,8 @@ build
 .env.local
 .env.production
 
-# Config files (generated from config.dev.ts)
-src/config.ts
+# Config files (generated from config/*.ts)
+src/config/config.ts
 
 # Code Generated
 src/generated

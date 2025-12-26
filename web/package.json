@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "codegen": "rm -rf src/generated && mkdir -p src/generated && openapi-zod-client '../contracts/api/todo.openapi.yaml' --output './src/generated/zod-schemas.ts' --export-schemas",
-    "config:dev": "cp ./src/config.dev.ts ./src/config.ts",
-    "config:local": "cp ./src/config.local.ts ./src/config.ts",
-    "config:mock": "cp ./src/config.mock.ts ./src/config.ts",
+    "config:dev": "cp ./src/config/config.dev.ts ./src/config/config.ts",
+    "config:local": "cp ./src/config/config.local.ts ./src/config/config.ts",
+    "config:mock": "cp ./src/config/config.mock.ts ./src/config/config.ts",
     "dev": "npm run config:dev && react-router dev",
     "dev:local": "npm run config:local && react-router dev",
     "dev:mock": "npm run config:mock && react-router dev",
