@@ -30,7 +30,6 @@ variable "aws_project_region" {
 ##################################################
 locals {
   static_site_url = "https://${module.static_site.cloudfront_domain_name}"
-  api_url         = module.server.api_endpoint
 
   # ビルド成果物ディレクトリ
   web_build_dir = "${path.module}/../../../../web/build/client"

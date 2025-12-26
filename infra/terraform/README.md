@@ -160,8 +160,8 @@ terraform output cloudfront_distribution_id
 | `npm run infra:diff:destroy:dev` | 削除前の差分確認 |
 | `npm run infra:destroy:dev` | インフラの削除 |
 | `npm run infra:output:dev` | 出力値の確認 |
-| `npm run validate` | Terraformコードのフォーマットチェック |
-| `npm run fix:format` | Terraformコードの自動フォーマット |
+| `npm run validate` | 全バリデーション（フォーマット + terraform validate + TFLint + Trivy） |
+| `npm run fix` | Terraformコードの自動フォーマット |
 
 ## トラブルシューティング
 

@@ -1,0 +1,51 @@
+# Trivy Configuration - Terraform IaC Security Scanning
+# https://trivy.dev/docs/
+#
+# AI駆動開発の観点:
+# - セキュリティ設定ミスをデプロイ前に検出
+# - シークレットの漏洩を防止
+# - CIS Benchmarkに基づくベストプラクティス検証
+
+# タイムアウト設定
+timeout: 10m
+
+# 終了コード: 脆弱性検出時に1を返す（CI/CDで失敗させる）
+exit-code: 1
+
+# 出力フォーマット
+format: table
+
+# スキャン対象
+scan:
+  scanners:
+    # 設定ミス検出（Terraform, Dockerfile, Kubernetes等）
+    - misconfig
+    # シークレット検出（APIキー、パスワード等）
+    - secret
+
+# Misconfiguration設定
+misconfiguration:
+  include-non-failures: false
+  scanners:
+    - terraform
+  # 生のTerraform設定をスキャン（terraform-rawスキーマ対応）
+  raw-config-scanners:
+    - terraform
+
+# 重要度フィルター
+severity:
+  - CRITICAL
+  - HIGH
+  - MEDIUM
+  - LOW
+
+# カスタムポリシー設定
+rego:
+  check:
+    - terraform/policies
+  namespaces:
+    - custom
+
+# キャッシュ設定
+cache:
+  backend: fs

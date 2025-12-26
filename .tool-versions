@@ -1,2 +1,4 @@
 nodejs 22.21.1
 terraform 1.11.3
+tflint 0.60.0
+trivy 0.68.2

@@ -107,7 +107,7 @@ npm run fix
 
 ```bash
 # フロントエンドビルド
-npm run client:build
+npm run web:build
 
 # サーバービルド
 npm run server:build

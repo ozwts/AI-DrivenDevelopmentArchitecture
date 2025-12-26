@@ -1,0 +1,48 @@
+# Trivy Ignore File - Development Environment
+# https://aquasecurity.github.io/trivy/latest/docs/configuration/filtering/
+#
+# 形式: <Misconfiguration ID>
+# 注意: 無視する場合は理由をコメントで記載すること
+#
+# 開発環境用の許容設定
+# 本番環境では以下を削除すること
+
+# DynamoDB Point-in-time recovery 無効（開発環境ではバックアップ不要）
+AVD-AWS-0024
+
+# S3バケットのforce_destroy有効（開発環境では完全削除可能に）
+AVD-AWS-0089
+
+# S3バージョニング無効（開発環境ではバージョン管理不要）
+AVD-AWS-0090
+
+# S3 CMK未使用（SSE-S3/AES256で暗号化済み、CMKはコスト・複雑性の観点から不採用）
+AVD-AWS-0132
+
+# CloudFrontロギング無効（開発環境ではコスト削減のため）
+AVD-AWS-0010
+
+# CloudFront WAF未設定（開発環境では不要）
+AVD-AWS-0011
+
+# === カスタムポリシー（開発環境では許容） ===
+
+# DynamoDB削除保護無効（開発環境では完全削除可能に）
+CUSTOM-AWS-0001
+
+# S3 force_destroy有効（開発環境では完全削除可能に）
+CUSTOM-AWS-0002
+
+# Cognito削除保護無効（開発環境では完全削除可能に）
+CUSTOM-AWS-0003
+
+# === LOW重要度（全環境共通で許容） ===
+
+# DynamoDB CMK未使用（デフォルト暗号化で十分）
+AVD-AWS-0025
+
+# CloudWatch Logs CMK未使用（デフォルト暗号化で十分）
+AVD-AWS-0017
+
+# Lambda X-Rayトレーシング無効（コスト・複雑性の観点から不採用）
+AVD-AWS-0066

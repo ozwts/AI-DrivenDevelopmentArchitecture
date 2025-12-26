@@ -118,7 +118,12 @@
       "Bash(npx playwright:*)",
       "mcp__playwright-test__test_run",
       "mcp__playwright-test__generator_setup_page",
-      "Bash(lsof:*)"
+      "Bash(lsof:*)",
+      "Bash(asdf install:*)",
+      "Bash(asdf plugin add:*)",
+      "Bash(trivy config:*)",
+      "WebFetch(domain:trivy.dev)",
+      "Bash(trivy:*)"
     ],
     "deny": [],
     "ask": []

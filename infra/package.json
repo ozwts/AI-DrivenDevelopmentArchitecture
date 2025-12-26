@@ -2,22 +2,51 @@
   "name": "infra",
   "version": "0.0.0",
   "scripts": {
+    "build": "cd .. && npm run build -w web && npm run api:build -w server",
     "api:build": "cd .. && npm run api:build -w server",
-    "build": "cd .. && npm run client:build && npm run api:build -w server",
-    "client:build": "cd .. && npm run client:build",
+    "web:build": "cd .. && npm run build -w web",
+
+    "fix": "terraform fmt -recursive terraform/",
+    "fix:format": "npm run fix",
+    "fix:check": "terraform fmt -check -recursive terraform/",
+
+    "lint:init": "tflint --init",
+    "lint": "npm run lint:init && tflint --recursive --chdir=terraform",
+    "lint:dev": "npm run lint:init && tflint --chdir=terraform/environments/dev",
+    "lint:stg": "npm run lint:init && tflint --chdir=terraform/environments/stg",
+    "lint:prd": "npm run lint:init && tflint --chdir=terraform/environments/prd",
+    "lint:modules": "npm run lint:init && tflint --recursive --chdir=terraform/modules",
+
+    "security": "trivy config --config terraform/trivy.yaml terraform/environments/dev",
+    "security:dev": "trivy config --config terraform/trivy.yaml --ignorefile terraform/environments/dev/.trivyignore terraform/environments/dev",
+    "security:stg": "trivy config --config terraform/trivy.yaml --ignorefile terraform/environments/stg/.trivyignore terraform/environments/stg",
+    "security:prd": "trivy config --config terraform/trivy.yaml --ignorefile terraform/environments/prd/.trivyignore terraform/environments/prd",
+
+    "validate": "npm run validate:dev",
+    "validate:dev": "npm run fix:check && npm run lint:dev && npm run security:dev",
+    "validate:stg": "npm run fix:check && npm run lint:stg && npm run security:stg",
+    "validate:prd": "npm run fix:check && npm run lint:prd && npm run security:prd",
+    "validate:all": "npm run fix:check && npm run lint && npm run security",
+
     "config:dev": "terraform -chdir=terraform/environments/dev init --reconfigure",
-    "deploy:dev": "npm run build && npm run config:dev && terraform -chdir=terraform/environments/dev apply --auto-approve",
-    "deploy:api:dev": "npm run api:build && terraform -chdir=terraform/environments/dev apply -target=module.db -target=module.server --auto-approve",
-    "deploy:web:dev": "npm run client:build && terraform -chdir=terraform/environments/dev apply -target=module.static_site --auto-approve",
-    "destroy:dev": "terraform -chdir=terraform/environments/dev destroy",
-    "diff:dev": "npm run build && npm run config:dev && terraform -chdir=terraform/environments/dev plan",
+    "config:stg": "terraform -chdir=terraform/environments/stg init --reconfigure",
+    "config:prd": "terraform -chdir=terraform/environments/prd init --reconfigure",
     "config:upgrade:dev": "terraform -chdir=terraform/environments/dev init -upgrade",
-    "config:ci:dev": "AWS_ACCESS_KEY_ID=dummy AWS_SECRET_ACCESS_KEY=dummy terraform -chdir=terraform/environments/dev init -backend=false",
-    "fix": "npm run fix:format",
-    "fix:format": "terraform fmt -recursive terraform/",
-    "validate": "npm run validate:format && npm run validate:tf",
-    "validate:format": "terraform fmt -check -recursive terraform/",
-    "validate:tf": "npm run validate:tf:dev",
-    "validate:tf:dev": "npm run config:ci:dev > /dev/null && terraform -chdir=terraform/environments/dev validate"
+    "config:upgrade:stg": "terraform -chdir=terraform/environments/stg init -upgrade",
+    "config:upgrade:prd": "terraform -chdir=terraform/environments/prd init -upgrade",
+
+    "diff:dev": "npm run build && npm run validate:dev && npm run config:dev && terraform -chdir=terraform/environments/dev plan",
+    "diff:stg": "npm run build && npm run validate:stg && npm run config:stg && terraform -chdir=terraform/environments/stg plan",
+    "diff:prd": "npm run build && npm run validate:prd && npm run config:prd && terraform -chdir=terraform/environments/prd plan",
+
+    "deploy:dev": "npm run build && npm run validate:dev && npm run config:dev && terraform -chdir=terraform/environments/dev apply --auto-approve",
+    "deploy:stg": "npm run build && npm run validate:stg && npm run config:stg && terraform -chdir=terraform/environments/stg apply --auto-approve",
+    "deploy:prd": "npm run build && npm run validate:prd && npm run config:prd && terraform -chdir=terraform/environments/prd apply",
+    "deploy:api:dev": "npm run api:build && terraform -chdir=terraform/environments/dev apply -target=module.db -target=module.server --auto-approve",
+    "deploy:web:dev": "npm run web:build && terraform -chdir=terraform/environments/dev apply -target=module.static_site --auto-approve",
+
+    "destroy:dev": "terraform -chdir=terraform/environments/dev destroy",
+    "destroy:stg": "terraform -chdir=terraform/environments/stg destroy",
+    "destroy:prd": "terraform -chdir=terraform/environments/prd destroy"
   }
 }

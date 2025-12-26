@@ -1,0 +1,22 @@
+# Trivy Ignore File - Production Environment
+# https://aquasecurity.github.io/trivy/latest/docs/configuration/filtering/
+#
+# 形式: <Misconfiguration ID>
+# 注意: 無視する場合は理由をコメントで記載すること
+#
+# 本番環境では原則として無視設定を追加しないこと
+# やむを得ず追加する場合は、セキュリティレビューを必須とする
+
+# S3 CMK未使用（SSE-S3/AES256で暗号化済み、CMKはコスト・複雑性の観点から不採用）
+AVD-AWS-0132
+
+# === LOW重要度（全環境共通で許容） ===
+
+# DynamoDB CMK未使用（デフォルト暗号化で十分）
+AVD-AWS-0025
+
+# CloudWatch Logs CMK未使用（デフォルト暗号化で十分）
+AVD-AWS-0017
+
+# Lambda X-Rayトレーシング無効（コスト・複雑性の観点から不採用）
+AVD-AWS-0066

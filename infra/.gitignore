@@ -21,6 +21,13 @@ override.tf.json
 .terraformrc
 terraform.rc
 
+# TFLint
+.tflint.d/
+
+# Trivy
+.trivy/
+trivy-report.txt
+
 # Lambda
 archive.zip
 lambda.zip

@@ -6,23 +6,31 @@ TerraformによるAWSインフラの管理（IaC）。
 
 - **IaC**: Terraform 1.11.3
 - **Provider**: AWS Provider 5.82
-- **State**: ローカル（`.tfstate` ファイル）
+- **State**: S3バックエンド
 - **Region**: ap-northeast-1 (東京)
+- **Linter**: TFLint 0.60.0 + AWS Plugin 0.44.0
+- **Security Scanner**: Trivy 0.58.2
 
 ## ディレクトリ構成
 
 ```
 infra/
-├── terraform/
-│   ├── modules/aws/         # 再利用可能なモジュール
-│   │   ├── db/              # DynamoDB tables
-│   │   ├── server/          # Lambda + API Gateway + IAM
-│   │   └── static-site/     # S3 + CloudFront
-│   │
-│   └── environments/        # 環境別設定（dev, stg, prd）
-│       └── dev/             # 開発環境の設定
-│
-└── package.json
+├── .tflint.hcl              # TFLint設定（最も厳格なルール）
+├── .trivyignore             # Trivy無視設定
+├── trivy.yaml               # Trivyセキュリティスキャン設定
+├── package.json
+├── README.md
+└── terraform/
+    ├── modules/aws/         # 再利用可能なモジュール
+    │   ├── auth/            # Cognito
+    │   ├── db/              # DynamoDB tables
+    │   ├── parameter/       # SSM Parameter Store
+    │   ├── server/          # Lambda + API Gateway + IAM
+    │   ├── static-site/     # S3 + CloudFront
+    │   └── storage/         # S3 buckets
+    │
+    └── environments/        # 環境別設定（dev, stg, prd）
+        └── dev/             # 開発環境の設定
 ```
 
 ## AWSリソース構成
@@ -86,12 +94,58 @@ npm run destroy:dev
 ### バリデーション
 
 ```bash
-# Terraformフォーマットチェック
+# dev環境のバリデーション（デフォルト）
 npm run validate
+
+# 環境別
+npm run validate:dev
+npm run validate:stg
+npm run validate:prd
+
+# 全環境（CI用）
+npm run validate:all
 
 # フォーマット修正
 npm run fix
 ```
+
+### Lint（TFLint）
+
+```bash
+# TFLintによる静的解析（全環境）
+npm run lint
+
+# 環境別
+npm run lint:dev
+npm run lint:stg
+npm run lint:prd
+
+# モジュールのみ
+npm run lint:modules
+```
+
+**TFLint設定（`.tflint.hcl`）:**
+- `preset = "all"`: 全ルール有効化（最も厳格）
+- `deep_check = true`: AWSリソースの実際の値を検証
+- AWS Plugin: 700+ ルールで設定ミスを検出
+
+### セキュリティスキャン（Trivy）
+
+```bash
+# セキュリティスキャン（CRITICAL/HIGH/MEDIUM）
+npm run security
+
+# 全重要度でスキャン（LOWも含む）
+npm run security:full
+```
+
+**Trivy設定（`trivy.yaml`）:**
+- 設定ミス検出（misconfiguration）
+- シークレット検出（secret）
+- 重要度: CRITICAL, HIGH, MEDIUM
+
+**無視設定（`.trivyignore`）:**
+ハンズオン環境で意図的に無効化している設定を記載
 
 ## デプロイ手順
 

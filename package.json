@@ -18,7 +18,7 @@
     "codegen:bundle": "redocly bundle 'contracts/api/entry.yaml' -o 'contracts/api/todo.openapi.yaml' && echo '# 自動生成ファイル - 直接編集禁止\n# 編集は entry.yaml および参照先ファイルに対して行ってください\n' | cat - 'contracts/api/todo.openapi.yaml' > 'contracts/api/todo.openapi.yaml.tmp' && mv 'contracts/api/todo.openapi.yaml.tmp' 'contracts/api/todo.openapi.yaml'",
     "codegen": "npm run codegen:bundle && npm run codegen -w server -w web",
     "update:pkgs": "ncu -u && npm run update:pkgs -w server -w web -w infra",
-    "client:build": "npm run build -w web",
+    "web:build": "npm run build -w web",
     "server:build": "npm run build -w server",
     "test": "npm run test -w server -w web",
     "deploy": "npm run deploy:dev -w infra",
