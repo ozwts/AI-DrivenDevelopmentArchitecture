@@ -1,5 +1,5 @@
 {
-  "label": "ルート設計",
-  "description": "機能境界としてのルート、コロケーション、共通化の配置基準",
+  "label": "Route Design",
+  "description": "Routes as feature boundaries, colocation, placement criteria for shared code",
   "dependencies": ["feature", "lib", "component", "hooks", "api", "logger"]
 }

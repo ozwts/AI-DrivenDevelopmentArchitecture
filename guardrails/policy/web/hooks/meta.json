@@ -1,5 +1,5 @@
 {
-  "label": "フック",
-  "description": "TanStack Query基盤のカスタムフック設計・実装パターン",
+  "label": "Hooks",
+  "description": "TanStack Query-based custom hook design and implementation patterns",
   "dependencies": ["lib", "logger", "api"]
 }

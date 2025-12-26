@@ -1,5 +1,5 @@
 {
-  "label": "ハンドラー",
-  "description": "HTTPリクエスト/レスポンス処理、入力バリデーション",
+  "label": "Handler",
+  "description": "HTTP request/response processing, input validation",
   "dependencies": ["use-case", "domain-model", "port"]
 }

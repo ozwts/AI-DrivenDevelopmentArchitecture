@@ -1,5 +1,5 @@
 {
-  "label": "技術基盤",
-  "description": "汎用Hook、純粋関数、APIクライアント基盤、Context/Provider",
+  "label": "Technical Foundation",
+  "description": "Generic hooks, pure functions, API client foundation, Context/Provider",
   "dependencies": []
 }

@@ -29,35 +29,35 @@ export const FIX_RESPONSIBILITIES: FixResponsibility[] = [
   {
     id: "procedure_fix_server",
     toolDescription:
-      "サーバー側（server）で自動修正を実行します。ESLint --fix、Prettier、knip（未使用export検出）を実行します。",
+      "Runs auto-fix on server side. ESLint --fix, Prettier, knip (unused export detection).",
     inputSchema: {
       fixType: z
         .enum(["lint", "format", "knip", "all"])
         .optional()
         .default("all")
         .describe(
-          "修正タイプ: 'lint'（Lint修正のみ）、'format'（フォーマットのみ）、'knip'（未使用export検出）、'all'（lint+format）。デフォルトは 'all'。",
+          "Fix type: 'lint' (lint only), 'format' (format only), 'knip' (unused exports), 'all' (lint+format). Default: 'all'.",
         ),
     },
   },
   {
     id: "procedure_fix_web",
     toolDescription:
-      "フロントエンド側（web）で自動修正を実行します。ESLint --fix、Prettier、knip（未使用export検出）を実行します。",
+      "Runs auto-fix on web side. ESLint --fix, Prettier, knip (unused export detection).",
     inputSchema: {
       fixType: z
         .enum(["lint", "format", "knip", "all"])
         .optional()
         .default("all")
         .describe(
-          "修正タイプ: 'lint'（Lint修正のみ）、'format'（フォーマットのみ）、'knip'（未使用export検出）、'all'（lint+format）。デフォルトは 'all'。",
+          "Fix type: 'lint' (lint only), 'format' (format only), 'knip' (unused exports), 'all' (lint+format). Default: 'all'.",
         ),
     },
   },
   {
     id: "procedure_fix_infra",
     toolDescription:
-      "インフラ側（infra）で自動修正を実行します。terraform fmtを実行します。",
+      "Runs auto-fix on infra side. Executes terraform fmt.",
     inputSchema: {},
   },
 ];

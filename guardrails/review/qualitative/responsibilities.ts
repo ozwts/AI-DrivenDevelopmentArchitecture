@@ -36,14 +36,14 @@ const toReviewResponsibility = (
   policy: ScannedPolicy,
 ): ReviewResponsibility => ({
   id: `review_${policy.category}_${policy.id.replace(/-/g, "_")}`,
-  title: `${policy.meta.label}レビュー`,
+  title: `${policy.meta.label} Review`,
   policyDir: policy.policyDir,
   responsibility: `${policy.meta.label} (${policy.category}/${policy.id})`,
-  toolDescription: `指定したディレクトリ配下のファイルが${policy.meta.label}ポリシーに準拠しているかを審査します。${policy.meta.description}`,
+  toolDescription: `Reviews files under the specified directories for ${policy.meta.label} policy compliance. ${policy.meta.description}`,
   inputSchema: {
     targetDirectories: z
       .array(z.string())
-      .describe("レビュー対象ディレクトリの絶対パスの配列"),
+      .describe("Array of absolute paths of target directories to review"),
   },
   dependencies: policy.meta.dependencies,
 });

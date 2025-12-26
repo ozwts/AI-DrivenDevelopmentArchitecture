@@ -17,6 +17,13 @@
         "playwright",
         "run-test-mcp-server"
       ]
+    },
+    "github": {
+      "command": "sh",
+      "args": [
+        "-c",
+        "docker run -i --rm -e GITHUB_PERSONAL_ACCESS_TOKEN=$(gh auth token) ghcr.io/github/github-mcp-server stdio --tools issue_read,issue_write,list_issues,search_issues,add_issue_comment,pull_request_read,create_pull_request,update_pull_request,list_pull_requests,merge_pull_request,pull_request_review_write,update_pull_request_branch"
+      ]
     }
   }
 }

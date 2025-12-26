@@ -187,18 +187,20 @@ policy/server/
 
 各ポリシーディレクトリには `meta.json` を配置し、ラベル・説明・依存関係を定義する。
 
+**英語で記載すること**: `label` と `description` は英語で記載する。日本語はトークン効率が悪く（英語の2-3倍消費）、MCPツールのトークン消費を増加させるため。
+
 ```json
 {
-  "label": "ユースケース",
-  "description": "ビジネスロジックの実装、Result型パターン",
+  "label": "Use Case",
+  "description": "Business logic implementation, Result type pattern",
   "dependencies": ["domain-model", "port"]
 }
 ```
 
 | フィールド     | 型       | 必須 | 説明                     |
 | -------------- | -------- | ---- | ------------------------ |
-| `label`        | string   | ○    | 選択肢の表示名           |
-| `description`  | string   | ○    | 選択肢の説明文           |
+| `label`        | string   | ○    | 選択肢の表示名（英語）   |
+| `description`  | string   | ○    | 選択肢の説明文（英語）   |
 | `dependencies` | string[] | -    | 関連するポリシーIDの配列 |
 
 ### 依存関係の方向性

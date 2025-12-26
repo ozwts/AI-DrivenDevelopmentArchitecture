@@ -1,5 +1,5 @@
 {
-  "label": "認証クライアント",
-  "description": "認証サービス（Cognito等）への抽象インターフェース",
+  "label": "Auth Client",
+  "description": "Abstract interface to authentication service (Cognito, etc.)",
   "dependencies": ["port"]
 }

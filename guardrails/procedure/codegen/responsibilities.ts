@@ -26,12 +26,12 @@ export const CODEGEN_RESPONSIBILITIES: CodegenResponsibility[] = [
   {
     id: "procedure_codegen",
     toolDescription:
-      "指定されたワークスペースでコード生成を実行します。OpenAPIからの型生成（openapi-zod-client）を行います。",
+      "Runs code generation on specified workspace. Generates types from OpenAPI (openapi-zod-client).",
     inputSchema: {
       workspace: z
         .enum(["server", "web"])
         .describe(
-          "生成対象のワークスペース: 'server'（サーバー側）、'web'（フロントエンド）",
+          "Target workspace: 'server' (server-side), 'web' (frontend)",
         ),
     },
   },

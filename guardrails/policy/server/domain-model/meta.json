@@ -1,4 +1,4 @@
 {
-  "label": "ドメインモデル",
-  "description": "Entity、Value Object、リポジトリインターフェースの設計・実装"
+  "label": "Domain Model",
+  "description": "Design and implementation of Entity, Value Object, and repository interfaces"
 }

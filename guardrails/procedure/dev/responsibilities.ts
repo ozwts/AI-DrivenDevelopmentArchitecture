@@ -35,16 +35,16 @@ const formatUptime = (seconds: number): string => {
  * 開発サーバー管理責務定義
  */
 export const DEV_SERVER_RESPONSIBILITIES: ProcedureResponsibility[] = [
-  // ----- 起動 -----
+  // ----- Start -----
   {
     id: "procedure_dev_start",
     toolDescription:
-      "開発サーバーを起動します。mode: 'full'（API+Web）または 'mock'（モックAPI）を選択できます。",
+      "Starts the dev server. mode: 'full' (API+Web) or 'mock' (mock API).",
     inputSchema: {
       mode: z
         .enum(["full", "mock"])
         .optional()
-        .describe("起動モード: 'full'=API+Web（デフォルト）, 'mock'=モックAPI"),
+        .describe("Start mode: 'full'=API+Web (default), 'mock'=mock API"),
     },
     handler: async (input, projectRoot): Promise<string> => {
       const manager = getDevServerManager(projectRoot);
@@ -53,10 +53,10 @@ export const DEV_SERVER_RESPONSIBILITIES: ProcedureResponsibility[] = [
     },
   },
 
-  // ----- 停止 -----
+  // ----- Stop -----
   {
     id: "procedure_dev_stop",
-    toolDescription: "開発サーバーを停止します。",
+    toolDescription: "Stops the dev server.",
     inputSchema: {},
     handler: async (_input, projectRoot): Promise<string> => {
       const manager = getDevServerManager(projectRoot);
@@ -64,17 +64,17 @@ export const DEV_SERVER_RESPONSIBILITIES: ProcedureResponsibility[] = [
     },
   },
 
-  // ----- リスタート -----
+  // ----- Restart -----
   {
     id: "procedure_dev_restart",
     toolDescription:
-      "開発サーバーを再起動します。停止後に同じモードで起動します。",
+      "Restarts the dev server. Stops then starts with the same mode.",
     inputSchema: {
       mode: z
         .enum(["full", "mock"])
         .optional()
         .describe(
-          "起動モード: 'full'=API+Web, 'mock'=モックAPI。省略時は前回と同じモード",
+          "Start mode: 'full'=API+Web, 'mock'=mock API. Uses previous mode if omitted",
         ),
     },
     handler: async (input, projectRoot): Promise<string> => {
@@ -99,11 +99,11 @@ export const DEV_SERVER_RESPONSIBILITIES: ProcedureResponsibility[] = [
     },
   },
 
-  // ----- 状態確認 -----
+  // ----- Status -----
   {
     id: "procedure_dev_status",
     toolDescription:
-      "開発サーバーの状態を確認します（稼働状況、PID、起動時刻、稼働時間）。",
+      "Checks dev server status (running state, PID, start time, uptime).",
     inputSchema: {},
     handler: async (_input, projectRoot): Promise<string> => {
       const manager = getDevServerManager(projectRoot);
@@ -129,17 +129,17 @@ export const DEV_SERVER_RESPONSIBILITIES: ProcedureResponsibility[] = [
     },
   },
 
-  // ----- ログ取得 -----
+  // ----- Logs -----
   {
     id: "procedure_dev_logs",
     toolDescription:
-      "開発サーバーのログを取得します。行数指定やフィルタリングが可能です。",
+      "Gets dev server logs. Supports line count and filtering.",
     inputSchema: {
       lines: z
         .number()
         .optional()
-        .describe("取得するログの行数（デフォルト: 100）"),
-      filter: z.string().optional().describe("フィルタ文字列（部分一致）"),
+        .describe("Number of log lines to retrieve (default: 100)"),
+      filter: z.string().optional().describe("Filter string (partial match)"),
     },
     handler: async (input, projectRoot): Promise<string> => {
       const manager = getDevServerManager(projectRoot);

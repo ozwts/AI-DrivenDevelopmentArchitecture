@@ -1,5 +1,5 @@
 {
-  "label": "ストレージクライアント",
-  "description": "ファイルストレージ（S3等）への抽象インターフェース",
+  "label": "Storage Client",
+  "description": "Abstract interface to file storage (S3, etc.)",
   "dependencies": ["port"]
 }

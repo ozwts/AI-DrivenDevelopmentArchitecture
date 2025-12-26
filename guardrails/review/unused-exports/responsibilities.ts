@@ -26,18 +26,18 @@ export const UNUSED_EXPORTS_RESPONSIBILITIES: UnusedExportsResponsibility[] = [
   {
     id: "review_unused_exports",
     toolDescription:
-      "指定されたワークスペースの未使用exportを検出します。knipを使用してexportされているが使用されていない関数・型・変数を検出します。",
+      "Detects unused exports in the specified workspace. Uses knip to find exported but unused functions, types, and variables.",
     inputSchema: {
       workspace: z
         .enum(["server", "web"])
         .describe(
-          "検出を実行するワークスペース: 'server'（サーバー側）、'web'（フロントエンド側）",
+          "Workspace to run detection: 'server' (server-side), 'web' (frontend)",
         ),
       targetDirectories: z
         .array(z.string())
         .optional()
         .describe(
-          "フィルタ対象ディレクトリの絶対パスの配列（省略時は全ファイル対象）",
+          "Array of absolute paths to filter (if omitted, all files are targeted)",
         ),
     },
   },

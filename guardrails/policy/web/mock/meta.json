@@ -1,5 +1,5 @@
 {
-  "label": "モック",
-  "description": "テストデータ・MSWハンドラーの命名規則とパターン",
+  "label": "Mock",
+  "description": "Test data and MSW handler naming conventions and patterns",
   "dependencies": ["route", "component"]
 }

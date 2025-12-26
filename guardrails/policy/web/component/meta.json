@@ -1,5 +1,5 @@
 {
-  "label": "コンポーネント",
-  "description": "routeまたはfeature内コンポーネントの設計・実装・テストパターン",
+  "label": "Component",
+  "description": "Design, implementation, and test patterns for route or feature components",
   "dependencies": ["ui", "design", "hooks", "api"]
 }

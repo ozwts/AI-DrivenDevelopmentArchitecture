@@ -1,5 +1,5 @@
 {
-  "label": "API通信",
-  "description": "API通信基盤、リクエスト正規化、型安全なクライアント",
+  "label": "API Communication",
+  "description": "API communication infrastructure, request normalization, type-safe client",
   "dependencies": ["lib"]
 }

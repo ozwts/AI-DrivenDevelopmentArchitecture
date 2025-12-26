@@ -1,5 +1,5 @@
 {
-  "label": "リポジトリ",
-  "description": "データ永続化実装、ドメインモデルとDB形式の変換",
+  "label": "Repository",
+  "description": "Data persistence implementation, conversion between domain model and DB format",
   "dependencies": ["domain-model", "port"]
 }

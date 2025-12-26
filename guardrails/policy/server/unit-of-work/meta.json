@@ -1,5 +1,5 @@
 {
   "label": "Unit of Work",
-  "description": "トランザクション境界の管理、複数リポジトリ操作のアトミック実行",
+  "description": "Transaction boundary management, atomic execution of multiple repository operations",
   "dependencies": ["port"]
 }

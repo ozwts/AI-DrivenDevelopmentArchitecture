@@ -24,28 +24,28 @@ const buildFilter = (input: Record<string, unknown>): TestFilter | undefined => 
 };
 
 /**
- * フィルタ用スキーマ（共通）
+ * Filter schema (shared)
  */
 const filterSchema = {
   file: z
     .string()
     .optional()
-    .describe("テストファイルパスまたはパターン（例: src/domain/user.test.ts）"),
+    .describe("Test file path or pattern (e.g., src/domain/user.test.ts)"),
   testName: z
     .string()
     .optional()
-    .describe("テスト名またはdescribe名でフィルタ（例: UserEntity）"),
+    .describe("Filter by test name or describe name (e.g., UserEntity)"),
 };
 
 /**
  * テスト実行責務定義
  */
 export const TEST_RESPONSIBILITIES: ProcedureResponsibility[] = [
-  // ----- サーバーテスト -----
+  // ----- Server Tests -----
   {
     id: "procedure_test_server",
     toolDescription:
-      "サーバーテストを実行します（vitest）。fileでファイル指定、testNameでテスト名/describe名フィルタができます。",
+      "Runs server tests (vitest). file specifies file, testName filters by test/describe name.",
     inputSchema: filterSchema,
     handler: async (input, projectRoot): Promise<string> => {
       const runner = getTestRunner(projectRoot);
@@ -55,11 +55,11 @@ export const TEST_RESPONSIBILITIES: ProcedureResponsibility[] = [
     },
   },
 
-  // ----- Webコンポーネントテスト -----
+  // ----- Web Component Tests -----
   {
     id: "procedure_test_web_component",
     toolDescription:
-      "Webコンポーネントテストを実行します（Playwright Component Test）。fileでファイル指定、testNameでテスト名フィルタができます。",
+      "Runs web component tests (Playwright Component Test). file specifies file, testName filters by test name.",
     inputSchema: filterSchema,
     handler: async (input, projectRoot): Promise<string> => {
       const runner = getTestRunner(projectRoot);
@@ -69,11 +69,11 @@ export const TEST_RESPONSIBILITIES: ProcedureResponsibility[] = [
     },
   },
 
-  // ----- Webスナップショットテスト -----
+  // ----- Web Snapshot Tests -----
   {
     id: "procedure_test_web_snapshot",
     toolDescription:
-      "Webスナップショットテストを実行します（Playwright Snapshot Test）。fileでファイル指定、testNameでテスト名フィルタができます。",
+      "Runs web snapshot tests (Playwright Snapshot Test). file specifies file, testName filters by test name.",
     inputSchema: filterSchema,
     handler: async (input, projectRoot): Promise<string> => {
       const runner = getTestRunner(projectRoot);
@@ -83,11 +83,11 @@ export const TEST_RESPONSIBILITIES: ProcedureResponsibility[] = [
     },
   },
 
-  // ----- Web全テスト -----
+  // ----- Web All Tests -----
   {
     id: "procedure_test_web",
     toolDescription:
-      "Web全テストを実行します（Component + Snapshot）。fileでファイル指定、testNameでテスト名フィルタができます。",
+      "Runs all web tests (Component + Snapshot). file specifies file, testName filters by test name.",
     inputSchema: filterSchema,
     handler: async (input, projectRoot): Promise<string> => {
       const runner = getTestRunner(projectRoot);
@@ -97,23 +97,23 @@ export const TEST_RESPONSIBILITIES: ProcedureResponsibility[] = [
     },
   },
 
-  // ----- E2Eテスト -----
+  // ----- E2E Tests -----
   {
     id: "procedure_test_e2e",
     toolDescription:
-      "E2Eテストを実行します（Playwright E2E Test）。fileでファイル指定、testNameでテスト名フィルタ、baseUrl/apiBaseUrlで対象環境を指定できます。URL未指定時はローカル環境（フロント: localhost:5173、API: localhost:3000）に接続します。",
+      "Runs E2E tests (Playwright E2E Test). file specifies file, testName filters, baseUrl/apiBaseUrl specify target environment. Default: localhost:5173 (frontend), localhost:3000 (API).",
     inputSchema: {
       ...filterSchema,
       baseUrl: z
         .string()
         .optional()
         .describe(
-          "フロントエンドのベースURL（省略時: http://localhost:5173）",
+          "Frontend base URL (default: http://localhost:5173)",
         ),
       apiBaseUrl: z
         .string()
         .optional()
-        .describe("APIサーバーのベースURL（省略時: http://localhost:3000）"),
+        .describe("API server base URL (default: http://localhost:3000)"),
     },
     handler: async (input, projectRoot): Promise<string> => {
       const runner = getTestRunner(projectRoot);
@@ -125,10 +125,10 @@ export const TEST_RESPONSIBILITIES: ProcedureResponsibility[] = [
     },
   },
 
-  // ----- 全テスト -----
+  // ----- All Tests -----
   {
     id: "procedure_test_all",
-    toolDescription: "全テストを実行します（Server + Web）。",
+    toolDescription: "Runs all tests (Server + Web).",
     inputSchema: {},
     handler: async (_input, projectRoot): Promise<string> => {
       const runner = getTestRunner(projectRoot);
@@ -137,11 +137,11 @@ export const TEST_RESPONSIBILITIES: ProcedureResponsibility[] = [
     },
   },
 
-  // ----- スナップショット更新 -----
+  // ----- Update Snapshots -----
   {
     id: "procedure_test_update_snapshots",
     toolDescription:
-      "スナップショットを更新します。fileでファイル指定、testNameでテスト名フィルタができます。",
+      "Updates snapshots. file specifies file, testName filters by test name.",
     inputSchema: filterSchema,
     handler: async (input, projectRoot): Promise<string> => {
       const runner = getTestRunner(projectRoot);
@@ -151,11 +151,11 @@ export const TEST_RESPONSIBILITIES: ProcedureResponsibility[] = [
     },
   },
 
-  // ----- スナップショットリフレッシュ -----
+  // ----- Refresh Snapshots -----
   {
     id: "procedure_test_refresh_snapshots",
     toolDescription:
-      "スナップショットを全削除して再生成します。全スナップショットをクリーンな状態から作り直します。",
+      "Deletes all snapshots and regenerates them from a clean state.",
     inputSchema: {},
     handler: async (_input, projectRoot): Promise<string> => {
       const runner = getTestRunner(projectRoot);
@@ -164,18 +164,18 @@ export const TEST_RESPONSIBILITIES: ProcedureResponsibility[] = [
     },
   },
 
-  // ----- E2Eユーザーセットアップ -----
+  // ----- E2E User Setup -----
   {
     id: "procedure_e2e_user_setup",
     toolDescription:
-      "E2Eテスト用ユーザーをCognitoに作成し、認証情報をSSM Parameter Storeに保存します。useBranchEnv=trueでブランチ環境用、falseで共有dev環境用。",
+      "Creates E2E test user in Cognito and saves credentials to SSM Parameter Store. useBranchEnv=true for branch env, false for shared dev env.",
     inputSchema: {
       useBranchEnv: z
         .boolean()
         .optional()
         .default(true)
         .describe(
-          "ブランチ環境を使用するか。true: ブランチ固有の環境（デフォルト）、false: 共有dev環境",
+          "Use branch environment. true: branch-specific env (default), false: shared dev env",
         ),
     },
     handler: async (input, projectRoot): Promise<string> => {
@@ -186,18 +186,18 @@ export const TEST_RESPONSIBILITIES: ProcedureResponsibility[] = [
     },
   },
 
-  // ----- E2Eユーザー削除 -----
+  // ----- E2E User Destroy -----
   {
     id: "procedure_e2e_user_destroy",
     toolDescription:
-      "E2Eテスト用ユーザーをCognitoから削除し、SSM Parameter Storeから認証情報を削除します。useBranchEnv=trueでブランチ環境用、falseで共有dev環境用。",
+      "Deletes E2E test user from Cognito and removes credentials from SSM Parameter Store. useBranchEnv=true for branch env, false for shared dev env.",
     inputSchema: {
       useBranchEnv: z
         .boolean()
         .optional()
         .default(true)
         .describe(
-          "ブランチ環境を使用するか。true: ブランチ固有の環境（デフォルト）、false: 共有dev環境",
+          "Use branch environment. true: branch-specific env (default), false: shared dev env",
         ),
     },
     handler: async (input, projectRoot): Promise<string> => {
@@ -208,11 +208,11 @@ export const TEST_RESPONSIBILITIES: ProcedureResponsibility[] = [
     },
   },
 
-  // ----- ブラウザセットアップ -----
+  // ----- Browser Setup -----
   {
     id: "procedure_e2e_browser_setup",
     toolDescription:
-      "E2Eテスト用のChromiumブラウザをインストールします。初回セットアップ時やブラウザ更新時に実行してください。",
+      "Installs Chromium browser for E2E tests. Run on initial setup or browser update.",
     inputSchema: {},
     handler: async (_input, projectRoot): Promise<string> => {
       const runner = getTestRunner(projectRoot);

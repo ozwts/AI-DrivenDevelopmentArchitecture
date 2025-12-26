@@ -1,5 +1,5 @@
 {
-  "label": "UIプリミティブ",
-  "description": "Leaf/Composite の2分類に基づくUIプリミティブ設計（CVAによるバリアント管理）",
+  "label": "UI Primitives",
+  "description": "UI primitive design based on Leaf/Composite classification (CVA variant management)",
   "dependencies": ["lib", "design"]
 }
