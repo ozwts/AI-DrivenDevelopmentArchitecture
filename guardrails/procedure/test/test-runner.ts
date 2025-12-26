@@ -12,6 +12,7 @@ export type TestTarget =
   | "web"
   | "web:component"
   | "web:snapshot"
+  | "e2e"
   | "all";
 
 export type TestResult = {
@@ -214,6 +215,42 @@ class TestRunner {
       output: noTestsFound
         ? `${result.output}\n(テストが存在しないためスキップ)`
         : result.output,
+      duration: Date.now() - startTime,
+    };
+  }
+
+  /**
+   * E2Eテスト実行 (Playwright E2E Test)
+   *
+   * playwright options:
+   * - file: playwright test <file>
+   * - testName: playwright test --grep "<testName>"
+   */
+  async runE2ETests(filter?: TestFilter): Promise<TestResult> {
+    const startTime = Date.now();
+
+    let command = "npx playwright test --project=chromium";
+    const args: string[] = [];
+
+    if (filter?.file !== undefined && filter.file !== "") {
+      // Playwright: ファイルパスは正規表現パターンとして解釈される
+      args.push(escapeForRegexPattern(filter.file));
+    }
+    if (filter?.testName !== undefined && filter.testName !== "") {
+      args.push(`--grep "${filter.testName}"`);
+    }
+
+    if (args.length > 0) {
+      command = `npx playwright test --project=chromium ${args.join(" ")}`;
+    }
+
+    const e2eDir = `${this.projectRoot}/e2e`;
+    const result = await runCommand(command, e2eDir);
+
+    return {
+      success: result.success,
+      target: "e2e",
+      output: result.output,
       duration: Date.now() - startTime,
     };
   }

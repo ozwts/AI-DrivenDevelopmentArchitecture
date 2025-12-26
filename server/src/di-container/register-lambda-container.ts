@@ -75,6 +75,16 @@ export const registerLambdaContainer = (): Container => {
 
   // Environment variables
   container
+    .bind(serviceId.LOG_LEVEL)
+    .toDynamicValue(() => unwrapEnv("LOG_LEVEL"))
+    .inSingletonScope();
+
+  container
+    .bind(serviceId.STAGE_NAME)
+    .toDynamicValue(() => unwrapEnv("STAGE_NAME"))
+    .inSingletonScope();
+
+  container
     .bind(serviceId.USERS_TABLE_NAME)
     .toDynamicValue(() => unwrapEnv("USERS_TABLE_NAME"))
     .inSingletonScope();
@@ -118,9 +128,13 @@ export const registerLambdaContainer = (): Container => {
   container
     .bind<Logger>(serviceId.LOGGER)
     .toDynamicValue(
-      () =>
+      (ctx) =>
         new LoggerImpl({
-          logLevel: unwrapEnv("LOG_LEVEL") as "DEBUG" | "INFO" | "WARN" | "ERROR",
+          logLevel: ctx.container.get<string>(serviceId.LOG_LEVEL) as
+            | "DEBUG"
+            | "INFO"
+            | "WARN"
+            | "ERROR",
           serviceName: "todo-app",
         }),
     )
@@ -135,10 +149,24 @@ export const registerLambdaContainer = (): Container => {
   // DynamoDB Document Client
   container
     .bind<DynamoDBDocumentClient>(serviceId.DDB_DOC)
-    .toDynamicValue(() => {
+    .toDynamicValue((ctx) => {
+      const stageName = ctx.container.get<string>(serviceId.STAGE_NAME);
+
+      // ローカル環境の場合、DynamoDB Localに向ける
+      if (stageName === "LOCAL") {
+        const ddb = new DynamoDBClient({
+          endpoint: "http://127.0.0.1:8000",
+          region,
+          credentials: {
+            accessKeyId: "fakeMyKeyId",
+            secretAccessKey: "fakeSecretAccessKey",
+          },
+        });
+        return DDBDocClient.from(ddb);
+      }
+
       const ddb = new DynamoDBClient({ region });
-      const ddbDoc = DDBDocClient.from(ddb);
-      return ddbDoc;
+      return DDBDocClient.from(ddb);
     })
     .inSingletonScope();
 
@@ -190,7 +218,24 @@ export const registerLambdaContainer = (): Container => {
   // S3 Client
   container
     .bind<S3Client>(serviceId.S3_CLIENT)
-    .toDynamicValue(() => new S3Client({ region }))
+    .toDynamicValue((ctx) => {
+      const stageName = ctx.container.get<string>(serviceId.STAGE_NAME);
+
+      // ローカル環境の場合、LocalStackに向ける
+      if (stageName === "LOCAL") {
+        return new S3Client({
+          endpoint: "http://127.0.0.1:4566",
+          region,
+          forcePathStyle: true,
+          credentials: {
+            accessKeyId: "fakeMyKeyId",
+            secretAccessKey: "fakeSecretAccessKey",
+          },
+        });
+      }
+
+      return new S3Client({ region });
+    })
     .inSingletonScope();
 
   // StorageClient

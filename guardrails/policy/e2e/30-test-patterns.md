@@ -48,6 +48,45 @@ nullable フィールド（日付、外部ID、説明文など）に対しては
 
 詳細は `contract/api/31-patch-semantics.md` を参照。
 
+## CRUD操作の検証
+
+CRUD操作後は必ず結果を検証する。操作完了のトースト確認だけでなく、**実際のデータが正しく反映されているか**まで確認する。
+
+| 操作 | 検証内容 |
+|------|----------|
+| Create | 作成後にリストや詳細画面で入力した値が表示されることを確認 |
+| Read | 表示された値が期待通りであることを確認 |
+| Update | 更新後に変更した値が反映されていることを確認 |
+| Delete | 削除後にリストから該当データが消えていることを確認 |
+
+### ✅ Good
+
+```typescript
+test("Todoを作成すると一覧に表示される", async ({ page }) => {
+  const title = `Test Todo ${Date.now()}`;
+
+  // 作成操作
+  await todosPage.createTodo({ title });
+
+  // トースト確認
+  await expect(page.getByRole("status").filter({ hasText: "作成しました" })).toBeVisible();
+
+  // 作成したデータが一覧に表示されることを確認
+  await expect(page.getByRole("heading", { name: title })).toBeVisible();
+});
+```
+
+### ❌ Bad
+
+```typescript
+test("Todoを作成する", async ({ page }) => {
+  await todosPage.createTodo({ title: "Test Todo" });
+
+  // トーストだけ確認して終わり - データが正しく保存されたか不明
+  await expect(page.getByRole("status")).toBeVisible();
+});
+```
+
 ## シナリオ構造
 
 各シナリオには以下を含める：
@@ -92,7 +131,54 @@ test("ログインフロー全体", async ({ page }) => {
 });
 ```
 
+## 堅牢なテストコードの原則
+
+テストコードは以下の原則に従って実装する。
+
+| 原則 | 説明 |
+|------|------|
+| テストの独立性 | 各テストは他のテストやゴミデータに依存せず、自己完結する |
+| ユニークなテストデータ | `Date.now()` やUUIDを使用し、テスト間の干渉を防ぐ |
+| 明示的な待機 | 適切なLocatorの待機メソッドを使用し、タイミング問題を回避 |
+| セマンティックなセレクタ | `getByRole` > `getByLabel` > `getByTestId` の優先順位で要素を特定 |
+| Page Object経由の操作 | UI操作はPage Objectにカプセル化し、変更に強い構造を維持 |
+| トースト等の一時要素 | `filter({ hasText: })` で特定のメッセージを持つ要素を選択 |
+| XPath/CSSセレクタ禁止 | セマンティックなセレクタのみを使用する |
+
+### ✅ Good
+
+```typescript
+// ユニークなテストデータを使用
+const uniqueId = Date.now();
+const todoTitle = `テストTODO_${uniqueId}`;
+
+// セマンティックなセレクタ
+await page.getByRole("button", { name: "作成" }).click();
+
+// 特定のメッセージを持つトーストを選択
+await expect(page.getByRole("status").filter({ hasText: "作成しました" })).toBeVisible();
+
+// Page Object経由の操作
+await todosPage.clickNewTodo();
+await todosPage.fillTodoForm(title, description);
+```
+
+### ❌ Bad
+
+```typescript
+// 固定のテストデータは他のテストと干渉する可能性
+const todoTitle = "テストTODO";
+
+// XPath/CSSセレクタは禁止
+await page.locator("//button[@class='submit']").click();
+await page.locator(".toast-success").waitFor();
+
+// テストファイルで直接Locator操作（Page Objectを使うべき）
+await page.getByLabel("タイトル").fill(title);
+```
+
 ## 関連ドキュメント
 
 - `10-e2e-overview.md`: E2Eテスト概要
+- `20-page-object-pattern.md`: Page Objectパターン
 - `contract/api/31-patch-semantics.md`: PATCH 3値セマンティクス

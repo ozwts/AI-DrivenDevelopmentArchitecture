@@ -1,4 +1,4 @@
-# E2E Test Specs
+# E2E Test Plans
 
 E2Eテストプランを格納するディレクトリ。
 

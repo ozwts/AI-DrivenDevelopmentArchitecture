@@ -9,6 +9,6 @@ import { test, expect } from "@playwright/test";
 test.describe("E2E Test Seed", () => {
   test("seed", async ({ page }) => {
     // ログインページに遷移（認証が必要な場合）
-    await page.goto("/login");
+    await page.goto("/auth");
   });
 });

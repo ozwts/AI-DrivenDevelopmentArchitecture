@@ -71,7 +71,7 @@ e2e/
 ├── playwright.config.ts
 ├── package.json
 ├── seed.spec.ts          # シードファイル
-├── specs/                # テストプラン
+├── plans/                # テストプラン
 ├── tests/                # テストファイル
 ├── pages/                # Page Object
 └── fixtures/             # テストデータ

@@ -21,11 +21,11 @@ const cardVariants = cva(
 type CardProps = Omit<ComponentPropsWithoutRef<"div">, "className"> &
   VariantProps<typeof cardVariants>;
 
-const CardRoot = forwardRef<HTMLDivElement, CardProps>(
+const CardRoot = forwardRef<HTMLElement, CardProps>(
   ({ tone, children, ...props }, ref) => (
-    <div ref={ref} className={cardVariants({ tone })} {...props}>
+    <article ref={ref} className={cardVariants({ tone })} {...props}>
       {children}
-    </div>
+    </article>
   ),
 );
 CardRoot.displayName = "Card";

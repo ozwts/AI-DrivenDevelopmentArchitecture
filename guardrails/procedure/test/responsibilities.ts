@@ -97,6 +97,20 @@ export const TEST_RESPONSIBILITIES: ProcedureResponsibility[] = [
     },
   },
 
+  // ----- E2Eテスト -----
+  {
+    id: "procedure_test_e2e",
+    toolDescription:
+      "E2Eテストを実行します（Playwright E2E Test）。fileでファイル指定、testNameでテスト名フィルタができます。",
+    inputSchema: filterSchema,
+    handler: async (input, projectRoot): Promise<string> => {
+      const runner = getTestRunner(projectRoot);
+      const filter = buildFilter(input);
+      const result = await runner.runE2ETests(filter);
+      return formatTestResult(result);
+    },
+  },
+
   // ----- 全テスト -----
   {
     id: "procedure_test_all",

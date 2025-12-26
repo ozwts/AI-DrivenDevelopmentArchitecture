@@ -57,6 +57,14 @@ locals {
         "http://localhost:5173",
         "http://localhost:3000",
       ])
+    },
+    # ログ設定
+    {
+      LOG_LEVEL = "DEBUG"
+    },
+    # ステージ設定
+    {
+      STAGE_NAME = "DEV"
     }
   )
 }

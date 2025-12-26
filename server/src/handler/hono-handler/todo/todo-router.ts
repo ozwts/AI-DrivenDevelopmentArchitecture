@@ -27,8 +27,8 @@ export const buildTodoRouter = ({
   // GET /todos/:todoId - TODO詳細
   todoRouter.get("/:todoId", buildGetTodoHandler({ container }));
 
-  // PUT /todos/:todoId - TODO更新
-  todoRouter.put("/:todoId", buildUpdateTodoHandler({ container }));
+  // PATCH /todos/:todoId - TODO更新
+  todoRouter.patch("/:todoId", buildUpdateTodoHandler({ container }));
 
   // DELETE /todos/:todoId - TODO削除
   todoRouter.delete("/:todoId", buildDeleteTodoHandler({ container }));

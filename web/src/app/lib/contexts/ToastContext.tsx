@@ -116,6 +116,8 @@ export function ToastProvider({ children }: ToastProviderProps) {
           return (
             <div
               key={toast.id}
+              role="alert"
+              aria-live="polite"
               className={`
                 flex items-start gap-3 p-4 rounded-lg border shadow-lg
                 min-w-72 max-w-md

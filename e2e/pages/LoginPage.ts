@@ -19,7 +19,7 @@ export class LoginPage {
   }
 
   async goto() {
-    await this.page.goto("/login");
+    await this.page.goto("/auth");
   }
 
   async login(email: string, password: string) {
@@ -30,6 +30,6 @@ export class LoginPage {
 
   async waitForRedirect() {
     // ログイン成功後、ホーム画面へリダイレクト
-    await expect(this.page).not.toHaveURL(/\/login/);
+    await expect(this.page).not.toHaveURL(/\/auth/);
   }
 }
