@@ -8,6 +8,11 @@ locals {
   web_build_dir = "${path.module}/../../../../web/build/client"
   api_build_dir = "${path.module}/../../../../server/dist/api"
 
+  # CORS許可オリジン
+  # WARNING: 開発環境のため全オリジン許可。検証・本番環境では必ず許可するオリジンを限定すること
+  # 例: cors_allowed_origins = [local.static_site_url]
+  cors_allowed_origins = ["*"]
+
   # アプリケーション共通環境変数
   # Lambda環境変数とSSM Parameter Store（ローカル開発用）で使いまわす
   app_env_vars = merge(
@@ -22,13 +27,9 @@ locals {
     {
       ATTACHMENTS_BUCKET_NAME = module.attachments_bucket.bucket_name
     },
-    # CORS設定
+    # CORS設定（local.cors_allowed_originsを参照）
     {
-      ALLOWED_ORIGINS = join(",", [
-        local.static_site_url,
-        "http://localhost:5173",
-        "http://localhost:3000",
-      ])
+      ALLOWED_ORIGINS = join(",", local.cors_allowed_origins)
     },
     # ログ設定
     {
@@ -159,12 +160,9 @@ module "attachments_bucket" {
   # バケットの用途を指定
   bucket_purpose = "attachments"
 
-  # CORS設定（開発環境ではlocalhostも許可）
-  enable_cors = true
-  cors_allowed_origins = [
-    local.static_site_url,
-    "http://localhost:5173",
-  ]
+  # CORS設定（local.cors_allowed_originsを参照）
+  enable_cors          = true
+  cors_allowed_origins = local.cors_allowed_origins
 
   # バージョニングとライフサイクル設定
   enable_versioning = false
@@ -214,11 +212,8 @@ module "server" {
   enable_s3_access = true
   s3_bucket_arn    = module.attachments_bucket.bucket_arn
 
-  # CORS設定（開発環境ではlocalhostも許可）
-  allowed_origins = [
-    local.static_site_url,
-    "http://localhost:5173",
-  ]
+  # CORS設定（local.cors_allowed_originsを参照）
+  allowed_origins = local.cors_allowed_origins
 
   # モニタリング設定
   enable_monitoring  = true

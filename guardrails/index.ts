@@ -20,7 +20,9 @@ import {
   UNUSED_EXPORTS_RESPONSIBILITIES,
   createUnusedExportsHandler,
 } from "./review";
-import { DEV_SERVER_RESPONSIBILITIES, TEST_RESPONSIBILITIES } from "./procedure";
+import { DEV_SERVER_RESPONSIBILITIES, TEST_RESPONSIBILITIES, DEPLOY_RESPONSIBILITIES } from "./procedure";
+import { executeDeploy, type DeployAction, type DeployTarget } from "./procedure/deploy/deployer";
+import { formatDeployResult } from "./procedure/deploy/formatter";
 
 // ESMで__dirnameを取得
 const __filename = fileURLToPath(import.meta.url);
@@ -245,6 +247,50 @@ const main = async (): Promise<void> => {
               {
                 type: "text" as const,
                 text: result,
+              },
+            ],
+          };
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : String(error);
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `エラー: ${msg}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+      },
+    );
+  }
+
+  // ----- デプロイ管理 (Deploy Management) -----
+  // 開発環境へのTerraformデプロイ
+  for (const responsibility of DEPLOY_RESPONSIBILITIES) {
+    server.registerTool(
+      responsibility.id,
+      {
+        description: responsibility.toolDescription,
+        inputSchema: responsibility.inputSchema,
+      },
+      async (input: Record<string, unknown>) => {
+        try {
+          const action = input.action as DeployAction;
+          const target = (input.target as DeployTarget | undefined) ?? "all";
+
+          const result = await executeDeploy({
+            action,
+            target,
+            projectRoot: PROJECT_ROOT,
+          });
+
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: formatDeployResult(result),
               },
             ],
           };

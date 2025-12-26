@@ -115,7 +115,7 @@ export const executeDeploy = async (
   const startTime = Date.now();
   const environment = "dev";
 
-  const infraDir = `${projectRoot}/../infra`;
+  const infraDir = `${projectRoot}/infra`;
 
   // サポートされている組み合わせかチェック
   const script = getSupportedScript(action, target);

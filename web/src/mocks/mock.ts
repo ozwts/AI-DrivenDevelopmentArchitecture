@@ -1,4 +1,4 @@
-import { rest } from "msw";
+import { http, HttpResponse, delay } from "msw";
 import urlJoin from "url-join";
 import { z } from "zod";
 import { config } from "../config/config";
@@ -49,9 +49,10 @@ let currentUser = UserDummy1;
 
 // TODOリストのハンドラー
 export const TodosResponseDummy = [
-  rest.get(urlJoin(config.apiUrl, "/todos"), (req, res, ctx) => {
-    const statusParam = req.url.searchParams.get("status");
-    const projectIdParam = req.url.searchParams.get("projectId");
+  http.get(urlJoin(config.apiUrl, "/todos"), async ({ request }) => {
+    const url = new URL(request.url);
+    const statusParam = url.searchParams.get("status");
+    const projectIdParam = url.searchParams.get("projectId");
 
     let filteredTodos = todos;
     if (statusParam) {
@@ -65,45 +66,39 @@ export const TodosResponseDummy = [
       );
     }
 
-    return res(
-      ctx.json(filteredTodos satisfies TodosResponse),
-      ctx.delay(100),
-      ctx.status(200),
-    );
+    await delay(100);
+    return HttpResponse.json(filteredTodos satisfies TodosResponse);
   }),
 ];
 
 // TODO詳細のハンドラー
 export const TodoResponseDummy = [
-  rest.get(urlJoin(config.apiUrl, "/todos/:todoId"), (req, res, ctx) => {
-    const { todoId } = req.params;
+  http.get(urlJoin(config.apiUrl, "/todos/:todoId"), async ({ params }) => {
+    const { todoId } = params;
     const todo = todos.find((t) => t.id === todoId);
 
     if (todo) {
-      return res(
-        ctx.json(todo satisfies TodoResponse),
-        ctx.delay(100),
-        ctx.status(200),
-      );
+      await delay(100);
+      return HttpResponse.json(todo satisfies TodoResponse);
     }
 
-    return res(ctx.status(404));
+    return new HttpResponse(null, { status: 404 });
   }),
 ];
 
 // TODO作成のハンドラー
 export const CreateTodoResponseDummy = [
-  rest.post(urlJoin(config.apiUrl, "/todos"), async (req, res, ctx) => {
-    const body = await req.clone().json();
+  http.post(urlJoin(config.apiUrl, "/todos"), async ({ request }) => {
+    const body = (await request.json()) as Record<string, unknown>;
     const newTodo: TodoResponse = {
       id: String(todos.length + 1),
-      title: body.title,
-      description: body.description,
-      status: body.status || "TODO",
-      priority: body.priority || "MEDIUM",
-      dueDate: body.dueDate,
-      projectId: body.projectId,
-      assigneeUserId: body.assigneeUserId || currentUser.id, // 省略時は現在のユーザーを担当者にする
+      title: body.title as string,
+      description: body.description as string | undefined,
+      status: (body.status as TodoResponse["status"]) || "TODO",
+      priority: (body.priority as TodoResponse["priority"]) || "MEDIUM",
+      dueDate: body.dueDate as string | undefined,
+      projectId: body.projectId as string,
+      assigneeUserId: (body.assigneeUserId as string) || currentUser.id, // 省略時は現在のユーザーを担当者にする
       attachments: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -111,120 +106,114 @@ export const CreateTodoResponseDummy = [
 
     todos.push(newTodo);
 
-    return res(
-      ctx.json(newTodo satisfies TodoResponse),
-      ctx.delay(100),
-      ctx.status(201),
-    );
+    await delay(100);
+    return HttpResponse.json(newTodo satisfies TodoResponse, { status: 201 });
   }),
 ];
 
 // TODO更新のハンドラー
 export const UpdateTodoResponseDummy = [
-  rest.put(urlJoin(config.apiUrl, "/todos/:todoId"), async (req, res, ctx) => {
-    const { todoId } = req.params;
-    const body = await req.clone().json();
-    const todoIndex = todos.findIndex((t) => t.id === todoId);
+  http.put(
+    urlJoin(config.apiUrl, "/todos/:todoId"),
+    async ({ params, request }) => {
+      const { todoId } = params;
+      const body = (await request.json()) as Record<string, unknown>;
+      const todoIndex = todos.findIndex((t) => t.id === todoId);
 
-    if (todoIndex === -1) {
-      return res(ctx.status(404));
-    }
+      if (todoIndex === -1) {
+        return new HttpResponse(null, { status: 404 });
+      }
 
-    const updatedTodo: TodoResponse = {
-      ...todos[todoIndex],
-      ...body,
-      updatedAt: new Date().toISOString(),
-    };
+      const updatedTodo: TodoResponse = {
+        ...todos[todoIndex],
+        ...body,
+        updatedAt: new Date().toISOString(),
+      };
 
-    todos[todoIndex] = updatedTodo;
+      todos[todoIndex] = updatedTodo;
 
-    return res(
-      ctx.json(updatedTodo satisfies TodoResponse),
-      ctx.delay(100),
-      ctx.status(200),
-    );
-  }),
+      await delay(100);
+      return HttpResponse.json(updatedTodo satisfies TodoResponse);
+    },
+  ),
 ];
 
 // TODO削除のハンドラー
 export const DeleteTodoResponseDummy = [
-  rest.delete(urlJoin(config.apiUrl, "/todos/:todoId"), (req, res, ctx) => {
-    const { todoId } = req.params;
+  http.delete(urlJoin(config.apiUrl, "/todos/:todoId"), async ({ params }) => {
+    const { todoId } = params;
     const todoIndex = todos.findIndex((t) => t.id === todoId);
 
     if (todoIndex === -1) {
-      return res(ctx.status(404));
+      return new HttpResponse(null, { status: 404 });
     }
 
     todos = todos.filter((t) => t.id !== todoId);
 
-    return res(ctx.delay(100), ctx.status(204));
+    await delay(100);
+    return new HttpResponse(null, { status: 204 });
   }),
 ];
 
 // プロジェクトリストのハンドラー
 export const ProjectsResponseDummy = [
-  rest.get(urlJoin(config.apiUrl, "/projects"), (_req, res, ctx) => {
-    return res(
-      ctx.json(projects satisfies ProjectsResponse),
-      ctx.delay(100),
-      ctx.status(200),
-    );
+  http.get(urlJoin(config.apiUrl, "/projects"), async () => {
+    await delay(100);
+    return HttpResponse.json(projects satisfies ProjectsResponse);
   }),
 ];
 
 // プロジェクト詳細のハンドラー
 export const ProjectResponseDummy = [
-  rest.get(urlJoin(config.apiUrl, "/projects/:projectId"), (req, res, ctx) => {
-    const { projectId } = req.params;
-    const project = projects.find((p) => p.id === projectId);
+  http.get(
+    urlJoin(config.apiUrl, "/projects/:projectId"),
+    async ({ params }) => {
+      const { projectId } = params;
+      const project = projects.find((p) => p.id === projectId);
 
-    if (project) {
-      return res(
-        ctx.json(project satisfies ProjectResponse),
-        ctx.delay(100),
-        ctx.status(200),
-      );
-    }
+      if (project) {
+        await delay(100);
+        return HttpResponse.json(project satisfies ProjectResponse);
+      }
 
-    return res(ctx.status(404));
-  }),
+      return new HttpResponse(null, { status: 404 });
+    },
+  ),
 ];
 
 // プロジェクト作成のハンドラー
 export const CreateProjectResponseDummy = [
-  rest.post(urlJoin(config.apiUrl, "/projects"), async (req, res, ctx) => {
-    const body = await req.clone().json();
+  http.post(urlJoin(config.apiUrl, "/projects"), async ({ request }) => {
+    const body = (await request.json()) as Record<string, unknown>;
     const newProject: ProjectResponse = {
       id: `project-${projects.length + 1}`,
-      name: body.name,
-      description: body.description,
-      color: body.color,
+      name: body.name as string,
+      description: body.description as string | undefined,
+      color: body.color as string,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
     projects.push(newProject);
 
-    return res(
-      ctx.json(newProject satisfies ProjectResponse),
-      ctx.delay(100),
-      ctx.status(201),
-    );
+    await delay(100);
+    return HttpResponse.json(newProject satisfies ProjectResponse, {
+      status: 201,
+    });
   }),
 ];
 
 // プロジェクト更新のハンドラー
 export const UpdateProjectResponseDummy = [
-  rest.put(
+  http.put(
     urlJoin(config.apiUrl, "/projects/:projectId"),
-    async (req, res, ctx) => {
-      const { projectId } = req.params;
-      const body = await req.clone().json();
+    async ({ params, request }) => {
+      const { projectId } = params;
+      const body = (await request.json()) as Record<string, unknown>;
       const projectIndex = projects.findIndex((p) => p.id === projectId);
 
       if (projectIndex === -1) {
-        return res(ctx.status(404));
+        return new HttpResponse(null, { status: 404 });
       }
 
       const updatedProject: ProjectResponse = {
@@ -235,25 +224,22 @@ export const UpdateProjectResponseDummy = [
 
       projects[projectIndex] = updatedProject;
 
-      return res(
-        ctx.json(updatedProject satisfies ProjectResponse),
-        ctx.delay(100),
-        ctx.status(200),
-      );
+      await delay(100);
+      return HttpResponse.json(updatedProject satisfies ProjectResponse);
     },
   ),
 ];
 
 // プロジェクト削除のハンドラー
 export const DeleteProjectResponseDummy = [
-  rest.delete(
+  http.delete(
     urlJoin(config.apiUrl, "/projects/:projectId"),
-    (req, res, ctx) => {
-      const { projectId } = req.params;
+    async ({ params }) => {
+      const { projectId } = params;
       const projectIndex = projects.findIndex((p) => p.id === projectId);
 
       if (projectIndex === -1) {
-        return res(ctx.status(404));
+        return new HttpResponse(null, { status: 404 });
       }
 
       // プロジェクトを削除
@@ -262,42 +248,38 @@ export const DeleteProjectResponseDummy = [
       // プロジェクトに紐づくTODOも全て削除
       todos = todos.filter((t) => t.projectId !== projectId);
 
-      return res(ctx.delay(100), ctx.status(204));
+      await delay(100);
+      return new HttpResponse(null, { status: 204 });
     },
   ),
 ];
 
 // ユーザーリストのハンドラー
 export const UsersResponseDummy = [
-  rest.get(urlJoin(config.apiUrl, "/users"), (_req, res, ctx) => {
-    return res(
-      ctx.json(users satisfies UsersResponse),
-      ctx.delay(100),
-      ctx.status(200),
-    );
+  http.get(urlJoin(config.apiUrl, "/users"), async () => {
+    await delay(100);
+    return HttpResponse.json(users satisfies UsersResponse);
   }),
 ];
 
 // 現在のユーザー取得のハンドラー
 export const CurrentUserResponseDummy = [
-  rest.get(urlJoin(config.apiUrl, "/users/me"), (_req, res, ctx) => {
-    return res(
-      ctx.json(currentUser satisfies UserResponse),
-      ctx.delay(100),
-      ctx.status(200),
-    );
+  http.get(urlJoin(config.apiUrl, "/users/me"), async () => {
+    await delay(100);
+    return HttpResponse.json(currentUser satisfies UserResponse);
   }),
 ];
 
 // 現在のユーザー更新のハンドラー
 export const UpdateCurrentUserResponseDummy = [
-  rest.put(urlJoin(config.apiUrl, "/users/me"), async (req, res, ctx) => {
-    const body = await req.clone().json();
+  http.put(urlJoin(config.apiUrl, "/users/me"), async ({ request }) => {
+    const body = (await request.json()) as Record<string, unknown>;
     currentUser = {
       ...currentUser,
-      name: body.name ?? currentUser.name,
-      email: body.email ?? currentUser.email,
-      emailVerified: body.emailVerified ?? currentUser.emailVerified,
+      name: (body.name as string) ?? currentUser.name,
+      email: (body.email as string) ?? currentUser.email,
+      emailVerified:
+        (body.emailVerified as boolean) ?? currentUser.emailVerified,
       updatedAt: new Date().toISOString(),
     };
 
@@ -307,48 +289,43 @@ export const UpdateCurrentUserResponseDummy = [
       users[userIndex] = currentUser;
     }
 
-    return res(
-      ctx.json(currentUser satisfies UserResponse),
-      ctx.delay(100),
-      ctx.status(200),
-    );
+    await delay(100);
+    return HttpResponse.json(currentUser satisfies UserResponse);
   }),
 ];
 
 // 現在のユーザー削除のハンドラー
 export const DeleteCurrentUserResponseDummy = [
-  rest.delete(urlJoin(config.apiUrl, "/users/me"), (_req, res, ctx) => {
+  http.delete(urlJoin(config.apiUrl, "/users/me"), async () => {
     // ユーザーをリストから削除
     users = users.filter((u) => u.id !== currentUser.id);
 
     // 別のユーザーに切り替え（モック環境用）
     currentUser = users[0] || UserDummy2;
 
-    return res(ctx.delay(100), ctx.status(204));
+    await delay(100);
+    return new HttpResponse(null, { status: 204 });
   }),
 ];
 
 // ユーザー詳細のハンドラー
 export const UserResponseDummy = [
-  rest.get(urlJoin(config.apiUrl, "/users/:userId"), (req, res, ctx) => {
-    const { userId } = req.params;
+  http.get(urlJoin(config.apiUrl, "/users/:userId"), async ({ params }) => {
+    const { userId } = params;
     const user = users.find((u) => u.id === userId);
 
     if (user) {
-      return res(
-        ctx.json(user satisfies UserResponse),
-        ctx.delay(100),
-        ctx.status(200),
-      );
+      await delay(100);
+      return HttpResponse.json(user satisfies UserResponse);
     }
 
-    return res(ctx.status(404));
+    return new HttpResponse(null, { status: 404 });
   }),
 ];
 
 // ユーザー登録のハンドラー（Cognito認証後の初回登録）
 export const RegisterUserResponseDummy = [
-  rest.post(urlJoin(config.apiUrl, "/users"), async (_req, res, ctx) => {
+  http.post(urlJoin(config.apiUrl, "/users"), async () => {
     // 実際にはCognitoトークンから情報を取得するが、モックでは新規ユーザーを作成
     const newUser: UserResponse = {
       id: `user-${users.length + 1}`,
@@ -363,48 +340,42 @@ export const RegisterUserResponseDummy = [
     users.push(newUser);
     currentUser = newUser;
 
-    return res(
-      ctx.json(newUser satisfies UserResponse),
-      ctx.delay(100),
-      ctx.status(201),
-    );
+    await delay(100);
+    return HttpResponse.json(newUser satisfies UserResponse, { status: 201 });
   }),
 ];
 
 // 添付ファイル一覧のハンドラー
 export const AttachmentsResponseDummy = [
-  rest.get(
+  http.get(
     urlJoin(config.apiUrl, "/todos/:todoId/attachments"),
-    (req, res, ctx) => {
-      const { todoId } = req.params;
+    async ({ params }) => {
+      const { todoId } = params;
       // uploadedステータスのもののみ返す
       const todoAttachments = attachments.filter(
         (a) => a.todoId === todoId && a.status === "UPLOADED",
       );
 
-      return res(
-        ctx.json(todoAttachments satisfies AttachmentsResponse),
-        ctx.delay(100),
-        ctx.status(200),
-      );
+      await delay(100);
+      return HttpResponse.json(todoAttachments satisfies AttachmentsResponse);
     },
   ),
 ];
 
 // 添付ファイル準備のハンドラー（署名付きURL取得）
 export const PrepareAttachmentResponseDummy = [
-  rest.post(
+  http.post(
     urlJoin(config.apiUrl, "/todos/:todoId/attachments"),
-    async (req, res, ctx) => {
-      const { todoId } = req.params;
-      const body = await req.clone().json();
+    async ({ params, request }) => {
+      const { todoId } = params;
+      const body = (await request.json()) as Record<string, unknown>;
 
       const newAttachment: AttachmentResponse = {
         id: `attachment-${attachments.length + 1}`,
         todoId: todoId as string,
-        filename: body.filename,
-        contentType: body.contentType,
-        filesize: body.filesize,
+        filename: body.filename as string,
+        contentType: body.contentType as string,
+        filesize: body.filesize as number,
         status: "PREPARED",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -420,119 +391,115 @@ export const PrepareAttachmentResponseDummy = [
         uploadUrl,
       };
 
-      return res(
-        ctx.json(response satisfies PrepareAttachmentResponse),
-        ctx.delay(100),
-        ctx.status(201),
-      );
+      await delay(100);
+      return HttpResponse.json(response satisfies PrepareAttachmentResponse, {
+        status: 201,
+      });
     },
   ),
 ];
 
 // 添付ファイル詳細のハンドラー
 export const AttachmentResponseDummy = [
-  rest.get(
+  http.get(
     urlJoin(config.apiUrl, "/todos/:todoId/attachments/:attachmentId"),
-    (req, res, ctx) => {
-      const { attachmentId } = req.params;
+    async ({ params }) => {
+      const { attachmentId } = params;
       const attachment = attachments.find((a) => a.id === attachmentId);
 
       if (attachment) {
-        return res(
-          ctx.json(attachment satisfies AttachmentResponse),
-          ctx.delay(100),
-          ctx.status(200),
-        );
+        await delay(100);
+        return HttpResponse.json(attachment satisfies AttachmentResponse);
       }
 
-      return res(ctx.status(404));
+      return new HttpResponse(null, { status: 404 });
     },
   ),
 ];
 
 // 添付ファイル更新のハンドラー（ステータスをuploadedに変更）
 export const UpdateAttachmentResponseDummy = [
-  rest.put(
+  http.put(
     urlJoin(config.apiUrl, "/todos/:todoId/attachments/:attachmentId"),
-    async (req, res, ctx) => {
-      const { attachmentId } = req.params;
-      const body = await req.clone().json();
+    async ({ params, request }) => {
+      const { attachmentId } = params;
+      const body = (await request.json()) as Record<string, unknown>;
       const attachmentIndex = attachments.findIndex(
         (a) => a.id === attachmentId,
       );
 
       if (attachmentIndex === -1) {
-        return res(ctx.status(404));
+        return new HttpResponse(null, { status: 404 });
       }
 
       const updatedAttachment: AttachmentResponse = {
         ...attachments[attachmentIndex],
-        status: body.status,
+        status: body.status as AttachmentResponse["status"],
         updatedAt: new Date().toISOString(),
       };
 
       attachments[attachmentIndex] = updatedAttachment;
 
-      return res(
-        ctx.json(updatedAttachment satisfies AttachmentResponse),
-        ctx.delay(100),
-        ctx.status(200),
-      );
+      await delay(100);
+      return HttpResponse.json(updatedAttachment satisfies AttachmentResponse);
     },
   ),
 ];
 
 // 添付ファイル削除のハンドラー
 export const DeleteAttachmentResponseDummy = [
-  rest.delete(
+  http.delete(
     urlJoin(config.apiUrl, "/todos/:todoId/attachments/:attachmentId"),
-    (req, res, ctx) => {
-      const { attachmentId } = req.params;
+    async ({ params }) => {
+      const { attachmentId } = params;
       const attachmentIndex = attachments.findIndex(
         (a) => a.id === attachmentId,
       );
 
       if (attachmentIndex === -1) {
-        return res(ctx.status(404));
+        return new HttpResponse(null, { status: 404 });
       }
 
       attachments = attachments.filter((a) => a.id !== attachmentId);
 
-      return res(ctx.delay(100), ctx.status(204));
+      await delay(100);
+      return new HttpResponse(null, { status: 204 });
     },
   ),
 ];
 
 // 添付ファイルダウンロードURL取得のハンドラー
 export const DownloadUrlResponseDummy = [
-  rest.get(
+  http.get(
     urlJoin(
       config.apiUrl,
       "/todos/:todoId/attachments/:attachmentId/download-url",
     ),
-    (req, res, ctx) => {
-      const { attachmentId } = req.params;
+    async ({ params }) => {
+      const { attachmentId } = params;
       const attachment = attachments.find((a) => a.id === attachmentId);
 
       if (!attachment) {
-        return res(ctx.status(404));
+        return new HttpResponse(null, { status: 404 });
       }
 
       // モック署名付きダウンロードURL（実際にはS3からダウンロード可能なURLではない）
       const downloadUrl = `https://mock-s3-bucket.s3.amazonaws.com/attachments/${attachment.todoId}/${attachment.id}/${attachment.filename}?signature=mock-download`;
 
-      return res(ctx.json({ downloadUrl }), ctx.delay(100), ctx.status(200));
+      await delay(100);
+      return HttpResponse.json({ downloadUrl });
     },
   ),
 ];
 
 // S3へのファイルアップロードをモック（実際のS3ではなくモック）
 export const S3UploadResponseDummy = [
-  rest.put(
+  http.put(
     "https://mock-s3-bucket.s3.amazonaws.com/attachments/*",
-    (_req, res, ctx) => {
+    async () => {
       // アップロード成功をシミュレート
-      return res(ctx.delay(200), ctx.status(200));
+      await delay(200);
+      return new HttpResponse(null, { status: 200 });
     },
   ),
 ];
@@ -622,7 +589,7 @@ export const startMockServer = async () => {
   }
 
   // setupWorkerを動的インポート（SSRビルド時のエラーを回避）
-  const { setupWorker } = await import("msw");
+  const { setupWorker } = await import("msw/browser");
 
   const response = getHandlersByType(config.mockType ?? "HAS_ALL");
 
@@ -632,7 +599,7 @@ export const startMockServer = async () => {
   // PlaywrightテストからMSWハンドラーを動的に切り替えられるようにする
   window.msw = {
     worker,
-    rest,
+    http,
     // ハンドラーを切り替える関数
     setHandlers: (type: string) => {
       const handlers = getHandlersByType(type);

@@ -26,6 +26,10 @@
     "deploy:web": "npm run deploy:web:dev -w infra",
     "destroy": "npm run destroy:dev -w infra"
   },
+  "overrides": {
+    "vite": "^6.4.1",
+    "esbuild": "^0.25.0"
+  },
   "devDependencies": {
     "@playwright/test": "^1.57.0",
     "@redocly/cli": "^2.14.0",

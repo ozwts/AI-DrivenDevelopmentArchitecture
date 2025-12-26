@@ -1,10 +1,11 @@
-import { SetupWorker, rest } from "msw";
+import { http } from "msw";
+import { SetupWorker } from "msw/browser";
 
 declare global {
   interface Window {
     msw?: {
       worker: SetupWorker;
-      rest: typeof rest;
+      http: typeof http;
       setHandlers: (type: string) => void;
     };
   }

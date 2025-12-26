@@ -124,7 +124,8 @@
       "Bash(trivy config:*)",
       "WebFetch(domain:trivy.dev)",
       "Bash(trivy:*)",
-      "Bash(tflint:*)"
+      "Bash(tflint:*)",
+      "Bash(npx msw:*)"
     ],
     "deny": [],
     "ask": []
