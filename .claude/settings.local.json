@@ -123,7 +123,8 @@
       "Bash(asdf plugin add:*)",
       "Bash(trivy config:*)",
       "WebFetch(domain:trivy.dev)",
-      "Bash(trivy:*)"
+      "Bash(trivy:*)",
+      "Bash(tflint:*)"
     ],
     "deny": [],
     "ask": []
