@@ -12,32 +12,26 @@ export type CodegenResponsibility = {
   toolDescription: string;
   inputSchema: {
     workspace: z.ZodEnum<["server", "web"]>;
-    generateType: z.ZodDefault<
-      z.ZodOptional<z.ZodEnum<["api-types", "mock", "all"]>>
-    >;
   };
 };
 
 /**
  * コード生成責務定義
+ *
+ * 利用するnpm scripts:
+ * - server: npm run codegen -w server
+ * - web: npm run codegen -w web
  */
 export const CODEGEN_RESPONSIBILITIES: CodegenResponsibility[] = [
   {
     id: "procedure_codegen",
     toolDescription:
-      "指定されたワークスペースでコード生成を実行します。API型生成（OpenAPIからの型生成）、モック生成などを行います。",
+      "指定されたワークスペースでコード生成を実行します。OpenAPIからの型生成（openapi-zod-client）を行います。",
     inputSchema: {
       workspace: z
         .enum(["server", "web"])
         .describe(
           "生成対象のワークスペース: 'server'（サーバー側）、'web'（フロントエンド）",
-        ),
-      generateType: z
-        .enum(["api-types", "mock", "all"])
-        .optional()
-        .default("all")
-        .describe(
-          "生成タイプ: 'api-types'（API型のみ）、'mock'（モックのみ）、'all'（全て）。デフォルトは 'all'。",
         ),
     },
   },

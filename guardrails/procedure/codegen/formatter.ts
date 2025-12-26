@@ -66,20 +66,10 @@ export const formatGenerateResult = (result: GenerateResult): string => {
   const status = result.success ? "✅ 成功" : "❌ 失敗";
   const duration = formatDuration(result.duration);
 
-  let generateTypeLabel: string;
-  if (result.generateType === "api-types") {
-    generateTypeLabel = "API型生成";
-  } else if (result.generateType === "mock") {
-    generateTypeLabel = "モック生成";
-  } else {
-    generateTypeLabel = "全生成";
-  }
-
   const output = [
     `# ⚙️ コード生成結果: ${status}`,
     "",
     `- **ワークスペース**: ${result.workspace}`,
-    `- **生成タイプ**: ${generateTypeLabel}`,
     `- **実行時間**: ${duration}`,
     "",
     "---",

@@ -10,7 +10,7 @@ import { Config } from "./config-type";
  * - VITE_API_URL: APIサーバーのURL（デフォルト: http://localhost:3000）
  */
 export const config: Config = {
-  apiUrl: import.meta.env.VITE_API_URL ?? "http://localhost:3000",
+  apiUrl: (import.meta.env.VITE_API_URL as string | undefined) ?? "http://localhost:3000",
   mockedApi: false,
   auth: {
     userPoolId: "ap-northeast-1_0ZkOnmBdP",

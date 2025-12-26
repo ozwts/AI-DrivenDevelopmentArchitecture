@@ -228,9 +228,9 @@ class TestRunner {
   /**
    * E2Eテスト実行 (Playwright E2E Test)
    *
-   * playwright options:
-   * - file: playwright test <file>
-   * - testName: playwright test --grep "<testName>"
+   * npm scripts: npm run test -- [options]
+   * - file: npm run test -- <file>
+   * - testName: npm run test -- --grep "<testName>"
    *
    * environment variables:
    * - E2E_BASE_URL: フロントエンドのベースURL
@@ -240,7 +240,7 @@ class TestRunner {
     const startTime = Date.now();
     const filter = options?.filter;
 
-    let command = "npx playwright test --project=chromium";
+    let command = "npm run test -- --project=chromium";
     const args: string[] = [];
     const envVars: string[] = [];
 
@@ -261,7 +261,7 @@ class TestRunner {
     }
 
     if (args.length > 0) {
-      command = `npx playwright test --project=chromium ${args.join(" ")}`;
+      command = `npm run test -- --project=chromium ${args.join(" ")}`;
     }
 
     // 環境変数をコマンドの前に付加

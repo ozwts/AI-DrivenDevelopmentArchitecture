@@ -6,13 +6,9 @@ import * as path from "path";
 import {
   executeUnusedExportsCheck,
   UnusedExportsResult,
+  Workspace,
 } from "./reviewer";
 import { formatUnusedExportsResults } from "./formatter";
-
-/**
- * ワークスペース種別
- */
-export type Workspace = "server" | "web";
 
 /**
  * 未使用export検出ハンドラー入力
@@ -49,11 +45,12 @@ export const createUnusedExportsHandler =
       throw new Error("guardrailsRootは必須です");
     }
 
-    // workspaceに基づいてprojectRootを決定
-    const projectRoot = path.join(guardrailsRoot, "..", workspace);
+    // モノレポのルートディレクトリを取得
+    const projectRoot = path.join(guardrailsRoot, "..");
 
     // 未使用export検出実行
     const result: UnusedExportsResult = await executeUnusedExportsCheck({
+      workspace,
       targetDirectories,
       projectRoot,
     });

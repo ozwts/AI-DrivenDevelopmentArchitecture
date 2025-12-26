@@ -14,7 +14,6 @@ export {
 export {
   createUnusedExportsHandler,
   type UnusedExportsHandlerInput,
-  type Workspace,
 } from "./handler";
 
 // レビュアー（内部利用）
@@ -23,6 +22,7 @@ export {
   type UnusedExportsInput,
   type UnusedExportsResult,
   type UnusedExportItem,
+  type Workspace,
 } from "./reviewer";
 
 // フォーマッター（内部利用）

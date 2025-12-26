@@ -1,13 +1,18 @@
 /**
  * 未使用export検出レビュー実装
  *
- * knipを使用して未使用のexportを検出する。
+ * npm scripts経由でknipを使用して未使用のexportを検出する。
  */
 
 import { exec } from "child_process";
 import { promisify } from "util";
 
 const execAsync = promisify(exec);
+
+/**
+ * ワークスペース種別
+ */
+export type Workspace = "server" | "web";
 
 /**
  * 未使用exportアイテム
@@ -48,35 +53,94 @@ type KnipJsonOutput = {
  * 未使用export検出入力パラメータ
  */
 export type UnusedExportsInput = {
+  /** 対象ワークスペース */
+  workspace: Workspace;
   /** 対象ディレクトリ一覧（フィルタ用、省略時は全て） */
   targetDirectories?: string[];
-  /** プロジェクトルートディレクトリ */
+  /** プロジェクトルートディレクトリ（モノレポのルート） */
   projectRoot: string;
 };
 
 /**
- * 未使用exportを検出
+ * 未使用exportを検出（npm scripts経由）
+ *
+ * 利用するnpm scripts:
+ * - server: npm run validate:knip -w server
+ * - web: npm run validate:knip -w web
  */
 export const executeUnusedExportsCheck = async (
   input: UnusedExportsInput,
 ): Promise<UnusedExportsResult> => {
-  const { targetDirectories, projectRoot } = input;
+  const { workspace, targetDirectories, projectRoot } = input;
 
   try {
-    // knipを実行（--reporter jsonで構造化出力を取得）
-    const { stdout } = await execAsync("npx knip --reporter json", {
-      cwd: projectRoot,
-      maxBuffer: 1024 * 1024 * 10, // 10MB
-    });
+    // npm scripts経由でknipを実行
+    const { stdout } = await execAsync(
+      `npm run validate:knip -w ${workspace}`,
+      {
+        cwd: projectRoot,
+        maxBuffer: 1024 * 1024 * 10, // 10MB
+      },
+    );
 
-    // knipのJSON出力をパース
-    const knipResult = JSON.parse(stdout) as KnipJsonOutput;
+    // npm run の出力からJSON部分を抽出
+    const jsonOutput = extractJsonFromOutput(stdout);
+    if (jsonOutput === null) {
+      return {
+        success: true,
+        unusedExports: [],
+      };
+    }
 
-    // 未使用exportを抽出
+    return parseKnipOutput(jsonOutput, targetDirectories);
+  } catch (error: unknown) {
+    // knipがエラーを返した場合（未使用exportがある場合もexit code 1になる）
+    const execError = error as { stdout?: string; stderr?: string };
+
+    if (
+      execError.stdout !== null &&
+      execError.stdout !== undefined &&
+      execError.stdout !== ""
+    ) {
+      const jsonOutput = extractJsonFromOutput(execError.stdout);
+      if (jsonOutput !== null) {
+        return parseKnipOutput(jsonOutput, targetDirectories);
+      }
+    }
+
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return {
+      success: false,
+      unusedExports: [],
+      error: errorMessage,
+    };
+  }
+};
+
+/**
+ * npm runの出力からJSON部分を抽出
+ */
+const extractJsonFromOutput = (output: string): string | null => {
+  // JSON開始位置を探す
+  const jsonStart = output.indexOf("{");
+  if (jsonStart === -1) {
+    return null;
+  }
+  return output.slice(jsonStart);
+};
+
+/**
+ * knipのJSON出力をパース
+ */
+const parseKnipOutput = (
+  jsonString: string,
+  targetDirectories?: string[],
+): UnusedExportsResult => {
+  try {
+    const knipResult = JSON.parse(jsonString) as KnipJsonOutput;
     const unusedExports: UnusedExportItem[] = [];
 
     for (const [file, fileIssues] of Object.entries(knipResult.files)) {
-      // exportsがある場合のみ処理
       if (
         fileIssues.exports !== null &&
         fileIssues.exports !== undefined &&
@@ -104,57 +168,11 @@ export const executeUnusedExportsCheck = async (
       success: unusedExports.length === 0,
       unusedExports,
     };
-  } catch (error: unknown) {
-    // knipがエラーを返した場合（未使用exportがある場合もexit code 1になる）
-    const execError = error as { stdout?: string; stderr?: string };
-
-    if (
-      execError.stdout !== null &&
-      execError.stdout !== undefined &&
-      execError.stdout !== ""
-    ) {
-      try {
-        const knipResult = JSON.parse(execError.stdout) as KnipJsonOutput;
-
-        const unusedExports: UnusedExportItem[] = [];
-
-        for (const [file, fileIssues] of Object.entries(knipResult.files)) {
-          if (
-            fileIssues.exports !== null &&
-            fileIssues.exports !== undefined &&
-            fileIssues.exports.length > 0
-          ) {
-            for (const exp of fileIssues.exports) {
-              if (
-                targetDirectories === undefined ||
-                targetDirectories.length === 0 ||
-                targetDirectories.some((dir) => file.startsWith(dir))
-              ) {
-                unusedExports.push({
-                  name: exp.name,
-                  file,
-                  line: exp.line,
-                  column: exp.col,
-                });
-              }
-            }
-          }
-        }
-
-        return {
-          success: unusedExports.length === 0,
-          unusedExports,
-        };
-      } catch {
-        // JSONパース失敗
-      }
-    }
-
-    const errorMessage = error instanceof Error ? error.message : String(error);
+  } catch {
     return {
       success: false,
       unusedExports: [],
-      error: errorMessage,
+      error: "Failed to parse knip output",
     };
   }
 };

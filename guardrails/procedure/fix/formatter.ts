@@ -71,6 +71,8 @@ export const formatFixResult = (result: FixResult): string => {
     fixTypeLabel = "Lint修正";
   } else if (result.fixType === "format") {
     fixTypeLabel = "フォーマット";
+  } else if (result.fixType === "knip") {
+    fixTypeLabel = "未使用export検出";
   } else {
     fixTypeLabel = "全修正";
   }

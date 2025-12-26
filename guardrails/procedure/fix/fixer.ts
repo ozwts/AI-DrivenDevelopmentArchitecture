@@ -1,7 +1,8 @@
 /**
  * 自動修正実行（Auto Fixer）
  *
- * ESLint --fix、Prettier、terraform fmtなどの自動修正を実行
+ * npm scripts経由でESLint --fix、Prettier、terraform fmt、knipを実行
+ * ワークスペース単位での修正を行う
  */
 
 import { exec } from "child_process";
@@ -11,8 +12,12 @@ const execAsync = promisify(exec);
 
 /**
  * 修正タイプ
+ * - lint: ESLint --fix
+ * - format: Prettier
+ * - knip: 未使用export検出
+ * - all: lint + format（knipは含まない）
  */
-export type FixType = "lint" | "format" | "all";
+export type FixType = "lint" | "format" | "knip" | "all";
 
 /**
  * ワークスペース種別
@@ -36,44 +41,43 @@ export type FixResult = {
 export type FixInput = {
   workspace: FixWorkspace;
   fixType: FixType;
-  targetPath?: string;
   projectRoot: string;
 };
 
 /**
- * 自動修正を実行
+ * 自動修正を実行（npm scripts経由）
+ *
+ * 利用するnpm scripts:
+ * - server: npm run fix:lint, npm run fix:format, npm run validate:knip
+ * - web: npm run fix:lint, npm run fix:format, npm run validate:knip
+ * - infra: npm run fix (terraform fmt)
  */
 export const executeFix = async (input: FixInput): Promise<FixResult> => {
-  const { workspace, fixType, targetPath, projectRoot } = input;
+  const { workspace, fixType, projectRoot } = input;
   const startTime = Date.now();
-
-  const workspaceRoot =
-    workspace === "infra"
-      ? `${projectRoot}/../infra/terraform`
-      : `${projectRoot}/../${workspace}`;
-
-  const target = targetPath !== undefined && targetPath !== "" ? targetPath : ".";
 
   let output = "";
 
   try {
-    // Lint fix
-    if (fixType === "lint" || fixType === "all") {
-      if (workspace === "infra") {
-        // terraform fmt
-        const { stdout: fmtOut } = await execAsync(
-          `terraform fmt -recursive "${target}"`,
-          { cwd: workspaceRoot, maxBuffer: 1024 * 1024 * 10 },
-        );
-        output += `## terraform fmt\n${fmtOut !== "" ? fmtOut : "All files formatted."}\n\n`;
-      } else {
-        // ESLint --fix
+    if (workspace === "infra") {
+      // infraはnpm run fix（terraform fmt）のみ
+      const { stdout } = await execAsync("npm run fix -w infra", {
+        cwd: projectRoot,
+        maxBuffer: 1024 * 1024 * 10,
+      });
+      output += `## terraform fmt\n${stdout !== "" ? stdout : "All files formatted."}\n\n`;
+    } else {
+      // server/webはfix:lint, fix:format, validate:knipを使用
+      if (fixType === "lint" || fixType === "all") {
         try {
-          const { stdout: lintOut } = await execAsync(
-            `npx eslint --fix "${target}"`,
-            { cwd: workspaceRoot, maxBuffer: 1024 * 1024 * 10 },
+          const { stdout } = await execAsync(
+            `npm run fix:lint -w ${workspace}`,
+            {
+              cwd: projectRoot,
+              maxBuffer: 1024 * 1024 * 10,
+            },
           );
-          output += `## ESLint --fix\n${lintOut !== "" ? lintOut : "No issues to fix."}\n\n`;
+          output += `## ESLint --fix\n${stdout !== "" ? stdout : "No issues to fix."}\n\n`;
         } catch (error: unknown) {
           const execError = error as { stdout?: string; stderr?: string };
           let errorOutput = "ESLint fix completed with warnings.";
@@ -85,29 +89,42 @@ export const executeFix = async (input: FixInput): Promise<FixResult> => {
           output += `## ESLint --fix\n${errorOutput}\n\n`;
         }
       }
-    }
 
-    // Format (Prettier for web/server, terraform fmt for infra)
-    if (fixType === "format" || fixType === "all") {
-      if (workspace === "infra") {
-        // Already handled by terraform fmt above
-        if (fixType === "format") {
-          const { stdout: fmtOut } = await execAsync(
-            `terraform fmt -recursive "${target}"`,
-            { cwd: workspaceRoot, maxBuffer: 1024 * 1024 * 10 },
-          );
-          output += `## terraform fmt\n${fmtOut !== "" ? fmtOut : "All files formatted."}\n\n`;
-        }
-      } else {
-        // Prettier (if available)
+      if (fixType === "format" || fixType === "all") {
         try {
-          const { stdout: prettierOut } = await execAsync(
-            `npx prettier --write "${target}"`,
-            { cwd: workspaceRoot, maxBuffer: 1024 * 1024 * 10 },
+          const { stdout } = await execAsync(
+            `npm run fix:format -w ${workspace}`,
+            {
+              cwd: projectRoot,
+              maxBuffer: 1024 * 1024 * 10,
+            },
           );
-          output += `## Prettier\n${prettierOut !== "" ? prettierOut : "All files formatted."}\n\n`;
+          output += `## Prettier\n${stdout !== "" ? stdout : "All files formatted."}\n\n`;
         } catch {
-          output += "## Prettier\nPrettier not configured or no files to format.\n\n";
+          output +=
+            "## Prettier\nPrettier not configured or no files to format.\n\n";
+        }
+      }
+
+      if (fixType === "knip") {
+        try {
+          const { stdout } = await execAsync(
+            `npm run fix:knip -w ${workspace}`,
+            {
+              cwd: projectRoot,
+              maxBuffer: 1024 * 1024 * 10,
+            },
+          );
+          output += `## knip --fix（未使用export削除）\n${stdout !== "" ? stdout : "未使用のexportを削除しました。"}\n\n`;
+        } catch (error: unknown) {
+          const execError = error as { stdout?: string; stderr?: string };
+          let errorOutput = "knip実行結果:";
+          if (execError.stdout !== undefined && execError.stdout !== "") {
+            errorOutput = execError.stdout;
+          } else if (execError.stderr !== undefined && execError.stderr !== "") {
+            errorOutput = execError.stderr;
+          }
+          output += `## knip --fix（未使用export削除）\n${errorOutput}\n\n`;
         }
       }
     }

@@ -31,6 +31,8 @@
     "update:packages": "ncu -u",
     "validate": "run-p validate:lint validate:tsc",
     "validate:format": "prettier --cache -c '**/*.{ts,tsx,json,yml,yaml,md}'",
+    "fix:knip": "knip --fix",
+    "validate:knip": "knip --reporter json",
     "validate:lint": "eslint --cache --max-warnings 0 .",
     "validate:tsc": "react-router typegen && tsc"
   },

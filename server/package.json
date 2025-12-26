@@ -19,6 +19,8 @@
     "test:watch": "npm run setup:db && vitest",
     "validate": "run-p validate:lint validate:tsc",
     "validate:format": "prettier --cache -c '**/*.{ts,json,yml,yaml,md}'",
+    "fix:knip": "knip --fix",
+    "validate:knip": "knip --reporter json",
     "validate:lint": "eslint --cache --max-warnings 0 \"**/*.ts\"",
     "validate:tsc": "tsc --noEmit",
     "validate:tsc:watch": "tsc --watch"
