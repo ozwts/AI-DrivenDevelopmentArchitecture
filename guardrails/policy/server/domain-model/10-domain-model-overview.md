@@ -132,6 +132,75 @@ domain/
 2. **Globパターン**: `**/*.entity.ts`のようなパターンで種類別にファイルを検出可能
 3. **カスタムLint設定**: ESLintルールで種類別にルールを適用しやすい（例: `.vo.ts`ファイルにはValue Object固有のルールを適用）
 
+## ビジネス契約との整合性
+
+ドメインモデルは `contracts/business` から導出する。実装時に以下の整合性を確認すること。
+
+**参照先**:
+- 用語集: `contracts/business/glossary.md`
+- 定義: `contracts/business/{domain}/definition.md`
+
+### 用語の一致
+
+| 確認項目 | 確認方法 |
+|----------|----------|
+| Entity名 | 用語集の「英語名」と一致しているか |
+| Value Object名 | 用語集の概念から導出されているか |
+| プロパティ名 | 定義の「属性」と対応しているか |
+
+```typescript
+// ✅ Good: 用語集に基づく命名
+// 用語集: TODO → Todo, TODOステータス → Todo Status
+export class Todo { ... }
+export class TodoStatus { ... }
+
+// ❌ Bad: 用語集と異なる命名
+export class Task { ... }       // 用語集には「TODO」
+export class TodoState { ... }  // 用語集には「TODOステータス」
+```
+
+### 属性の一致
+
+定義の「属性」セクションに記載された属性がEntityに反映されているか確認する。
+
+```typescript
+// contracts/business/todo/definition.md の属性:
+// - タイトル：TODOの概要
+// - 説明：詳細な内容
+// - TODOステータス：進捗状況（未着手、作業中、完了）
+// - 優先度：重要度（低、中、高）
+
+// ✅ Good: 定義に基づくプロパティ
+export class Todo {
+  readonly title: string;           // タイトル
+  readonly description?: string;    // 説明
+  readonly status: TodoStatus;      // TODOステータス
+  readonly priority: Priority;      // 優先度
+}
+```
+
+### 制約の一致
+
+定義の「制約」セクションに記載されたルールがValue ObjectまたはEntityに実装されているか確認する。
+
+```typescript
+// contracts/business/todo/definition.md の制約:
+// - タイトルは必須
+// - 担当者は必須（デフォルトは作成者）
+// - 添付ステータスは準備完了からアップロード完了への一方向のみ遷移可能
+
+// ✅ Good: 制約がValue Objectに実装されている
+export class AttachmentStatus {
+  canTransitionTo(newStatus: AttachmentStatus): Result<void, DomainError> {
+    // 一方向遷移のみ許可
+    if (this.isUploadCompleted()) {
+      return Result.err(new DomainError("アップロード完了後は変更できません"));
+    }
+    return Result.ok(undefined);
+  }
+}
+```
+
 ## Do / Don't
 
 ### ✅ Good

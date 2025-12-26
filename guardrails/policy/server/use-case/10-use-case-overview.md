@@ -198,6 +198,96 @@ export class CreateProjectUseCaseImpl implements CreateProjectUseCase {
 
 **UseCase層の責務**: NotFoundError、ForbiddenError、ConflictErrorを返す
 
+## シナリオとの整合性
+
+ユースケースは `contracts/business/{domain}/scenario/*.md` から導出する。実装時に以下の整合性を確認すること。
+
+**参照先**:
+- 用語集: `contracts/business/glossary.md`
+- シナリオ: `contracts/business/{domain}/scenario/{scenario}.md`
+
+### ユースケース名の一致
+
+シナリオのファイル名・タイトルとユースケース名が対応しているか確認する。
+
+```typescript
+// contracts/business/todo/scenario/register-todo.md
+// タイトル: TODOを登録する
+
+// ✅ Good: シナリオと一致
+// register-todo-use-case.ts
+export class RegisterTodoUseCaseImpl { ... }
+
+// ❌ Bad: シナリオと異なる命名
+// create-todo-use-case.ts  // シナリオは「登録」
+// add-todo-use-case.ts     // シナリオにない命名
+```
+
+### 入力の一致
+
+シナリオの「何を」セクションとUseCaseInputが対応しているか確認する。
+
+```typescript
+// contracts/business/todo/scenario/register-todo.md
+// ## 何を
+// - タイトル（必須）
+// - 説明
+// - 優先度
+// - 期限
+// - プロジェクト
+
+// ✅ Good: シナリオの入力と一致
+export type RegisterTodoUseCaseInput = {
+  title: string;         // タイトル（必須）
+  description?: string;  // 説明
+  priority?: string;     // 優先度
+  dueDate?: string;      // 期限
+  projectId?: string;    // プロジェクト
+};
+
+// ❌ Bad: シナリオにない入力を追加
+export type RegisterTodoUseCaseInput = {
+  title: string;
+  tags?: string[];       // ❌ シナリオにない
+  isImportant?: boolean; // ❌ シナリオにない
+};
+```
+
+### 振る舞いの一致
+
+シナリオの「どうなる」セクションがユースケースで実装されているか確認する。
+
+```typescript
+// contracts/business/todo/scenario/register-todo.md
+// ## どうなる
+// - TODOが作成される
+// - 作成者が担当者として設定される
+// - ステータスは未着手で初期化される
+// - 優先度は中で初期化される（指定がない場合）
+
+// ✅ Good: シナリオの振る舞いを実装
+const todoResult = Todo.from({
+  ...input,
+  assigneeId: input.userId,                           // 作成者が担当者
+  status: TodoStatus.notStarted(),                    // 未着手で初期化
+  priority: input.priority ?? Priority.medium(),     // デフォルトは中
+});
+```
+
+### 例外の一致
+
+シナリオの「例外」セクションがユースケースでエラーとして返されるか確認する。
+
+```typescript
+// contracts/business/todo/scenario/register-todo.md
+// ## 例外
+// - タイトルが空の場合、登録できない
+
+// ✅ Good: シナリオの例外がバリデーション層で処理される
+// → Handler層のZodスキーマで title: z.string().min(1) として検証済み
+// → UseCase層では型レベルバリデーション済みの入力を受け取る
+```
+
 ## Do / Don't
 
 ### ✅ Good
