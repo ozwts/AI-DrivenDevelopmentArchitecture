@@ -1,5 +1,0 @@
-{
-  "label": "E2Eテスト",
-  "description": "ユーザーフロー全体の検証、結合テストでは発見できないエッジケース",
-  "dependencies": ["contract/api"]
-}

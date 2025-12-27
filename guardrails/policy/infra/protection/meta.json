@@ -1,5 +1,0 @@
-{
-  "label": "保護戦略",
-  "description": "ステートフルリソースの削除保護、カスタムRegoポリシー",
-  "dependencies": []
-}

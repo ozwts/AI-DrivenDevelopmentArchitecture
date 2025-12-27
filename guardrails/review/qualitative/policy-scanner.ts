@@ -23,7 +23,7 @@ export type PolicyMeta = {
 /**
  * ポリシーカテゴリ
  */
-export type PolicyCategory = "server" | "web" | "contract";
+export type PolicyCategory = "server" | "web" | "contract" | "e2e" | "infra";
 
 /**
  * スキャン結果
@@ -126,6 +126,28 @@ export const scanContractPolicies = (
 };
 
 /**
+ * E2E側ポリシーをスキャンする
+ *
+ * @param guardrailsRoot guardrailsディレクトリのルートパス
+ * @returns スキャンされたポリシー一覧
+ */
+export const scanE2ePolicies = (guardrailsRoot: string): ScannedPolicy[] => {
+  const e2ePolicyPath = path.join(guardrailsRoot, "policy", "e2e");
+  return scanPolicies(e2ePolicyPath, guardrailsRoot, "e2e");
+};
+
+/**
+ * Infra側ポリシーをスキャンする
+ *
+ * @param guardrailsRoot guardrailsディレクトリのルートパス
+ * @returns スキャンされたポリシー一覧
+ */
+export const scanInfraPolicies = (guardrailsRoot: string): ScannedPolicy[] => {
+  const infraPolicyPath = path.join(guardrailsRoot, "policy", "infra");
+  return scanPolicies(infraPolicyPath, guardrailsRoot, "infra");
+};
+
+/**
  * 全ポリシーをスキャンする
  *
  * @param guardrailsRoot guardrailsディレクトリのルートパス
@@ -137,8 +159,12 @@ export const scanAllPolicies = (
   server: ScannedPolicy[];
   web: ScannedPolicy[];
   contract: ScannedPolicy[];
+  e2e: ScannedPolicy[];
+  infra: ScannedPolicy[];
 } => ({
   server: scanServerPolicies(guardrailsRoot),
   web: scanWebPolicies(guardrailsRoot),
   contract: scanContractPolicies(guardrailsRoot),
+  e2e: scanE2ePolicies(guardrailsRoot),
+  infra: scanInfraPolicies(guardrailsRoot),
 });

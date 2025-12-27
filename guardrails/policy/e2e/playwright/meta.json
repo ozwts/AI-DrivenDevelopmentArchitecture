@@ -1,0 +1,5 @@
+{
+  "label": "Playwright",
+  "description": "E2E testing with Playwright, page object pattern, test patterns, authentication, test repair",
+  "dependencies": ["contract/api"]
+}

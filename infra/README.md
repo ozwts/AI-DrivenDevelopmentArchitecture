@@ -5,37 +5,45 @@ TerraformによるAWSインフラの管理（IaC）。
 ## 技術スタック
 
 - **IaC**: Terraform 1.11.3
-- **Provider**: AWS Provider 5.82
+- **Provider**: AWS Provider 6.20
 - **State**: S3バックエンド
 - **Region**: ap-northeast-1 (東京)
-- **Linter**: TFLint 0.60.0 + AWS Plugin 0.44.0
-- **Security Scanner**: Trivy 0.58.2
+- **Linter**: TFLint 0.60.0 + AWS Plugin
+- **Security Scanner**: Trivy 0.68.2
 
 ## ディレクトリ構成
 
 ```
 infra/
-├── .tflint.hcl              # TFLint設定（最も厳格なルール）
-├── .trivyignore             # Trivy無視設定
-├── trivy.yaml               # Trivyセキュリティスキャン設定
 ├── package.json
 ├── README.md
 └── terraform/
-    ├── modules/aws/         # 再利用可能なモジュール
-    │   ├── auth/            # Cognito
-    │   ├── db/              # DynamoDB tables
-    │   ├── parameter/       # SSM Parameter Store
-    │   ├── server/          # Lambda + API Gateway + IAM
-    │   ├── static-site/     # S3 + CloudFront
-    │   └── storage/         # S3 buckets
-    │
-    └── environments/        # 環境別設定（dev, stg, prd）
-        └── dev/             # 開発環境の設定
+    ├── .tflint.hcl           # TFLint設定
+    ├── trivy.yaml            # Trivyセキュリティスキャン設定
+    ├── policies/             # Trivyカスタムポリシー（Rego）
+    │   ├── cognito_deletion_protection.rego
+    │   ├── dynamodb_deletion_protection.rego
+    │   └── s3_force_destroy.rego
+    ├── modules/aws/          # 再利用可能なモジュール
+    │   ├── auth/             # Cognito
+    │   ├── db/               # DynamoDB tables
+    │   ├── parameter/        # SSM Parameter Store
+    │   ├── server/           # Lambda + API Gateway + IAM
+    │   ├── static-site/      # S3 + CloudFront
+    │   └── storage/          # S3 buckets
+    └── environments/         # 環境エントリーポイント
+        ├── dev/              # 開発環境
+        │   ├── main.tf
+        │   ├── variables.tf
+        │   ├── providers.tf
+        │   ├── outputs.tf
+        │   ├── data.tf
+        │   └── .trivyignore  # 環境固有の例外
+        ├── stg/              # 検証環境（.gitkeepのみ）
+        └── prd/              # 本番環境（.gitkeepのみ）
 ```
 
 ## AWSリソース構成
-
-### アーキテクチャ図
 
 ```
 CloudFront
@@ -46,106 +54,109 @@ CloudFront
             │
             └─→ Lambda (Node.js 22)
                     │
-                    └─→ DynamoDB
+                    ├─→ DynamoDB
+                    ├─→ S3 (Storage)
+                    └─→ Cognito
 ```
-
-### リソース一覧
-
-- **S3**: 静的Webサイトホスティング（React build）
-- **CloudFront**: CDN、S3とAPI Gatewayを統合
-- **API Gateway**: HTTP API（REST APIではない）
-- **Lambda**: Node.js 22.x runtime、esbuildでバンドル
-- **DynamoDB**: TODOテーブル、Pay-per-request billing
-- **IAM Role**: Lambda実行ロール
 
 ## コマンド
 
-### 初期化
+以下のコマンドは`infra/`ディレクトリ内で実行する。
 
 ```bash
-# Terraform初期化（初回、またはモジュール変更後）
-npm run init:dev
-
-# または直接Terraformコマンド
-cd terraform/environments/dev
-terraform init
-```
-
-### デプロイ
-
-```bash
-# デプロイプラン確認
-npm run diff:dev
-
-# デプロイ実行
-npm run deploy:dev
-
-# API + DBデプロイ（Lambda、API Gateway、DynamoDB）
-npm run deploy:api:dev
-```
-
-### 削除
-
-```bash
-# インフラ削除（注意: データも削除されます）
-npm run destroy:dev
+cd infra
 ```
 
 ### バリデーション
 
 ```bash
-# dev環境のバリデーション（デフォルト）
-npm run validate
-
-# 環境別
+# 開発環境のバリデーション（format + lint + security）
 npm run validate:dev
-npm run validate:stg
-npm run validate:prd
 
-# 全環境（CI用）
+# 全環境
 npm run validate:all
 
 # フォーマット修正
 npm run fix
 ```
 
+### ブランチ環境デプロイ（デフォルト）
+
+ブランチ名のハッシュでリソースを分離し、並行開発を実現：
+
+```bash
+# プラン確認
+npm run diff:branch:dev
+
+# デプロイ
+npm run deploy:branch:dev
+
+# 部分デプロイ
+npm run deploy:branch:api:dev
+npm run deploy:branch:web:dev
+
+# 削除
+npm run destroy:branch:dev
+```
+
+### 共有環境デプロイ
+
+```bash
+# プラン確認
+npm run diff:dev
+
+# デプロイ
+npm run deploy:dev
+
+# 部分デプロイ
+npm run deploy:api:dev   # API + DB
+npm run deploy:web:dev   # Web
+
+# 削除
+npm run destroy:dev
+```
+
 ### Lint（TFLint）
 
 ```bash
-# TFLintによる静的解析（全環境）
+# 全環境
 npm run lint
 
 # 環境別
 npm run lint:dev
 npm run lint:stg
 npm run lint:prd
-
-# モジュールのみ
-npm run lint:modules
 ```
-
-**TFLint設定（`.tflint.hcl`）:**
-- `preset = "all"`: 全ルール有効化（最も厳格）
-- `deep_check = true`: AWSリソースの実際の値を検証
-- AWS Plugin: 700+ ルールで設定ミスを検出
 
 ### セキュリティスキャン（Trivy）
 
 ```bash
-# セキュリティスキャン（CRITICAL/HIGH/MEDIUM）
+# 全環境
 npm run security
 
-# 全重要度でスキャン（LOWも含む）
-npm run security:full
+# 環境別
+npm run security:dev
+npm run security:stg
+npm run security:prd
 ```
 
-**Trivy設定（`trivy.yaml`）:**
-- 設定ミス検出（misconfiguration）
-- シークレット検出（secret）
-- 重要度: CRITICAL, HIGH, MEDIUM
+## 保護戦略
 
-**無視設定（`.trivyignore`）:**
-ハンズオン環境で意図的に無効化している設定を記載
+### ステートフルリソースの保護
+
+| リソース | 保護属性                      | 開発     | 本番   |
+| -------- | ----------------------------- | -------- | ------ |
+| DynamoDB | `deletion_protection_enabled` | false    | true   |
+| S3       | `force_destroy`               | true     | false  |
+| Cognito  | `deletion_protection`         | INACTIVE | ACTIVE |
+
+### カスタムポリシー
+
+`terraform/policies/`にRegoポリシーを配置。保護が無効なリソースはTrivyで検出される。
+
+### 環境別trivyignore
+
+開発環境は`environments/dev/.trivyignore`で保護を緩和。本番環境は緩和不可。
 
 ## デプロイ手順
 
@@ -158,271 +169,91 @@ npm run security:full
 
 ### 1. AWS認証設定
 
-#### IAMユーザー作成
-
-1. AWSマネジメントコンソール → IAM
-2. ユーザー作成（例: `hands-on-deployer`）
-3. アクセスキー取得
-4. MFAデバイス設定
-
-#### AWS CLI設定
-
 ```bash
 # プロファイル設定
 aws configure --profile hands-on
 
-# 入力内容:
-# AWS Access Key ID: AKIA...
-# AWS Secret Access Key: ...
-# Default region name: ap-northeast-1
-# Default output format: json
-```
-
-#### MFA認証トークン取得
-
-```bash
-# スクリプトに実行権限付与（初回のみ）
-chmod +x ../devtools/get-aws-session-token.sh
-
 # MFAトークン取得（12時間有効）
 source ../devtools/get-aws-session-token.sh hands-on <MFA_ARN> <MFA_CODE>
-#      ^^^^^^ 重要: source コマンドを使用
-
-# 成功すると環境変数が設定される:
-# AWS_ACCESS_KEY_ID=ASIA...
-# AWS_SECRET_ACCESS_KEY=...
-# AWS_SESSION_TOKEN=...
 ```
 
-**MFA ARN例**: `arn:aws:iam::123456789012:mfa/hands-on-deployer`
-
-### 2. ビルド
-
-デプロイ前に、サーバーとWebをビルド：
+### 2. ビルド＆デプロイ
 
 ```bash
-# サーバービルド（Lambda用）
-cd ..
-npm run api:build -w server
-
-# Webビルド（S3用）
-npm run build -w web
-
-cd infra
-```
-
-### 3. 初期化（初回のみ）
-
-```bash
-npm run init:dev
-```
-
-### 4. デプロイ実行
-
-```bash
-# プラン確認
+# 差分確認
 npm run diff:dev
 
 # デプロイ
 npm run deploy:dev
 ```
 
-### 5. 出力の確認
-
-デプロイ成功後、以下の情報が表示されます：
+デプロイ成功後、以下が出力される：
 
 ```
 Outputs:
 
 api_endpoint = "https://xxxxx.execute-api.ap-northeast-1.amazonaws.com"
 cloudfront_url = "https://xxxxx.cloudfront.net"
-todos_table_name = "hands-on-<identifier>-todos"
-```
-
-**重要**: `api_endpoint` の値を `web/src/config.dev.ts` に設定してください。
-
-### 6. フロントエンド設定
-
-```typescript
-// web/src/config.dev.ts
-export const config: Config = {
-  apiUrl: "https://xxxxx.execute-api.ap-northeast-1.amazonaws.com",
-};
-```
-
-### 7. フロントエンド再デプロイ
-
-```bash
-# Webをリビルド
-cd ..
-npm run build -w web
-
-# 再デプロイ
-npm run deploy -w infra
-```
-
-### 8. 動作確認
-
-CloudFront URLでアプリケーションにアクセス：
-
-```
-https://xxxxx.cloudfront.net
 ```
 
 ## Terraformモジュール
 
+### Auth モジュール (`auth/`)
+
+Cognito User Pool管理：
+
+- User Pool設定
+- App Client
+- 認証フロー
+
 ### DB モジュール (`db/`)
 
-DynamoDBテーブルを管理：
+DynamoDBテーブル管理：
 
-- TODOテーブル（Pay-per-request billing）
-- GSI（StatusIndex）設定
-- 属性定義とキースキーマ
+- テーブル定義
+- GSI設定
+- 削除保護
+
+### Parameter モジュール (`parameter/`)
+
+SSM Parameter Store管理：
+
+- 設定値の保存
+- 環境変数の管理
 
 ### Server モジュール (`server/`)
 
-Lambda + API Gateway + IAMを管理：
+Lambda + API Gateway + IAM管理：
 
-- Lambda関数（Node.js 22.x、esbuildバンドル）
+- Lambda関数（Node.js 22.x）
 - HTTP API Gateway
 - Lambda実行ロール
-- DynamoDBアクセス権限
+- DynamoDB/S3/Cognitoアクセス権限
 
 ### Static Site モジュール (`static-site/`)
 
-S3 + CloudFrontを管理：
+S3 + CloudFront管理：
 
-- S3バケット（Reactビルド配置）
+- S3バケット
 - CloudFront distribution
-- Basic認証設定
+- Basic認証
 - セキュリティヘッダー
-- キャッシュポリシー
+
+### Storage モジュール (`storage/`)
+
+S3バケット管理：
+
+- ファイルストレージ
+- 削除保護設定
 
 ## トラブルシューティング
-
-### MFA認証エラー
-
-```bash
-# エラー: AccessDenied when calling GetSessionToken
-```
-
-**原因と対処**:
-- MFAコードが間違っている → 認証アプリから最新コード取得
-- MFA ARNが間違っている → IAMコンソールで確認
-- 時刻がずれている → PCの時刻を同期
-
-### セッショントークン期限切れ
-
-```bash
-# エラー: The security token included in the request is expired
-```
-
-**対処**: MFA認証を再実行
-
-```bash
-source ../devtools/get-aws-session-token.sh hands-on <MFA_ARN> <MFA_CODE>
-```
 
 ### Terraformステートエラー
 
 ```bash
-# ステートを確認
-npm run diff:dev
+# 再初期化
+npm run config:dev
 
-# ステートをリセット（注意: リソースは削除されない）
-rm -rf terraform/.terraform terraform/.terraform.lock.hcl
-npm run init:dev
+# 強制再初期化（プロバイダーアップグレード）
+npm run config:upgrade:dev
 ```
-
-### Lambda関数が見つからない
-
-```bash
-# Lambdaビルドを確認
-ls -lh ../server/dist/lambda-handler.zip
-
-# 再ビルド
-cd ..
-npm run api:build -w server
-cd infra
-
-# 再デプロイ
-npm run deploy:dev
-```
-
-### DynamoDBテーブルが作成されない
-
-```bash
-# Terraformプランを確認
-npm run diff:dev
-
-# モジュールを確認
-cat terraform/modules/aws/db/tables.tf
-```
-
-### CloudFrontキャッシュの問題
-
-```bash
-# CloudFront invalidation作成
-aws cloudfront create-invalidation \
-  --distribution-id <DISTRIBUTION_ID> \
-  --paths "/*"
-```
-
-## ベストプラクティス
-
-### 1. ステート管理
-
-**現在**: ローカル `.tfstate` ファイル
-
-**本番推奨**: S3バックエンド + DynamoDB ロック
-
-```hcl
-terraform {
-  backend "s3" {
-    bucket         = "terraform-state-bucket"
-    key            = "hands-on/dev/terraform.tfstate"
-    region         = "ap-northeast-1"
-    dynamodb_table = "terraform-locks"
-    encrypt        = true
-  }
-}
-```
-
-### 2. 環境分離
-
-```
-environments/
-  ├── dev/        # 開発環境
-  ├── stg/        # ステージング環境
-  └── prd/        # 本番環境
-```
-
-### 3. 変数管理
-
-機密情報は環境変数またはAWS Secrets Managerを使用：
-
-```hcl
-variable "db_password" {
-  sensitive = true
-}
-```
-
-### 4. タグ付け
-
-すべてのリソースに適切なタグを付与：
-
-```hcl
-tags = {
-  Environment = "dev"
-  Project     = "hands-on"
-  ManagedBy   = "Terraform"
-}
-```
-
-## 参考資料
-
-- [Terraform AWS Provider](https://registry.terraform.io/providers/hashicorp/aws/latest/docs)
-- [AWS Lambda](https://docs.aws.amazon.com/lambda/)
-- [API Gateway](https://docs.aws.amazon.com/apigateway/)
-- [DynamoDB](https://docs.aws.amazon.com/dynamodb/)
-- [CloudFront](https://docs.aws.amazon.com/cloudfront/)

@@ -12,10 +12,15 @@
       ]
     },
     "playwright-test": {
-      "command": "npx",
+      "command": "uvx",
       "args": [
-        "playwright",
-        "run-test-mcp-server"
+        "mcp-filter",
+        "run",
+        "-t", "stdio",
+        "--stdio-command", "npx",
+        "--stdio-arg", "playwright",
+        "--stdio-arg", "run-test-mcp-server",
+        "-a", "test_list,test_run,test_debug,generator_setup_page,generator_read_log,generator_write_test,planner_setup_page,planner_save_plan,browser_verify_element_visible,browser_verify_text_visible,browser_verify_list_visible,browser_verify_value,browser_generate_locator"
       ]
     },
     "github": {

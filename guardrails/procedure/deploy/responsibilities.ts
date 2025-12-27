@@ -48,9 +48,9 @@ export const DEPLOY_RESPONSIBILITIES: DeployResponsibility[] = [
       useBranchEnv: z
         .boolean()
         .optional()
-        .default(false)
+        .default(true)
         .describe(
-          "Use branch environment. true: isolate State/resources by branch hash for independent dev env. false: use shared dev env.",
+          "Use branch environment. true: branch-specific env (default), false: shared dev env",
         ),
     },
   },

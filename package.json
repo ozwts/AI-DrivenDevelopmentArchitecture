@@ -22,10 +22,12 @@
     "web:build": "npm run build -w web",
     "server:build": "npm run build -w server",
     "test": "npm run test -w server -w web",
-    "deploy": "npm run deploy:dev -w infra",
-    "deploy:api": "npm run deploy:api:dev -w infra",
-    "deploy:web": "npm run deploy:web:dev -w infra",
-    "destroy": "npm run destroy:dev -w infra"
+    "deploy": "npm run deploy:branch:dev -w infra",
+    "deploy:api": "npm run deploy:branch:api:dev -w infra",
+    "deploy:web": "npm run deploy:branch:web:dev -w infra",
+    "destroy": "npm run destroy:branch:dev -w infra",
+    "deploy:shared": "npm run deploy:dev -w infra",
+    "destroy:shared": "npm run destroy:dev -w infra"
   },
   "overrides": {
     "vite": "^6.4.1",

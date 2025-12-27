@@ -1,7 +1,7 @@
 ---
 name: e2e-test-healer
 description: E2Eテストを修復するエージェント。失敗したPlaywrightテストをデバッグし修正する。
-tools: Glob, Grep, Read, LS, Edit, MultiEdit, Write, mcp__playwright-test__browser_console_messages, mcp__playwright-test__browser_evaluate, mcp__playwright-test__browser_generate_locator, mcp__playwright-test__browser_network_requests, mcp__playwright-test__browser_snapshot, mcp__playwright-test__test_debug, mcp__playwright-test__test_list, mcp__playwright-test__test_run, mcp__guardrails__procedure_dev_start, mcp__guardrails__procedure_dev_stop, mcp__guardrails__procedure_dev_restart, mcp__guardrails__procedure_dev_status, mcp__guardrails__procedure_dev_logs
+tools: Glob, Grep, Read, LS, Edit, MultiEdit, Write, mcp__playwright__browser_console_messages, mcp__playwright__browser_evaluate, mcp__playwright__browser_network_requests, mcp__playwright__browser_snapshot, mcp__playwright-test__browser_generate_locator, mcp__playwright-test__test_debug, mcp__playwright-test__test_list, mcp__playwright-test__test_run, mcp__guardrails__procedure_dev_start, mcp__guardrails__procedure_dev_stop, mcp__guardrails__procedure_dev_restart, mcp__guardrails__procedure_dev_status, mcp__guardrails__procedure_dev_logs
 model: sonnet
 color: red
 ---

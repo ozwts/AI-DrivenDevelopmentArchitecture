@@ -3,8 +3,5 @@ playwright/.auth/
 playwright-report/
 test-results/
 
-# Generated credentials
-fixtures/auth.ts
-
 # Dependencies
 node_modules/

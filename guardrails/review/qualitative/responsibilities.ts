@@ -65,5 +65,7 @@ export const buildReviewResponsibilities = (
     ...allPolicies.server,
     ...allPolicies.web,
     ...allPolicies.contract,
+    ...allPolicies.e2e,
+    ...allPolicies.infra,
   ].map(toReviewResponsibility);
 };

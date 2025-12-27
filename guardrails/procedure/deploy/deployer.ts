@@ -174,7 +174,7 @@ const getUnsupportedMessage = (
 export const executeDeploy = async (
   input: DeployInput,
 ): Promise<DeployResult> => {
-  const { action, target, projectRoot, useBranchEnv = false } = input;
+  const { action, target, projectRoot, useBranchEnv = true } = input;
   const startTime = Date.now();
   const environment = "dev";
 

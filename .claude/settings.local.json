@@ -127,7 +127,9 @@
       "Bash(tflint:*)",
       "Bash(npx msw:*)",
       "WebFetch(domain:scalefactory.com)",
-      "WebFetch(domain:www.env0.com)"
+      "WebFetch(domain:www.env0.com)",
+      "WebFetch(domain:dev.to)",
+      "WebFetch(domain:developer.microsoft.com)"
     ],
     "deny": [],
     "ask": []

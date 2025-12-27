@@ -4,85 +4,97 @@ Node.js + Hono + DynamoDBを使用したサーバーレスバックエンド。�
 
 ## 技術スタック
 
-- **Runtime**: Node.js 22.x
-- **Framework**: Hono 4 (軽量Webフレームワーク)
-- **DI Container**: InversifyJS 6
-- **Database**: AWS SDK v3 (DynamoDB DocumentClient)
-- **Validation**: Zod 3
-- **Testing**: Vitest 2
-- **Build**: esbuild
-- **Logger**: AWS Lambda Powertools Logger
+| カテゴリ | 技術 | バージョン |
+|---------|------|-----------|
+| Runtime | Node.js | 22.x |
+| Framework | Hono | 4.x |
+| DI Container | InversifyJS | 6.x |
+| Database | AWS SDK v3 (DynamoDB) | 3.x |
+| Validation | Zod | 3.x |
+| Testing | Vitest | 4.x |
+| Build | esbuild | 0.25.x |
+| Logger | AWS Lambda Powertools | 2.x |
 
 ## ディレクトリ構成
 
 ```
 server/
 ├── src/
-│   ├── domain/          # ドメイン層（外部依存なし）
-│   │   └── model/       # エンティティとリポジトリインターフェース
+│   ├── domain/              # ドメイン層（外部依存なし）
+│   │   └── model/           # エンティティ・リポジトリIF
 │   │
-│   ├── application/     # アプリケーション層
-│   │   ├── use-case/    # ユースケース実装とテスト
-│   │   └── port/        # Logger, FetchNowなどのインターフェース
+│   ├── application/         # アプリケーション層
+│   │   ├── use-case/        # ユースケース実装
+│   │   └── port/            # 外部IF（Logger, FetchNow等）
 │   │
-│   ├── infrastructure/  # インフラストラクチャ層
-│   │   ├── repository/  # DynamoDB実装とミディアムテスト
-│   │   └── */           # Logger, FetchNowなどの実装
+│   ├── infrastructure/      # インフラストラクチャ層
+│   │   ├── repository/      # DynamoDB実装
+│   │   ├── auth-client/     # Cognito実装
+│   │   ├── storage-client/  # S3実装
+│   │   ├── logger/          # Powertools実装
+│   │   └── unit-of-work/    # トランザクション実装
 │   │
-│   ├── handler/         # ハンドラー層
-│   │   └── hono-handler/  # Honoハンドラとルーティング
+│   ├── handler/             # ハンドラー層
+│   │   └── hono-handler/    # Honoルーター・ハンドラ
 │   │
-│   ├── di-container/    # 依存性注入設定
-│   ├── util/            # テストユーティリティなど
-│   ├── generated/       # OpenAPI自動生成コード
+│   ├── di-container/        # 依存性注入設定
+│   ├── util/                # ユーティリティ
+│   ├── generated/           # OpenAPI自動生成コード
 │   │
-│   ├── lambda-handler.ts        # Lambda エントリーポイント
-│   └── standalone-handler.ts    # ローカル実行用
+│   └── handler/
+│       ├── lambda-handler.ts       # Lambda エントリーポイント
+│       └── local-handler.ts        # ローカル実行用
 │
-├── docker-compose.yml          # DynamoDB Local
-├── esbuild.api.config.mjs     # Lambda ビルド設定
-├── vitest.config.ts           # テスト設定
+├── docker-compose.yml               # DynamoDB Local
+├── esbuild.api.config.mjs          # Lambda ビルド設定
+├── vitest.config.ts                # テスト設定
 └── package.json
 ```
 
 ## 設計思想・実装ガイドライン
 
-設計思想、実装パターン、テスト戦略については **Guardrails ポリシー** を参照してください：
+設計思想、実装パターン、テスト戦略については **Guardrails ポリシー** を参照：
 
-- **ドメインモデル**: `guardrails/policy/server/domain-model/`
-- **ユースケース**: `guardrails/policy/server/use-case/`
-- **リポジトリ**: `guardrails/policy/server/repository/`
-- **ハンドラー**: `guardrails/policy/server/handler/`
-- **Port層（Logger, FetchNow等）**: `guardrails/policy/server/port/`
-- **Unit of Work**: `guardrails/policy/server/unit-of-work/`
-- **Logger**: `guardrails/policy/server/logger/`
+| レイヤー | ポリシー | 概要 |
+|---------|---------|------|
+| ドメインモデル | `guardrails/policy/server/domain-model/` | Entity, VO, リポジトリIF |
+| ユースケース | `guardrails/policy/server/use-case/` | ビジネスロジック, Result型 |
+| リポジトリ | `guardrails/policy/server/repository/` | DynamoDB実装, 変換ロジック |
+| ハンドラー | `guardrails/policy/server/handler/` | HTTP処理, バリデーション |
+| Port層 | `guardrails/policy/server/port/` | 外部依存の抽象化 |
+| Unit of Work | `guardrails/policy/server/unit-of-work/` | トランザクション境界 |
+| Logger | `guardrails/policy/server/logger/` | ログ出力抽象化 |
+| DIコンテナ | `guardrails/policy/server/di-container/` | 依存性解決 |
 
 ## コマンド
+
+以下のコマンドは`server/`ディレクトリ内で実行する。
+
+```bash
+cd server
+```
+
+### 開発
+
+```bash
+# ローカルサーバー起動（ブランチ環境に接続）
+npm run dev:branch
+
+# ローカルサーバー起動（共有dev環境に接続）
+npm run dev
+```
 
 ### テスト
 
 ```bash
-# 全テスト実行
+# 全テスト実行（DynamoDB Localが自動起動）
 npm test
 
 # ウォッチモード
 npm run test:watch
 
-# カバレッジ付き
-npm run test:coverage
-
-# 特定のテストファイルのみ
+# 特定ファイルのみ
 npx vitest run src/application/use-case/todo/list-todos.test.ts
-```
-
-**重要**: テスト実行前にDynamoDB Localを起動してください：
-
-```bash
-# DynamoDB Local起動
-sudo docker compose up -d
-
-# 起動確認
-sudo docker ps | grep dynamodb
 ```
 
 ### バリデーション
@@ -101,22 +113,10 @@ npm run validate:lint
 ### ビルド
 
 ```bash
-# TypeScriptビルド
-npm run build
-
 # Lambda関数ビルド（esbuild）
 npm run api:build
 
 # 出力: dist/lambda-handler.zip
-```
-
-### ローカル実行
-
-```bash
-# Standalone Hono サーバー起動
-npm run start
-
-# http://localhost:3000 でアクセス可能
 ```
 
 ### フォーマット
@@ -132,32 +132,46 @@ npm run fix:format
 npm run fix:lint
 ```
 
-## トラブルシューティング
+## テスト戦略
 
-### DynamoDB Localが起動しない
+| テスト種別 | 対象 | 実行方法 |
+|-----------|------|----------|
+| Smallテスト | Entity, VO, UseCase | モック依存、高速実行 |
+| Mediumテスト | Repository | DynamoDB Local使用 |
+
+```
+*.small.test.ts  # Smallテスト（単体）
+*.medium.test.ts # Mediumテスト（統合）
+```
+
+## DynamoDB Local
+
+テスト実行時に自動で起動されるが、手動操作も可能：
 
 ```bash
-# コンテナ停止・削除
-sudo docker compose down
+# 起動
+docker compose up -d
 
-# 再起動
-sudo docker compose up -d
+# 停止・削除
+docker compose down
 
 # ログ確認
-sudo docker compose logs
+docker compose logs
 ```
+
+## トラブルシューティング
 
 ### テストが失敗する
 
 ```bash
-# DynamoDB Localが起動しているか確認
-sudo docker ps | grep dynamodb
+# DynamoDB Localの状態確認
+docker ps | grep dynamodb
 
 # ポート8000が使用中か確認
 lsof -i :8000
 
-# テーブルが正しく作成されているか確認（AWS CLI必要）
-aws dynamodb list-tables --endpoint-url http://localhost:8000
+# コンテナ再起動
+docker compose down && docker compose up -d
 ```
 
 ### ビルドエラー
@@ -169,18 +183,6 @@ npm ci
 
 # TypeScript検証
 npm run validate:tsc
-
-# Lambda ビルド
-npm run api:build
-```
-
-### Lambda デプロイ後にエラー
-
-CloudWatch Logsを確認：
-
-```bash
-# AWS CLI で最新のログを確認
-aws logs tail /aws/lambda/<function-name> --follow
 ```
 
 ## 参考資料
