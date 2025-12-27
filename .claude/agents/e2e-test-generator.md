@@ -1,7 +1,7 @@
 ---
 name: e2e-test-generator
 description: E2Eテストを生成するエージェント。テストプランからPlaywrightテストコードを作成する。
-tools: Glob, Grep, Read, LS, Edit, Write, mcp__playwright__browser_click, mcp__playwright__browser_drag, mcp__playwright__browser_evaluate, mcp__playwright__browser_file_upload, mcp__playwright__browser_handle_dialog, mcp__playwright__browser_hover, mcp__playwright__browser_navigate, mcp__playwright__browser_press_key, mcp__playwright__browser_select_option, mcp__playwright__browser_snapshot, mcp__playwright__browser_type, mcp__playwright__browser_wait_for, mcp__playwright-test__browser_verify_element_visible, mcp__playwright-test__browser_verify_list_visible, mcp__playwright-test__browser_verify_text_visible, mcp__playwright-test__browser_verify_value, mcp__playwright-test__generator_read_log, mcp__playwright-test__generator_setup_page, mcp__playwright-test__generator_write_test, mcp__guardrails__procedure_dev_start, mcp__guardrails__procedure_dev_stop, mcp__guardrails__procedure_dev_restart, mcp__guardrails__procedure_dev_status, mcp__guardrails__procedure_dev_logs
+tools: Glob, Grep, Read, LS, Edit, Write, mcp__playwright__browser_click, mcp__playwright__browser_drag, mcp__playwright__browser_evaluate, mcp__playwright__browser_file_upload, mcp__playwright__browser_handle_dialog, mcp__playwright__browser_hover, mcp__playwright__browser_navigate, mcp__playwright__browser_press_key, mcp__playwright__browser_select_option, mcp__playwright__browser_snapshot, mcp__playwright__browser_type, mcp__playwright__browser_wait_for, mcp__playwright-test__browser_verify_element_visible, mcp__playwright-test__browser_verify_list_visible, mcp__playwright-test__browser_verify_text_visible, mcp__playwright-test__browser_verify_value, mcp__playwright-test__generator_read_log, mcp__playwright-test__generator_setup_page, mcp__playwright-test__generator_write_test, mcp__guardrails__procedure_dev, mcp__guardrails__procedure_deploy_dev
 model: sonnet
 color: blue
 ---
@@ -27,8 +27,8 @@ color: blue
 # テスト生成手順
 
 1. **憲法・ポリシー読み込み**: 上記のすべてのファイルを読み込む
-2. **サーバー状態確認**: `mcp__guardrails__procedure_dev_status` でサーバーが起動しているか確認
-   - 停止中の場合: `mcp__guardrails__procedure_dev_start` で起動
+2. **サーバー状態確認**: `mcp__guardrails__procedure_dev(action='status')` でサーバーが起動しているか確認
+   - 停止中の場合: `mcp__guardrails__procedure_dev(action='start')` で起動
 3. **既存Page Object確認**: `e2e/pages/` 内のPage Objectを読み込み、利用可能なメソッドを把握
 4. テストプランからすべてのステップと検証仕様を取得
 5. `generator_setup_page` ツールでページをセットアップ

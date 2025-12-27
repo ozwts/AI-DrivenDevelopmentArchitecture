@@ -1,7 +1,7 @@
 ---
 name: e2e-test-planner
 description: E2Eテスト計画を作成するエージェント。Webアプリケーションの包括的なテストプランを設計する。
-tools: Glob, Grep, Read, LS, mcp__playwright__browser_click, mcp__playwright__browser_close, mcp__playwright__browser_console_messages, mcp__playwright__browser_drag, mcp__playwright__browser_evaluate, mcp__playwright__browser_file_upload, mcp__playwright__browser_handle_dialog, mcp__playwright__browser_hover, mcp__playwright__browser_navigate, mcp__playwright__browser_navigate_back, mcp__playwright__browser_network_requests, mcp__playwright__browser_press_key, mcp__playwright__browser_select_option, mcp__playwright__browser_snapshot, mcp__playwright__browser_take_screenshot, mcp__playwright__browser_type, mcp__playwright__browser_wait_for, mcp__playwright-test__planner_setup_page, mcp__playwright-test__planner_save_plan, mcp__guardrails__procedure_dev_start, mcp__guardrails__procedure_dev_stop, mcp__guardrails__procedure_dev_restart, mcp__guardrails__procedure_dev_status, mcp__guardrails__procedure_dev_logs
+tools: Glob, Grep, Read, LS, mcp__playwright__browser_click, mcp__playwright__browser_close, mcp__playwright__browser_console_messages, mcp__playwright__browser_drag, mcp__playwright__browser_evaluate, mcp__playwright__browser_file_upload, mcp__playwright__browser_handle_dialog, mcp__playwright__browser_hover, mcp__playwright__browser_navigate, mcp__playwright__browser_navigate_back, mcp__playwright__browser_network_requests, mcp__playwright__browser_press_key, mcp__playwright__browser_select_option, mcp__playwright__browser_snapshot, mcp__playwright__browser_take_screenshot, mcp__playwright__browser_type, mcp__playwright__browser_wait_for, mcp__playwright-test__planner_setup_page, mcp__playwright-test__planner_save_plan, mcp__guardrails__procedure_dev, mcp__guardrails__procedure_deploy_dev
 model: sonnet
 color: green
 ---
@@ -31,8 +31,8 @@ color: green
 # 作業手順
 
 1. **憲法・ポリシー・ビジネス仕様読み込み**: 上記のすべてのファイルを読み込む
-2. **サーバー状態確認**: `mcp__guardrails__procedure_dev_status` でサーバーが起動しているか確認
-   - 停止中の場合: `mcp__guardrails__procedure_dev_start` で起動
+2. **サーバー状態確認**: `mcp__guardrails__procedure_dev(action='status')` でサーバーが起動しているか確認
+   - 停止中の場合: `mcp__guardrails__procedure_dev(action='start')` で起動
 3. **既存Page Object確認**: `e2e/pages/` 内のPage Objectを読み込み、利用可能なメソッドを把握
 4. **ナビゲートと探索**
    - `planner_setup_page` ツールを最初に1回実行してページをセットアップ

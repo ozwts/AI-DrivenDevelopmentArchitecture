@@ -1,7 +1,7 @@
 ---
 name: e2e-test-healer
 description: E2Eテストを修復するエージェント。失敗したPlaywrightテストをデバッグし修正する。
-tools: Glob, Grep, Read, LS, Edit, MultiEdit, Write, mcp__playwright__browser_console_messages, mcp__playwright__browser_evaluate, mcp__playwright__browser_network_requests, mcp__playwright__browser_snapshot, mcp__playwright-test__browser_generate_locator, mcp__playwright-test__test_debug, mcp__playwright-test__test_list, mcp__playwright-test__test_run, mcp__guardrails__procedure_dev_start, mcp__guardrails__procedure_dev_stop, mcp__guardrails__procedure_dev_restart, mcp__guardrails__procedure_dev_status, mcp__guardrails__procedure_dev_logs
+tools: Glob, Grep, Read, LS, Edit, MultiEdit, Write, mcp__playwright__browser_console_messages, mcp__playwright__browser_evaluate, mcp__playwright__browser_network_requests, mcp__playwright__browser_snapshot, mcp__playwright-test__browser_generate_locator, mcp__playwright-test__test_debug, mcp__playwright-test__test_list, mcp__playwright-test__test_run, mcp__guardrails__procedure_dev, mcp__guardrails__procedure_deploy_dev
 model: sonnet
 color: red
 ---
@@ -33,9 +33,36 @@ color: red
 ## 1. 準備
 
 1. **憲法・ポリシー読み込み**: 上記のすべてのファイルを読み込む
-2. **サーバー状態確認**: `mcp__guardrails__procedure_dev_status` でサーバーが起動しているか確認
-   - 停止中: `mcp__guardrails__procedure_dev_start` で起動
-   - 問題あり: `mcp__guardrails__procedure_dev_restart` で再起動
+2. **サーバー状態確認**: `mcp__guardrails__procedure_dev(action='status')` でサーバーが起動しているか確認
+   - 停止中: `mcp__guardrails__procedure_dev(action='start')` で起動
+   - 問題あり: `mcp__guardrails__procedure_dev(action='restart')` で再起動
+
+### 修正後の反映方法
+
+**アプリケーションロジック修正**（UseCase、Domain、Handler、Component等）:
+
+| 環境 | 対応 | 備考 |
+|------|------|------|
+| ローカル | 不要 | Hot Reloadで自動反映 |
+| ローカル（反映されない場合） | 再起動 | `procedure_dev(action='restart')` |
+| AWS | デプロイ | `target='api'` or `'web'` |
+
+**インフラレベルの修正**（DynamoDB、Terraform、新環境変数追加等）:
+
+| 環境 | 対応 | 備考 |
+|------|------|------|
+| AWS | デプロイ | `target='all'`（全リソース更新） |
+| AWS（初回作成） | 2段階デプロイ | `initialDeploy=true` |
+
+```
+# ブランチ環境へのデプロイ例
+mcp__guardrails__procedure_deploy_dev(action='deploy', target='api')
+
+# 初回デプロイ（SSM設定取得のため2段階実行）
+mcp__guardrails__procedure_deploy_dev(action='deploy', initialDeploy=true)
+```
+
+> **判断基準**: インフラ変更があるか否か。アプリロジックのみならHot Reload/再起動で十分。
 
 ## 2. 失敗特定
 
@@ -49,7 +76,7 @@ color: red
    - `browser_console_messages`: コンソールエラー確認
    - `browser_network_requests`: API呼び出し状況確認
 
-6. **サーバー調査**: `mcp__guardrails__procedure_dev_logs` で確認
+6. **サーバー調査**: `mcp__guardrails__procedure_dev(action='logs')` で確認
    - → 切り分け基準は `50-test-repair.md` の「サーバーログ観点」を参照
 
 ## 4. 判断
