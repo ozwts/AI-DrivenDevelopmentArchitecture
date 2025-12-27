@@ -129,7 +129,8 @@
       "WebFetch(domain:scalefactory.com)",
       "WebFetch(domain:www.env0.com)",
       "WebFetch(domain:dev.to)",
-      "WebFetch(domain:developer.microsoft.com)"
+      "WebFetch(domain:developer.microsoft.com)",
+      "Bash(timeout 3 npx tsx:*)"
     ],
     "deny": [],
     "ask": []

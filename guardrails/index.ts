@@ -13,16 +13,28 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import * as path from "path";
 import { fileURLToPath } from "url";
 import {
-  buildReviewResponsibilities,
-  createReviewHandler,
+  buildUnifiedReviewResponsibility,
+  createUnifiedReviewHandler,
   STATIC_ANALYSIS_RESPONSIBILITIES,
   createStaticAnalysisHandler,
   UNUSED_EXPORTS_RESPONSIBILITIES,
   createUnusedExportsHandler,
+  INFRA_ANALYSIS_RESPONSIBILITIES,
+  createInfraAnalysisHandler,
 } from "./review";
-import { DEV_SERVER_RESPONSIBILITIES, TEST_RESPONSIBILITIES, DEPLOY_RESPONSIBILITIES } from "./procedure";
+import {
+  DEV_SERVER_RESPONSIBILITIES,
+  TEST_RESPONSIBILITIES,
+  FIX_RESPONSIBILITIES,
+  CODEGEN_RESPONSIBILITIES,
+  DEPLOY_RESPONSIBILITIES,
+} from "./procedure";
 import { executeDeploy, type DeployAction, type DeployTarget } from "./procedure/deploy/deployer";
 import { formatDeployResult } from "./procedure/deploy/formatter";
+import { executeFix, type FixType, type FixWorkspace } from "./procedure/fix/fixer";
+import { formatFixResult } from "./procedure/fix/formatter";
+import { executeGenerate, type GenerateWorkspace } from "./procedure/codegen/generator";
+import { formatGenerateResult } from "./procedure/codegen/formatter";
 
 // ESMで__dirnameを取得
 const __filename = fileURLToPath(import.meta.url);
@@ -46,51 +58,38 @@ const main = async (): Promise<void> => {
 
   // ----- 定性的レビュー (Qualitative Review) -----
   // サブエージェント起動を促すガイダンスメッセージを返す
-  // policy/配下のmeta.jsonから動的にツールを登録
-  // 新しいレビュー責務を追加する場合は、meta.jsonを配置しREVIEWABLE_*_POLICIESに追加するだけで自動登録されます
-  //
-  // 例: review_server_domain_model, review_server_use_case
-  const reviewResponsibilities = buildReviewResponsibilities(GUARDRAILS_ROOT);
-  for (const responsibility of reviewResponsibilities) {
-    const handler = createReviewHandler(responsibility);
+  // policy/配下のmeta.jsonから動的にスキャンし、単一ツールに統合
+  // 新しいレビュー責務を追加する場合は、meta.jsonを配置するだけで自動認識
+  const qualitativeReview = buildUnifiedReviewResponsibility(GUARDRAILS_ROOT);
+  const qualitativeHandler = createUnifiedReviewHandler(qualitativeReview);
 
-    server.registerTool(
-      responsibility.id,
-      {
-        description: responsibility.toolDescription,
-        inputSchema: responsibility.inputSchema,
-      },
-      async ({ targetDirectories }) => {
-        try {
-          const result = await handler({
-            targetDirectories,
-            guardrailsRoot: GUARDRAILS_ROOT,
-          });
+  server.registerTool(
+    qualitativeReview.id,
+    {
+      description: qualitativeReview.toolDescription,
+      inputSchema: qualitativeReview.inputSchema,
+    },
+    async ({ policyId, targetDirectories }) => {
+      try {
+        const result = await qualitativeHandler({
+          policyId,
+          targetDirectories,
+          guardrailsRoot: GUARDRAILS_ROOT,
+        });
 
-          return {
-            content: [
-              {
-                type: "text",
-                text: result,
-              },
-            ],
-          };
-        } catch (error) {
-          const errorMessage =
-            error instanceof Error ? error.message : String(error);
-          return {
-            content: [
-              {
-                type: "text",
-                text: `エラー: ${errorMessage}`,
-              },
-            ],
-            isError: true,
-          };
-        }
-      },
-    );
-  }
+        return {
+          content: [{ type: "text", text: result }],
+        };
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        return {
+          content: [{ type: "text", text: `エラー: ${errorMessage}` }],
+          isError: true,
+        };
+      }
+    },
+  );
 
   // ----- 静的解析レビュー (Static Analysis Review) -----
   // TypeScript型チェック・ESLintによる静的解析
@@ -187,6 +186,53 @@ const main = async (): Promise<void> => {
     );
   }
 
+  // ----- インフラ静的解析 (Infra Static Analysis) -----
+  // Terraform環境のフォーマット・Lint・セキュリティスキャン
+  // 責務定義（review/static-analysis-infra/responsibilities.ts）から動的にツールを登録
+  //
+  // 例: review_infra_static_analysis
+  for (const responsibility of INFRA_ANALYSIS_RESPONSIBILITIES) {
+    const handler = createInfraAnalysisHandler();
+
+    server.registerTool(
+      responsibility.id,
+      {
+        description: responsibility.toolDescription,
+        inputSchema: responsibility.inputSchema,
+      },
+      async ({ targetDirectory, analysisType }) => {
+        try {
+          const result = await handler({
+            targetDirectory,
+            analysisType,
+            guardrailsRoot: GUARDRAILS_ROOT,
+          });
+
+          return {
+            content: [
+              {
+                type: "text",
+                text: result,
+              },
+            ],
+          };
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          return {
+            content: [
+              {
+                type: "text",
+                text: `エラー: ${errorMessage}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+      },
+    );
+  }
+
   // ========================================
   // Procedure (行政): ポリシーに従った手順実行
   // ========================================
@@ -247,6 +293,101 @@ const main = async (): Promise<void> => {
               {
                 type: "text" as const,
                 text: result,
+              },
+            ],
+          };
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : String(error);
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `エラー: ${msg}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+      },
+    );
+  }
+
+  // ----- 自動修正管理 (Auto Fix Management) -----
+  // ESLint --fix、Prettier、terraform fmt、knipによる自動修正
+  for (const responsibility of FIX_RESPONSIBILITIES) {
+    server.registerTool(
+      responsibility.id,
+      {
+        description: responsibility.toolDescription,
+        inputSchema: responsibility.inputSchema,
+      },
+      async (input: Record<string, unknown>) => {
+        try {
+          // 責務IDからワークスペースを判定
+          let workspace: FixWorkspace;
+          if (responsibility.id === "procedure_fix_server") {
+            workspace = "server";
+          } else if (responsibility.id === "procedure_fix_web") {
+            workspace = "web";
+          } else {
+            workspace = "infra";
+          }
+
+          const fixType = (input.fixType as FixType | undefined) ?? "all";
+
+          const result = await executeFix({
+            workspace,
+            fixType,
+            projectRoot: PROJECT_ROOT,
+          });
+
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: formatFixResult(result),
+              },
+            ],
+          };
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : String(error);
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `エラー: ${msg}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+      },
+    );
+  }
+
+  // ----- コード生成管理 (Code Generation Management) -----
+  // OpenAPI型生成
+  for (const responsibility of CODEGEN_RESPONSIBILITIES) {
+    server.registerTool(
+      responsibility.id,
+      {
+        description: responsibility.toolDescription,
+        inputSchema: responsibility.inputSchema,
+      },
+      async (input: Record<string, unknown>) => {
+        try {
+          const workspace = input.workspace as GenerateWorkspace;
+
+          const result = await executeGenerate({
+            workspace,
+            projectRoot: PROJECT_ROOT,
+          });
+
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: formatGenerateResult(result),
               },
             ],
           };

@@ -5,69 +5,64 @@
 import * as path from "path";
 import { executeReview, ReviewResult } from "./reviewer";
 import { formatQualitativeReviewResults } from "./formatter";
-import { ReviewResponsibility } from "./responsibilities";
+import { UnifiedReviewResponsibility, PolicyDefinition } from "./responsibilities";
 
-/**
- * レビューハンドラー入力
- */
-export type ReviewHandlerInput = {
+export type UnifiedReviewInput = {
+  policyId: string;
   targetDirectories: string[];
   guardrailsRoot: string;
 };
 
 /**
- * 依存ポリシーIDからポリシーディレクトリの絶対パスを解決する
- *
- * @param dependencyId 依存ポリシーID（例: "port", "domain-model"）
- * @param currentPolicyDir 現在のポリシーディレクトリの絶対パス
- * @returns 依存ポリシーディレクトリの絶対パス
+ * 依存ポリシーのパスを解決
  */
 const resolveDependencyPath = (
   dependencyId: string,
   currentPolicyDir: string,
 ): string => {
-  // 現在のポリシーディレクトリの親ディレクトリ（例: policy/server/）
   const parentDir = path.dirname(currentPolicyDir);
-  // 依存ポリシーディレクトリ（例: policy/server/port/）
   return path.join(parentDir, dependencyId);
 };
 
 /**
- * 汎用レビューハンドラー
+ * 統合レビューハンドラーを生成
  */
-export const createReviewHandler =
-  (responsibility: ReviewResponsibility) =>
-  async (args: ReviewHandlerInput): Promise<string> => {
-    const { targetDirectories, guardrailsRoot } = args;
+export const createUnifiedReviewHandler =
+  (responsibility: UnifiedReviewResponsibility) =>
+  async (args: UnifiedReviewInput): Promise<string> => {
+    const { policyId, targetDirectories, guardrailsRoot } = args;
 
     // バリデーション
-    if (
-      targetDirectories === null ||
-      targetDirectories === undefined ||
-      !Array.isArray(targetDirectories) ||
-      targetDirectories.length === 0
-    ) {
+    if (policyId === "" || policyId === undefined || policyId === null) {
+      throw new Error("policyId is required");
+    }
+    if (!Array.isArray(targetDirectories) || targetDirectories.length === 0) {
+      throw new Error("targetDirectories must be a non-empty array");
+    }
+
+    // ポリシー検索
+    const policy: PolicyDefinition | undefined =
+      responsibility.policies.get(policyId);
+    if (policy === undefined) {
+      const available = Array.from(responsibility.policies.keys()).join(", ");
       throw new Error(
-        "targetDirectoriesは必須で、空でない配列である必要があります",
+        `Unknown policyId: "${policyId}". Available: ${available}`,
       );
     }
 
-    // ポリシーディレクトリのパス構築
-    const fullPolicyDir = path.join(guardrailsRoot, responsibility.policyDir);
-
-    // 依存ポリシーディレクトリのパス解決
-    const dependencyPolicyDirs = responsibility.dependencies?.map((depId) =>
+    // パス構築
+    const fullPolicyDir = path.join(guardrailsRoot, policy.policyDir);
+    const dependencyPolicyDirs = policy.dependencies?.map((depId) =>
       resolveDependencyPath(depId, fullPolicyDir),
     );
 
-    // レビュー実行（ガイダンス生成のみ）
-    const reviewResult: ReviewResult = await executeReview({
+    // レビュー実行
+    const result: ReviewResult = await executeReview({
       targetDirectories,
       policyDir: fullPolicyDir,
-      responsibility: responsibility.responsibility,
+      responsibility: `${policy.label} (${policyId})`,
       dependencyPolicyDirs,
     });
 
-    // 結果整形
-    return formatQualitativeReviewResults(reviewResult, responsibility.title);
+    return formatQualitativeReviewResults(result, `${policy.label} Review`);
   };

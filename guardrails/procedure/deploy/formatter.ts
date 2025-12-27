@@ -81,9 +81,10 @@ export const formatDeployResult = (result: DeployResult): string => {
 
   // サマリー
   lines.push("### サマリー");
-  const envLabel = result.branchSuffix
-    ? `${result.environment} (ブランチ環境: ${result.branchSuffix})`
-    : result.environment;
+  const envLabel =
+    result.branchSuffix !== undefined && result.branchSuffix !== ""
+      ? `${result.environment} (ブランチ環境: ${result.branchSuffix})`
+      : result.environment;
   lines.push(`- **環境**: ${envLabel}`);
   lines.push(`- **ターゲット**: ${targetLabel}`);
   lines.push(`- **アクション**: ${actionLabel}`);

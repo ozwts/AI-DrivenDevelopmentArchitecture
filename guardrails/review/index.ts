@@ -11,12 +11,10 @@
 // Qualitative Review（定性的レビュー）
 // ========================================
 export {
-  // 責務定義
-  type ReviewResponsibility,
-  buildReviewResponsibilities,
-  // ハンドラー
-  createReviewHandler,
-  type ReviewHandlerInput,
+  type UnifiedReviewResponsibility,
+  buildUnifiedReviewResponsibility,
+  createUnifiedReviewHandler,
+  type UnifiedReviewInput,
 } from "./qualitative";
 
 // ========================================

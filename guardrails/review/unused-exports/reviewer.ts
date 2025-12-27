@@ -62,66 +62,9 @@ export type UnusedExportsInput = {
 };
 
 /**
- * 未使用exportを検出（npm scripts経由）
- *
- * 利用するnpm scripts:
- * - server: npm run validate:knip -w server
- * - web: npm run validate:knip -w web
- */
-export const executeUnusedExportsCheck = async (
-  input: UnusedExportsInput,
-): Promise<UnusedExportsResult> => {
-  const { workspace, targetDirectories, projectRoot } = input;
-
-  try {
-    // npm scripts経由でknipを実行
-    const { stdout } = await execAsync(
-      `npm run validate:knip -w ${workspace}`,
-      {
-        cwd: projectRoot,
-        maxBuffer: 1024 * 1024 * 10, // 10MB
-      },
-    );
-
-    // npm run の出力からJSON部分を抽出
-    const jsonOutput = extractJsonFromOutput(stdout);
-    if (jsonOutput === null) {
-      return {
-        success: true,
-        unusedExports: [],
-      };
-    }
-
-    return parseKnipOutput(jsonOutput, targetDirectories);
-  } catch (error: unknown) {
-    // knipがエラーを返した場合（未使用exportがある場合もexit code 1になる）
-    const execError = error as { stdout?: string; stderr?: string };
-
-    if (
-      execError.stdout !== null &&
-      execError.stdout !== undefined &&
-      execError.stdout !== ""
-    ) {
-      const jsonOutput = extractJsonFromOutput(execError.stdout);
-      if (jsonOutput !== null) {
-        return parseKnipOutput(jsonOutput, targetDirectories);
-      }
-    }
-
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    return {
-      success: false,
-      unusedExports: [],
-      error: errorMessage,
-    };
-  }
-};
-
-/**
  * npm runの出力からJSON部分を抽出
  */
 const extractJsonFromOutput = (output: string): string | null => {
-  // JSON開始位置を探す
   const jsonStart = output.indexOf("{");
   if (jsonStart === -1) {
     return null;
@@ -173,6 +116,62 @@ const parseKnipOutput = (
       success: false,
       unusedExports: [],
       error: "Failed to parse knip output",
+    };
+  }
+};
+
+/**
+ * 未使用exportを検出（npm scripts経由）
+ *
+ * 利用するnpm scripts:
+ * - server: npm run validate:knip -w server
+ * - web: npm run validate:knip -w web
+ */
+export const executeUnusedExportsCheck = async (
+  input: UnusedExportsInput,
+): Promise<UnusedExportsResult> => {
+  const { workspace, targetDirectories, projectRoot } = input;
+
+  try {
+    // npm scripts経由でknipを実行
+    const { stdout } = await execAsync(
+      `npm run validate:knip -w ${workspace}`,
+      {
+        cwd: projectRoot,
+        maxBuffer: 1024 * 1024 * 10, // 10MB
+      },
+    );
+
+    // npm run の出力からJSON部分を抽出
+    const jsonOutput = extractJsonFromOutput(stdout);
+    if (jsonOutput === null) {
+      return {
+        success: true,
+        unusedExports: [],
+      };
+    }
+
+    return parseKnipOutput(jsonOutput, targetDirectories);
+  } catch (error: unknown) {
+    // knipがエラーを返した場合（未使用exportがある場合もexit code 1になる）
+    const execError = error as { stdout?: string; stderr?: string };
+
+    if (
+      execError.stdout !== null &&
+      execError.stdout !== undefined &&
+      execError.stdout !== ""
+    ) {
+      const jsonOutput = extractJsonFromOutput(execError.stdout);
+      if (jsonOutput !== null) {
+        return parseKnipOutput(jsonOutput, targetDirectories);
+      }
+    }
+
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return {
+      success: false,
+      unusedExports: [],
+      error: errorMessage,
     };
   }
 };
