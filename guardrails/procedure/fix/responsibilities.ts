@@ -5,12 +5,13 @@
 import { z } from "zod";
 
 /**
- * 自動修正責務
+ * 自動修正責務（統合版）
  */
 export type FixResponsibility = {
   id: string;
   toolDescription: string;
   inputSchema: {
+    workspace: z.ZodEnum<["server", "web", "infra"]>;
     fixType?: z.ZodDefault<
       z.ZodOptional<z.ZodEnum<["lint", "format", "knip", "all"]>>
     >;
@@ -18,46 +19,33 @@ export type FixResponsibility = {
 };
 
 /**
- * 自動修正責務定義
+ * 自動修正責務定義（統合版）
+ *
+ * 3ツールを1つに統合:
+ * - workspace: server | web | infra
+ * - fixType: lint | format | knip | all (infraでは無視)
  *
  * 利用するnpm scripts:
- * - server: npm run fix:lint, npm run fix:format, npm run validate:knip
- * - web: npm run fix:lint, npm run fix:format, npm run validate:knip
+ * - server: npm run fix:lint, npm run fix:format, npm run fix:knip
+ * - web: npm run fix:lint, npm run fix:format, npm run fix:knip
  * - infra: npm run fix (terraform fmt)
  */
 export const FIX_RESPONSIBILITIES: FixResponsibility[] = [
   {
-    id: "procedure_fix_server",
+    id: "procedure_fix",
     toolDescription:
-      "Runs auto-fix on server side. ESLint --fix, Prettier, knip (unused export detection).",
+      "Runs auto-fix. workspace: 'server'/'web' (ESLint --fix, Prettier, knip), 'infra' (terraform fmt). fixType applies to server/web only.",
     inputSchema: {
+      workspace: z
+        .enum(["server", "web", "infra"])
+        .describe("Target workspace: server, web, infra"),
       fixType: z
         .enum(["lint", "format", "knip", "all"])
         .optional()
         .default("all")
         .describe(
-          "Fix type: 'lint' (lint only), 'format' (format only), 'knip' (unused exports), 'all' (lint+format). Default: 'all'.",
+          "Fix type for server/web: 'lint', 'format', 'knip', 'all' (default). Ignored for infra.",
         ),
     },
-  },
-  {
-    id: "procedure_fix_web",
-    toolDescription:
-      "Runs auto-fix on web side. ESLint --fix, Prettier, knip (unused export detection).",
-    inputSchema: {
-      fixType: z
-        .enum(["lint", "format", "knip", "all"])
-        .optional()
-        .default("all")
-        .describe(
-          "Fix type: 'lint' (lint only), 'format' (format only), 'knip' (unused exports), 'all' (lint+format). Default: 'all'.",
-        ),
-    },
-  },
-  {
-    id: "procedure_fix_infra",
-    toolDescription:
-      "Runs auto-fix on infra side. Executes terraform fmt.",
-    inputSchema: {},
   },
 ];

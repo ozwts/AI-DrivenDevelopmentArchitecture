@@ -314,6 +314,7 @@ const main = async (): Promise<void> => {
 
   // ----- 自動修正管理 (Auto Fix Management) -----
   // ESLint --fix、Prettier、terraform fmt、knipによる自動修正
+  // 統合版: workspace（server/web/infra）をパラメータで指定
   for (const responsibility of FIX_RESPONSIBILITIES) {
     server.registerTool(
       responsibility.id,
@@ -323,16 +324,7 @@ const main = async (): Promise<void> => {
       },
       async (input: Record<string, unknown>) => {
         try {
-          // 責務IDからワークスペースを判定
-          let workspace: FixWorkspace;
-          if (responsibility.id === "procedure_fix_server") {
-            workspace = "server";
-          } else if (responsibility.id === "procedure_fix_web") {
-            workspace = "web";
-          } else {
-            workspace = "infra";
-          }
-
+          const workspace = input.workspace as FixWorkspace;
           const fixType = (input.fixType as FixType | undefined) ?? "all";
 
           const result = await executeFix({
