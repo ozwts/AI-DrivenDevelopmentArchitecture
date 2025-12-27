@@ -45,8 +45,8 @@ export const buildTodoRouter = ({
     buildPrepareAttachmentUploadHandler({ container }),
   );
 
-  // PUT /todos/:todoId/attachments/:attachmentId - 添付ファイルステータス更新
-  todoRouter.put(
+  // PATCH /todos/:todoId/attachments/:attachmentId - 添付ファイルステータス更新
+  todoRouter.patch(
     "/:todoId/attachments/:attachmentId",
     buildUpdateAttachmentStatusHandler({ container }),
   );

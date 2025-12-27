@@ -413,7 +413,61 @@ const main = async (): Promise<void> => {
           const action = input.action as DeployAction;
           const target = (input.target as DeployTarget | undefined) ?? "all";
           const useBranchEnv = (input.useBranchEnv as boolean | undefined) ?? false;
+          const initialDeploy = (input.initialDeploy as boolean | undefined) ?? false;
 
+          // 初回デプロイモード: 2段階デプロイを実行
+          // 1. all: インフラ・API作成（API Gateway URL等がSSMに格納される）
+          // 2. web: フロントエンド再ビルド（SSMから設定を取得してバンドル）
+          if (initialDeploy && action === "deploy") {
+            // Step 1: all target
+            const step1Result = await executeDeploy({
+              action,
+              target: "all",
+              projectRoot: PROJECT_ROOT,
+              useBranchEnv,
+            });
+
+            if (!step1Result.success) {
+              return {
+                content: [
+                  {
+                    type: "text" as const,
+                    text: formatDeployResult(step1Result),
+                  },
+                ],
+              };
+            }
+
+            // Step 2: web target（SSM設定を取得してフロントエンドを再ビルド）
+            const step2Result = await executeDeploy({
+              action,
+              target: "web",
+              projectRoot: PROJECT_ROOT,
+              useBranchEnv,
+            });
+
+            // 両方の結果を結合して返す
+            const combinedOutput = [
+              "## 初回デプロイ完了（2段階デプロイ）",
+              "",
+              "### Step 1: インフラ・API作成 (target=all)",
+              formatDeployResult(step1Result),
+              "",
+              "### Step 2: フロントエンド再ビルド (target=web)",
+              formatDeployResult(step2Result),
+            ].join("\n");
+
+            return {
+              content: [
+                {
+                  type: "text" as const,
+                  text: combinedOutput,
+                },
+              ],
+            };
+          }
+
+          // 通常デプロイ
           const result = await executeDeploy({
             action,
             target,

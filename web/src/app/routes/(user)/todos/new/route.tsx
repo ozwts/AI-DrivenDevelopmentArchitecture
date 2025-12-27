@@ -1,9 +1,11 @@
 import { useNavigate } from "react-router";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button, Card } from "@/app/lib/ui";
 import { buildLogger } from "@/app/lib/logger";
 import { useToast } from "@/app/lib/contexts";
 import { useCreateTodo } from "@/app/features/todo";
+import { todoApi } from "@/app/features/todo/api";
 import { z } from "zod";
 import { schemas } from "@/generated/zod-schemas";
 import { useFileUpload } from "../_shared/hooks";
@@ -20,6 +22,7 @@ type RegisterTodoParams = z.infer<typeof schemas.RegisterTodoParams>;
 export default function TodoNewRoute() {
   const navigate = useNavigate();
   const toast = useToast();
+  const queryClient = useQueryClient();
   const createTodo = useCreateTodo();
   const { uploadFiles, isUploading } = useFileUpload();
 
@@ -46,6 +49,16 @@ export default function TodoNewRoute() {
             `TODOを作成しましたが、すべてのファイルのアップロードに失敗しました`,
           );
         }
+
+        // ファイルアップロード完了後、明示的に最新のTODOデータを取得してキャッシュに格納
+        // prefetchQueryを使用することで、詳細ページ遷移時に最新データが表示される
+        await queryClient.prefetchQuery({
+          queryKey: ["todos", newTodo.id],
+          queryFn: () => todoApi.getTodo(newTodo.id),
+        });
+        // 一覧のキャッシュも無効化
+        queryClient.invalidateQueries({ queryKey: ["todos"] });
+
         // 詳細画面に遷移
         navigate(`/todos/${newTodo.id}`);
       } else {

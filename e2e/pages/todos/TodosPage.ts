@@ -1,4 +1,5 @@
 import { type Page, type Locator } from "@playwright/test";
+import path from "path";
 
 /**
  * TODO一覧ページのPage Object
@@ -14,6 +15,8 @@ export class TodosPage {
   readonly createButton: Locator;
   readonly updateButton: Locator;
   readonly successToast: Locator;
+  readonly fileInput: Locator;
+  readonly attachmentSection: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -24,6 +27,8 @@ export class TodosPage {
     this.createButton = page.getByRole("button", { name: "作成" });
     this.updateButton = page.getByRole("button", { name: "更新" });
     this.successToast = page.getByRole("alert");
+    this.fileInput = page.getByTestId("file-input");
+    this.attachmentSection = page.getByTestId("attachment-section");
   }
 
   async goto() {
@@ -145,5 +150,62 @@ export class TodosPage {
   async clickDeleteButton(description: string) {
     const card = this.getTodoCardByDescription(description);
     await card.getByRole("button", { name: "削除" }).click();
+  }
+
+  /**
+   * TODO作成フォームでファイルを選択
+   */
+  async selectFile(filePath: string) {
+    await this.fileInput.setInputFiles(filePath);
+  }
+
+  /**
+   * TODO詳細ページに遷移
+   */
+  async gotoDetail(todoId: string) {
+    await this.page.goto(`/todos/${todoId}`);
+  }
+
+  /**
+   * 添付ファイルセクションのアップロード用ファイル選択
+   */
+  async selectAttachmentFile(filePath: string) {
+    const attachmentInput = this.page.getByTestId("attachment-upload-input");
+    await attachmentInput.setInputFiles(filePath);
+  }
+
+  /**
+   * アップロードボタンをクリック
+   */
+  async clickUploadButton() {
+    await this.page.getByRole("button", { name: "アップロード" }).click();
+  }
+
+  /**
+   * 添付ファイルのダウンロードボタンをクリック
+   */
+  getDownloadButton(filename: string): Locator {
+    return this.page.getByRole("button", { name: `${filename}をダウンロード` });
+  }
+
+  /**
+   * 添付ファイルの削除ボタンをクリック
+   */
+  getAttachmentDeleteButton(filename: string): Locator {
+    return this.page.getByRole("button", { name: `${filename}を削除` });
+  }
+
+  /**
+   * 添付ファイル名が表示されているか確認
+   */
+  getAttachmentFilename(filename: string): Locator {
+    return this.attachmentSection.getByText(filename);
+  }
+
+  /**
+   * テスト用ファイルのパスを取得
+   */
+  static getTestFilePath(filename: string = "test-file.txt"): string {
+    return path.join(__dirname, "../../fixtures/files", filename);
   }
 }

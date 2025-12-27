@@ -26,11 +26,11 @@ Claude Code
 
 ### 構成要素
 
-| 要素 | 場所 | 役割 |
-|-----|------|------|
-| MCPサーバー | `.mcp.json` | ツール提供（guardrails, playwright, github） |
-| スラッシュコマンド | `.claude/commands/` | サブエージェント起動のショートカット |
-| サブエージェント | `.claude/agents/` | 領域特化の実装・レビュー |
+| 要素               | 場所                | 役割                                         |
+| ------------------ | ------------------- | -------------------------------------------- |
+| MCPサーバー        | `.mcp.json`         | ツール提供（guardrails, playwright, github） |
+| スラッシュコマンド | `.claude/commands/` | サブエージェント起動のショートカット         |
+| サブエージェント   | `.claude/agents/`   | 領域特化の実装・レビュー                     |
 
 ### MCPとサブエージェントの連携
 
@@ -59,7 +59,7 @@ npm run validate    # 静的解析
 
 ```bash
 npm run deploy      # ブランチ専用のAWSリソースをデプロイ
-npm run dev         # Server（localhost）+ Web起動
+npm run dev         # Server（localhost）+ Web（localhost）起動
 npm run destroy     # ブランチ環境を削除
 ```
 
@@ -99,14 +99,14 @@ claude
 
 ## 技術スタック
 
-| ワークスペース | 技術 | 役割 |
-|--------------|------|------|
-| `web/` | React, TanStack Query, Tailwind CSS | フロントエンド |
-| `server/` | Hono, Vitest | APIサーバー |
-| `infra/` | Terraform, Trivy, TFLint | インフラ |
-| `e2e/` | Playwright | E2Eテスト |
-| `guardrails/` | MCP Server | AI統治機構 |
-| `contracts/` | OpenAPI | API契約 |
+| ワークスペース | 技術                                | 役割           |
+| -------------- | ----------------------------------- | -------------- |
+| `web/`         | React, TanStack Query, Tailwind CSS | フロントエンド |
+| `server/`      | Hono, Vitest                        | APIサーバー    |
+| `infra/`       | Terraform, Trivy, TFLint            | インフラ       |
+| `e2e/`         | Playwright                          | E2Eテスト      |
+| `guardrails/`  | MCP Server                          | AI統治機構     |
+| `contracts/`   | OpenAPI                             | API契約        |
 
 ## セットアップ
 
@@ -144,7 +144,15 @@ npm ci
 cd server && docker compose up -d && cd ..
 ```
 
-### 4. 動作確認
+### 4. コード生成
+
+```bash
+npm run codegen
+```
+
+OpenAPIスキーマからAPIクライアント・型定義を生成する。サーバー起動前に必須。
+
+### 5. 動作確認
 
 ```bash
 # テスト実行
@@ -203,13 +211,13 @@ npm run destroy:shared   # 共有環境を削除
 
 ## ワークスペース詳細
 
-| ワークスペース | README |
-|--------------|--------|
-| server | [server/README.md](./server/README.md) |
-| web | [web/README.md](./web/README.md) |
-| infra | [infra/README.md](./infra/README.md) |
-| e2e | [e2e/README.md](./e2e/README.md) |
-| guardrails | [guardrails/README.md](./guardrails/README.md) |
+| ワークスペース | README                                         |
+| -------------- | ---------------------------------------------- |
+| server         | [server/README.md](./server/README.md)         |
+| web            | [web/README.md](./web/README.md)               |
+| infra          | [infra/README.md](./infra/README.md)           |
+| e2e            | [e2e/README.md](./e2e/README.md)               |
+| guardrails     | [guardrails/README.md](./guardrails/README.md) |
 
 ## AWS認証（デプロイ時）
 

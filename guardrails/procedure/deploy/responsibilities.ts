@@ -14,6 +14,7 @@ export type DeployResponsibility = {
     action: z.ZodEnum<["diff", "deploy", "destroy", "upgrade"]>;
     target: z.ZodDefault<z.ZodOptional<z.ZodEnum<["all", "api", "web"]>>>;
     useBranchEnv: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
+    initialDeploy: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
   };
 };
 
@@ -31,7 +32,7 @@ export const DEPLOY_RESPONSIBILITIES: DeployResponsibility[] = [
   {
     id: "procedure_deploy_dev",
     toolDescription:
-      "Executes Terraform deploy to dev environment. useBranchEnv=true creates isolated env using branch name hash.",
+      "Executes Terraform deploy to dev environment. useBranchEnv=true creates isolated env using branch name hash. initialDeploy=true runs 2-step deploy: first 'all' to create infra/API, then 'web' to fetch SSM config.",
     inputSchema: {
       action: z
         .enum(["diff", "deploy", "destroy", "upgrade"])
@@ -51,6 +52,13 @@ export const DEPLOY_RESPONSIBILITIES: DeployResponsibility[] = [
         .default(true)
         .describe(
           "Use branch environment. true: branch-specific env (default), false: shared dev env",
+        ),
+      initialDeploy: z
+        .boolean()
+        .optional()
+        .default(false)
+        .describe(
+          "Initial deploy mode. When true, executes 2-step deploy: (1) 'all' target to create infrastructure and API, (2) 'web' target to rebuild frontend with SSM config fetched from deployed API. Required for first-time branch env deployment because frontend config depends on API Gateway URL stored in SSM.",
         ),
     },
   },

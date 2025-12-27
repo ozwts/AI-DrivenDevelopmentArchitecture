@@ -130,7 +130,10 @@
       "WebFetch(domain:www.env0.com)",
       "WebFetch(domain:dev.to)",
       "WebFetch(domain:developer.microsoft.com)",
-      "Bash(timeout 3 npx tsx:*)"
+      "Bash(timeout 3 npx tsx:*)",
+      "mcp__playwright-test__test_list",
+      "mcp__playwright-test__test_debug",
+      "Bash(git diff:*)"
     ],
     "deny": [],
     "ask": []
