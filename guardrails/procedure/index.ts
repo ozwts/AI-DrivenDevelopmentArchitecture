@@ -35,3 +35,8 @@ export { CODEGEN_RESPONSIBILITIES, type CodegenResponsibility } from "./codegen"
 // Deploy（デプロイ）
 // ========================================
 export { DEPLOY_RESPONSIBILITIES, type DeployResponsibility } from "./deploy";
+
+// ========================================
+// Workflow（ワークフロー管理）
+// ========================================
+export { WORKFLOW_RESPONSIBILITIES, type WorkflowResponsibility } from "./workflow";

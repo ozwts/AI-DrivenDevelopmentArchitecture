@@ -28,6 +28,7 @@ import {
   FIX_RESPONSIBILITIES,
   CODEGEN_RESPONSIBILITIES,
   DEPLOY_RESPONSIBILITIES,
+  WORKFLOW_RESPONSIBILITIES,
 } from "./procedure";
 import { executeDeploy, type DeployAction, type DeployTarget } from "./procedure/deploy/deployer";
 import { formatDeployResult } from "./procedure/deploy/formatter";
@@ -480,6 +481,42 @@ const main = async (): Promise<void> => {
               {
                 type: "text" as const,
                 text: formatDeployResult(result),
+              },
+            ],
+          };
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : String(error);
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `エラー: ${msg}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+      },
+    );
+  }
+
+  // ----- ワークフロー管理 (Workflow Management) -----
+  // タスクの計画・登録・進捗管理
+  for (const responsibility of WORKFLOW_RESPONSIBILITIES) {
+    server.registerTool(
+      responsibility.id,
+      {
+        description: responsibility.toolDescription,
+        inputSchema: responsibility.inputSchema,
+      },
+      async (input: Record<string, unknown>) => {
+        try {
+          const result = await responsibility.handler(input, GUARDRAILS_ROOT);
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: result,
               },
             ],
           };
