@@ -57,7 +57,12 @@ const buildGuidanceMessage = (
     lines.push("procedure_workflow(action: 'requirements',");
     lines.push('  goal: "全体のゴール",');
     lines.push("  requirements: [");
-    lines.push('    { what: "何を実現するか", why: "なぜ必要か" },');
+    lines.push("    {");
+    lines.push('      actor: "誰が",');
+    lines.push('      want: "何をしたい",');
+    lines.push('      because: "なぜ（課題）",');
+    lines.push('      acceptance: "成功基準"');
+    lines.push("    }");
     lines.push("  ]");
     lines.push(")");
     lines.push("```\n");
@@ -68,10 +73,14 @@ const buildGuidanceMessage = (
   lines.push("## 現在の要件定義\n");
   lines.push(`**Goal**: ${goal}\n`);
   lines.push("### Requirements\n");
-  for (let i = 0; i < requirements.length; i++) {
+  for (let i = 0; i < requirements.length; i += 1) {
     const req = requirements[i];
-    lines.push(`${i + 1}. **${req.what}**`);
-    lines.push(`   - Why: ${req.why}`);
+    lines.push(`${i + 1}. **${req.actor}** が **${req.want}**`);
+    lines.push(`   - Because: ${req.because}`);
+    lines.push(`   - Acceptance: ${req.acceptance}`);
+    if (req.constraints !== undefined && req.constraints.length > 0) {
+      lines.push(`   - Constraints: ${req.constraints.join(", ")}`);
+    }
   }
   lines.push("");
 
@@ -82,6 +91,7 @@ const buildGuidanceMessage = (
   lines.push("## サブエージェントの役割\n");
   lines.push("- 要件をタスクにブレークダウンする");
   lines.push("- runbooksを参照してタスクリストを**提案**する（登録はしない）");
+  lines.push("- **ステップを具体化**（各ステップで何を作るかを明示、1成果物=1タスク）");
   lines.push("- 各タスクに参照先runbookを紐づける");
   lines.push("- 提案を受けてメインセッションが登録を判断する\n");
 

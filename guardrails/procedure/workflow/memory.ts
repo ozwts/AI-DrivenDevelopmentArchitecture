@@ -7,12 +7,25 @@
 
 /**
  * 要件定義
+ *
+ * 対話を通じて深掘りし、以下の観点を明確化する：
+ * - actor: 誰がその機能を使うか
+ * - want: 何をしたいか（ニーズ）
+ * - because: なぜ必要か（課題・背景）
+ * - acceptance: どうなれば成功か（成功基準）
+ * - constraints: 守るべきルールや制約（オプション）
  */
 export type Requirement = {
-  /** 何を実現するか */
-  what: string;
-  /** なぜ必要か（目的・ビジネス価値） */
-  why: string;
+  /** 誰が（アクター・ユーザー種別） */
+  actor: string;
+  /** 何をしたい（ニーズ・欲求） */
+  want: string;
+  /** なぜ（課題・背景） */
+  because: string;
+  /** 成功基準（どうなれば達成か） */
+  acceptance: string;
+  /** 制約（オプション） */
+  constraints?: string[];
 };
 
 /**
@@ -45,7 +58,9 @@ export type TaskWithStatus = WorkflowTask & {
  */
 class WorkflowMemory {
   private requirements: Requirement[] = [];
+
   private goal: string | null = null;
+
   private tasks: TaskWithStatus[] = [];
 
   /**

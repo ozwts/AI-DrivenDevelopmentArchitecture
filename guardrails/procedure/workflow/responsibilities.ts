@@ -27,10 +27,23 @@ export type WorkflowResponsibility = {
 
 /**
  * 要件定義入力スキーマ
+ *
+ * 対話を通じて深掘りし、以下の観点を明確化する：
+ * - actor: 誰がその機能を使うか
+ * - want: 何をしたいか（ニーズ）
+ * - because: なぜ必要か（課題・背景）
+ * - acceptance: どうなれば成功か（成功基準）
+ * - constraints: 守るべきルールや制約（オプション）
  */
 const RequirementSchema = z.object({
-  what: z.string().describe("何を実現するか"),
-  why: z.string().describe("なぜ必要か（目的・ビジネス価値）"),
+  actor: z.string().describe("誰が（アクター・ユーザー種別）"),
+  want: z.string().describe("何をしたい（ニーズ・欲求）"),
+  because: z.string().describe("なぜ（課題・背景）"),
+  acceptance: z.string().describe("成功基準（どうなれば達成か）"),
+  constraints: z
+    .array(z.string())
+    .optional()
+    .describe("制約（オプション）"),
 });
 
 /**
@@ -127,7 +140,8 @@ export const WORKFLOW_RESPONSIBILITIES: WorkflowResponsibility[] = [
             );
           }
           memory.setTasks(tasks);
-          return formatSetResult(memory.getGoal() ?? "", tasks.length);
+          const runbooksDir = `${guardrailsRoot}/procedure/workflow/runbooks`;
+          return formatSetResult(memory.getGoal() ?? "", memory.getTasks(), runbooksDir);
         }
 
         case "done": {
@@ -135,10 +149,12 @@ export const WORKFLOW_RESPONSIBILITIES: WorkflowResponsibility[] = [
           if (index === undefined) {
             throw new Error("index is required for 'done' action");
           }
-          const tasks = memory.getTasks();
-          const task = tasks.find((t) => t.index === index);
+          const tasksBefore = memory.getTasks();
+          const task = tasksBefore.find((t) => t.index === index);
           const success = memory.markDone(index);
-          return formatDoneResult(success, index, task);
+          const tasksAfter = memory.getTasks();
+          const runbooksDir = `${guardrailsRoot}/procedure/workflow/runbooks`;
+          return formatDoneResult(success, index, task, tasksAfter, runbooksDir);
         }
 
         case "list": {

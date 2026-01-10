@@ -7,6 +7,99 @@
 import type { TaskWithStatus, Requirement } from "./memory";
 
 /**
+ * タスク名を短縮（長すぎる場合は省略）
+ */
+const truncateTaskName = (name: string, maxLength: number = 40): string => {
+  if (name.length <= maxLength) {
+    return name;
+  }
+  return `${name.substring(0, maxLength - 3)}...`;
+};
+
+/**
+ * 進捗サマリーテーブルを生成
+ */
+const formatProgressTable = (tasks: TaskWithStatus[]): string => {
+  const completed = tasks.filter((t) => t.done).length;
+  const total = tasks.length;
+  const pendingTasks = tasks.filter((t) => !t.done);
+  const nextIndex = pendingTasks.length > 0 ? pendingTasks[0].index : -1;
+
+  const lines: string[] = [
+    "",
+    `## 進捗: ${completed}/${total} 完了`,
+    "",
+    "| # | タスク | 状態 |",
+    "|---|--------|------|",
+  ];
+
+  for (const task of tasks) {
+    let status: string;
+    if (task.done) {
+      status = "✅";
+    } else if (task.index === nextIndex) {
+      status = "▶ 次";
+    } else {
+      status = "⬜";
+    }
+    lines.push(`| ${task.index} | ${truncateTaskName(task.what)} | ${status} |`);
+  }
+
+  lines.push("");
+  lines.push("_詳細: `procedure_workflow(action: 'list')`_");
+
+  return lines.join("\n");
+};
+
+/**
+ * 次のタスク詳細を表示するヘルパー
+ */
+const formatNextTaskDetail = (
+  tasks: TaskWithStatus[],
+  runbooksDir?: string,
+): string => {
+  const pendingTasks = tasks.filter((t) => !t.done);
+  if (pendingTasks.length === 0) {
+    return "\n\n🎉 **全タスク完了！**";
+  }
+
+  const nextTask = pendingTasks[0];
+  const lines: string[] = [
+    "",
+    "---",
+    "",
+    "## ▶ 次のタスク",
+    "",
+    `### [${nextTask.index}] ${nextTask.what}`,
+    "",
+    `- **Why**: ${nextTask.why}`,
+    `- **Done when**: ${nextTask.doneWhen}`,
+  ];
+
+  if (nextTask.ref !== undefined) {
+    const refPath =
+      runbooksDir !== undefined
+        ? `${runbooksDir}/${nextTask.ref}.md`
+        : `runbooks/${nextTask.ref}.md`;
+    lines.push(`- **Ref**: \`${refPath}\``);
+  }
+
+  lines.push("");
+  lines.push(`完了後: \`procedure_workflow(action: 'done', index: ${nextTask.index})\``);
+
+  return lines.join("\n");
+};
+
+/**
+ * 進捗サマリー + 次タスク詳細を表示
+ */
+const formatProgressAndNextTask = (
+  tasks: TaskWithStatus[],
+  runbooksDir?: string,
+): string =>
+  formatProgressTable(tasks) + formatNextTaskDetail(tasks, runbooksDir);
+
+/**
  * タスクリストをチェックリスト形式でフォーマット
  */
 export const formatTaskList = (
@@ -29,10 +122,14 @@ export const formatTaskList = (
   // 要件定義表示
   if (requirements.length > 0) {
     lines.push("### 要件定義", "");
-    for (let i = 0; i < requirements.length; i++) {
+    for (let i = 0; i < requirements.length; i += 1) {
       const req = requirements[i];
-      lines.push(`${i + 1}. **${req.what}**`);
-      lines.push(`   - Why: ${req.why}`);
+      lines.push(`${i + 1}. **${req.actor}** が **${req.want}**`);
+      lines.push(`   - Because: ${req.because}`);
+      lines.push(`   - Acceptance: ${req.acceptance}`);
+      if (req.constraints !== undefined && req.constraints.length > 0) {
+        lines.push(`   - Constraints: ${req.constraints.join(", ")}`);
+      }
     }
     lines.push("");
   }
@@ -84,10 +181,14 @@ export const formatRequirementsResult = (
     "",
   ];
 
-  for (let i = 0; i < requirements.length; i++) {
+  for (let i = 0; i < requirements.length; i += 1) {
     const req = requirements[i];
-    lines.push(`${i + 1}. **${req.what}**`);
-    lines.push(`   - Why: ${req.why}`);
+    lines.push(`${i + 1}. **${req.actor}** が **${req.want}**`);
+    lines.push(`   - Because: ${req.because}`);
+    lines.push(`   - Acceptance: ${req.acceptance}`);
+    if (req.constraints !== undefined && req.constraints.length > 0) {
+      lines.push(`   - Constraints: ${req.constraints.join(", ")}`);
+    }
   }
 
   lines.push("");
@@ -101,8 +202,15 @@ export const formatRequirementsResult = (
 /**
  * タスク登録結果をフォーマット
  */
-export const formatSetResult = (goal: string, taskCount: number): string =>
-  `**Goal**: ${goal}\n\n${taskCount}件のタスクを登録しました。\n\n\`procedure_workflow(action: 'list')\` で確認できます。`;
+export const formatSetResult = (
+  goal: string,
+  tasks: TaskWithStatus[],
+  runbooksDir?: string,
+): string => {
+  const taskCount = tasks.length;
+  const base = `**Goal**: ${goal}\n\n${taskCount}件のタスクを登録しました。`;
+  return base + formatProgressAndNextTask(tasks, runbooksDir);
+};
 
 /**
  * タスク完了結果をフォーマット
@@ -110,13 +218,16 @@ export const formatSetResult = (goal: string, taskCount: number): string =>
 export const formatDoneResult = (
   success: boolean,
   index: number,
-  task?: TaskWithStatus,
+  task: TaskWithStatus | undefined,
+  remainingTasks: TaskWithStatus[],
+  runbooksDir?: string,
 ): string => {
   if (!success) {
     return `エラー: インデックス ${index} のタスクが見つかりません。`;
   }
 
-  return `タスク [${index}] を完了しました: ${task?.what}`;
+  const base = `✅ タスク [${index}] を完了しました: ${task?.what}`;
+  return base + formatProgressAndNextTask(remainingTasks, runbooksDir);
 };
 
 /**
