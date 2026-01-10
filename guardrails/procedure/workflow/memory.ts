@@ -6,6 +6,16 @@
  */
 
 /**
+ * 要件定義
+ */
+export type Requirement = {
+  /** 何を実現するか */
+  what: string;
+  /** なぜ必要か（目的・ビジネス価値） */
+  why: string;
+};
+
+/**
  * ワークフロータスク
  */
 export type WorkflowTask = {
@@ -34,8 +44,30 @@ export type TaskWithStatus = WorkflowTask & {
  * シングルトンでタスク状態を管理
  */
 class WorkflowMemory {
+  private requirements: Requirement[] = [];
   private goal: string | null = null;
   private tasks: TaskWithStatus[] = [];
+
+  /**
+   * 要件定義を設定
+   */
+  setRequirements(requirements: Requirement[]): void {
+    this.requirements = requirements;
+  }
+
+  /**
+   * 要件定義を取得
+   */
+  getRequirements(): Requirement[] {
+    return [...this.requirements];
+  }
+
+  /**
+   * 要件定義が存在するか
+   */
+  hasRequirements(): boolean {
+    return this.requirements.length > 0;
+  }
 
   /**
    * ゴールを設定
@@ -99,9 +131,10 @@ class WorkflowMemory {
   }
 
   /**
-   * タスクとゴールをクリア
+   * 要件定義・ゴール・タスクをクリア
    */
   clear(): void {
+    this.requirements = [];
     this.goal = null;
     this.tasks = [];
   }

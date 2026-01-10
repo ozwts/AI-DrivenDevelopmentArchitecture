@@ -3,6 +3,9 @@
  *
  * npm scripts経由でOpenAPI型生成を実行
  * ワークスペース単位での生成を行う
+ *
+ * 注意: 各ワークスペースのcodegenスクリプトは内部でcodegen:bundleを先に実行するため、
+ * どのワークスペースを指定しても常にOpenAPI結合が行われる
  */
 
 import { exec } from "child_process";
@@ -13,7 +16,7 @@ const execAsync = promisify(exec);
 /**
  * ワークスペース種別
  */
-export type GenerateWorkspace = "server" | "web";
+export type GenerateWorkspace = "server" | "web" | "all";
 
 /**
  * 生成結果
@@ -37,8 +40,9 @@ export type GenerateInput = {
  * コード生成を実行（npm scripts経由）
  *
  * 利用するnpm scripts:
- * - server: npm run codegen -w server (openapi-zod-client)
- * - web: npm run codegen -w web (openapi-zod-client)
+ * - all: npm run codegen（bundle + server + web）
+ * - server: npm run codegen -w server（内部でbundle実行）
+ * - web: npm run codegen -w web（内部でbundle実行）
  */
 export const executeGenerate = async (
   input: GenerateInput,
@@ -46,14 +50,19 @@ export const executeGenerate = async (
   const { workspace, projectRoot } = input;
   const startTime = Date.now();
 
-  let output = "";
-
   try {
-    const { stdout } = await execAsync(`npm run codegen -w ${workspace}`, {
+    // all: ルートのcodegen、server/web: ワークスペース単位のcodegen
+    const command =
+      workspace === "all"
+        ? "npm run codegen"
+        : `npm run codegen -w ${workspace}`;
+
+    const { stdout } = await execAsync(command, {
       cwd: projectRoot,
       maxBuffer: 1024 * 1024 * 10,
     });
-    output = `## コード生成 (${workspace})\n${stdout !== "" ? stdout : "コード生成が完了しました。"}\n`;
+
+    const output = `## コード生成 (${workspace})\n${stdout !== "" ? stdout : "コード生成が完了しました。"}\n`;
 
     return {
       success: true,

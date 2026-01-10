@@ -4,52 +4,96 @@
  * ワークフロータスクの出力整形
  */
 
-import type { TaskWithStatus } from "./memory";
+import type { TaskWithStatus, Requirement } from "./memory";
 
 /**
  * タスクリストをチェックリスト形式でフォーマット
  */
 export const formatTaskList = (
   goal: string | null,
+  requirements: Requirement[],
   tasks: TaskWithStatus[],
   runbooksDir?: string,
 ): string => {
-  if (tasks.length === 0) {
-    return "タスクが登録されていません。";
+  if (goal === null && requirements.length === 0 && tasks.length === 0) {
+    return "ワークフローが登録されていません。";
   }
 
-  const lines: string[] = ["## ワークフロータスク", ""];
+  const lines: string[] = ["## ワークフロー", ""];
 
   // ゴール表示
   if (goal !== null) {
     lines.push(`**Goal**: ${goal}`, "");
   }
 
-  // 進捗サマリー
-  const completed = tasks.filter((t) => t.done).length;
-  const total = tasks.length;
-  lines.push(`**進捗: ${completed}/${total} 完了**`, "");
-
-  // タスクリスト
-  for (const task of tasks) {
-    const checkbox = task.done ? "[x]" : "[ ]";
-    const indexLabel = `[${task.index}]`;
-
-    lines.push(`### ${checkbox} ${indexLabel} ${task.what}`);
-    lines.push("");
-    lines.push(`- **Why**: ${task.why}`);
-    lines.push(`- **Done when**: ${task.doneWhen}`);
-
-    if (task.ref !== undefined) {
-      const refPath =
-        runbooksDir !== undefined
-          ? `${runbooksDir}/${task.ref}.md`
-          : `runbooks/${task.ref}.md`;
-      lines.push(`- **Ref**: \`${refPath}\``);
+  // 要件定義表示
+  if (requirements.length > 0) {
+    lines.push("### 要件定義", "");
+    for (let i = 0; i < requirements.length; i++) {
+      const req = requirements[i];
+      lines.push(`${i + 1}. **${req.what}**`);
+      lines.push(`   - Why: ${req.why}`);
     }
-
     lines.push("");
   }
+
+  // タスクリスト
+  if (tasks.length > 0) {
+    // 進捗サマリー
+    const completed = tasks.filter((t) => t.done).length;
+    const total = tasks.length;
+    lines.push(`### タスク（${completed}/${total} 完了）`, "");
+
+    for (const task of tasks) {
+      const checkbox = task.done ? "[x]" : "[ ]";
+      const indexLabel = `[${task.index}]`;
+
+      lines.push(`#### ${checkbox} ${indexLabel} ${task.what}`);
+      lines.push("");
+      lines.push(`- **Why**: ${task.why}`);
+      lines.push(`- **Done when**: ${task.doneWhen}`);
+
+      if (task.ref !== undefined) {
+        const refPath =
+          runbooksDir !== undefined
+            ? `${runbooksDir}/${task.ref}.md`
+            : `runbooks/${task.ref}.md`;
+        lines.push(`- **Ref**: \`${refPath}\``);
+      }
+
+      lines.push("");
+    }
+  }
+
+  return lines.join("\n");
+};
+
+/**
+ * 要件定義登録結果をフォーマット
+ */
+export const formatRequirementsResult = (
+  goal: string,
+  requirements: Requirement[],
+): string => {
+  const lines: string[] = [
+    `**Goal**: ${goal}`,
+    "",
+    `${requirements.length}件の要件を登録しました。`,
+    "",
+    "### 要件定義",
+    "",
+  ];
+
+  for (let i = 0; i < requirements.length; i++) {
+    const req = requirements[i];
+    lines.push(`${i + 1}. **${req.what}**`);
+    lines.push(`   - Why: ${req.why}`);
+  }
+
+  lines.push("");
+  lines.push("次のステップ:");
+  lines.push("1. `procedure_workflow(action: 'plan')` でタスクを計画");
+  lines.push("2. `procedure_workflow(action: 'set', tasks: [...])` でタスクを登録");
 
   return lines.join("\n");
 };

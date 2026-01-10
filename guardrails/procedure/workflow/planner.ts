@@ -7,6 +7,7 @@
 
 import * as fs from "fs/promises";
 import * as path from "path";
+import { getWorkflowMemory, type Requirement } from "./memory";
 
 /**
  * プランナー結果
@@ -41,40 +42,73 @@ const scanRunbooks = async (runbooksDir: string): Promise<string[]> => {
 /**
  * サブエージェント起動を促すガイダンスメッセージを生成
  */
-const buildGuidanceMessage = (availableRunbooks: string[]): string => {
-  let guidance =
-    "`workflow-planner` サブエージェントを起動し、ワークフロータスクを提案させてください。\n\n";
+const buildGuidanceMessage = (
+  availableRunbooks: string[],
+  goal: string | null,
+  requirements: Requirement[],
+): string => {
+  const lines: string[] = [];
 
-  guidance += "## サブエージェントの役割\n\n";
-  guidance += "- runbooksを参照してタスクリストを**提案**する（登録はしない）\n";
-  guidance += "- 各タスクに参照先runbookを紐づける\n";
-  guidance += "- 提案を受けてメインセッションが登録を判断する\n\n";
-
-  if (availableRunbooks.length > 0) {
-    guidance += "## 利用可能なRunbooks\n\n";
-    for (const runbook of availableRunbooks) {
-      const relativePath = `procedure/workflow/runbooks/${runbook}.md`;
-      guidance += `- \`${relativePath}\`\n`;
-    }
-    guidance += "\n";
+  // 要件が未設定の場合は警告
+  if (goal === null || requirements.length === 0) {
+    lines.push("⚠️ **要件定義が未設定です**\n");
+    lines.push("`plan` の前に `requirements` アクションで要件を登録してください。\n");
+    lines.push("```typescript");
+    lines.push("procedure_workflow(action: 'requirements',");
+    lines.push('  goal: "全体のゴール",');
+    lines.push("  requirements: [");
+    lines.push('    { what: "何を実現するか", why: "なぜ必要か" },');
+    lines.push("  ]");
+    lines.push(")");
+    lines.push("```\n");
+    return lines.join("\n");
   }
 
-  guidance += "## タスク登録フォーマット（メインセッション用）\n\n";
-  guidance += "```typescript\n";
-  guidance += "procedure_workflow(action: 'set',\n";
-  guidance += '  goal: "全体のゴール（何を達成するか）",\n';
-  guidance += "  tasks: [\n";
-  guidance += "    {\n";
-  guidance += '      what: "何をするか（具体的なアクション）",\n';
-  guidance += '      why: "なぜするか（目的・理由）",\n';
-  guidance += '      doneWhen: "完了条件",\n';
-  guidance += '      ref: "procedure/workflow/runbooks/xxx.md"  // 相対パス\n';
-  guidance += "    }\n";
-  guidance += "  ]\n";
-  guidance += ")\n";
-  guidance += "```\n";
+  // 現在の要件を表示
+  lines.push("## 現在の要件定義\n");
+  lines.push(`**Goal**: ${goal}\n`);
+  lines.push("### Requirements\n");
+  for (let i = 0; i < requirements.length; i++) {
+    const req = requirements[i];
+    lines.push(`${i + 1}. **${req.what}**`);
+    lines.push(`   - Why: ${req.why}`);
+  }
+  lines.push("");
 
-  return guidance;
+  lines.push(
+    "`workflow-planner` サブエージェントを起動し、上記の要件に基づいてタスクを提案させてください。\n",
+  );
+
+  lines.push("## サブエージェントの役割\n");
+  lines.push("- 要件をタスクにブレークダウンする");
+  lines.push("- runbooksを参照してタスクリストを**提案**する（登録はしない）");
+  lines.push("- 各タスクに参照先runbookを紐づける");
+  lines.push("- 提案を受けてメインセッションが登録を判断する\n");
+
+  if (availableRunbooks.length > 0) {
+    lines.push("## 利用可能なRunbooks\n");
+    for (const runbook of availableRunbooks) {
+      const relativePath = `procedure/workflow/runbooks/${runbook}.md`;
+      lines.push(`- \`${relativePath}\``);
+    }
+    lines.push("");
+  }
+
+  lines.push("## タスク登録フォーマット（メインセッション用）\n");
+  lines.push("```typescript");
+  lines.push("procedure_workflow(action: 'set',");
+  lines.push("  tasks: [");
+  lines.push("    {");
+  lines.push('      what: "何をするか（具体的なアクション）",');
+  lines.push('      why: "なぜするか（目的・理由）",');
+  lines.push('      doneWhen: "完了条件",');
+  lines.push('      ref: "runbook名"  // 例: "server-implementation"');
+  lines.push("    }");
+  lines.push("  ]");
+  lines.push(")");
+  lines.push("```");
+
+  return lines.join("\n");
 };
 
 /**
@@ -113,8 +147,13 @@ export const executePlan = async (
     // 利用可能なrunbookをスキャン
     const availableRunbooks = await scanRunbooks(runbooksDir);
 
+    // 現在の要件を取得
+    const memory = getWorkflowMemory();
+    const goal = memory.getGoal();
+    const requirements = memory.getRequirements();
+
     // ガイダンスメッセージを生成
-    const guidance = buildGuidanceMessage(availableRunbooks);
+    const guidance = buildGuidanceMessage(availableRunbooks, goal, requirements);
 
     return {
       guidance,
