@@ -1,76 +1,85 @@
-# 契約定義
+# 契約定義ワークフロー
 
-ビジネスルールとAPI契約を定義するフェーズ。
+## 対象スコープ
 
-## 目的
-
-- フロントエンドとサーバーの契約を先に定義
-- 実装前に設計を確定させ、手戻りを最小化
-- 型安全性の基盤を構築
+- `contracts/business/` - ビジネス契約
+- `contracts/api/` - API契約（OpenAPI）
 
 ---
 
-## ビジネス契約の定義
+## ステップ 0: 要件定義の確認
 
-### 作業内容
+**読むもの:**
 
-- ビジネスルールの明確化
-- ドメイン用語の定義（用語集）
-- ユースケースの特定
-
-### 配置先
-
-`contracts/business/` 配下
-
-### ポリシーレビュー
-
-```
-mcp__guardrails__review_qualitative(
-  policyId='contract/business',
-  targetDirectories=['contracts/business/']
-)
-```
+- `contracts/business/glossary.md` - 用語集
+- `contracts/business/` - 既存ビジネス契約
+- `contracts/api/todo.openapi.yaml` - 既存API契約
 
 ---
 
-## API契約の定義
+## ステップ 1: ビジネス契約の定義
 
-### 作業内容
+**ポリシー:** `guardrails/policy/contract/business/`
 
-- `contracts/api/todo.openapi.yaml` を更新
-- RESTful設計原則に従う
-- スキーマ、パス、リクエスト/レスポンスを定義
+**実装先:** `contracts/business/{domain}/`
 
-### 設計原則
+**作成するもの:**
+
+- `definition.md` - エンティティ定義（属性、制約）
+- `scenario/{action}.md` - ユースケースシナリオ
+
+**用語集の更新:**
+
+新しいドメイン用語がある場合は `contracts/business/glossary.md` を更新
+
+→ 修正内容に応じた観点でポリシーレビュー
+
+---
+
+## ステップ 2: API契約の定義
+
+**ポリシー:** `guardrails/policy/contract/api/`
+
+**実装先:** `contracts/api/`
+
+**作成するもの:**
+
+- `{domain}/components.yaml` - スキーマ定義
+- `{domain}/{resource}.paths.yaml` - エンドポイント定義
+- `entry.yaml` への参照追加
+
+**設計原則:**
 
 1. **リソース指向**: 名詞でリソースを表現（`/todos`, `/projects`）
 2. **HTTPメソッド**: GET/POST/PUT/PATCH/DELETE を適切に使用
 3. **ステータスコード**: 200, 201, 400, 401, 403, 404, 500 を適切に返却
-4. **スキーマ定義**: 詳細な型定義で型安全性を確保
 
-### ポリシーレビュー
+→ 修正内容に応じた観点でポリシーレビュー
+
+---
+
+## ステップ 3: コード生成
 
 ```
-mcp__guardrails__review_qualitative(
-  policyId='contract/api',
-  targetDirectories=['contracts/api/']
-)
+mcp__guardrails__procedure_codegen(workspace='all')
 ```
 
 ---
 
-## コード生成
+## ステップ 4: 影響範囲の検証
 
-契約定義後、型定義を生成:
+```
+mcp__guardrails__review_static_analysis(
+  workspace='server',
+  targetDirectories=['server/src/'],
+  analysisType='type-check'
+)
 
-**フロントエンド用:**
-```
-mcp__guardrails__procedure_codegen(workspace='web')
-```
-
-**サーバー用:**
-```
-mcp__guardrails__procedure_codegen(workspace='server')
+mcp__guardrails__review_static_analysis(
+  workspace='web',
+  targetDirectories=['web/src/'],
+  analysisType='type-check'
+)
 ```
 
 ---
@@ -79,7 +88,8 @@ mcp__guardrails__procedure_codegen(workspace='server')
 
 フロントエンド実装中の契約修正は許容される。
 
-修正フロー:
+**修正フロー:**
+
 1. OpenAPI仕様を修正
 2. コード再生成
 3. 影響箇所を修正
@@ -92,5 +102,7 @@ mcp__guardrails__procedure_codegen(workspace='server')
 ## 完了条件
 
 - ビジネス契約が文書化されている
-- OpenAPI仕様の初期版が定義されている
+- OpenAPI仕様が定義されている
+- コード生成が完了している
+- 型チェックを通過している
 - ポリシーレビューを通過している

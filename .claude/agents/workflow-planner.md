@@ -17,7 +17,7 @@ user: "カスケード削除付きのプロジェクト削除機能を実装し�
 assistant: "フロントエンドとバックエンドの連携が必要です。workflow-plannerエージェントでタスクリストを提案します。"
 <commentary>複雑な機能には構造化されたタスク計画が有効</commentary>
 </example>
-model: haiku
+model: sonnet
 color: green
 ---
 
