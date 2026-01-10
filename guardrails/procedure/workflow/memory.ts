@@ -38,7 +38,7 @@ export type WorkflowTask = {
   why: string;
   /** 完了条件 */
   doneWhen: string;
-  /** 参照先runbook名（例: "server-implementation"） */
+  /** 参照先runbook相対パス（例: "procedure/workflow/runbooks/50-server.md"） */
   ref?: string;
 };
 

@@ -54,10 +54,7 @@ const formatProgressTable = (tasks: TaskWithStatus[]): string => {
 /**
  * 次のタスク詳細を表示するヘルパー
  */
-const formatNextTaskDetail = (
-  tasks: TaskWithStatus[],
-  runbooksDir?: string,
-): string => {
+const formatNextTaskDetail = (tasks: TaskWithStatus[]): string => {
   const pendingTasks = tasks.filter((t) => !t.done);
   if (pendingTasks.length === 0) {
     return "\n\n🎉 **全タスク完了！**";
@@ -77,11 +74,7 @@ const formatNextTaskDetail = (
   ];
 
   if (nextTask.ref !== undefined) {
-    const refPath =
-      runbooksDir !== undefined
-        ? `${runbooksDir}/${nextTask.ref}.md`
-        : `runbooks/${nextTask.ref}.md`;
-    lines.push(`- **Ref**: \`${refPath}\``);
+    lines.push(`- **Ref**: \`${nextTask.ref}\``);
   }
 
   lines.push("");
@@ -93,11 +86,8 @@ const formatNextTaskDetail = (
 /**
  * 進捗サマリー + 次タスク詳細を表示
  */
-const formatProgressAndNextTask = (
-  tasks: TaskWithStatus[],
-  runbooksDir?: string,
-): string =>
-  formatProgressTable(tasks) + formatNextTaskDetail(tasks, runbooksDir);
+const formatProgressAndNextTask = (tasks: TaskWithStatus[]): string =>
+  formatProgressTable(tasks) + formatNextTaskDetail(tasks);
 
 /**
  * タスクリストをチェックリスト形式でフォーマット
@@ -106,7 +96,6 @@ export const formatTaskList = (
   goal: string | null,
   requirements: Requirement[],
   tasks: TaskWithStatus[],
-  runbooksDir?: string,
 ): string => {
   if (goal === null && requirements.length === 0 && tasks.length === 0) {
     return "ワークフローが登録されていません。";
@@ -151,11 +140,7 @@ export const formatTaskList = (
       lines.push(`- **Done when**: ${task.doneWhen}`);
 
       if (task.ref !== undefined) {
-        const refPath =
-          runbooksDir !== undefined
-            ? `${runbooksDir}/${task.ref}.md`
-            : `runbooks/${task.ref}.md`;
-        lines.push(`- **Ref**: \`${refPath}\``);
+        lines.push(`- **Ref**: \`${task.ref}\``);
       }
 
       lines.push("");
@@ -202,14 +187,10 @@ export const formatRequirementsResult = (
 /**
  * タスク登録結果をフォーマット
  */
-export const formatSetResult = (
-  goal: string,
-  tasks: TaskWithStatus[],
-  runbooksDir?: string,
-): string => {
+export const formatSetResult = (goal: string, tasks: TaskWithStatus[]): string => {
   const taskCount = tasks.length;
   const base = `**Goal**: ${goal}\n\n${taskCount}件のタスクを登録しました。`;
-  return base + formatProgressAndNextTask(tasks, runbooksDir);
+  return base + formatProgressAndNextTask(tasks);
 };
 
 /**
@@ -220,14 +201,13 @@ export const formatDoneResult = (
   index: number,
   task: TaskWithStatus | undefined,
   remainingTasks: TaskWithStatus[],
-  runbooksDir?: string,
 ): string => {
   if (!success) {
     return `エラー: インデックス ${index} のタスクが見つかりません。`;
   }
 
   const base = `✅ タスク [${index}] を完了しました: ${task?.what}`;
-  return base + formatProgressAndNextTask(remainingTasks, runbooksDir);
+  return base + formatProgressAndNextTask(remainingTasks);
 };
 
 /**

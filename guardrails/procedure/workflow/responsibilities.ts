@@ -56,7 +56,9 @@ const TaskSchema = z.object({
   ref: z
     .string()
     .optional()
-    .describe('参照先runbook名（例: "server-implementation"）'),
+    .describe(
+      '参照先runbook相対パス（例: "procedure/workflow/runbooks/50-server.md"）',
+    ),
 });
 
 /**
@@ -140,8 +142,7 @@ export const WORKFLOW_RESPONSIBILITIES: WorkflowResponsibility[] = [
             );
           }
           memory.setTasks(tasks);
-          const runbooksDir = `${guardrailsRoot}/procedure/workflow/runbooks`;
-          return formatSetResult(memory.getGoal() ?? "", memory.getTasks(), runbooksDir);
+          return formatSetResult(memory.getGoal() ?? "", memory.getTasks());
         }
 
         case "done": {
@@ -153,16 +154,14 @@ export const WORKFLOW_RESPONSIBILITIES: WorkflowResponsibility[] = [
           const task = tasksBefore.find((t) => t.index === index);
           const success = memory.markDone(index);
           const tasksAfter = memory.getTasks();
-          const runbooksDir = `${guardrailsRoot}/procedure/workflow/runbooks`;
-          return formatDoneResult(success, index, task, tasksAfter, runbooksDir);
+          return formatDoneResult(success, index, task, tasksAfter);
         }
 
         case "list": {
           const goal = memory.getGoal();
           const requirements = memory.getRequirements();
           const tasks = memory.getTasks();
-          const runbooksDir = `${guardrailsRoot}/procedure/workflow/runbooks`;
-          return formatTaskList(goal, requirements, tasks, runbooksDir);
+          return formatTaskList(goal, requirements, tasks);
         }
 
         case "clear": {

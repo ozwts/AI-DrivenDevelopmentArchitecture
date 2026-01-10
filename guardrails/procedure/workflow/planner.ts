@@ -121,7 +121,7 @@ const buildGuidanceMessage = (
   lines.push('      what: "何をするか（具体的なアクション）",');
   lines.push('      why: "なぜするか（目的・理由）",');
   lines.push('      doneWhen: "完了条件",');
-  lines.push('      ref: "runbook名"  // 例: "server-implementation"');
+  lines.push('      ref: "procedure/workflow/runbooks/50-server.md"  // runbook相対パス');
   lines.push("    }");
   lines.push("  ]");
   lines.push(")");

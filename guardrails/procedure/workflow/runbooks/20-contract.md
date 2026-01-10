@@ -34,7 +34,22 @@
 
 ---
 
-## ステップ 2: API契約の定義
+## ステップ 2: ビジネス契約のレビュー
+
+### 2-1: 定性レビュー
+
+```
+mcp__guardrails__review_qualitative(
+  policyId='contract/business',
+  targetDirectories=['contracts/business/{domain}/']
+)
+```
+
+→ 違反があれば修正し、再レビュー
+
+---
+
+## ステップ 3: API契約の定義
 
 **ポリシー:** `guardrails/policy/contract/api/`
 
@@ -54,34 +69,32 @@
 
 ---
 
-## ステップ 3: レビュー
+## ステップ 4: API契約のレビュー
 
-→ `10-development-overview.md` の「レビューと修正」を参照
-
-### 3-1: 静的解析
+### 4-1: 静的解析
 
 ```
 mcp__guardrails__review_static_analysis(
   workspace='server',
-  targetDirectories=['contracts/'],
+  targetDirectories=['contracts/api/'],
   analysisType='lint'
 )
 ```
 
-### 3-2: 定性レビュー
-
-修正内容に応じた観点でポリシーレビューを実施する。
+### 4-2: 定性レビュー
 
 ```
 mcp__guardrails__review_qualitative(
-  policyId='{修正内容に応じたポリシーID}',
-  targetDirectories=['{実装先ディレクトリ}']
+  policyId='contract/api',
+  targetDirectories=['contracts/api/']
 )
 ```
 
+→ 違反があれば修正し、再レビュー
+
 ---
 
-## ステップ 4: コード生成
+## ステップ 5: コード生成
 
 ```
 mcp__guardrails__procedure_codegen(workspace='all')
@@ -89,7 +102,7 @@ mcp__guardrails__procedure_codegen(workspace='all')
 
 ---
 
-## ステップ 5: 影響範囲の検証
+## ステップ 6: 影響範囲の検証
 
 ```
 mcp__guardrails__review_static_analysis(
@@ -125,7 +138,8 @@ mcp__guardrails__review_static_analysis(
 ## 完了条件
 
 - ビジネス契約が文書化されている
+- ビジネス契約のポリシーレビューを通過している
 - OpenAPI仕様が定義されている
+- API契約のポリシーレビューを通過している
 - コード生成が完了している
 - 型チェックを通過している
-- ポリシーレビューを通過している
