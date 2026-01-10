@@ -85,7 +85,9 @@ Contract → Policy → Frontend(mock) → PR作成 ─────────�
 [Claude Code Actions]              Server(full), Infra ─────────┘
 ```
 
-軽量なServer・Infra作業をPR経由でActionsに移譲。メインセッションは途切れずE2Eで締めくくる。重たい作業はパターン1でメインセッションで実施。
+- 軽量なServer・Infra作業をPR経由でActionsに移譲。なるべく並列度を上げることを推奨。
+- メインセッションでは移譲が難しい重たい作業を実施しつつ、Actionsの実行状況を定期的に監視する。
+- 実装が完了した機能からE2Eの追加/修正/テストを進める。
 
 ---
 

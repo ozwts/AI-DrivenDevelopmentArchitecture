@@ -15,6 +15,7 @@ mcp__guardrails__procedure_dev(action='start', mode='mock')
 ## ステップ 0: 要件定義と設計方針の確認
 
 **読むもの:**
+
 - `contracts/business/` - ビジネス契約
 - `server/src/domain/model/` - ドメインモデル
 - `guardrails/policy/web/` - フロントエンドポリシー
@@ -54,6 +55,7 @@ mcp__guardrails__review_static_analysis(
 ## ステップ 4: ルート実装
 
 **ポリシー:**
+
 - `guardrails/policy/web/route/`
 - `guardrails/policy/web/component/`
 - `guardrails/policy/web/design/`
@@ -67,6 +69,7 @@ mcp__guardrails__review_static_analysis(
 ## ステップ 5: Feature抽出（必要な場合）
 
 **ポリシー:**
+
 - `guardrails/policy/web/feature/`
 - `guardrails/policy/web/hooks/`
 
@@ -96,16 +99,43 @@ mcp__guardrails__review_static_analysis(
 
 ---
 
-## ステップ 7: テストの実装
+## ステップ 7: デザインブラッシュアップ
+
+**サブエージェント:** `designer`
+
+Playwright MCPで実際の画面を確認しながら、UIをブラッシュアップする。
+
+**チェック観点:**
+
+- `guardrails/constitution/user-first/user-first-principles.md` - ユーザーファースト原則
+- `guardrails/policy/web/design/` - デザイン4原則（整列・近接・対比・反復）
+
+**確認する画面状態:**
+
+- 初期状態、入力中、エラー状態、成功状態、空状態
+
+→ 原則に基づき、ダイナミックな変更も含めてブラッシュアップ
+
+---
+
+## ステップ 8: テストの実装
+
+**ポリシー:**
+
+- `guardrails/policy/web/component/40-test-patterns.md`
+- `guardrails/policy/web/route/40-test-patterns.md`
+- `guardrails/policy/web/ui/50-test-pattern.md`
 
 ```
 mcp__guardrails__procedure_test(target='web-component')
 mcp__guardrails__procedure_snapshot(action='update', file='...')
 ```
 
+→ 修正内容に応じた観点でポリシーレビュー
+
 ---
 
-## ステップ 8: 最終検証
+## ステップ 9: 最終検証
 
 ```
 mcp__guardrails__review_static_analysis(workspace='web', targetDirectories=['web/src/'])
@@ -113,6 +143,9 @@ mcp__guardrails__review_unused_exports(workspace='web')
 mcp__guardrails__procedure_fix(workspace='web')
 mcp__guardrails__procedure_dev(action='start', mode='mock')
 ```
+
+今回実装した箇所に関わる全ての観点で定性レビューと修正を実施する。
+サブエージェントを使って並列実行を推奨。
 
 ---
 

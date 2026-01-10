@@ -70,4 +70,5 @@
 
 - `20-token-management.md`: トークンの管理と再構成
 - `30-aesthetic-direction.md`: 美的方向性
+- `40-interaction-efficiency.md`: インタラクション効率（操作最小化）
 - `../ui/10-ui-overview.md`: UIプリミティブ設計概要

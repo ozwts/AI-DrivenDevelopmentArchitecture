@@ -138,5 +138,11 @@
     "deny": [],
     "ask": []
   },
-  "enableAllProjectMcpServers": true
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "guardrails",
+    "playwright",
+    "playwright-test",
+    "github"
+  ]
 }
