@@ -40,3 +40,8 @@ export { DEPLOY_RESPONSIBILITIES, type DeployResponsibility } from "./deploy";
 // Workflow（ワークフロー管理）
 // ========================================
 export { WORKFLOW_RESPONSIBILITIES, type WorkflowResponsibility } from "./workflow";
+
+// ========================================
+// Context（コンテキスト復元）
+// ========================================
+export { CONTEXT_RESPONSIBILITIES, type ContextResponsibility } from "./context";
