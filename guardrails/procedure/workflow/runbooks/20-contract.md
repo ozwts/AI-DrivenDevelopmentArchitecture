@@ -32,8 +32,6 @@
 
 新しいドメイン用語がある場合は `contracts/business/glossary.md` を更新
 
-→ 修正内容に応じた観点でポリシーレビュー
-
 ---
 
 ## ステップ 2: API契約の定義
@@ -54,11 +52,36 @@
 2. **HTTPメソッド**: GET/POST/PUT/PATCH/DELETE を適切に使用
 3. **ステータスコード**: 200, 201, 400, 401, 403, 404, 500 を適切に返却
 
-→ 修正内容に応じた観点でポリシーレビュー
+---
+
+## ステップ 3: レビュー
+
+→ `10-development-overview.md` の「レビューと修正」を参照
+
+### 3-1: 静的解析
+
+```
+mcp__guardrails__review_static_analysis(
+  workspace='server',
+  targetDirectories=['contracts/'],
+  analysisType='lint'
+)
+```
+
+### 3-2: 定性レビュー
+
+修正内容に応じた観点でポリシーレビューを実施する。
+
+```
+mcp__guardrails__review_qualitative(
+  policyId='{修正内容に応じたポリシーID}',
+  targetDirectories=['{実装先ディレクトリ}']
+)
+```
 
 ---
 
-## ステップ 3: コード生成
+## ステップ 4: コード生成
 
 ```
 mcp__guardrails__procedure_codegen(workspace='all')
@@ -66,7 +89,7 @@ mcp__guardrails__procedure_codegen(workspace='all')
 
 ---
 
-## ステップ 4: 影響範囲の検証
+## ステップ 5: 影響範囲の検証
 
 ```
 mcp__guardrails__review_static_analysis(

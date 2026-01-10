@@ -50,8 +50,6 @@ mcp__guardrails__review_static_analysis(
 
 **実装先:** `server/src/domain/model/`
 
-→ 修正内容に応じた観点でポリシーレビュー
-
 ---
 
 ## ステップ 4: DynamoDBスキーマの更新（必要な場合）
@@ -72,17 +70,13 @@ mcp__guardrails__review_static_analysis(
 - `server/src/domain/model/*/` - インターフェース
 - `server/src/infrastructure/repository/` - 実装
 
-→ 修正内容に応じた観点でポリシーレビュー
-
 ---
 
 ## ステップ 6: ユースケースの実装
 
 **ポリシー:** `guardrails/policy/server/use-case/`
 
-**実装先:** `server/src/use-case/`
-
-→ 修正内容に応じた観点でポリシーレビュー
+**実装先:** `server/src/application/use-case/`
 
 ---
 
@@ -98,8 +92,6 @@ mcp__guardrails__review_static_analysis(
 - `server/src/handler/hono-handler/`
 - `server/src/di-container/`
 
-→ 修正内容に応じた観点でポリシーレビュー
-
 ---
 
 ## ステップ 7b: Portの追加・修正（必要な場合）
@@ -114,11 +106,39 @@ mcp__guardrails__review_static_analysis(
 
 **実装先:** `server/src/domain/support/`, `server/src/infrastructure/`
 
-→ 修正内容に応じた観点でポリシーレビュー。ポリシーが存在しない新概念は、先にポリシーを起草し人間のレビューを受けること。
+ポリシーが存在しない新概念は、先にポリシーを起草し人間のレビューを受けること。
 
 ---
 
-## ステップ 8: テストの実装
+## ステップ 8: レビュー
+
+→ `10-development-overview.md` の「レビューと修正」を参照
+
+### 8-1: 静的解析
+
+```
+mcp__guardrails__review_static_analysis(
+  workspace='server',
+  targetDirectories=['{実装先ディレクトリ}']
+)
+```
+
+### 8-2: 定性レビュー
+
+修正内容に応じた観点でポリシーレビューを実施する。
+
+```
+mcp__guardrails__review_qualitative(
+  policyId='{修正内容に応じたポリシーID}',
+  targetDirectories=['{実装先ディレクトリ}']
+)
+```
+
+---
+
+## ステップ 9: テストの実装
+
+**ポリシー:** `guardrails/policy/co-evolution/testing-principles.md`
 
 ```
 mcp__guardrails__procedure_test(target='server')
@@ -126,7 +146,7 @@ mcp__guardrails__procedure_test(target='server')
 
 ---
 
-## ステップ 9: 最終検証
+## ステップ 10: 最終検証
 
 ```
 mcp__guardrails__review_static_analysis(workspace='server', targetDirectories=['server/src/'])

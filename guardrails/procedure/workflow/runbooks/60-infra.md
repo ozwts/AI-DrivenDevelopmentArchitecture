@@ -30,7 +30,11 @@
 
 ---
 
-## ステップ 2: 静的解析
+## ステップ 2: レビュー
+
+→ `10-development-overview.md` の「レビューと修正」を参照
+
+### 2-1: 静的解析
 
 ```
 mcp__guardrails__review_infra_static_analysis(
@@ -39,28 +43,20 @@ mcp__guardrails__review_infra_static_analysis(
 )
 ```
 
----
+### 2-2: 定性レビュー
 
-## ステップ 3: ポリシーレビュー
+修正内容に応じた観点でポリシーレビューを実施する。
 
 ```
 mcp__guardrails__review_qualitative(
-  policyId='infra/terraform',
-  targetDirectories=['infra/terraform/']
+  policyId='{修正内容に応じたポリシーID}',
+  targetDirectories=['{実装先ディレクトリ}']
 )
 ```
 
 ---
 
-## ステップ 4: 自動修正
-
-```
-mcp__guardrails__procedure_fix(workspace='infra')
-```
-
----
-
-## ステップ 5: デプロイ
+## ステップ 3: デプロイ
 
 ### 差分確認（Plan）
 
@@ -91,6 +87,20 @@ mcp__guardrails__procedure_deploy_dev(
   useBranchEnv=true
 )
 ```
+
+---
+
+## ステップ 4: 最終検証
+
+```
+mcp__guardrails__review_infra_static_analysis(
+  targetDirectory='infra/terraform/environments/dev',
+  analysisType='all'
+)
+mcp__guardrails__procedure_fix(workspace='infra')
+```
+
+今回実装した箇所に関わる全ての観点で定性レビューを実施する。
 
 ---
 

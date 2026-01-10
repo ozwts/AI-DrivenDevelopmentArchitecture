@@ -48,8 +48,6 @@ mcp__guardrails__review_static_analysis(
 
 **実装先:** `web/src/mocks/`
 
-→ 修正内容に応じた観点でポリシーレビュー
-
 ---
 
 ## ステップ 4: ルート実装
@@ -62,8 +60,6 @@ mcp__guardrails__review_static_analysis(
 
 **実装先:** `web/src/app/routes/`
 
-→ 修正内容に応じた観点でポリシーレビュー
-
 ---
 
 ## ステップ 5: Feature抽出（必要な場合）
@@ -75,8 +71,6 @@ mcp__guardrails__review_static_analysis(
 
 **実装先:** `web/src/app/features/`
 
-→ 修正内容に応じた観点でポリシーレビュー
-
 ---
 
 ## ステップ 6: 共有UIコンポーネント（必要な場合）
@@ -84,8 +78,6 @@ mcp__guardrails__review_static_analysis(
 **ポリシー:** `guardrails/policy/web/ui/`
 
 **実装先:** `web/src/app/lib/ui/`
-
-→ 修正内容に応じた観点でポリシーレビュー
 
 ---
 
@@ -95,11 +87,37 @@ mcp__guardrails__review_static_analysis(
 
 **実装先:** `web/src/app/lib/`など
 
-→ 修正内容に応じた観点でポリシーレビュー。ポリシーが存在しない新概念は、先にポリシーを起草し人間のレビューを受けること。
+ポリシーが存在しない新概念は、先にポリシーを起草し人間のレビューを受けること。
 
 ---
 
-## ステップ 7: デザインブラッシュアップ
+## ステップ 7: レビュー
+
+→ `10-development-overview.md` の「レビューと修正」を参照
+
+### 7-1: 静的解析
+
+```
+mcp__guardrails__review_static_analysis(
+  workspace='web',
+  targetDirectories=['{実装先ディレクトリ}']
+)
+```
+
+### 7-2: 定性レビュー
+
+修正内容に応じた観点でポリシーレビューを実施する。
+
+```
+mcp__guardrails__review_qualitative(
+  policyId='{修正内容に応じたポリシーID}',
+  targetDirectories=['{実装先ディレクトリ}']
+)
+```
+
+---
+
+## ステップ 8: デザインブラッシュアップ
 
 **サブエージェント:** `designer`
 
@@ -114,11 +132,9 @@ Playwright MCPで実際の画面を確認しながら、UIをブラッシュア�
 
 - 初期状態、入力中、エラー状態、成功状態、空状態
 
-→ 原則に基づき、ダイナミックな変更も含めてブラッシュアップ
-
 ---
 
-## ステップ 8: テストの実装
+## ステップ 9: テストの実装
 
 **ポリシー:**
 
@@ -131,11 +147,9 @@ mcp__guardrails__procedure_test(target='web-component')
 mcp__guardrails__procedure_snapshot(action='update', file='...')
 ```
 
-→ 修正内容に応じた観点でポリシーレビュー
-
 ---
 
-## ステップ 9: 最終検証
+## ステップ 10: 最終検証
 
 ```
 mcp__guardrails__review_static_analysis(workspace='web', targetDirectories=['web/src/'])

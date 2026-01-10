@@ -52,7 +52,9 @@ const buildGuidanceMessage = (
   // 要件が未設定の場合は警告
   if (goal === null || requirements.length === 0) {
     lines.push("⚠️ **要件定義が未設定です**\n");
-    lines.push("`plan` の前に `requirements` アクションで要件を登録してください。\n");
+    lines.push(
+      "`plan` の前に `requirements` アクションで要件を登録してください。\n",
+    );
     lines.push("```typescript");
     lines.push("procedure_workflow(action: 'requirements',");
     lines.push('  goal: "全体のゴール",');
@@ -91,9 +93,16 @@ const buildGuidanceMessage = (
   lines.push("## サブエージェントの役割\n");
   lines.push("- 要件をタスクにブレークダウンする");
   lines.push("- runbooksを参照してタスクリストを**提案**する（登録はしない）");
-  lines.push("- **ステップを具体化**（各ステップで何を作るかを明示、1成果物=1タスク）");
+  lines.push(
+    "- **ステップを具体化**（各ステップで何を作るかを明示、1成果物=1タスク）",
+  );
   lines.push("- 各タスクに参照先runbookを紐づける");
   lines.push("- 提案を受けてメインセッションが登録を判断する\n");
+
+  lines.push("## フェーズ順序\n");
+  lines.push(
+    "タスクの順番は `procedure/workflow/runbooks/10-development-overview.md` の考えを遵守すること。\n",
+  );
 
   if (availableRunbooks.length > 0) {
     lines.push("## 利用可能なRunbooks\n");
@@ -163,7 +172,11 @@ export const executePlan = async (
     const requirements = memory.getRequirements();
 
     // ガイダンスメッセージを生成
-    const guidance = buildGuidanceMessage(availableRunbooks, goal, requirements);
+    const guidance = buildGuidanceMessage(
+      availableRunbooks,
+      goal,
+      requirements,
+    );
 
     return {
       guidance,
