@@ -133,7 +133,9 @@
       "Bash(timeout 3 npx tsx:*)",
       "mcp__playwright-test__test_list",
       "mcp__playwright-test__test_debug",
-      "Bash(git diff:*)"
+      "Bash(git diff:*)",
+      "Bash(chmod:*)",
+      "Bash(./.claude/hooks/workflow-init.sh:*)"
     ],
     "deny": [],
     "ask": []
@@ -144,5 +146,17 @@
     "playwright",
     "playwright-test",
     "github"
-  ]
+  ],
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/workflow-init.sh\""
+          }
+        ]
+      }
+    ]
+  }
 }

@@ -61,14 +61,17 @@ const buildGuidanceMessage = (availableRunbooks: string[]): string => {
 
   guidance += "## タスク登録フォーマット（メインセッション用）\n\n";
   guidance += "```typescript\n";
-  guidance += "procedure_workflow(action: 'set', tasks: [\n";
-  guidance += "  {\n";
-  guidance += '    what: "何をするか（具体的なアクション）",\n';
-  guidance += '    why: "なぜするか（目的・理由）",\n';
-  guidance += '    doneWhen: "完了条件",\n';
-  guidance += '    ref: "procedure/workflow/runbooks/xxx.md"  // 相対パス\n';
-  guidance += "  }\n";
-  guidance += "])\n";
+  guidance += "procedure_workflow(action: 'set',\n";
+  guidance += '  goal: "全体のゴール（何を達成するか）",\n';
+  guidance += "  tasks: [\n";
+  guidance += "    {\n";
+  guidance += '      what: "何をするか（具体的なアクション）",\n';
+  guidance += '      why: "なぜするか（目的・理由）",\n';
+  guidance += '      doneWhen: "完了条件",\n';
+  guidance += '      ref: "procedure/workflow/runbooks/xxx.md"  // 相対パス\n';
+  guidance += "    }\n";
+  guidance += "  ]\n";
+  guidance += ")\n";
   guidance += "```\n";
 
   return guidance;

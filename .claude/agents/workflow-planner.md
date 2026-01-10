@@ -40,41 +40,57 @@ color: green
 
 ### ステップ2: Runbookの読み込み
 
-要件に基づいて関連するrunbookを読む:
-- `procedure/workflow/runbooks/server-implementation.md` - バックエンド/サーバー作業用
-- `procedure/workflow/runbooks/frontend-implementation.md` - フロントエンド/UI作業用
+`guardrails/procedure/workflow/runbooks/` 配下のファイルを**すべて読み込む**:
 
-Readツールを使用してファイルを読む。
+```
+Glob: guardrails/procedure/workflow/runbooks/*.md
+```
+
+番号順に整理されている（10-, 20-, 30-...）。Readツールを使用してすべてのファイルを読む。
 
 ### ステップ3: タスクリスト提案
 
-以下の形式でタスクを提案する（各タスクにrunbook参照を紐づける）:
+以下の形式でタスクを提案する（**Goalを必ず含める**、各タスクにrunbook参照を紐づける）:
 
 ```
 ## 提案タスクリスト
 
-1. **What**: server/src/domain/model/user-settings/ にバリデーション付きUserSettingsエンティティを作成
-   - **Why**: 適切なバリデーションルールを持つユーザー設定を表すドメインモデルが必要
-   - **Done when**: エンティティファイル作成、全必須フィールド実装、バリデーションロジック実装、スモールテストパス
-   - **Ref**: `procedure/workflow/runbooks/server-implementation.md`（ステップ1参照）
+**Goal**: プロジェクトメンバー招待機能を実装し、複数ユーザーでプロジェクトを共同管理できるようにする
 
-2. **What**: OpenAPI仕様にUserSettingsエンドポイントを追加
-   - **Why**: フロントエンドとバックエンドの契約を定義するため
-   - **Done when**: スキーマ定義完了、RESTful設計原則に準拠
-   - **Ref**: `procedure/workflow/runbooks/server-implementation.md`（ステップ2参照）
+1. **What**: contracts/business/project/scenario/invite-member.md を作成
+   - **Why**: 招待機能のビジネスルールを契約として定義するため
+   - **Done when**: シナリオ定義完了、用語集との整合性確認
+   - **Ref**: `procedure/workflow/runbooks/20-contract.md`
+
+2. **What**: contracts/api/project/member.paths.yaml を作成
+   - **Why**: メンバー管理APIの契約を定義するため
+   - **Done when**: OpenAPI仕様完成、ポリシーに準拠
+   - **Ref**: `procedure/workflow/runbooks/20-contract.md`
 
 3. **What**: ...
 ```
 
 ## タスク品質ガイドライン
 
+### 良いGoal例
+
+- 「プロジェクトメンバー招待機能を実装し、複数ユーザーでプロジェクトを共同管理できるようにする」
+- 「Todoに優先度フィールドを追加し、重要なタスクを視覚的に識別できるようにする」
+
+### 悪いGoal例
+
+- 「機能を追加する」（何の機能か不明）
+- 「バックエンドを実装」（目的が不明）
+
 ### 良いタスク例
+
 - **What**: 具体的なアクション（ファイルパス、機能名を含む）
-- **Why**: 明確な目的と理由
+- **Why**: Goalに紐づく明確な目的と理由
 - **Done when**: 測定可能な完了条件
 - **Ref**: 関連するrunbookの相対パス（`procedure/workflow/runbooks/xxx.md`）
 
 ### 悪いタスク例（曖昧すぎる）
+
 - What: "バックエンドを実装"
 - Why: "バックエンドが必要"
 - Done when: "バックエンドが動く"
@@ -89,16 +105,12 @@ Readツールを使用してファイルを読む。
 - タスク間の依存関係を考慮（順序が重要）
 - runbookのステップを省略しない
 
-## 利用可能なRunbook
-
-`guardrails/procedure/workflow/runbooks/` 配下:
-- `feature-development.md` - 機能開発の5フェーズワークフロー（契約→立法→フロントエンド→サーバー→E2E）
-- `server-implementation.md` - 10ステップのサーバー実装ワークフロー
-- `frontend-implementation.md` - 11ステップのフロントエンド実装ワークフロー
-
 ## 出力形式
 
 最後に必ず以下を含める:
 
-1. **提案タスクリスト**（番号付き、各タスクにRef紐づけ）
-2. **推奨開始ポイント**（どのタスクから始めるべきか）
+1. **Goal**（全体の目標、何を達成するか）
+2. **提案タスクリスト**（番号付き、各タスクにRef紐づけ）
+3. **推奨開始ポイント**（どのタスクから始めるべきか）
+
+**重要**: 提案後、メインセッションはユーザーにGoalとタスクリストを提示し、承認・修正を求めること。合意後に登録を行う。

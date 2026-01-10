@@ -10,6 +10,7 @@ import type { TaskWithStatus } from "./memory";
  * タスクリストをチェックリスト形式でフォーマット
  */
 export const formatTaskList = (
+  goal: string | null,
   tasks: TaskWithStatus[],
   runbooksDir?: string,
 ): string => {
@@ -18,6 +19,11 @@ export const formatTaskList = (
   }
 
   const lines: string[] = ["## ワークフロータスク", ""];
+
+  // ゴール表示
+  if (goal !== null) {
+    lines.push(`**Goal**: ${goal}`, "");
+  }
 
   // 進捗サマリー
   const completed = tasks.filter((t) => t.done).length;
@@ -51,7 +57,8 @@ export const formatTaskList = (
 /**
  * タスク登録結果をフォーマット
  */
-export const formatSetResult = (taskCount: number): string => `${taskCount}件のタスクを登録しました。\n\n\`procedure_workflow(action: 'list')\` で確認できます。`;
+export const formatSetResult = (goal: string, taskCount: number): string =>
+  `**Goal**: ${goal}\n\n${taskCount}件のタスクを登録しました。\n\n\`procedure_workflow(action: 'list')\` で確認できます。`;
 
 /**
  * タスク完了結果をフォーマット

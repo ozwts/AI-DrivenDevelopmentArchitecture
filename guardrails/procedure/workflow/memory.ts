@@ -34,12 +34,30 @@ export type TaskWithStatus = WorkflowTask & {
  * シングルトンでタスク状態を管理
  */
 class WorkflowMemory {
+  private goal: string | null = null;
   private tasks: TaskWithStatus[] = [];
+
+  /**
+   * ゴールを設定
+   */
+  setGoal(goal: string): void {
+    this.goal = goal;
+  }
+
+  /**
+   * ゴールを取得
+   */
+  getGoal(): string | null {
+    return this.goal;
+  }
 
   /**
    * タスクを登録（既存タスクは上書き）
    */
-  setTasks(tasks: WorkflowTask[]): void {
+  setTasks(tasks: WorkflowTask[], goal?: string): void {
+    if (goal !== undefined) {
+      this.goal = goal;
+    }
     this.tasks = tasks.map((task, index) => ({
       ...task,
       index,
@@ -81,9 +99,10 @@ class WorkflowMemory {
   }
 
   /**
-   * タスクをクリア
+   * タスクとゴールをクリア
    */
   clear(): void {
+    this.goal = null;
     this.tasks = [];
   }
 
