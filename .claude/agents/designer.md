@@ -44,19 +44,34 @@ mcp__guardrails__procedure_dev(action='status')
 mcp__guardrails__procedure_dev(action='start', mode='mock')
 ```
 
-## 3. 現状の画面確認
+## 3. 導線の確認（最優先）
+
+ユーザーが目的を達成するまでの流れを実際に操作して確認する。導線が正しくなければデザインを磨いても意味がない。
 
 ### 対象画面への遷移
 
 ```
 mcp__playwright__browser_navigate(url='http://localhost:5173/{対象パス}')
-```
-
-### スナップショット取得
-
-```
 mcp__playwright__browser_snapshot()
 ```
+
+### 確認観点
+
+- **到達可能性**: 目的の画面に迷わず到達できるか
+- **一貫性**: 同じ操作パターンが統一されているか
+- **フィードバック**: 操作結果が明確に伝わるか
+- **回復可能性**: 間違った操作から戻れるか
+
+### 導線を辿る
+
+```
+mcp__playwright__browser_click(element='...', ref='...')
+mcp__playwright__browser_snapshot()
+```
+
+導線に問題があれば、デザインブラッシュアップより先に修正する。
+
+## 4. 視覚デザインの確認
 
 ### スクリーンショット撮影
 
@@ -68,11 +83,11 @@ mcp__playwright__browser_take_screenshot(fullPage=true)
 
 ポリシー（`guardrails/policy/web/design/`）に従い、各状態を確認して問題点を特定する。
 
-## 4. 問題点の特定と改善方針の決定
+## 5. 問題点の特定と改善方針の決定
 
 読み込んだ憲法とポリシーに基づいて問題点を特定し、改善方針を決定する。
 
-## 5. 修正の実施
+## 6. 修正の実施
 
 ### 修正対象ファイル
 
@@ -87,7 +102,7 @@ mcp__playwright__browser_take_screenshot(fullPage=true)
 3. **大胆に変更OK** - 原則に基づくならダイナミックな変更も許可
 4. **トークン体系の見直し** - 個別修正より体系全体を更新
 
-## 6. 修正後の確認
+## 7. 修正後の確認
 
 ### 画面を再読み込みして確認
 
@@ -102,7 +117,7 @@ mcp__playwright__browser_take_screenshot(fullPage=true)
 - ユーザー体験が向上したか
 - 一貫性が保たれているか
 
-## 7. 完了報告
+## 8. 完了報告
 
 ```markdown
 # デザインブラッシュアップ完了

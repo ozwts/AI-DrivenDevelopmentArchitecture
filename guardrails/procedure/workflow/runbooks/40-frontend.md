@@ -121,17 +121,18 @@ mcp__guardrails__review_qualitative(
 
 **サブエージェント:** `designer`
 
-Playwright MCPで実際の画面を確認しながら、UIをブラッシュアップする。
+Playwright MCPで実際の画面を確認しながら、導線とUIをブラッシュアップする。
 
 ```
 Task(
   subagent_type='designer',
-  prompt='以下の画面のデザインをブラッシュアップしてください: {追加・修正した画面のパス一覧}'
+  prompt='以下の画面の導線とデザインをブラッシュアップしてください: {追加・修正した画面のパス一覧}'
 )
 ```
 
 **チェック観点:**
 
+- **導線（最優先）**: 到達可能性、一貫性、フィードバック、回復可能性
 - `guardrails/constitution/user-first/user-first-principles.md`
 - `guardrails/policy/web/design/`
 
