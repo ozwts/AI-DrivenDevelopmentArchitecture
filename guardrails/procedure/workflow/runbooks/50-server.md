@@ -180,6 +180,33 @@ mcp__guardrails__procedure_dev(action='start', mode='full')
 
 ---
 
+## ステップ 11: フェーズ完了チェックポイント
+
+このフェーズで得られた知見を踏まえ、後続タスクの計画を見直す。
+
+**確認すること:**
+
+1. 実装中に発見したインフラ変更の必要性（テーブル追加、GSI追加など）
+2. E2Eテストへの影響
+3. 追加で必要になったタスク
+4. 不要になったタスク
+
+**見直しが必要な場合:**
+
+```
+mcp__guardrails__procedure_workflow(action='list')  // 現在の状態を確認
+mcp__guardrails__procedure_workflow(action='set', tasks=[
+  // 完了済みタスクはdone: trueで保持
+  { what: "完了済みタスク", ..., done: true },
+  // 新しい計画
+  { what: "新タスク", ... }
+])
+```
+
+**見直し不要の場合:** そのまま次フェーズへ進む
+
+---
+
 ## 完了条件
 
 - コード生成完了

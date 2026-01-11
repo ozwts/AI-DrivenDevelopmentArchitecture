@@ -164,20 +164,9 @@ npm run security:prd
 
 1. AWSアカウント
 2. IAMユーザー（AdministratorAccess権限）
-3. MFAデバイス設定
-4. AWS CLI設定
+3. AWS CLI設定済み
 
-### 1. AWS認証設定
-
-```bash
-# プロファイル設定
-aws configure --profile hands-on
-
-# MFAトークン取得（12時間有効）
-source ../devtools/get-aws-session-token.sh hands-on <MFA_ARN> <MFA_CODE>
-```
-
-### 2. ビルド＆デプロイ
+### 1. ビルド＆デプロイ
 
 ```bash
 # 差分確認

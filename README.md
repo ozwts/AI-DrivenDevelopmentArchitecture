@@ -72,9 +72,9 @@ Claude Code
 
 ### 構成要素
 
-| 要素           | 場所              | 役割                     |
-| -------------- | ----------------- | ------------------------ |
-| MCPサーバー    | `.mcp.json`       | ツール提供               |
+| 要素             | 場所              | 役割                     |
+| ---------------- | ----------------- | ------------------------ |
+| MCPサーバー      | `.mcp.json`       | ツール提供               |
 | サブエージェント | `.claude/agents/` | 領域特化の実装・レビュー |
 
 ### MCPとサブエージェントの連携
@@ -89,26 +89,26 @@ Claude Code
 
 **Review（司法）**:
 
-| ツール                       | 説明                                      |
-| ---------------------------- | ----------------------------------------- |
-| `review_qualitative`         | ポリシー違反の定性的レビュー              |
-| `review_static_analysis`     | 静的解析（TypeScript型チェック、ESLint）  |
-| `review_unused_exports`      | 未使用export検出（knip）                  |
+| ツール                         | 説明                                             |
+| ------------------------------ | ------------------------------------------------ |
+| `review_qualitative`           | ポリシー違反の定性的レビュー                     |
+| `review_static_analysis`       | 静的解析（TypeScript型チェック、ESLint）         |
+| `review_unused_exports`        | 未使用export検出（knip）                         |
 | `review_infra_static_analysis` | インフラ静的解析（terraform fmt、TFLint、Trivy） |
 
 **Procedure（行政）**:
 
-| ツール              | 説明                                      |
-| ------------------- | ----------------------------------------- |
-| `procedure_dev`     | 開発サーバー管理（start/stop/status/logs）|
-| `procedure_test`    | テスト実行（server/web/e2e）              |
-| `procedure_snapshot`| スナップショット管理（update/refresh）    |
-| `procedure_e2e_setup` | E2Eセットアップ（Cognitoユーザー/ブラウザ）|
-| `procedure_fix`     | 自動修正（ESLint/Prettier/knip）          |
-| `procedure_codegen` | コード生成（OpenAPIから型生成）           |
-| `procedure_deploy_dev` | 開発環境デプロイ（diff/deploy/destroy） |
-| `procedure_workflow`| ワークフロー管理（plan/set/done/list）    |
-| `procedure_context` | コンテキスト復元（compacting対策）        |
+| ツール                 | 説明                                        |
+| ---------------------- | ------------------------------------------- |
+| `procedure_dev`        | 開発サーバー管理（start/stop/status/logs）  |
+| `procedure_test`       | テスト実行（server/web/e2e）                |
+| `procedure_snapshot`   | スナップショット管理（update/refresh）      |
+| `procedure_e2e_setup`  | E2Eセットアップ（Cognitoユーザー/ブラウザ） |
+| `procedure_fix`        | 自動修正（ESLint/Prettier/knip）            |
+| `procedure_codegen`    | コード生成（OpenAPIから型生成）             |
+| `procedure_deploy_dev` | 開発環境デプロイ（diff/deploy/destroy）     |
+| `procedure_workflow`   | ワークフロー管理（plan/set/done/list）      |
+| `procedure_context`    | コンテキスト復元（compacting対策）          |
 
 #### playwright
 
@@ -116,7 +116,7 @@ Claude Code
 
 #### playwright-test
 
-E2Eテスト実行・管理（test_list/test_run/test_debug/generator_*/planner_*）
+E2Eテスト実行・管理（test*list/test_run/test_debug/generator*_/planner\__）
 
 #### github
 
@@ -132,6 +132,18 @@ Issue/PR操作（issue_read/create_pull_request/merge_pull_request等）
 4. **要件登録** → **タスク計画** → **タスク登録** → **タスク実行**
 
 詳細: `.claude/hooks/workflow-init.sh`
+
+### 例: 機能追加の指示
+
+```
+プロジェクトに他のユーザーを招待し、共同でTodoを管理できる機能を追加したい
+```
+
+この指示から、AIが深掘りインタビューで要件を明確化し、Business契約→API契約→実装の順で開発を進める。
+
+## アーキテクチャ図
+
+![インフラ構成](./infra.drawio.svg)
 
 ## 実行環境
 
@@ -178,30 +190,28 @@ npm run deploy:shared   # 共有環境へデプロイ
 - ブランチ環境のE2Eテストはローカルで実施し、共有環境はCI上で実行を想定
 - **AWSセッション必要**
 
-### AWSセッションの取得
+### AWSセッションの設定
 
-モード2・3を使用する場合、事前にセッションを取得する。
+モード2・3（バックエンド実装）を使用する場合、事前にAWSセッショントークンを環境変数にエクスポートしておくこと。
 
 ```bash
-# セッション取得（12時間有効）
-source devtools/get-aws-session-token.sh <profile> <MFA_ARN> <MFA_CODE>
-
-# Claude Code起動（環境変数を引き継ぐ）
-claude
+export AWS_ACCESS_KEY_ID=xxx
+export AWS_SECRET_ACCESS_KEY=xxx
+export AWS_SESSION_TOKEN=xxx
 ```
 
-**注意**: セッション取得後に新しいターミナルを開くと環境変数が失われる。同一ターミナルでClaude Codeを起動すること。
+**注意**: Claude Codeは起動時の環境変数を引き継ぐ。セッション設定後に同一ターミナルでClaude Codeを起動すること。
 
 ## 技術スタック
 
-| ワークスペース | 技術                                | 役割                    |
-| -------------- | ----------------------------------- | ----------------------- |
-| `contracts/`   | OpenAPI, Markdown                   | Business契約 + API契約  |
-| `web/`         | React, TanStack Query, Tailwind CSS | フロントエンド          |
-| `server/`      | Hono, Vitest                        | APIサーバー             |
-| `infra/`       | Terraform, Trivy, TFLint            | インフラ                |
-| `e2e/`         | Playwright                          | E2Eテスト               |
-| `guardrails/`  | MCP Server (TypeScript)             | AI統治機構              |
+| ワークスペース | 技術                                | 役割                   |
+| -------------- | ----------------------------------- | ---------------------- |
+| `contracts/`   | OpenAPI, Markdown                   | Business契約 + API契約 |
+| `web/`         | React, TanStack Query, Tailwind CSS | フロントエンド         |
+| `server/`      | Hono, Vitest                        | APIサーバー            |
+| `infra/`       | Terraform, Trivy, TFLint            | インフラ               |
+| `e2e/`         | Playwright                          | E2Eテスト              |
+| `guardrails/`  | MCP Server (TypeScript)             | AI統治機構             |
 
 ## セットアップ
 
@@ -303,10 +313,9 @@ npm run destroy:shared   # 共有環境を削除
 │   ├── policy/        # 立法（領域別ルール）
 │   ├── review/        # 司法（コードレビュー）
 │   └── procedure/     # 行政（手順実行）
-├── .claude/           # Claude Code設定
-│   ├── agents/        # サブエージェント定義
-│   └── hooks/         # フック（初期化処理等）
-└── devtools/          # 開発ツール
+└── .claude/           # Claude Code設定
+    ├── agents/        # サブエージェント定義
+    └── hooks/         # フック（初期化処理等）
 ```
 
 ## ワークスペース詳細
@@ -318,10 +327,3 @@ npm run destroy:shared   # 共有環境を削除
 | infra          | [infra/README.md](./infra/README.md)           |
 | e2e            | [e2e/README.md](./e2e/README.md)               |
 | guardrails     | [guardrails/README.md](./guardrails/README.md) |
-
-## AWS認証（デプロイ時）
-
-```bash
-# MFAトークン取得（12時間有効）
-source devtools/get-aws-session-token.sh <profile> <MFA_ARN> <MFA_CODE>
-```

@@ -24,10 +24,6 @@ infra/
 ### 1. AWS認証情報の設定
 
 ```bash
-# プロジェクトルートから実行
-# MFA認証でセッショントークンを取得
-source devtools/get-aws-session-token.sh <プロファイル名> <MFAデバイスARN> <MFAコード>
-
 # 認証情報の確認
 aws sts get-caller-identity
 ```

@@ -59,6 +59,10 @@ const TaskSchema = z.object({
     .describe(
       '参照先runbook相対パス（例: "procedure/workflow/runbooks/50-server.md"）',
     ),
+  done: z
+    .boolean()
+    .optional()
+    .describe("完了状態（計画見直し時に完了済みタスクを保持するために使用）"),
 });
 
 /**

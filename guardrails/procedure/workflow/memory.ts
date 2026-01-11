@@ -40,6 +40,8 @@ export type WorkflowTask = {
   doneWhen: string;
   /** 参照先runbook相対パス（例: "procedure/workflow/runbooks/50-server.md"） */
   ref?: string;
+  /** 完了状態（計画見直し時に完了済みタスクを保持するために使用） */
+  done?: boolean;
 };
 
 /**
@@ -100,6 +102,7 @@ class WorkflowMemory {
 
   /**
    * タスクを登録（既存タスクは上書き）
+   * doneフラグが指定されていればその値を使用、未指定ならfalse
    */
   setTasks(tasks: WorkflowTask[], goal?: string): void {
     if (goal !== undefined) {
@@ -108,7 +111,7 @@ class WorkflowMemory {
     this.tasks = tasks.map((task, index) => ({
       ...task,
       index,
-      done: false,
+      done: task.done ?? false,
     }));
   }
 
