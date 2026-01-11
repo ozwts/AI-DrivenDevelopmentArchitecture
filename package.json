@@ -16,7 +16,7 @@
     "fix:format": "npm run fix:format -w web -w server -w infra",
     "validate": "npm run validate -w web -w server -w infra && npm run validate:cspell",
     "validate:cspell": "cspell '**/*.{ts,tsx}' --cache --gitignore",
-    "codegen:bundle": "redocly bundle 'contracts/api/entry.yaml' -o 'contracts/api/todo.openapi.yaml' && echo '# 自動生成ファイル - 直接編集禁止\n# 編集は entry.yaml および参照先ファイルに対して行ってください\n' | cat - 'contracts/api/todo.openapi.yaml' > 'contracts/api/todo.openapi.yaml.tmp' && mv 'contracts/api/todo.openapi.yaml.tmp' 'contracts/api/todo.openapi.yaml'",
+    "codegen:bundle": "redocly bundle 'contracts/api/todo-app/todo-app.entry.yaml' -o 'contracts/api/todo-app.openapi.yaml' && echo '# 自動生成ファイル - 直接編集禁止\n# 編集は todo-app/todo-app.entry.yaml および参照先ファイルに対して行ってください\n' | cat - 'contracts/api/todo-app.openapi.yaml' > 'contracts/api/todo-app.openapi.yaml.tmp' && mv 'contracts/api/todo-app.openapi.yaml.tmp' 'contracts/api/todo-app.openapi.yaml'",
     "codegen": "npm run codegen:bundle && npm run codegen -w server -w web",
     "update:pkgs": "ncu -u && npm run update:pkgs -w server -w web -w infra",
     "web:build": "npm run build -w web",

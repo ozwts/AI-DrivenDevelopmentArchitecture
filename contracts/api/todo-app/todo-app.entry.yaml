@@ -56,7 +56,7 @@ components:
   schemas:
     # Shared
     ErrorResponse:
-      $ref: "shared/error.schemas.yaml#/ErrorResponse"
+      $ref: "../_shared/error.schemas.yaml#/ErrorResponse"
 
     # Todo
     TodoStatus:

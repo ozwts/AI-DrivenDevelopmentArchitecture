@@ -97,13 +97,14 @@ Handler層（バリデーション実行）
 
 ```
 contracts/api/
-├── entry.yaml                  # エントリポイント
-├── {resource}.openapi.yaml     # バンドル後（自動生成）
-├── shared/
-│   └── error.schemas.yaml      # 共通スキーマ
-└── {aggregate}/
-    ├── {entity}.paths.yaml     # パス定義
-    └── {entity}.schemas.yaml   # スキーマ定義
+├── _shared/
+│   └── error.schemas.yaml          # 共通スキーマ
+├── {app-name}/                     # アプリケーション
+│   ├── {app-name}.entry.yaml       # エントリポイント
+│   └── {aggregate}/                # 集約
+│       ├── {entity}.paths.yaml     # パス定義
+│       └── {entity}.schemas.yaml   # スキーマ定義
+└── {app-name}.openapi.yaml         # バンドル後（自動生成）
 ```
 
 ### マルチファイル構造の原則
@@ -114,17 +115,36 @@ OpenAPI仕様は**ドメイン単位で分割**し、バンドルツールで単
 
 1. **エントリポイント**: 全体構造を定義し、`$ref` で各ドメインファイルを参照
 2. **ドメイン分割**: DDD集約単位でディレクトリを分割（子エンティティは親と同一ディレクトリ）
-3. **共通スキーマ**: 横断的に使用するスキーマ（ErrorResponse等）は shared ディレクトリに配置
+3. **共通スキーマ**: 横断的に使用するスキーマ（ErrorResponse等）は _shared ディレクトリに配置
 4. **自動生成**: バンドル後のファイルは直接編集禁止
+
+### 集約の凝集
+
+```
+# ❌ Bad: 子エンティティが別ディレクトリ
+contracts/api/
+├── project/
+│   └── project.*.yaml
+├── project-member/       # ❌ 別ディレクトリに分離
+│   └── project-member.*.yaml
+
+# ✅ Good: 子エンティティは親ディレクトリに配置
+contracts/api/
+├── project/
+│   ├── project.*.yaml
+│   └── project-member.*.yaml     # ✅ 親と同一ディレクトリ
+```
+
+**判断基準**: ビジネス契約（`contracts/business/`）で同一ディレクトリに配置されている概念は、API契約でも同一ディレクトリに配置する。
 
 ### $ref 参照の記法
 
 OpenAPIの `$ref` はJSON Pointer (RFC 6901) に従う。
 
-| 文字 | エスケープ | 例 |
-|------|-----------|-----|
-| `/`  | `~1`      | `/todos` → `~1todos` |
-| `~`  | `~0`      | |
+| 文字 | エスケープ | 例                   |
+| ---- | ---------- | -------------------- |
+| `/`  | `~1`       | `/todos` → `~1todos` |
+| `~`  | `~0`       |                      |
 
 ```yaml
 # パス参照（/todos → ~1todos）

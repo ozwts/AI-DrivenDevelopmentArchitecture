@@ -1,5 +1,5 @@
 # 自動生成ファイル - 直接編集禁止
-# 編集は entry.yaml および参照先ファイルに対して行ってください
+# 編集は todo-app/todo-app.entry.yaml および参照先ファイルに対して行ってください
 
 openapi: 3.0.2
 info:

@@ -32,13 +32,13 @@
         content:
           application/json:
             schema:
-              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
       "500":
         description: サーバーエラー
         content:
           application/json:
             schema:
-              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
   post:
     tags:
       - todos
@@ -63,25 +63,25 @@
         content:
           application/json:
             schema:
-              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
       "401":
         description: 認証エラー
         content:
           application/json:
             schema:
-              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
       "422":
         description: ドメインルールエラー
         content:
           application/json:
             schema:
-              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
       "500":
         description: サーバーエラー
         content:
           application/json:
             schema:
-              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
 
 /todos/{todoId}:
   get:
@@ -109,19 +109,19 @@
         content:
           application/json:
             schema:
-              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
       "404":
         description: TODOが存在しない
         content:
           application/json:
             schema:
-              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
       "500":
         description: サーバーエラー
         content:
           application/json:
             schema:
-              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
   patch:
     tags:
       - todos
@@ -153,37 +153,37 @@
         content:
           application/json:
             schema:
-              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
       "401":
         description: 認証エラー
         content:
           application/json:
             schema:
-              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
       "403":
         description: アクセス拒否、権限エラー
         content:
           application/json:
             schema:
-              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
       "404":
         description: TODOが存在しない
         content:
           application/json:
             schema:
-              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
       "422":
         description: ドメインルールエラー
         content:
           application/json:
             schema:
-              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
       "500":
         description: サーバーエラー
         content:
           application/json:
             schema:
-              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
   delete:
     tags:
       - todos
@@ -205,22 +205,22 @@
         content:
           application/json:
             schema:
-              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
       "403":
         description: アクセス拒否、権限エラー
         content:
           application/json:
             schema:
-              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
       "404":
         description: TODOが存在しない
         content:
           application/json:
             schema:
-              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
       "500":
         description: サーバーエラー
         content:
           application/json:
             schema:
-              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"

@@ -27,19 +27,19 @@
         content:
           application/json:
             schema:
-              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
       "404":
         description: TODOが存在しない
         content:
           application/json:
             schema:
-              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
       "500":
         description: サーバーエラー
         content:
           application/json:
             schema:
-              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
 
 /todos/{todoId}/attachments/prepare:
   post:
@@ -77,31 +77,31 @@
         content:
           application/json:
             schema:
-              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
       "401":
         description: 認証エラー
         content:
           application/json:
             schema:
-              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
       "404":
         description: TODOが存在しない
         content:
           application/json:
             schema:
-              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
       "422":
         description: ドメインルールエラー
         content:
           application/json:
             schema:
-              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
       "500":
         description: サーバーエラー
         content:
           application/json:
             schema:
-              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
 
 /todos/{todoId}/attachments/{attachmentId}:
   get:
@@ -135,19 +135,19 @@
         content:
           application/json:
             schema:
-              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
       "404":
         description: 添付ファイルが存在しない
         content:
           application/json:
             schema:
-              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
       "500":
         description: サーバーエラー
         content:
           application/json:
             schema:
-              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
   patch:
     tags:
       - attachments
@@ -186,37 +186,37 @@
         content:
           application/json:
             schema:
-              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
       "401":
         description: 認証エラー
         content:
           application/json:
             schema:
-              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
       "403":
         description: アクセス拒否、権限エラー
         content:
           application/json:
             schema:
-              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
       "404":
         description: 添付ファイルが存在しない
         content:
           application/json:
             schema:
-              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
       "422":
         description: ドメインルールエラー
         content:
           application/json:
             schema:
-              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
       "500":
         description: サーバーエラー
         content:
           application/json:
             schema:
-              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
   delete:
     tags:
       - attachments
@@ -245,25 +245,25 @@
         content:
           application/json:
             schema:
-              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
       "403":
         description: アクセス拒否、権限エラー
         content:
           application/json:
             schema:
-              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
       "404":
         description: 添付ファイルが存在しない
         content:
           application/json:
             schema:
-              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
       "500":
         description: サーバーエラー
         content:
           application/json:
             schema:
-              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
 
 /todos/{todoId}/attachments/{attachmentId}/download-url:
   get:
@@ -298,22 +298,22 @@
         content:
           application/json:
             schema:
-              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
       "403":
         description: アクセス拒否、権限エラー
         content:
           application/json:
             schema:
-              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
       "404":
         description: 添付ファイルが存在しない
         content:
           application/json:
             schema:
-              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
       "500":
         description: サーバーエラー
         content:
           application/json:
             schema:
-              $ref: "../shared/error.schemas.yaml#/ErrorResponse"
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
