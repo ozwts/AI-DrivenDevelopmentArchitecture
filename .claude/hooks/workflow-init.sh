@@ -137,7 +137,9 @@ echo '```'
 echo "mcp__guardrails__procedure_workflow(action='set', tasks=[...])"
 echo '```'
 echo ""
-echo "**重要**: Goal登録 → 深掘りインタビュー → 要件登録 → タスク計画 → タスク登録の順序を守ること。"
+echo "**重要**: "
+echo "- Goal登録 → 深掘りインタビュー → 要件登録 → タスク計画 → タスク登録の順序を守ること"
+echo "- **サブエージェントから提案された全タスクを省略せずにそのまま登録すること。タスクを集約・省略してはならない**"
 echo ""
 echo "### Step 7: タスク実行"
 echo ""
