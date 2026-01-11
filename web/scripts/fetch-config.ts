@@ -145,8 +145,8 @@ export type GeneratedEnv = typeof generatedEnv;
 const main = async (): Promise<void> => {
   // 引数解析
   const args = process.argv.slice(2);
-  const env = args[0] ?? "dev";
-  const branchSuffix = args[1];
+  const env = args.at(0) ?? "dev";
+  const branchSuffix = args.at(1);
 
   // パスプレフィックス構築
   const resourcePrefix = branchSuffix !== undefined
