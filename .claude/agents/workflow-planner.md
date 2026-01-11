@@ -163,10 +163,19 @@ runbook「ユースケースの実装」ステップで2つのユースケース
 以下は契約フェーズの例:
 
 ```
-N. **What**: 後続フェーズ（Frontend/Server/Infra/E2E）の作業計画を見直す
+N. **What**: 後続フェーズ（Policy/Frontend/Server/Infra/E2E）の作業計画を見直す
    - **Why**: 契約フェーズで得られた知見（設計変更、追加要件など）を後続タスクに反映するため
    - **Done when**: 後続タスクの追加・削除・修正を完了、または見直し不要を確認
    - **Ref**: `procedure/workflow/runbooks/20-contract.md`
+```
+
+以下はポリシーフェーズの例:
+
+```
+N. **What**: 後続フェーズ（Frontend/Server/Infra/E2E）の作業計画を見直す
+   - **Why**: ポリシーフェーズで得られた知見（新設ポリシー、制約変更など）を後続タスクに反映するため
+   - **Done when**: 後続タスクの追加・削除・修正を完了、または見直し不要を確認
+   - **Ref**: `procedure/workflow/runbooks/30-policy.md`
 ```
 
 ### 注意事項

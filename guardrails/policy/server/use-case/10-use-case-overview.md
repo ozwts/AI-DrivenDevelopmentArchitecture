@@ -2,7 +2,7 @@
 
 ## 核心原則
 
-1. **1つのユーザーアクション = 1つのユースケース**として実装
+1. **1シナリオ = 1ユースケース**として実装（ビジネス契約から1対1で導出）
 2. **Result型で成功/失敗を明示的に表現**
 3. **executeメソッドで書き切る**（プライベートメソッドを作らず、全体の流れをexecuteメソッド内に記述）
 
@@ -330,4 +330,16 @@ if (input.name.length === 0) {
 
 // 複数のアクションを1つに含める
 // manage-project-use-case.ts（作成・削除・更新を全て含む）
+
+// 異なるビジネス意図を汎用化する
+class ChangeRoleUseCaseImpl {
+  async execute(input: { memberId: string; newRole: string }) {
+    if (input.newRole === 'owner') {
+      // 昇格ロジック
+    } else {
+      // 降格ロジック ← 異なる意図・権限・制約を条件分岐で処理
+    }
+  }
+}
+// ✅ 正しくは PromoteToOwnerUseCase と DemoteFromOwnerUseCase に分離
 ```
