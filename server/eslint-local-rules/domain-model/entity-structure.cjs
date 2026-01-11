@@ -2,6 +2,7 @@
  * Entity構造要件チェック
  *
  * domain/model 内のEntityファイル（.vo.ts, .repository.ts, .dummy.ts, .test.ts以外）:
+ * - idプロパティ必須（複合キー禁止）
  * - privateコンストラクタ
  * - すべてのプロパティがreadonly
  * - {ClassName}Props型エイリアスの存在
@@ -9,6 +10,7 @@
  * - インスタンスメソッドがvoidを返さない（新インスタンス返却）
  * - set/change/updateプレフィックス禁止（ドメインの言葉を使う）
  *
+ * 参照: guardrails/policy/server/domain-model/20-entity-overview.md
  * 参照: guardrails/policy/server/domain-model/22-entity-implementation.md
  */
 
@@ -28,6 +30,8 @@ module.exports = {
     },
     schema: [],
     messages: {
+      missingIdProperty:
+        "Entity '{{className}}' must have 'readonly id: string' property. Composite keys are prohibited. See: 20-entity-overview.md",
       missingPrivateConstructor:
         "Entity must have a private constructor. See: 22-entity-implementation.md",
       missingFromMethod:
@@ -80,8 +84,17 @@ module.exports = {
 
         let hasPrivateConstructor = false;
         let hasFromMethod = false;
+        let hasIdProperty = false;
 
         for (const member of classBody) {
+          // id プロパティ（readonly id: string）
+          if (
+            member.type === "PropertyDefinition" &&
+            member.key?.name === "id" &&
+            member.readonly
+          ) {
+            hasIdProperty = true;
+          }
           // private constructor
           if (
             member.type === "MethodDefinition" &&
@@ -149,6 +162,13 @@ module.exports = {
           }
         }
 
+        if (!hasIdProperty) {
+          context.report({
+            node,
+            messageId: "missingIdProperty",
+            data: { className },
+          });
+        }
         if (!hasPrivateConstructor) {
           context.report({ node, messageId: "missingPrivateConstructor" });
         }

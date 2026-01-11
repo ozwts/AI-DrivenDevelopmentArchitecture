@@ -85,3 +85,93 @@ main
 - ブランチ名から環境名のハッシュを生成
 - `feature/xxx` → `sandbox-dev-{hash}-*`
 - 各ブランチで独立した検証環境を構築可能
+
+---
+
+## コミット規約
+
+### フェーズごとのコミット
+
+各フェーズ完了時にコミット・プッシュを行う。フェーズの成果物を1コミットにまとめる。
+
+### コミットメッセージ形式
+
+```
+{prefix}({scope}): {簡潔な説明}
+
+{詳細（任意）}
+```
+
+### Prefix（フェーズ対応）
+
+| Prefix | フェーズ | 用途 |
+|--------|----------|------|
+| `contract` | 契約 | ビジネス契約・API契約の追加・変更 |
+| `policy` | ポリシー | ポリシーの追加・変更 |
+| `feat` | Frontend/Server | 新機能の実装 |
+| `fix` | Frontend/Server | バグ修正 |
+| `refactor` | Frontend/Server | リファクタリング |
+| `test` | E2E | テストの追加・修正 |
+| `infra` | Infra | インフラ構成の変更 |
+| `docs` | - | ドキュメントのみの変更 |
+| `chore` | - | その他（依存更新、設定変更など） |
+
+### Scope（対象領域）
+
+| Scope | 対象 |
+|-------|------|
+| `business` | contracts/business/ |
+| `api` | contracts/api/ |
+| `web` | web/src/ |
+| `server` | server/src/ |
+| `infra` | infra/ |
+| `e2e` | e2e/ |
+| `policy` | guardrails/policy/ |
+
+### 良いコミット例
+
+```
+contract(business): プロジェクトメンバー招待シナリオを追加
+
+- invite-member.md を作成
+- glossary.md にメンバーロールを追加
+```
+
+```
+feat(server): InviteMemberUseCaseを実装
+
+- ドメインモデル: ProjectMember, MemberRole
+- ユースケース: InviteMemberUseCase
+- リポジトリ: ProjectMemberRepository
+```
+
+```
+feat(web): メンバー招待ダイアログを実装
+
+- InviteMemberDialog コンポーネント
+- useInviteMember フック
+- CTテスト・SSテスト
+```
+
+### 悪いコミット例
+
+```
+update  ← 何を更新したか不明
+```
+
+```
+fix     ← 何を修正したか不明
+```
+
+```
+WIP     ← 中間状態をコミットしない
+```
+
+### コミットタイミング
+
+| タイミング | 推奨 |
+|-----------|------|
+| フェーズ完了時 | ✅ 必須 |
+| 大きな機能単位 | ✅ 推奨 |
+| 作業途中（WIP） | ❌ 避ける |
+| 動作しない状態 | ❌ 禁止 |
