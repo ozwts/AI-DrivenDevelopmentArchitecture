@@ -138,7 +138,7 @@ mcp__guardrails__review_qualitative(
 
 ## ステップ 9: テストの実装
 
-**ポリシー:** `guardrails/policy/co-evolution/testing-principles.md`
+**ポリシー:** `guardrails/constitution/co-evolution/testing-principles.md`
 
 ```
 mcp__guardrails__procedure_test(target='server')

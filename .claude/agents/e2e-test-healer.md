@@ -82,10 +82,6 @@ mcp__guardrails__procedure_deploy_dev(action='deploy', initialDeploy=true)
 ## 4. 判断
 
 7. **修正対象の判断**: `50-test-repair.md` の判断基準に従い、何を修正すべきか決定
-   - テストの問題 → テスト修正
-   - アプリのバグ → アプリ修正
-   - UX問題 → UI設計修正
-   - 環境問題 → 環境設定修正
 
 ## 5. 修正
 
@@ -100,12 +96,7 @@ mcp__guardrails__procedure_deploy_dev(action='deploy', initialDeploy=true)
 
 # 制約
 
-| 制約 | 理由 |
-|------|------|
-| XPath/CSSセレクタ禁止 | ポリシー違反 |
-| Page Object経由必須 | 保守性確保 |
-| `networkidle` 禁止 | 非推奨API |
-| 質問しない | 最も合理的な対応を自律実施 |
+`guardrails/policy/e2e/playwright/` のポリシーに従うこと。質問せず最も合理的な対応を自律実施する。
 
 # 解決困難な場合
 

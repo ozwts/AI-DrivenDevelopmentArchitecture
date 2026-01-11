@@ -125,12 +125,8 @@ Playwright MCPで実際の画面を確認しながら、UIをブラッシュア�
 
 **チェック観点:**
 
-- `guardrails/constitution/user-first/user-first-principles.md` - ユーザーファースト原則
-- `guardrails/policy/web/design/` - デザイン4原則（整列・近接・対比・反復）
-
-**確認する画面状態:**
-
-- 初期状態、入力中、エラー状態、成功状態、空状態
+- `guardrails/constitution/user-first/user-first-principles.md`
+- `guardrails/policy/web/design/`
 
 ---
 

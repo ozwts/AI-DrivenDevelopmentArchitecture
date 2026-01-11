@@ -62,7 +62,7 @@ Glob: guardrails/procedure/workflow/runbooks/*.md
    - **Done when**: シナリオ定義完了、用語集との整合性確認
    - **Ref**: `procedure/workflow/runbooks/20-contract.md`
 
-2. **What**: contracts/api/project/member.paths.yaml を作成
+2. **What**: contracts/api/todo-app/project/member.paths.yaml を作成
    - **Why**: メンバー管理APIの契約を定義するため
    - **Done when**: OpenAPI仕様完成、ポリシーに準拠
    - **Ref**: `procedure/workflow/runbooks/20-contract.md`

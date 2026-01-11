@@ -18,15 +18,7 @@
 
 **ポリシー:** `guardrails/policy/infra/terraform/`
 
-- `10-terraform-overview.md` - 全体方針
-- `20-environment.md` - 環境分離
-- `30-module.md` - モジュール設計
-- `40-protection.md` - 保護戦略
-- `50-validation.md` - 検証パイプライン
-
 **実装先:** `infra/terraform/`
-
-→ ポリシーに則って実装
 
 ---
 

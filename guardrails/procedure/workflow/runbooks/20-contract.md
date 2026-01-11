@@ -13,7 +13,7 @@
 
 - `contracts/business/glossary.md` - 用語集
 - `contracts/business/` - 既存ビジネス契約
-- `contracts/api/todo.openapi.yaml` - 既存API契約
+- `contracts/api/` - 既存API契約
 
 ---
 
@@ -57,15 +57,9 @@ mcp__guardrails__review_qualitative(
 
 **作成するもの:**
 
-- `{domain}/components.yaml` - スキーマ定義
-- `{domain}/{resource}.paths.yaml` - エンドポイント定義
-- `entry.yaml` への参照追加
-
-**設計原則:**
-
-1. **リソース指向**: 名詞でリソースを表現（`/todos`, `/projects`）
-2. **HTTPメソッド**: GET/POST/PUT/PATCH/DELETE を適切に使用
-3. **ステータスコード**: 200, 201, 400, 401, 403, 404, 500 を適切に返却
+- `{app-name}/{aggregate}/{entity}.schemas.yaml` - スキーマ定義
+- `{app-name}/{aggregate}/{entity}.paths.yaml` - エンドポイント定義
+- `{app-name}/{app-name}.entry.yaml` への参照追加
 
 ---
 
