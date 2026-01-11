@@ -123,6 +123,13 @@ mcp__guardrails__review_qualitative(
 
 Playwright MCPで実際の画面を確認しながら、UIをブラッシュアップする。
 
+```
+Task(
+  subagent_type='designer',
+  prompt='以下の画面のデザインをブラッシュアップしてください: {追加・修正した画面のパス一覧}'
+)
+```
+
 **チェック観点:**
 
 - `guardrails/constitution/user-first/user-first-principles.md`
@@ -130,7 +137,7 @@ Playwright MCPで実際の画面を確認しながら、UIをブラッシュア�
 
 ---
 
-## ステップ 9: テストの実装
+## ステップ 9: コンポーネントテストの実装
 
 **ポリシー:**
 
@@ -138,14 +145,37 @@ Playwright MCPで実際の画面を確認しながら、UIをブラッシュア�
 - `guardrails/policy/web/route/40-test-patterns.md`
 - `guardrails/policy/web/ui/50-test-pattern.md`
 
+**実装先:** 各コンポーネントと同階層に `*.ct.test.tsx` を作成
+
 ```
 mcp__guardrails__procedure_test(target='web-component')
-mcp__guardrails__procedure_snapshot(action='update', file='...')
 ```
 
 ---
 
-## ステップ 10: 最終検証
+## ステップ 10: スナップショットテストの実装
+
+**ポリシー:**
+
+- `guardrails/policy/web/component/40-test-patterns.md`
+- `guardrails/policy/web/route/40-test-patterns.md`
+- `guardrails/policy/web/ui/50-test-pattern.md`
+
+**実装先:** ルートディレクトリ直下に `route.ss.test.ts` を作成
+
+```
+mcp__guardrails__procedure_snapshot(action='update', file='...')
+```
+
+**スナップショット確認:** 取得したスナップショットファイルを読み、想定通りの内容か確認すること。
+
+- レイアウト崩れ、不要な要素、欠落がないか
+- テストケース名と内容が一致しているか
+- 問題があれば修正して再取得
+
+---
+
+## ステップ 11: 最終検証
 
 ```
 mcp__guardrails__review_static_analysis(workspace='web', targetDirectories=['web/src/'])
@@ -168,7 +198,7 @@ mcp__guardrails__procedure_dev(action='start', mode='mock')
 
 ---
 
-## ステップ 11: フェーズ完了チェックポイント
+## ステップ 12: フェーズ完了チェックポイント
 
 このフェーズで得られた知見を踏まえ、後続タスクの計画を見直す。
 

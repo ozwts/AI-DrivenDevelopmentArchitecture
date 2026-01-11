@@ -39,23 +39,42 @@
 
 ## 設計原則
 
-### 1. 親IDを子エンティティに含めない
+### 1. 子エンティティに親IDを含めない
 
 子エンティティのドメインモデルには親のIDを含めない。親子関係は永続化層で管理する。
 
+**違反の検出方法**: 子エンティティに`{親Entity名}Id`というプロパティがある場合は違反。
+
 ```typescript
-// ❌ 子エンティティに親IDを含める
+// ❌ Bad: 子エンティティに親IDを含める
 export class Attachment {
-  readonly todoId: string; // ドメインモデルには不要
+  readonly todoId: string; // ❌ 親IDはドメインモデルに不要
 }
 
-// Good
+export class ProjectMember {
+  readonly projectId: string; // ❌ 親IDはドメインモデルに不要
+  readonly userId: string;
+}
+
+// ✅ Good: 親IDを含めない
 export class Attachment {
-  readonly id: string;
+  readonly id: string;      // 子エンティティもIDを持つ
   readonly fileName: string;
   // todoIdは永続化層で管理
 }
+
+export class ProjectMember {
+  readonly id: string;      // 子エンティティもIDを持つ
+  readonly userId: string;  // 別集約への参照はOK
+  readonly role: MemberRole;
+  // projectIdは永続化層で管理
+}
 ```
+
+**なぜ親IDを含めないのか**:
+- 親子関係は集約ルートが管理する責務
+- 永続化層で親子関係をマッピングする
+- ドメインモデルをシンプルに保つ
 
 ### 2. 集約ルートで子エンティティを保持
 
@@ -76,12 +95,16 @@ export class Todo {
 }
 ```
 
-### 3. リポジトリは集約単位で作る
+### 3. リポジトリは集約単位で作る（1集約 = 1リポジトリ）
 
-子エンティティ専用のリポジトリは作らない。
+**禁止**: 子エンティティ専用のリポジトリを作成してはならない。
+
+**違反の検出方法**:
+- `{子Entity名}Repository`というファイル・型が存在する場合は違反
+- ビジネス契約の「集約」セクションで「子エンティティ」と定義されたエンティティに専用リポジトリがある場合は違反
 
 ```typescript
-// Good: 集約ルート単位
+// ✅ Good: 集約ルート単位
 export type TodoRepository = {
   todoId(): string;
   attachmentId(): string; // 子エンティティのID生成も提供
@@ -89,9 +112,22 @@ export type TodoRepository = {
   save(props: { todo: Todo }): Promise<SaveResult>;
 };
 
-// ❌ 子エンティティ専用リポジトリ
+export type ProjectRepository = {
+  projectId(): string;
+  projectMemberId(): string; // 子エンティティのID生成も提供
+  findById(props: { id: string }): Promise<FindByIdResult>;
+  save(props: { project: Project }): Promise<SaveResult>;
+};
+
+// ❌ Bad: 子エンティティ専用リポジトリ
 export type AttachmentRepository = { ... };
+export type ProjectMemberRepository = { ... };
 ```
+
+**なぜ子エンティティ専用リポジトリを禁止するのか**:
+- 集約の整合性境界が崩れる
+- トランザクション境界が曖昧になる
+- 親子関係の一貫性を保証できなくなる
 
 ### 4. 集約のサイズ制限（階層の深さ）
 
@@ -164,19 +200,21 @@ const updated = todo.removeAttachment("att-123", now);
 ### Bad
 
 ```typescript
-// 子エンティティに親IDを含める
-export class Attachment {
-  readonly todoId: string; // ❌ ドメインモデルには不要
+// ❌ 子エンティティに親IDを含める → 設計原則1参照
+export class ProjectMember {
+  readonly projectId: string; // ❌ 親IDはドメインモデルに不要
 }
 
-// 別の集約をオブジェクト参照
+// ❌ 別の集約をオブジェクト参照
 export class Todo {
   readonly project: Project; // ❌ ID参照にすべき
 }
 
-// 子エンティティを直接操作
+// ❌ 子エンティティを直接操作
 attachment.update({ fileName: "..." }); // ❌ 集約ルート経由にすべき
 
-// 子エンティティ専用リポジトリ
-export type AttachmentRepository = { ... }; // ❌ 親リポジトリに統合
+// ❌ 子エンティティ専用リポジトリ → 設計原則3参照
+export type ProjectMemberRepository = { ... }; // ❌ ProjectRepositoryに統合
 ```
+
+**注**: Entityの識別子（ID）に関するルールは `20-entity-overview.md` を参照。

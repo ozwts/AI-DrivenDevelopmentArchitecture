@@ -4,6 +4,48 @@
 
 Entityは**識別子（ID）を持つ不変ドメインオブジェクト**であり、**Value Objectを保持**して常に正しい状態を維持する。
 
+## 識別子（ID）の原則
+
+### すべてのEntityは`id`プロパティを持つ
+
+**必須**: すべてのEntity（集約ルート・子エンティティ問わず）は`id: string`プロパティを持つ。
+
+```typescript
+// ✅ Good: idプロパティを持つ
+export class ProjectMember {
+  readonly id: string;        // 必須
+  readonly userId: string;    // 別集約への参照
+  readonly role: MemberRole;
+}
+
+// ❌ Bad: idがない（複合キーで識別）
+export class ProjectMember {
+  readonly projectId: string; // ❌ 親IDで識別しようとしている
+  readonly userId: string;    // ❌ 複合キーで識別しようとしている
+}
+```
+
+### 複合キーは禁止
+
+**禁止**: 複数のフィールドの組み合わせでエンティティを識別する設計は禁止。
+
+**理由**:
+- 識別の一貫性が失われる
+- 集約パターンとの整合性が取れない
+- リポジトリのID生成責務が曖昧になる
+
+```typescript
+// ❌ Bad: 複合キーでの識別
+equals(other: ProjectMember): boolean {
+  return this.projectId === other.projectId && this.userId === other.userId;
+}
+
+// ✅ Good: idでの識別
+equals(other: ProjectMember): boolean {
+  return this.id === other.id;
+}
+```
+
 ## 関連ドキュメント
 
 | トピック           | ファイル                          |
@@ -141,6 +183,21 @@ export class Todo {
 ### ❌ Bad
 
 ```typescript
+// idがない（複合キーで識別）
+export class ProjectMember {
+  readonly projectId: string;
+  readonly userId: string;
+  // ❌ id: string がない → Entityには必ずidが必要
+}
+
+// 複合キーでの等価判定
+export class ProjectMember {
+  equals(other: ProjectMember): boolean {
+    // ❌ 複合キーでの識別は禁止
+    return this.projectId === other.projectId && this.userId === other.userId;
+  }
+}
+
 // mutableなプロパティ
 export class Todo {
   id: string; // ❌ readonlyがない
