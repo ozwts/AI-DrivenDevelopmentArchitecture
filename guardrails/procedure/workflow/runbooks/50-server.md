@@ -50,6 +50,8 @@ mcp__guardrails__review_static_analysis(
 
 **実装先:** `server/src/domain/model/`
 
+**完了条件:** 静的解析パス、定性レビューパス、コミット
+
 ---
 
 ## ステップ 4: DynamoDBスキーマの更新（必要な場合）
@@ -58,6 +60,8 @@ mcp__guardrails__review_static_analysis(
 
 - `server/src/util/testing-util/dynamodb.ts` - テスト用スキーマ
 - `infra/terraform/modules/aws/db/tables.tf` - Terraform（同期必須）
+
+**完了条件:** インフラ静的解析パス、コミット
 
 ---
 
@@ -70,6 +74,8 @@ mcp__guardrails__review_static_analysis(
 - `server/src/domain/model/*/` - インターフェース
 - `server/src/infrastructure/repository/` - 実装
 
+**完了条件:** 静的解析パス、定性レビューパス、コミット
+
 ---
 
 ## ステップ 6: ユースケースの実装
@@ -77,6 +83,8 @@ mcp__guardrails__review_static_analysis(
 **ポリシー:** `guardrails/policy/server/use-case/`
 
 **実装先:** `server/src/application/use-case/`
+
+**完了条件:** 静的解析パス、定性レビューパス、コミット
 
 ---
 
@@ -92,9 +100,11 @@ mcp__guardrails__review_static_analysis(
 - `server/src/handler/hono-handler/`
 - `server/src/di-container/`
 
+**完了条件:** 静的解析パス、定性レビューパス（各ポリシーを並列実行）、コミット
+
 ---
 
-## ステップ 7b: Portの追加・修正（必要な場合）
+## ステップ 8: Portの追加・修正（必要な場合）
 
 **ポリシー:**
 
@@ -108,31 +118,7 @@ mcp__guardrails__review_static_analysis(
 
 ポリシーが存在しない新概念は、先にポリシーを起草し人間のレビューを受けること。
 
----
-
-## ステップ 8: レビュー
-
-→ `10-development-overview.md` の「レビューと修正」を参照
-
-### 8-1: 静的解析
-
-```
-mcp__guardrails__review_static_analysis(
-  workspace='server',
-  targetDirectories=['{実装先ディレクトリ}']
-)
-```
-
-### 8-2: 定性レビュー
-
-修正内容に応じた観点でポリシーレビューを実施する。
-
-```
-mcp__guardrails__review_qualitative(
-  policyId='{修正内容に応じたポリシーID}',
-  targetDirectories=['{実装先ディレクトリ}']
-)
-```
+**完了条件:** 静的解析パス、定性レビューパス（該当ポリシーを並列実行）、コミット
 
 ---
 
@@ -143,6 +129,8 @@ mcp__guardrails__review_qualitative(
 ```
 mcp__guardrails__procedure_test(target='server')
 ```
+
+**完了条件:** テスト成功、コミット
 
 ---
 
@@ -155,8 +143,9 @@ mcp__guardrails__procedure_fix(workspace='server')
 mcp__guardrails__procedure_dev(action='start', mode='full')
 ```
 
-今回実装した箇所に関わる全ての観点で定性レビューを実施する。
-サブエージェントを使って並列実行可能。
+今回実装した箇所に関わる全ての観点で定性レビューを実施する（並列実行可能）。
+
+**完了条件:** 全レビューパス、開発サーバー起動確認
 
 ---
 

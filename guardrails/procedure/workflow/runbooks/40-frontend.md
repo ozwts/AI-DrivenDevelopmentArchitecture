@@ -48,6 +48,8 @@ mcp__guardrails__review_static_analysis(
 
 **実装先:** `web/src/mocks/`
 
+**完了条件:** 静的解析パス、定性レビューパス、コミット
+
 ---
 
 ## ステップ 4: ルート実装
@@ -60,6 +62,8 @@ mcp__guardrails__review_static_analysis(
 
 **実装先:** `web/src/app/routes/`
 
+**完了条件:** 静的解析パス、定性レビューパス（各ポリシーを並列実行）、コミット
+
 ---
 
 ## ステップ 5: Feature抽出（必要な場合）
@@ -71,6 +75,8 @@ mcp__guardrails__review_static_analysis(
 
 **実装先:** `web/src/app/features/`
 
+**完了条件:** 静的解析パス、定性レビューパス（各ポリシーを並列実行）、コミット
+
 ---
 
 ## ステップ 6: 共有UIコンポーネント（必要な場合）
@@ -79,9 +85,11 @@ mcp__guardrails__review_static_analysis(
 
 **実装先:** `web/src/app/lib/ui/`
 
+**完了条件:** 静的解析パス、定性レビューパス、コミット
+
 ---
 
-## ステップ 6b: 基盤（lib）などの追加・修正（必要な場合）
+## ステップ 7: 基盤（lib）などの追加・修正（必要な場合）
 
 **ポリシー:** `guardrails/policy/web/lib/`
 
@@ -89,31 +97,7 @@ mcp__guardrails__review_static_analysis(
 
 ポリシーが存在しない新概念は、先にポリシーを起草し人間のレビューを受けること。
 
----
-
-## ステップ 7: レビュー
-
-→ `10-development-overview.md` の「レビューと修正」を参照
-
-### 7-1: 静的解析
-
-```
-mcp__guardrails__review_static_analysis(
-  workspace='web',
-  targetDirectories=['{実装先ディレクトリ}']
-)
-```
-
-### 7-2: 定性レビュー
-
-修正内容に応じた観点でポリシーレビューを実施する。
-
-```
-mcp__guardrails__review_qualitative(
-  policyId='{修正内容に応じたポリシーID}',
-  targetDirectories=['{実装先ディレクトリ}']
-)
-```
+**完了条件:** 静的解析パス、定性レビューパス（該当ポリシーを並列実行）、コミット
 
 ---
 
@@ -136,6 +120,8 @@ Task(
 - `guardrails/constitution/user-first/user-first-principles.md`
 - `guardrails/policy/web/design/`
 
+**完了条件:** designerサブエージェント完了、コミット
+
 ---
 
 ## ステップ 9: コンポーネントテストの実装
@@ -151,6 +137,8 @@ Task(
 ```
 mcp__guardrails__procedure_test(target='web-component')
 ```
+
+**完了条件:** テスト成功、コミット
 
 ---
 
@@ -174,6 +162,8 @@ mcp__guardrails__procedure_snapshot(action='update', file='...')
 - テストケース名と内容が一致しているか
 - 問題があれば修正して再取得
 
+**完了条件:** スナップショット確認OK、コミット
+
 ---
 
 ## ステップ 11: 最終検証
@@ -185,8 +175,9 @@ mcp__guardrails__procedure_fix(workspace='web')
 mcp__guardrails__procedure_dev(action='start', mode='mock')
 ```
 
-今回実装した箇所に関わる全ての観点で定性レビューと修正を実施する。
-サブエージェントを使って並列実行を推奨。
+今回実装した箇所に関わる全ての観点で定性レビューを実施する（並列実行可能）。
+
+**完了条件:** 全レビューパス、開発サーバー起動確認
 
 ---
 

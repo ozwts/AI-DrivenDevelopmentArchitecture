@@ -20,35 +20,11 @@
 
 **実装先:** `infra/terraform/`
 
----
-
-## ステップ 2: レビュー
-
-→ `10-development-overview.md` の「レビューと修正」を参照
-
-### 2-1: 静的解析
-
-```
-mcp__guardrails__review_infra_static_analysis(
-  targetDirectory='infra/terraform/environments/dev',
-  analysisType='all'
-)
-```
-
-### 2-2: 定性レビュー
-
-修正内容に応じた観点でポリシーレビューを実施する。
-
-```
-mcp__guardrails__review_qualitative(
-  policyId='{修正内容に応じたポリシーID}',
-  targetDirectories=['{実装先ディレクトリ}']
-)
-```
+**完了条件:** 静的解析パス、定性レビューパス、コミット
 
 ---
 
-## ステップ 3: デプロイ
+## ステップ 2: デプロイ
 
 ### 差分確認（Plan）
 
@@ -80,9 +56,11 @@ mcp__guardrails__procedure_deploy_dev(
 )
 ```
 
+**完了条件:** Plan成功、Apply成功、Destroy成功
+
 ---
 
-## ステップ 4: 最終検証
+## ステップ 3: 最終検証
 
 ```
 mcp__guardrails__review_infra_static_analysis(
@@ -92,11 +70,13 @@ mcp__guardrails__review_infra_static_analysis(
 mcp__guardrails__procedure_fix(workspace='infra')
 ```
 
-今回実装した箇所に関わる全ての観点で定性レビューを実施する。
+今回実装した箇所に関わる全ての観点で定性レビューを実施する（並列実行可能）。
+
+**完了条件:** 全レビューパス
 
 ---
 
-## ステップ 5: フェーズ完了チェックポイント
+## ステップ 4: フェーズ完了チェックポイント
 
 このフェーズで得られた知見を踏まえ、後続タスクの計画を見直す。
 
@@ -125,8 +105,8 @@ mcp__guardrails__procedure_workflow(action='set', tasks=[
 
 ## 完了条件
 
-- 静的解析（format, lint, security）を通過
-- ポリシーレビューを通過
+- 静的解析（format, lint, security）通過
+- ポリシーレビュー通過
 - Plan で意図した変更のみ表示
-- Apply が成功
-- Destroy が成功
+- Apply 成功
+- Destroy 成功

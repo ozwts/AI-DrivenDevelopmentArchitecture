@@ -32,24 +32,11 @@
 
 新しいドメイン用語がある場合は `contracts/business/glossary.md` を更新
 
----
-
-## ステップ 2: ビジネス契約のレビュー
-
-### 2-1: 定性レビュー
-
-```
-mcp__guardrails__review_qualitative(
-  policyId='contract/business',
-  targetDirectories=['contracts/business/{domain}/']
-)
-```
-
-→ 違反があれば修正し、再レビュー
+**完了条件:** 定性レビューパス、コミット
 
 ---
 
-## ステップ 3: API契約の定義
+## ステップ 2: API契約の定義
 
 **ポリシー:** `guardrails/policy/contract/api/`
 
@@ -61,55 +48,14 @@ mcp__guardrails__review_qualitative(
 - `{app-name}/{aggregate}/{entity}.paths.yaml` - エンドポイント定義
 - `{app-name}/{app-name}.entry.yaml` への参照追加
 
----
-
-## ステップ 4: API契約のレビュー
-
-### 4-1: 静的解析
-
-```
-mcp__guardrails__review_static_analysis(
-  workspace='server',
-  targetDirectories=['contracts/api/'],
-  analysisType='lint'
-)
-```
-
-### 4-2: 定性レビュー
-
-```
-mcp__guardrails__review_qualitative(
-  policyId='contract/api',
-  targetDirectories=['contracts/api/']
-)
-```
-
-→ 違反があれば修正し、再レビュー
+**完了条件:** 静的解析パス、定性レビューパス、コミット
 
 ---
 
-## ステップ 5: コード生成
+## ステップ 3: コード生成
 
 ```
 mcp__guardrails__procedure_codegen(workspace='all')
-```
-
----
-
-## ステップ 6: 影響範囲の検証
-
-```
-mcp__guardrails__review_static_analysis(
-  workspace='server',
-  targetDirectories=['server/src/'],
-  analysisType='type-check'
-)
-
-mcp__guardrails__review_static_analysis(
-  workspace='web',
-  targetDirectories=['web/src/'],
-  analysisType='type-check'
-)
 ```
 
 ---
@@ -129,7 +75,7 @@ mcp__guardrails__review_static_analysis(
 
 ---
 
-## ステップ 7: フェーズ完了チェックポイント
+## ステップ 4: フェーズ完了チェックポイント
 
 このフェーズで得られた知見を踏まえ、後続タスクの計画を見直す。
 
@@ -158,9 +104,7 @@ mcp__guardrails__procedure_workflow(action='set', tasks=[
 
 ## 完了条件
 
-- ビジネス契約が文書化されている
-- ビジネス契約のポリシーレビューを通過している
-- OpenAPI仕様が定義されている
-- API契約のポリシーレビューを通過している
-- コード生成が完了している
-- 型チェックを通過している
+- ビジネス契約定義完了
+- API契約定義完了
+- コード生成完了
+- ポリシーレビュー通過
