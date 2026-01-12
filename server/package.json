@@ -12,7 +12,7 @@
     "fix": "run-s fix:*",
     "fix:format": "prettier --cache --write '**/*.{ts,json,yml,yaml,md}'",
     "fix:lint": "eslint --cache --max-warnings 0 --fix \"**/*.ts\"",
-    "setup:db": "docker compose up -d --remove-orphans && wait-on tcp:8000 -t 30000 && sleep 2",
+    "setup:db": "docker ps -q -f name=dynamodb-local -f status=running | grep -q . || (docker compose up -d --remove-orphans && wait-on tcp:8000 -t 30000 && sleep 2)",
     "sort": "sort-package-json",
     "update:pkgs": "ncu -u",
     "start": "tsx src/handler/lambda-handler.ts",
