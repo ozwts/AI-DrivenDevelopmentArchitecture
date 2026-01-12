@@ -5,6 +5,14 @@
  * MCPサーバーのプロセス内で永続化
  */
 
+import {
+  type Phase,
+  type Scope,
+  getPhasesForScope,
+  getNextPhase as getNextPhaseFromDefinition,
+  isPhaseInScope as isPhaseInScopeFromDefinition,
+} from "./phases";
+
 /**
  * 要件定義
  *
@@ -38,10 +46,12 @@ export type WorkflowTask = {
   why: string;
   /** 完了条件 */
   doneWhen: string;
-  /** 参照先runbook相対パス（例: "procedure/workflow/runbooks/50-server.md"） */
-  ref?: string;
+  /** 参照先runbook相対パス（例: ["procedure/workflow/runbooks/50-server-domain.md"]） */
+  refs?: string[];
   /** 完了状態（計画見直し時に完了済みタスクを保持するために使用） */
   done?: boolean;
+  /** 所属フェーズ（オプション） */
+  phase?: Phase;
 };
 
 /**
@@ -67,6 +77,28 @@ export type Notes = {
 };
 
 /**
+ * フェーズ状態
+ */
+export type PhaseState = {
+  /** 現在のフェーズ */
+  current: Phase | null;
+  /** 完了したフェーズ */
+  completed: Phase[];
+  /** 実装スコープ */
+  scope: Scope;
+};
+
+/**
+ * PR情報
+ */
+export type PRInfo = {
+  /** PR番号 */
+  number: number;
+  /** PR URL */
+  url: string;
+};
+
+/**
  * ワークフローメモリ
  * シングルトンでタスク状態を管理
  */
@@ -82,6 +114,16 @@ class WorkflowMemory {
     remainingWork: [],
     breakingChanges: [],
   };
+
+  private phaseState: PhaseState = {
+    current: null,
+    completed: [],
+    scope: "full",
+  };
+
+  // ========================================
+  // 要件定義
+  // ========================================
 
   /**
    * 要件定義を設定
@@ -104,6 +146,10 @@ class WorkflowMemory {
     return this.requirements.length > 0;
   }
 
+  // ========================================
+  // ゴール
+  // ========================================
+
   /**
    * ゴールを設定
    */
@@ -117,6 +163,10 @@ class WorkflowMemory {
   getGoal(): string | null {
     return this.goal;
   }
+
+  // ========================================
+  // タスク管理
+  // ========================================
 
   /**
    * タスクを登録（既存タスクは上書き）
@@ -167,6 +217,44 @@ class WorkflowMemory {
   }
 
   /**
+   * タスクが存在するか
+   */
+  hasTasks(): boolean {
+    return this.tasks.length > 0;
+  }
+
+  /**
+   * 進捗を取得
+   */
+  getProgress(): { total: number; completed: number; pending: number } {
+    const total = this.tasks.length;
+    const completed = this.tasks.filter((t) => t.done).length;
+    return {
+      total,
+      completed,
+      pending: total - completed,
+    };
+  }
+
+  /**
+   * 特定フェーズのタスクを取得
+   */
+  getTasksForPhase(phase: Phase): TaskWithStatus[] {
+    return this.tasks.filter((t) => t.phase === phase);
+  }
+
+  /**
+   * 特定フェーズの未完了タスクを取得
+   */
+  getPendingTasksForPhase(phase: Phase): TaskWithStatus[] {
+    return this.tasks.filter((t) => t.phase === phase && !t.done);
+  }
+
+  // ========================================
+  // 特記事項
+  // ========================================
+
+  /**
    * 特記事項を取得
    */
   getNotes(): Notes {
@@ -209,8 +297,98 @@ class WorkflowMemory {
     this.notes.breakingChanges.push(change);
   }
 
+  // ========================================
+  // フェーズ管理
+  // ========================================
+
   /**
-   * 要件定義・ゴール・タスク・特記事項をクリア
+   * スコープを設定
+   */
+  setScope(scope: Scope): void {
+    this.phaseState.scope = scope;
+  }
+
+  /**
+   * スコープを取得
+   */
+  getScope(): Scope {
+    return this.phaseState.scope;
+  }
+
+  /**
+   * 現在のフェーズを取得
+   */
+  getCurrentPhase(): Phase | null {
+    return this.phaseState.current;
+  }
+
+  /**
+   * 現在のフェーズを設定
+   */
+  setCurrentPhase(phase: Phase): void {
+    this.phaseState.current = phase;
+  }
+
+  /**
+   * フェーズを完了マーク
+   */
+  completePhase(phase: Phase): void {
+    if (!this.phaseState.completed.includes(phase)) {
+      this.phaseState.completed.push(phase);
+    }
+  }
+
+  /**
+   * 完了したフェーズを取得
+   */
+  getCompletedPhases(): Phase[] {
+    return [...this.phaseState.completed];
+  }
+
+  /**
+   * フェーズがスコープに含まれるか確認
+   */
+  isPhaseInScope(phase: Phase): boolean {
+    return isPhaseInScopeFromDefinition(phase, this.phaseState.scope);
+  }
+
+  /**
+   * 次のフェーズを取得
+   */
+  getNextPhase(): Phase | null {
+    return getNextPhaseFromDefinition(
+      this.phaseState.current,
+      this.phaseState.scope,
+    );
+  }
+
+  /**
+   * スコープ内のフェーズ一覧を取得
+   */
+  getPhasesInScope(): Phase[] {
+    return getPhasesForScope(this.phaseState.scope);
+  }
+
+  /**
+   * フェーズ状態全体を取得
+   */
+  getPhaseState(): PhaseState {
+    return { ...this.phaseState };
+  }
+
+  /**
+   * フェーズが完了済みか確認
+   */
+  isPhaseCompleted(phase: Phase): boolean {
+    return this.phaseState.completed.includes(phase);
+  }
+
+  // ========================================
+  // クリア
+  // ========================================
+
+  /**
+   * 要件定義・ゴール・タスク・特記事項・フェーズをクリア
    */
   clear(): void {
     this.requirements = [];
@@ -221,25 +399,10 @@ class WorkflowMemory {
       remainingWork: [],
       breakingChanges: [],
     };
-  }
-
-  /**
-   * タスクが存在するか
-   */
-  hasTasks(): boolean {
-    return this.tasks.length > 0;
-  }
-
-  /**
-   * 進捗を取得
-   */
-  getProgress(): { total: number; completed: number; pending: number } {
-    const total = this.tasks.length;
-    const completed = this.tasks.filter((t) => t.done).length;
-    return {
-      total,
-      completed,
-      pending: total - completed,
+    this.phaseState = {
+      current: null,
+      completed: [],
+      scope: "full",
     };
   }
 }
@@ -256,3 +419,6 @@ export const getWorkflowMemory = (): WorkflowMemory => {
   }
   return memoryInstance;
 };
+
+// 型の再エクスポート
+export type { Phase, Scope } from "./phases";

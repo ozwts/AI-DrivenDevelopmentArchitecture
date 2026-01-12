@@ -1,8 +1,17 @@
-# サーバーサイド実装ワークフロー
+# サーバー実装ワークフロー
+
+リポジトリ実装、ユースケース、ハンドラ、DIコンテナを実装する。
 
 ## 対象スコープ
 
-- `server/src/` 配下のサーバーサイドコード
+- `server/src/infrastructure/repository/` - リポジトリ実装
+- `server/src/application/use-case/` - ユースケース
+- `server/src/handler/` - ハンドラ
+- `server/src/di-container/` - DIコンテナ
+
+## 前提条件
+
+Server/Domainフェーズが完了していること（ドメインモデルとポートが定義済み）
 
 ## 開発モード
 
@@ -12,83 +21,47 @@ mcp__guardrails__procedure_dev(action='start', mode='full')
 
 ---
 
-## ステップ 0: 要件定義と設計方針の確認
+## ステップ 0: 要件確認
 
 **読むもの:**
 
-- `contracts/business/` - ビジネス契約
-- `server/src/domain/model/` - 既存ドメインモデル
-- `guardrails/policy/server/` - サーバーポリシー
-
-フロントエンドの実装が完了している場合、実装済みのAPI設計を尊重すること。
+- `server/src/domain/model/` - ドメインモデル（Server/Domainフェーズで実装済み）
+- `server/src/domain/support/` - ポートインターフェース
+- `contracts/api/` - API契約
 
 ---
 
-## ステップ 1: コード生成
-
-```
-mcp__guardrails__procedure_codegen(workspace='server')
-```
-
----
-
-## ステップ 2: 影響範囲の検証
-
-```
-mcp__guardrails__review_static_analysis(
-  workspace='server',
-  targetDirectories=['server/src/'],
-  analysisType='type-check'
-)
-```
-
----
-
-## ステップ 3: ドメインモデルの実装
-
-**ポリシー:** `guardrails/policy/server/domain-model/`
-
-**実装先:** `server/src/domain/model/`
-
-**完了条件:** 静的解析パス、定性レビューパス、コミット
-
----
-
-## ステップ 4: DynamoDBスキーマの更新（必要な場合）
-
-**実装先:**
-
-- `server/src/util/testing-util/dynamodb.ts` - テスト用スキーマ
-- `infra/terraform/modules/aws/db/tables.tf` - Terraform（同期必須）
-
-**完了条件:** インフラ静的解析パス、コミット
-
----
-
-## ステップ 5: リポジトリの実装
+## ステップ 1: リポジトリの実装
 
 **ポリシー:** `guardrails/policy/server/repository/`
 
-**実装先:**
+**実装先:** `server/src/infrastructure/repository/`
 
-- `server/src/domain/model/*/` - インターフェース
-- `server/src/infrastructure/repository/` - 実装
+**実装内容:**
+- ドメインモデルで定義したリポジトリインターフェースの実装
+- DynamoDB操作の実装
+- ドメインモデルとDBフォーマット間の変換
 
 **完了条件:** 静的解析パス、定性レビューパス、コミット
 
 ---
 
-## ステップ 6: ユースケースの実装
+## ステップ 2: ユースケースの実装
 
 **ポリシー:** `guardrails/policy/server/use-case/`
 
 **実装先:** `server/src/application/use-case/`
 
+**実装内容:**
+- ビジネスロジックの実装
+- Result型パターンの適用
+- リポジトリとポートの呼び出し
+
 **完了条件:** 静的解析パス、定性レビューパス、コミット
 
 ---
 
-## ステップ 7: ハンドラとDIの実装
+## ステップ 3: ハンドラとDIの実装
 
 **ポリシー:**
 
@@ -100,41 +73,44 @@ mcp__guardrails__review_static_analysis(
 - `server/src/handler/hono-handler/`
 - `server/src/di-container/`
 
+**実装内容:**
+- HTTPリクエスト/レスポンス処理
+- 入力バリデーション（OpenAPI生成型による型制約）
+- 依存性の解決とComposition Root
+
 **完了条件:** 静的解析パス、定性レビューパス（各ポリシーを並列実行）、コミット
 
 ---
 
-## ステップ 8: Portの追加・修正（必要な場合）
+## ステップ 4: ポート実装の追加（必要な場合）
 
 **ポリシー:**
 
-- `guardrails/policy/server/port/`
 - `guardrails/policy/server/auth-client/`
 - `guardrails/policy/server/storage-client/`
 - `guardrails/policy/server/logger/`
 - `guardrails/policy/server/fetch-now/`
 
-**実装先:** `server/src/domain/support/`, `server/src/infrastructure/`
+**実装先:** `server/src/infrastructure/`
 
-ポリシーが存在しない新概念は、先にポリシーを起草し人間のレビューを受けること。
+**実装内容:**
+- ポートインターフェースの具象実装
+- 外部サービスとの連携実装
 
-**完了条件:** 静的解析パス、定性レビューパス（該当ポリシーを並列実行）、コミット
+**完了条件:** 静的解析パス、定性レビューパス、コミット
 
 ---
 
-## ステップ 9: テストの実装
+## ステップ 5: テストの実装
 
 **ポリシー:**
 
-- `guardrails/policy/server/domain-model/50-test-overview.md`
-- `guardrails/policy/server/domain-model/51-value-object-test-patterns.md`
-- `guardrails/policy/server/domain-model/52-entity-test-patterns.md`
 - `guardrails/policy/server/repository/40-test-patterns.md`
 - `guardrails/policy/server/use-case/30-testing-overview.md`
 
 **実装先:** `server/src/` 配下の `*.test.ts` ファイル
 
-**レビュー後にテスト実行:**
+**テスト実行:**
 
 ```
 mcp__guardrails__procedure_test(target='server')
@@ -144,7 +120,7 @@ mcp__guardrails__procedure_test(target='server')
 
 ---
 
-## ステップ 10: 最終検証
+## ステップ 6: 最終検証
 
 ```
 mcp__guardrails__review_static_analysis(workspace='server', targetDirectories=['server/src/'])
@@ -179,13 +155,13 @@ mcp__guardrails__procedure_dev(action='start', mode='full')
 
 ---
 
-## ステップ 11: フェーズ完了チェックポイント
+## ステップ 7: フェーズ完了チェックポイント
 
 このフェーズで得られた知見を踏まえ、後続タスクの計画を見直す。
 
 **確認すること:**
 
-1. 実装中に発見したインフラ変更の必要性（テーブル追加、GSI追加など）
+1. インフラ変更の必要性（テーブル追加、GSI追加、環境変数など）
 2. E2Eテストへの影響
 3. 追加で必要になったタスク
 4. 不要になったタスク
@@ -206,7 +182,7 @@ mcp__guardrails__procedure_workflow(action='set', tasks=[
 
 ---
 
-## ステップ 12: コミット＆PR更新
+## ステップ 8: コミット＆PR更新
 
 ### 1. リモート同期
 
@@ -218,7 +194,7 @@ git fetch origin && git rebase origin/{current-branch}
 
 ```bash
 git add -A
-git commit -m "feat(server): {message}"
+git commit -m "feat(server): implement use cases, repositories, and handlers"
 git push origin {current-branch}
 ```
 
@@ -230,14 +206,17 @@ GitHub MCPサーバーでPRボディを更新（`.github/PULL_REQUEST_TEMPLATE.m
 - 見直し結果を反映（タスクの追加・削除・修正）
 - 特記事項を追記（必要な場合）
 
-**完了条件:** コミット成功、プッシュ成功、PR更新完了（進捗＆計画変更を反映）
+**完了条件:** コミット成功、プッシュ成功、PR更新完了
 
 ---
 
 ## 完了条件
 
-- コード生成完了
-- 各レイヤー実装完了
+- リポジトリ実装完了
+- ユースケース実装完了
+- ハンドラ実装完了
+- DI設定完了
 - テスト成功
 - 静的解析通過
 - ポリシーレビュー通過
+- 開発サーバー起動確認

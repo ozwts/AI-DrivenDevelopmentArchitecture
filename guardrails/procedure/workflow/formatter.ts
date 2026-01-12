@@ -4,7 +4,15 @@
  * ワークフロータスクの出力整形
  */
 
-import type { TaskWithStatus, Requirement, Notes } from "./memory";
+import type {
+  TaskWithStatus,
+  Requirement,
+  Notes,
+  PhaseState,
+  PRInfo,
+  Phase,
+} from "./memory";
+import { getPhaseDefinition } from "./phases";
 
 /**
  * タスク名を短縮（長すぎる場合は省略）
@@ -57,7 +65,13 @@ const formatProgressTable = (tasks: TaskWithStatus[]): string => {
 const formatNextTaskDetail = (tasks: TaskWithStatus[]): string => {
   const pendingTasks = tasks.filter((t) => !t.done);
   if (pendingTasks.length === 0) {
-    return "\n\n🎉 **全タスク完了！**";
+    return [
+      "",
+      "",
+      "🎉 **現在フェーズの全タスク完了！**",
+      "",
+      "次のステップ: `procedure_workflow(action: 'advance')` でフェーズを進める",
+    ].join("\n");
   }
 
   const nextTask = pendingTasks[0];
@@ -73,8 +87,8 @@ const formatNextTaskDetail = (tasks: TaskWithStatus[]): string => {
     `- **Done when**: ${nextTask.doneWhen}`,
   ];
 
-  if (nextTask.ref !== undefined) {
-    lines.push(`- **Ref**: \`${nextTask.ref}\``);
+  if (nextTask.refs !== undefined && nextTask.refs.length > 0) {
+    lines.push(`- **Refs**: ${nextTask.refs.map((r) => `\`${r}\``).join(", ")}`);
   }
 
   lines.push("");
@@ -97,12 +111,34 @@ export const formatTaskList = (
   requirements: Requirement[],
   tasks: TaskWithStatus[],
   notes: Notes,
+  phaseState: PhaseState,
+  pr: PRInfo | null,
 ): string => {
   if (goal === null && requirements.length === 0 && tasks.length === 0) {
     return "ワークフローが登録されていません。";
   }
 
   const lines: string[] = ["## ワークフロー", ""];
+
+  // フェーズ状態表示
+  if (phaseState.current !== null) {
+    const currentPhaseDef = getPhaseDefinition(phaseState.current);
+    lines.push("### フェーズ進捗", "");
+    lines.push(`**スコープ**: ${phaseState.scope}`);
+    lines.push(`**現在のフェーズ**: ${currentPhaseDef?.name ?? phaseState.current}`);
+    if (phaseState.completed.length > 0) {
+      const completedNames = phaseState.completed.map(
+        (p) => getPhaseDefinition(p)?.name ?? p,
+      );
+      lines.push(`**完了フェーズ**: ${completedNames.join(" → ")}`);
+    }
+    lines.push("");
+  }
+
+  // PR情報表示
+  if (pr !== null) {
+    lines.push(`**PR**: [#${pr.number}](${pr.url})`, "");
+  }
 
   // ゴール表示
   if (goal !== null) {
@@ -140,8 +176,8 @@ export const formatTaskList = (
       lines.push(`- **Why**: ${task.why}`);
       lines.push(`- **Done when**: ${task.doneWhen}`);
 
-      if (task.ref !== undefined) {
-        lines.push(`- **Ref**: \`${task.ref}\``);
+      if (task.refs !== undefined && task.refs.length > 0) {
+        lines.push(`- **Refs**: ${task.refs.map((r) => `\`${r}\``).join(", ")}`);
       }
 
       lines.push("");
@@ -191,9 +227,11 @@ export const formatTaskList = (
 export const formatRequirementsResult = (
   goal: string,
   requirements: Requirement[],
+  scope: string,
 ): string => {
   const lines: string[] = [
     `**Goal**: ${goal}`,
+    `**Scope**: ${scope}`,
     "",
     `${requirements.length}件の要件を登録しました。`,
     "",
@@ -249,3 +287,83 @@ export const formatDoneResult = (
  * クリア結果をフォーマット
  */
 export const formatClearResult = (): string => "すべてのタスクをクリアしました。";
+
+/**
+ * フェーズ遷移結果をフォーマット
+ */
+export const formatAdvanceResult = (
+  previousPhase: Phase,
+  nextPhase: Phase,
+  runbook?: string,
+): string => {
+  const prevPhaseDef = getPhaseDefinition(previousPhase);
+  const nextPhaseDef = getPhaseDefinition(nextPhase);
+
+  const lines: string[] = [
+    `✅ **${prevPhaseDef?.name ?? previousPhase}** フェーズが完了しました。`,
+    "",
+    `## 次のフェーズ: ${nextPhaseDef?.name ?? nextPhase}`,
+    "",
+  ];
+
+  if (runbook !== undefined) {
+    lines.push(`**参照Runbook**: \`${runbook}\``);
+    lines.push("");
+  }
+
+  lines.push("次のステップ:");
+  lines.push("1. `procedure_workflow(action: 'plan')` で次フェーズのタスクを計画");
+  lines.push("2. `procedure_workflow(action: 'set', tasks: [...])` でタスクを登録");
+
+  return lines.join("\n");
+};
+
+/**
+ * フェーズ遷移ブロック結果をフォーマット（未完了タスクがある場合）
+ */
+export const formatAdvanceBlockedResult = (
+  currentPhase: Phase,
+  pendingTasks: TaskWithStatus[],
+): string => {
+  const phaseDef = getPhaseDefinition(currentPhase);
+
+  const lines: string[] = [
+    `⚠️ **${phaseDef?.name ?? currentPhase}** フェーズには未完了のタスクがあります。`,
+    "",
+    "### 未完了タスク",
+    "",
+  ];
+
+  for (const task of pendingTasks) {
+    lines.push(`- [${task.index}] ${task.what}`);
+  }
+
+  lines.push("");
+  lines.push("すべてのタスクを完了してから `procedure_workflow(action: 'advance')` を実行してください。");
+
+  return lines.join("\n");
+};
+
+/**
+ * ワークフロー完了結果をフォーマット
+ */
+export const formatWorkflowCompleteResult = (completedPhases: Phase[]): string => {
+  const lines: string[] = [
+    "🎉 **全フェーズが完了しました！**",
+    "",
+    "### 完了したフェーズ",
+    "",
+  ];
+
+  for (const phase of completedPhases) {
+    const phaseDef = getPhaseDefinition(phase);
+    lines.push(`- ✅ ${phaseDef?.name ?? phase}`);
+  }
+
+  lines.push("");
+  lines.push("新しいワークフローを開始するには:");
+  lines.push("1. `procedure_workflow(action: 'clear')` で現在のワークフローをクリア");
+  lines.push("2. `procedure_workflow(action: 'requirements', ...)` で新しい要件を登録");
+
+  return lines.join("\n");
+};

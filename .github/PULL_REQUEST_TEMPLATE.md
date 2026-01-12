@@ -1,35 +1,83 @@
 ## 概要
 
-<!-- Goal: 何を達成するか -->
+<!-- Goal: ユーザーの発言をそのまま記載 -->
 
-## 要件
+## 要件定義
 
-<!-- 要件サマリー -->
+<!-- procedure_workflow(action='requirements') で登録した要件を記載 -->
 
-| 誰が | 何をしたい | なぜ | 成功基準 | 制約 |
-| ---- | ---------- | ---- | -------- | ---- |
-|      |            |      |          |      |
+| Actor | Want | Because | Acceptance | Constraints |
+| ----- | ---- | ------- | ---------- | ----------- |
+|       |      |         |            |             |
 
-## タスク
+## 実施したタスク
 
-<!-- procedure_workflowで登録した全タスクをチェックリスト形式で列挙 -->
+<!-- procedure_workflow(action='set') で登録した全タスクを記載。フェーズごとにグループ化 -->
 
-- [ ] タスク1
-- [ ] タスク2
-- [ ] タスク3
+### Contract フェーズ
+
+- [ ] **[0] タスク名**
+  - Why: なぜするか
+  - Done when: 完了条件
+  - Refs: `procedure/workflow/runbooks/20-contract.md`
+
+<!-- フェーズが複数ある場合は以下を追加 -->
+<!--
+### Policy フェーズ
+
+- [ ] **[N] タスク名**
+  - Why: なぜするか
+  - Done when: 完了条件
+  - Refs: `procedure/workflow/runbooks/30-policy.md`
+
+### Frontend フェーズ
+
+- [ ] **[N] タスク名**
+  - Why: なぜするか
+  - Done when: 完了条件
+  - Refs: `procedure/workflow/runbooks/40-frontend.md`
+
+### Server/Domain フェーズ
+
+- [ ] **[N] タスク名**
+  - Why: なぜするか
+  - Done when: 完了条件
+  - Refs: `procedure/workflow/runbooks/50-server-domain.md`
+
+### Server/Implement フェーズ
+
+- [ ] **[N] タスク名**
+  - Why: なぜするか
+  - Done when: 完了条件
+  - Refs: `procedure/workflow/runbooks/55-server-implement.md`
+
+### Infra フェーズ
+
+- [ ] **[N] タスク名**
+  - Why: なぜするか
+  - Done when: 完了条件
+  - Refs: `procedure/workflow/runbooks/60-infra.md`
+
+### E2E フェーズ
+
+- [ ] **[N] タスク名**
+  - Why: なぜするか
+  - Done when: 完了条件
+  - Refs: `procedure/workflow/runbooks/70-e2e.md`
+-->
 
 ## 特記事項
 
-<!-- 人・AIへの引き継ぎ用 -->
+<!-- 人・AIへの引き継ぎ用。該当がなければセクションごと削除 -->
 
 ### 設計判断
 
-<!-- 重要な設計判断とその理由。なければ削除 -->
+<!-- 重要な設計判断とその理由 -->
 
 ### 後続作業・残件
 
-<!-- 後続作業・やりきれなかったこと。なければ削除-->
+<!-- 後続作業・やりきれなかったこと -->
 
 ### 破壊的変更
 
-<!-- 既存機能への影響。なければ削除 -->
+<!-- 既存機能への影響 -->

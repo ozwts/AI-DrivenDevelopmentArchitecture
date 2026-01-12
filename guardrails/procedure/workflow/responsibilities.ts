@@ -2,15 +2,27 @@
  * ワークフロー管理の責務定義
  */
 import { z } from "zod";
-import { getWorkflowMemory, type WorkflowTask, type Requirement, type Notes } from "./memory";
+import {
+  getWorkflowMemory,
+  type WorkflowTask,
+  type Requirement,
+  type Notes,
+  type Phase,
+  type Scope,
+} from "./memory";
 import { executePlan } from "./planner";
+import { getPRForCurrentBranch } from "./context-collector";
 import {
   formatTaskList,
   formatRequirementsResult,
   formatSetResult,
   formatDoneResult,
   formatClearResult,
+  formatAdvanceResult,
+  formatAdvanceBlockedResult,
+  formatWorkflowCompleteResult,
 } from "./formatter";
+import { getPhaseDefinition } from "./phases";
 
 /**
  * Procedure責務定義の型
@@ -47,22 +59,41 @@ const RequirementSchema = z.object({
 });
 
 /**
+ * フェーズスキーマ
+ */
+const PhaseSchema = z.enum([
+  "contract",
+  "policy",
+  "frontend",
+  "server-domain",
+  "server-implement",
+  "infra",
+  "e2e",
+]);
+
+/**
+ * スコープスキーマ
+ */
+const ScopeSchema = z.enum(["policy", "frontend", "server-domain", "full"]);
+
+/**
  * タスク入力スキーマ
  */
 const TaskSchema = z.object({
   what: z.string().describe("何をするか（具体的なアクション）"),
   why: z.string().describe("なぜするか（目的・理由）"),
   doneWhen: z.string().describe("完了条件"),
-  ref: z
-    .string()
+  refs: z
+    .array(z.string())
     .optional()
     .describe(
-      '参照先runbook相対パス（例: "procedure/workflow/runbooks/50-server.md"）',
+      '参照先runbook相対パス（例: ["procedure/workflow/runbooks/50-server-domain.md"]）',
     ),
   done: z
     .boolean()
     .optional()
     .describe("完了状態（計画見直し時に完了済みタスクを保持するために使用）"),
+  phase: PhaseSchema.optional().describe("所属フェーズ"),
 });
 
 /**
@@ -86,27 +117,52 @@ const NotesSchema = z.object({
 /**
  * ワークフロー管理責務定義（統合版）
  *
- * 6つのアクション:
- * - plan: サブエージェント誘発
- * - requirements: 要件定義の登録
+ * 8つのアクション:
+ * - plan: サブエージェント誘発（フェーズ単位）
+ * - requirements: 要件定義の登録（スコープ設定含む）
  * - set: タスク登録/上書き
  * - done: 完了マーク
  * - list: 全タスク表示
+ * - advance: フェーズ遷移
+ * - set-pr: PR情報設定
  * - clear: クリア
  */
 export const WORKFLOW_RESPONSIBILITIES: WorkflowResponsibility[] = [
   {
     id: "procedure_workflow",
     toolDescription:
-      "Workflow task management. action: 'plan' (invoke subagent for planning), 'requirements' (register requirements with goal), 'set' (register/overwrite tasks), 'done' (mark task complete), 'list' (show all tasks), 'clear' (clear all tasks).",
+      "Workflow task management. " +
+      "action: 'plan' (invoke subagent for planning), " +
+      "'requirements' (register requirements with goal), " +
+      "'set' (register/overwrite tasks), " +
+      "'done' (mark task complete), " +
+      "'list' (show all tasks), " +
+      "'advance' (move to next phase), " +
+      "'clear' (clear all tasks).",
     inputSchema: {
       action: z
-        .enum(["plan", "requirements", "set", "done", "list", "clear"])
-        .describe("Action to perform: plan, requirements, set, done, list, clear"),
+        .enum([
+          "plan",
+          "requirements",
+          "set",
+          "done",
+          "list",
+          "advance",
+          "clear",
+        ])
+        .describe(
+          "Action to perform: plan, requirements, set, done, list, advance, clear",
+        ),
       goal: z
         .string()
         .optional()
         .describe("Overall goal for this workflow (for 'requirements' action)"),
+      scope: ScopeSchema.optional().describe(
+        "Implementation scope: 'policy' (Contract+Policy), 'frontend' (+Frontend), 'server-domain' (+Server Domain), 'full' (all phases). Default: 'full' (for 'requirements' action)",
+      ),
+      phase: PhaseSchema.optional().describe(
+        "Target phase for planning (for 'plan' action). If not specified, uses next phase.",
+      ),
       requirements: z
         .array(RequirementSchema)
         .optional()
@@ -131,11 +187,13 @@ export const WORKFLOW_RESPONSIBILITIES: WorkflowResponsibility[] = [
         | "set"
         | "done"
         | "list"
+        | "advance"
         | "clear";
 
       switch (action) {
         case "plan": {
-          const result = await executePlan(guardrailsRoot);
+          const phase = input.phase as Phase | undefined;
+          const result = await executePlan(guardrailsRoot, phase);
           if (!result.success) {
             throw new Error(result.error ?? "Unknown error");
           }
@@ -145,20 +203,29 @@ export const WORKFLOW_RESPONSIBILITIES: WorkflowResponsibility[] = [
         case "requirements": {
           const goal = input.goal as string | undefined;
           const requirements = input.requirements as Requirement[] | undefined;
+          const scope = (input.scope as Scope | undefined) ?? "full";
+
           if (goal === undefined) {
             throw new Error("goal is required for 'requirements' action");
           }
           if (requirements === undefined || requirements.length === 0) {
-            throw new Error("requirements is required for 'requirements' action");
+            throw new Error(
+              "requirements is required for 'requirements' action",
+            );
           }
+
           memory.setGoal(goal);
           memory.setRequirements(requirements);
-          return formatRequirementsResult(goal, requirements);
+          memory.setScope(scope);
+          memory.setCurrentPhase("contract"); // Always start with contract
+
+          return formatRequirementsResult(goal, requirements, scope);
         }
 
         case "set": {
           const tasks = input.tasks as WorkflowTask[] | undefined;
           const notes = input.notes as Partial<Notes> | undefined;
+
           if (tasks === undefined || tasks.length === 0) {
             throw new Error("tasks is required for 'set' action");
           }
@@ -167,22 +234,27 @@ export const WORKFLOW_RESPONSIBILITIES: WorkflowResponsibility[] = [
               "requirements must be set before tasks. Use 'requirements' action first.",
             );
           }
+
           memory.setTasks(tasks);
           if (notes !== undefined) {
             memory.setNotes(notes);
           }
+
           return formatSetResult(memory.getGoal() ?? "", memory.getTasks());
         }
 
         case "done": {
           const index = input.index as number | undefined;
+
           if (index === undefined) {
             throw new Error("index is required for 'done' action");
           }
+
           const tasksBefore = memory.getTasks();
           const task = tasksBefore.find((t) => t.index === index);
           const success = memory.markDone(index);
           const tasksAfter = memory.getTasks();
+
           return formatDoneResult(success, index, task, tasksAfter);
         }
 
@@ -191,7 +263,57 @@ export const WORKFLOW_RESPONSIBILITIES: WorkflowResponsibility[] = [
           const requirements = memory.getRequirements();
           const tasks = memory.getTasks();
           const notes = memory.getNotes();
-          return formatTaskList(goal, requirements, tasks, notes);
+          const phaseState = memory.getPhaseState();
+          const pr = getPRForCurrentBranch();
+
+          return formatTaskList(
+            goal,
+            requirements,
+            tasks,
+            notes,
+            phaseState,
+            pr,
+          );
+        }
+
+        case "advance": {
+          const currentPhase = memory.getCurrentPhase();
+
+          if (currentPhase === null) {
+            throw new Error(
+              "No active phase to advance from. Use 'requirements' action first.",
+            );
+          }
+
+          // Check all tasks for current phase are done
+          const phaseTasks = memory.getTasksForPhase(currentPhase);
+          const pendingTasks = phaseTasks.filter((t) => !t.done);
+
+          if (pendingTasks.length > 0) {
+            return formatAdvanceBlockedResult(currentPhase, pendingTasks);
+          }
+
+          // Mark phase complete
+          memory.completePhase(currentPhase);
+
+          // Get next phase
+          const nextPhase = memory.getNextPhase();
+
+          if (nextPhase === null) {
+            return formatWorkflowCompleteResult(memory.getCompletedPhases());
+          }
+
+          // Set new phase
+          memory.setCurrentPhase(nextPhase);
+
+          // Get phase definition for runbook reference
+          const nextPhaseDef = getPhaseDefinition(nextPhase);
+
+          return formatAdvanceResult(
+            currentPhase,
+            nextPhase,
+            nextPhaseDef?.runbook,
+          );
         }
 
         case "clear": {

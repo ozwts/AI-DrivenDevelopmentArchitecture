@@ -1,13 +1,19 @@
 /**
  * Workflow Planner（ワークフロープランナー）
  *
- * MCPサーバーからサブエージェント起動を誘導する軽量プランニングロジック。
- * 実際のタスク抽出は workflow-planner サブエージェントが実行します。
+ * フェーズ単位でのタスク計画を支援
+ * サブエージェント起動を誘導するガイダンスを生成
  */
 
 import * as fs from "fs/promises";
 import * as path from "path";
-import { getWorkflowMemory, type Requirement } from "./memory";
+import { getWorkflowMemory, type Requirement, type Phase } from "./memory";
+import { getPhaseDefinition, PHASES } from "./phases";
+import {
+  collectContext,
+  formatContextForGuidance,
+  type WorkflowContext,
+} from "./context-collector";
 
 /**
  * プランナー結果
@@ -19,6 +25,8 @@ export type PlannerResult = {
   runbooksDir: string;
   /** 利用可能なrunbook一覧 */
   availableRunbooks: string[];
+  /** 対象フェーズ */
+  targetPhase: Phase | null;
   /** 成功フラグ */
   success: boolean;
   /** エラーメッセージ（失敗時） */
@@ -40,41 +48,35 @@ const scanRunbooks = async (runbooksDir: string): Promise<string[]> => {
 };
 
 /**
- * サブエージェント起動を促すガイダンスメッセージを生成
+ * フェーズ別ガイダンスメッセージを生成
  */
-const buildGuidanceMessage = (
-  availableRunbooks: string[],
-  goal: string | null,
+const buildPhaseGuidanceMessage = (
+  targetPhase: Phase,
+  goal: string,
   requirements: Requirement[],
+  context: WorkflowContext,
 ): string => {
   const lines: string[] = [];
+  const phaseDef = getPhaseDefinition(targetPhase);
 
-  // 要件が未設定の場合は警告
-  if (goal === null || requirements.length === 0) {
-    lines.push("⚠️ **要件定義が未設定です**\n");
-    lines.push(
-      "`plan` の前に `requirements` アクションで要件を登録してください。\n",
-    );
-    lines.push("```typescript");
-    lines.push("procedure_workflow(action: 'requirements',");
-    lines.push('  goal: "全体のゴール",');
-    lines.push("  requirements: [");
-    lines.push("    {");
-    lines.push('      actor: "誰が",');
-    lines.push('      want: "何をしたい",');
-    lines.push('      because: "なぜ（課題）",');
-    lines.push('      acceptance: "成功基準"');
-    lines.push("    }");
-    lines.push("  ]");
-    lines.push(")");
-    lines.push("```\n");
-    return lines.join("\n");
-  }
+  // ヘッダーと即時アクション
+  lines.push(`# ${phaseDef?.name ?? targetPhase} フェーズの計画`);
+  lines.push("");
+  lines.push("## ▶ 次のアクション");
+  lines.push("");
+  lines.push(
+    "**`workflow-planner` サブエージェントを起動**し、以下のコンテキストを渡してタスクを提案させてください。",
+  );
+  lines.push("");
+  lines.push("---");
+  lines.push("");
 
-  // 現在の要件を表示
-  lines.push("## 現在の要件定義\n");
-  lines.push(`**Goal**: ${goal}\n`);
-  lines.push("### Requirements\n");
+  // ゴールと要件
+  lines.push(`**Goal**: ${goal}`);
+  lines.push("");
+
+  lines.push("## 要件定義");
+  lines.push("");
   for (let i = 0; i < requirements.length; i += 1) {
     const req = requirements[i];
     lines.push(`${i + 1}. **${req.actor}** が **${req.want}**`);
@@ -86,105 +88,127 @@ const buildGuidanceMessage = (
   }
   lines.push("");
 
-  lines.push(
-    "`workflow-planner` サブエージェントを起動し、上記の要件に基づいてタスクを提案させてください。\n",
-  );
-
-  lines.push("## サブエージェントの役割\n");
-  lines.push("- 要件をタスクにブレークダウンする");
-  lines.push("- runbooksを参照してタスクリストを**提案**する（登録はしない）");
-  lines.push(
-    "- **ステップを具体化**（各ステップで何を作るかを明示、1成果物=1タスク）",
-  );
-  lines.push("- 各タスクに参照先runbookを紐づける");
-  lines.push("- 提案を受けてメインセッションが登録を判断する\n");
-
-  lines.push("## フェーズ順序\n");
-  lines.push(
-    "タスクの順番は `procedure/workflow/runbooks/10-development-overview.md` の考えを遵守すること。\n",
-  );
-
-  // 必須タスクの指示を追加
-  lines.push("## 必須タスク（重要）\n");
-  lines.push("以下のタスクは**必ず**含めること:\n");
-  lines.push("### 1. Draft PR作成（タスクリストの最初）\n");
-  lines.push("```");
-  lines.push("1. **What**: Draft PRを作成する");
-  lines.push(
-    "   - **Why**: タスク進捗を可視化し、CIを動かすため",
-  );
-  lines.push(
-    "   - **Done when**: 空コミットでDraft PR作成、PRボディに全タスクをチェックリストとして記載",
-  );
-  lines.push("   - **Ref**: `procedure/workflow/runbooks/11-branch-strategy.md`");
-  lines.push("```\n");
-
-  lines.push("### 2. 各フェーズの最後に2つのタスク\n");
-  lines.push("各フェーズ（Contract, Policy, Frontend, Server, Infra, E2E）完了時に:\n");
-  lines.push("**(a) 後続計画の見直し**");
-  lines.push("```");
-  lines.push("N. **What**: 後続フェーズの作業計画を見直す");
-  lines.push(
-    "   - **Why**: このフェーズで得られた知見を後続タスクに反映するため",
-  );
-  lines.push(
-    "   - **Done when**: 後続タスクの追加・削除・修正を完了、または見直し不要を確認",
-  );
-  lines.push("   - **Ref**: 該当runbook");
-  lines.push("```\n");
-  lines.push("**(b) コミット・プッシュ・PR更新**");
-  lines.push("```");
-  lines.push("N+1. **What**: {フェーズ名}フェーズの成果物をコミット・プッシュ・PR更新");
-  lines.push(
-    "   - **Why**: フェーズ完了を記録し、PRの進捗と計画変更を反映するため",
-  );
-  lines.push(
-    "   - **Done when**: リモート同期 → コミット → プッシュ → PR更新（完了チェック＆見直し結果反映）",
-  );
-  lines.push("   - **Ref**: `procedure/workflow/runbooks/11-branch-strategy.md`");
-  lines.push("```\n");
-
-  lines.push("### 3. E2Eフェーズの最後にReady for Review\n");
-  lines.push("```");
-  lines.push("N. **What**: Draft PRをReady for Reviewに変更する");
-  lines.push("   - **Why**: 全フェーズ完了後、レビュー可能な状態にするため");
-  lines.push(
-    "   - **Done when**: `mcp__github__update_pull_request(draft=false)` で変更完了",
-  );
-  lines.push("   - **Ref**: `procedure/workflow/runbooks/70-e2e.md`");
-  lines.push("```\n");
-
-  if (availableRunbooks.length > 0) {
-    lines.push("## 利用可能なRunbooks\n");
-    for (const runbook of availableRunbooks) {
-      const relativePath = `procedure/workflow/runbooks/${runbook}.md`;
-      lines.push(`- \`${relativePath}\``);
-    }
+  // コンテキスト（前のフェーズからの引き継ぎ）
+  const contextStr = formatContextForGuidance(context);
+  if (contextStr.length > 0) {
+    lines.push("## 前フェーズからのコンテキスト");
     lines.push("");
+    lines.push(contextStr);
   }
 
-  lines.push("## タスク登録フォーマット（メインセッション用）\n");
+  // フェーズ固有の指示
+  lines.push("## フェーズ固有の指示");
+  lines.push("");
+  if (phaseDef !== undefined) {
+    lines.push(`**参照Runbook**: \`${phaseDef.runbook}\``);
+    lines.push("");
+    if (phaseDef.devMode !== undefined) {
+      lines.push(`**開発モード**: \`${phaseDef.devMode}\``);
+      lines.push("");
+    }
+  }
+
+  // サブエージェントへの指示
+  lines.push("## サブエージェントへの指示");
+  lines.push("");
+  lines.push(`- **${phaseDef?.name ?? targetPhase}フェーズのタスクのみ**を提案`);
+  lines.push("- 上記のコンテキスト（コミット履歴、PRコメント、完了タスク）を考慮");
+  lines.push("- runbookの各ステップを具体化（1成果物=1タスク）");
+  lines.push("- 各タスクに`phase`フィールドを設定");
+  lines.push("");
+
+  // タスクフォーマット
+  lines.push("## タスク登録フォーマット");
+  lines.push("");
   lines.push("```typescript");
-  lines.push("procedure_workflow(action: 'set',");
-  lines.push("  tasks: [");
-  lines.push("    {");
-  lines.push('      what: "何をするか（具体的なアクション）",');
-  lines.push('      why: "なぜするか（目的・理由）",');
-  lines.push('      doneWhen: "完了条件",');
-  lines.push('      ref: "procedure/workflow/runbooks/50-server.md"  // runbook相対パス');
-  lines.push("    }");
-  lines.push("  ]");
-  lines.push(")");
+  lines.push("procedure_workflow(action: 'set', tasks: [");
+  lines.push("  // 既存の完了済みタスク（必要な場合）");
+  lines.push("  { what: '完了済みタスク', ..., done: true },");
+  lines.push("  // 新規タスク");
+  lines.push("  {");
+  lines.push('    what: "何をするか",');
+  lines.push('    why: "なぜするか",');
+  lines.push('    doneWhen: "完了条件",');
+  lines.push(`    refs: ["${phaseDef?.runbook ?? "procedure/workflow/runbooks/xxx.md"}"],`);
+  lines.push(`    phase: "${targetPhase}"`);
+  lines.push("  }");
+  lines.push("])");
   lines.push("```");
+  lines.push("");
+
+  // フェーズ完了後の流れ
+  lines.push("## フェーズ完了後");
+  lines.push("");
+  lines.push("1. 全タスク完了後: `procedure_workflow(action='advance')`");
+  lines.push("2. 次フェーズの計画: `procedure_workflow(action='plan')`");
 
   return lines.join("\n");
 };
 
 /**
- * プランニング準備を実行し、サブエージェント起動を促すガイダンスを返す
+ * 要件未設定時のガイダンスメッセージを生成
+ */
+const buildRequirementsRequiredMessage = (): string => {
+  const lines: string[] = [];
+
+  lines.push("⚠️ **要件定義が未設定です**");
+  lines.push("");
+  lines.push(
+    "`plan` の前に `requirements` アクションで要件とスコープを登録してください。",
+  );
+  lines.push("");
+  lines.push("```typescript");
+  lines.push("procedure_workflow(action: 'requirements',");
+  lines.push('  goal: "全体のゴール",');
+  lines.push("  scope: 'full',  // 'policy' | 'frontend' | 'server-domain' | 'full'");
+  lines.push("  requirements: [");
+  lines.push("    {");
+  lines.push('      actor: "誰が",');
+  lines.push('      want: "何をしたい",');
+  lines.push('      because: "なぜ（課題）",');
+  lines.push('      acceptance: "成功基準"');
+  lines.push("    }");
+  lines.push("  ]");
+  lines.push(")");
+  lines.push("```");
+  lines.push("");
+  lines.push("## スコープの選択肢");
+  lines.push("");
+  lines.push("| スコープ | 含まれるフェーズ |");
+  lines.push("|----------|-----------------|");
+  lines.push("| `policy` | Contract → Policy |");
+  lines.push("| `frontend` | + Frontend |");
+  lines.push("| `server-domain` | + Server/Domain |");
+  lines.push("| `full` | + Server/Implement → Infra → E2E |");
+
+  return lines.join("\n");
+};
+
+/**
+ * 全フェーズ完了時のメッセージを生成
+ */
+const buildAllPhasesCompleteMessage = (completedPhases: Phase[]): string => {
+  const lines: string[] = [];
+
+  lines.push("🎉 **全フェーズが完了しています**");
+  lines.push("");
+  lines.push("完了したフェーズ:");
+  for (const phase of completedPhases) {
+    const phaseDef = getPhaseDefinition(phase);
+    lines.push(`- ✅ ${phaseDef?.name ?? phase}`);
+  }
+  lines.push("");
+  lines.push("新しいワークフローを開始するには、`clear` してから `requirements` を登録してください。");
+
+  return lines.join("\n");
+};
+
+/**
+ * プランニング準備を実行し、フェーズ別ガイダンスを返す
  */
 export const executePlan = async (
   guardrailsRoot: string,
+  targetPhaseOverride?: Phase,
 ): Promise<PlannerResult> => {
   try {
     const runbooksDir = path.join(
@@ -206,7 +230,6 @@ export const executePlan = async (
         "code" in error &&
         (error as NodeJS.ErrnoException).code === "ENOENT"
       ) {
-        // ディレクトリがなければ作成
         await fs.mkdir(runbooksDir, { recursive: true });
       } else {
         throw error;
@@ -216,22 +239,54 @@ export const executePlan = async (
     // 利用可能なrunbookをスキャン
     const availableRunbooks = await scanRunbooks(runbooksDir);
 
-    // 現在の要件を取得
+    // 現在の状態を取得
     const memory = getWorkflowMemory();
     const goal = memory.getGoal();
     const requirements = memory.getRequirements();
+    const currentPhase = memory.getCurrentPhase();
 
-    // ガイダンスメッセージを生成
-    const guidance = buildGuidanceMessage(
-      availableRunbooks,
+    // 要件が未設定の場合
+    if (goal === null || requirements.length === 0) {
+      return {
+        guidance: buildRequirementsRequiredMessage(),
+        runbooksDir,
+        availableRunbooks,
+        targetPhase: null,
+        success: true,
+      };
+    }
+
+    // 対象フェーズを決定
+    const targetPhase =
+      targetPhaseOverride ?? currentPhase ?? memory.getNextPhase();
+
+    // 全フェーズ完了の場合
+    if (targetPhase === null) {
+      return {
+        guidance: buildAllPhasesCompleteMessage(memory.getCompletedPhases()),
+        runbooksDir,
+        availableRunbooks,
+        targetPhase: null,
+        success: true,
+      };
+    }
+
+    // コンテキストを収集
+    const context = await collectContext(guardrailsRoot);
+
+    // フェーズ別ガイダンスを生成
+    const guidance = buildPhaseGuidanceMessage(
+      targetPhase,
       goal,
       requirements,
+      context,
     );
 
     return {
       guidance,
       runbooksDir,
       availableRunbooks,
+      targetPhase,
       success: true,
     };
   } catch (error) {
@@ -241,8 +296,12 @@ export const executePlan = async (
       guidance: "",
       runbooksDir: "",
       availableRunbooks: [],
+      targetPhase: null,
       success: false,
       error: errorMessage,
     };
   }
 };
+
+// 利用可能なフェーズ一覧をエクスポート（参照用）
+export { PHASES };
