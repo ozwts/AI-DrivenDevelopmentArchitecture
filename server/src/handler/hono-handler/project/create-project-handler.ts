@@ -1,4 +1,3 @@
-import type { Context } from "hono";
 import type { Container } from "inversify";
 import { schemas } from "@/generated/zod-schemas";
 import { serviceId } from "@/di-container/service-id";
@@ -8,10 +7,12 @@ import { UnexpectedError, unexpectedErrorMessage } from "@/util/error-util";
 import { handleError } from "../../hono-handler-util/error-handler";
 import { formatZodError } from "../../hono-handler-util/validation-formatter";
 import { convertToProjectResponse } from "./project-response-mapper";
+import { USER_SUB, type AppContext } from "../constants";
+import { MemberRole } from "@/domain/model/project-member/member-role.vo";
 
 export const buildCreateProjectHandler =
   ({ container }: { container: Container }) =>
-  async (c: Context) => {
+  async (c: AppContext) => {
     const logger = container.get<Logger>(serviceId.LOGGER);
     const useCase = container.get<CreateProjectUseCase>(
       serviceId.CREATE_PROJECT_USE_CASE,
@@ -38,6 +39,20 @@ export const buildCreateProjectHandler =
 
       const body = parseResult.data;
 
+      // 認証ミドルウェアで設定されたuserSubを取得
+      const userSub = c.get(USER_SUB);
+
+      if (userSub === "") {
+        logger.error("userSubがコンテキストに設定されていません");
+        return c.json(
+          {
+            name: new UnexpectedError().name,
+            message: unexpectedErrorMessage,
+          },
+          500,
+        );
+      }
+
       // 空文字列をundefinedに変換（POSTリクエストの正規化）
       const description =
         body.description?.trim() === "" ? undefined : body.description;
@@ -46,6 +61,7 @@ export const buildCreateProjectHandler =
         name: body.name,
         description,
         color: body.color,
+        currentUserId: userSub,
       });
 
       if (!result.isOk()) {
@@ -53,7 +69,11 @@ export const buildCreateProjectHandler =
       }
 
       // レスポンスのZodバリデーション
-      const responseData = convertToProjectResponse(result.data);
+      // プロジェクト作成者は必ずOWNERになる
+      const responseData = convertToProjectResponse(
+        result.data,
+        MemberRole.owner(),
+      );
       const responseParseResult =
         schemas.ProjectResponse.safeParse(responseData);
       if (!responseParseResult.success) {

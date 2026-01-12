@@ -6,6 +6,7 @@ import { buildGetCurrentUserHandler } from "./get-current-user-handler";
 import { buildRegisterCurrentUserHandler } from "./register-current-user-handler";
 import { buildUpdateCurrentUserHandler } from "./update-current-user-handler";
 import { buildDeleteCurrentUserHandler } from "./delete-current-user-handler";
+import { buildSearchUsersHandler } from "./search-users-handler";
 
 export const buildUserRouter = ({
   container,
@@ -13,6 +14,9 @@ export const buildUserRouter = ({
   container: Container;
 }): Hono => {
   const userRouter = new Hono();
+
+  // GET /users/search - ユーザー検索
+  userRouter.get("/search", buildSearchUsersHandler({ container }));
 
   // GET /users - ユーザーリスト
   userRouter.get("/", buildListUsersHandler({ container }));

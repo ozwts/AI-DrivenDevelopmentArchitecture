@@ -2,19 +2,19 @@ import type { Container } from "inversify";
 import { schemas } from "@/generated/zod-schemas";
 import { serviceId } from "@/di-container/service-id";
 import type { Logger } from "@/application/port/logger";
-import type { UpdateProjectUseCase } from "@/application/use-case/project/update-project-use-case";
+import type { InviteMemberUseCase } from "@/application/use-case/project-member";
 import { UnexpectedError, unexpectedErrorMessage } from "@/util/error-util";
 import { handleError } from "../../hono-handler-util/error-handler";
 import { formatZodError } from "../../hono-handler-util/validation-formatter";
-import { convertToProjectResponse } from "./project-response-mapper";
+import { convertToProjectMemberResponse } from "./project-member-response-mapper";
 import { USER_SUB, type AppContext } from "../constants";
 
-export const buildUpdateProjectHandler =
+export const buildInviteMemberHandler =
   ({ container }: { container: Container }) =>
   async (c: AppContext) => {
     const logger = container.get<Logger>(serviceId.LOGGER);
-    const useCase = container.get<UpdateProjectUseCase>(
-      serviceId.UPDATE_PROJECT_USE_CASE,
+    const inviteMemberUseCase = container.get<InviteMemberUseCase>(
+      serviceId.INVITE_MEMBER_USE_CASE,
     );
 
     try {
@@ -31,11 +31,10 @@ export const buildUpdateProjectHandler =
         );
       }
 
-      const projectId = c.req.param("projectId");
       const rawBody: unknown = await c.req.json();
 
       // リクエストボディのZodバリデーション
-      const parseResult = schemas.UpdateProjectParams.safeParse(rawBody);
+      const parseResult = schemas.InviteMemberParams.safeParse(rawBody);
       if (!parseResult.success) {
         logger.debug("リクエストバリデーションエラー", {
           errors: parseResult.error.errors,
@@ -51,33 +50,26 @@ export const buildUpdateProjectHandler =
       }
 
       const body = parseResult.data;
+      const projectId = c.req.param("projectId");
 
-      // 3値を区別するため、条件付きでプロパティを追加
-      // - キー未指定: プロパティを渡さない → UseCase側で "field" in input === false
-      // - null送信: undefined を渡す → UseCase側で値をクリア
-      // - 値送信: その値を渡す → UseCase側で値を更新
-      const result = await useCase.execute({
+      const result = await inviteMemberUseCase.execute({
         projectId,
         currentUserId: userSub,
-        name: body.name,
-        ...("description" in body && {
-          description:
-            body.description === null ? undefined : body.description,
-        }),
-        color: body.color,
+        userId: body.userId,
+        role: body.role,
       });
 
       if (!result.isOk()) {
         return handleError(result.error, c, logger);
       }
 
-      // レスポンスのZodバリデーション
-      const responseData = convertToProjectResponse(
-        result.data.project,
-        result.data.myRole,
+      // InviteMemberWithUserをProjectMemberResponseに変換
+      const responseData = convertToProjectMemberResponse(
+        result.data.member,
+        result.data.user,
       );
       const responseParseResult =
-        schemas.ProjectResponse.safeParse(responseData);
+        schemas.ProjectMemberResponse.safeParse(responseData);
       if (!responseParseResult.success) {
         logger.error("レスポンスバリデーションエラー", {
           errors: responseParseResult.error.errors,
@@ -92,7 +84,7 @@ export const buildUpdateProjectHandler =
         );
       }
 
-      return c.json(responseParseResult.data, 200);
+      return c.json(responseParseResult.data, 201);
     } catch (error) {
       logger.error("ハンドラーで予期せぬエラーをキャッチ", error as Error);
       return c.json(

@@ -5,6 +5,7 @@ import type {
   ProjectRepository,
   SaveResult,
   FindByIdResult,
+  FindByIdsResult,
   FindAllResult,
   RemoveResult,
 } from "./project.repository";
@@ -12,6 +13,7 @@ import type {
 export type ProjectRepositoryDummyProps = {
   projectIdReturnValue?: string | undefined;
   findByIdReturnValue?: FindByIdResult | undefined;
+  findByIdsReturnValue?: FindByIdsResult | undefined;
   findAllReturnValue?: FindAllResult | undefined;
   saveReturnValue?: SaveResult | undefined;
   removeReturnValue?: RemoveResult | undefined;
@@ -28,6 +30,8 @@ export class ProjectRepositoryDummy implements ProjectRepository {
 
   readonly #findByIdReturnValue: FindByIdResult;
 
+  readonly #findByIdsReturnValue: FindByIdsResult;
+
   readonly #findAllReturnValue: FindAllResult;
 
   readonly #saveReturnValue: SaveResult;
@@ -38,6 +42,8 @@ export class ProjectRepositoryDummy implements ProjectRepository {
     this.#projectIdReturnValue = props?.projectIdReturnValue ?? uuid();
     this.#findByIdReturnValue =
       props?.findByIdReturnValue ?? Result.ok(projectDummyFrom());
+    this.#findByIdsReturnValue =
+      props?.findByIdsReturnValue ?? Result.ok([projectDummyFrom()]);
     this.#findAllReturnValue =
       props?.findAllReturnValue ?? Result.ok([projectDummyFrom()]);
     this.#saveReturnValue = props?.saveReturnValue ?? Result.ok(undefined);
@@ -50,6 +56,10 @@ export class ProjectRepositoryDummy implements ProjectRepository {
 
   findById(_props: { id: string }): Promise<FindByIdResult> {
     return Promise.resolve(this.#findByIdReturnValue);
+  }
+
+  findByIds(_props: { ids: string[] }): Promise<FindByIdsResult> {
+    return Promise.resolve(this.#findByIdsReturnValue);
   }
 
   findAll(): Promise<FindAllResult> {

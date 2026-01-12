@@ -12,6 +12,7 @@ import {
   type SaveResult,
   type RemoveResult,
   type FindByIdResult,
+  type FindByIdsResult,
   type FindAllResult,
   type ProjectRepository,
 } from "@/domain/model/project/project.repository";
@@ -111,6 +112,37 @@ export class ProjectRepositoryImpl implements ProjectRepository {
       return Result.ok(project);
     } catch (error) {
       this.#logger.error("プロジェクトの取得に失敗しました", error as Error);
+      return Result.err(new UnexpectedError());
+    }
+  }
+
+  async findByIds(props: { ids: string[] }): Promise<FindByIdsResult> {
+    try {
+      if (props.ids.length === 0) {
+        return Result.ok([]);
+      }
+
+      // 各IDに対してfindByIdを呼び出し、結果を集約
+      const results = await Promise.all(
+        props.ids.map((id) => this.findById({ id })),
+      );
+
+      const projects: Project[] = [];
+      for (const result of results) {
+        if (result.isErr()) {
+          return Result.err(result.error);
+        }
+        if (result.data !== undefined) {
+          projects.push(result.data);
+        }
+      }
+
+      return Result.ok(projects);
+    } catch (error) {
+      this.#logger.error(
+        "プロジェクト一覧の取得に失敗しました（findByIds）",
+        error as Error,
+      );
       return Result.err(new UnexpectedError());
     }
   }

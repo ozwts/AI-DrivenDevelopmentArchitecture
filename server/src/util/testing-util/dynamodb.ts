@@ -225,6 +225,64 @@ export const buildAttachmentsTableParams = ({
 });
 
 /**
+ * ProjectMembersテーブル
+ *
+ * プロジェクトアグリゲートの子エンティティであるプロジェクトメンバーを管理。
+ * PK: projectId (親プロジェクトのID)
+ * SK: memberId (プロジェクトメンバーのID)
+ * この設計により、projectIdでクエリすると、そのプロジェクトに属するすべてのメンバーを取得できる。
+ * GSI: UserIdIndex - ユーザーが所属するプロジェクト一覧を取得するため。
+ */
+export const buildProjectMembersTableParams = ({
+  ddb,
+  projectMembersTableName,
+}: {
+  ddb: DynamoDBClient;
+  projectMembersTableName: string;
+}): RefreshTableParams => ({
+  ddb,
+  tableName: projectMembersTableName,
+  attributeDefinitions: [
+    {
+      AttributeName: "projectId",
+      AttributeType: "S",
+    },
+    {
+      AttributeName: "memberId",
+      AttributeType: "S",
+    },
+    {
+      AttributeName: "userId",
+      AttributeType: "S",
+    },
+  ],
+  keySchema: [
+    {
+      AttributeName: "projectId",
+      KeyType: "HASH",
+    },
+    {
+      AttributeName: "memberId",
+      KeyType: "RANGE",
+    },
+  ],
+  globalSecondaryIndexes: [
+    {
+      IndexName: "UserIdIndex",
+      KeySchema: [
+        {
+          AttributeName: "userId",
+          KeyType: "HASH",
+        },
+      ],
+      Projection: {
+        ProjectionType: "ALL",
+      },
+    },
+  ],
+});
+
+/**
  * テーブルを削除し再作成する
  *
  * @param params パラメータ

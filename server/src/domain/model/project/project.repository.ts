@@ -4,6 +4,7 @@ import type { Project } from "./project.entity";
 
 export type SaveResult = Result<void, UnexpectedError>;
 export type FindByIdResult = Result<Project | undefined, UnexpectedError>;
+export type FindByIdsResult = Result<Project[], UnexpectedError>;
 export type FindAllResult = Result<Project[], UnexpectedError>;
 export type RemoveResult = Result<void, UnexpectedError>;
 
@@ -17,6 +18,11 @@ export type ProjectRepository = {
    * プロジェクトをIDで検索する
    */
   findById(props: { id: string }): Promise<FindByIdResult>;
+
+  /**
+   * プロジェクトを複数IDで検索する
+   */
+  findByIds(props: { ids: string[] }): Promise<FindByIdsResult>;
 
   /**
    * プロジェクトを全件検索する

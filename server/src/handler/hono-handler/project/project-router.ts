@@ -5,6 +5,7 @@ import { buildGetProjectHandler } from "./get-project-handler";
 import { buildCreateProjectHandler } from "./create-project-handler";
 import { buildUpdateProjectHandler } from "./update-project-handler";
 import { buildDeleteProjectHandler } from "./delete-project-handler";
+import { buildProjectMemberRouter } from "../project-member/project-member-router";
 
 export const buildProjectRouter = ({
   container,
@@ -27,6 +28,12 @@ export const buildProjectRouter = ({
 
   // DELETE /projects/:projectId - プロジェクト削除
   projectRouter.delete("/:projectId", buildDeleteProjectHandler({ container }));
+
+  // メンバー関連のルート
+  projectRouter.route(
+    "/:projectId/members",
+    buildProjectMemberRouter({ container }),
+  );
 
   return projectRouter;
 };

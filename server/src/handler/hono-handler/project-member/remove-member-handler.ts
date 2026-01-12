@@ -1,19 +1,17 @@
 import type { Container } from "inversify";
-import { schemas } from "@/generated/zod-schemas";
 import { serviceId } from "@/di-container/service-id";
 import type { Logger } from "@/application/port/logger";
-import type { ListProjectsUseCase } from "@/application/use-case/project/list-projects-use-case";
+import type { RemoveMemberUseCase } from "@/application/use-case/project-member";
 import { UnexpectedError, unexpectedErrorMessage } from "@/util/error-util";
 import { handleError } from "../../hono-handler-util/error-handler";
-import { convertToProjectResponse } from "./project-response-mapper";
 import { USER_SUB, type AppContext } from "../constants";
 
-export const buildListProjectsHandler =
+export const buildRemoveMemberHandler =
   ({ container }: { container: Container }) =>
   async (c: AppContext) => {
     const logger = container.get<Logger>(serviceId.LOGGER);
-    const useCase = container.get<ListProjectsUseCase>(
-      serviceId.LIST_PROJECTS_USE_CASE,
+    const removeMemberUseCase = container.get<RemoveMemberUseCase>(
+      serviceId.REMOVE_MEMBER_USE_CASE,
     );
 
     try {
@@ -30,33 +28,20 @@ export const buildListProjectsHandler =
         );
       }
 
-      const result = await useCase.execute({ currentUserId: userSub });
+      const projectId = c.req.param("projectId");
+      const memberId = c.req.param("memberId");
+
+      const result = await removeMemberUseCase.execute({
+        projectId,
+        currentUserId: userSub,
+        targetMemberId: memberId,
+      });
 
       if (!result.isOk()) {
         return handleError(result.error, c, logger);
       }
 
-      // レスポンスのZodバリデーション
-      const responseData = result.data.map((item) =>
-        convertToProjectResponse(item.project, item.myRole),
-      );
-      const responseParseResult =
-        schemas.ProjectsResponse.safeParse(responseData);
-      if (!responseParseResult.success) {
-        logger.error("レスポンスバリデーションエラー", {
-          errors: responseParseResult.error.errors,
-          responseData,
-        });
-        return c.json(
-          {
-            name: new UnexpectedError().name,
-            message: unexpectedErrorMessage,
-          },
-          500,
-        );
-      }
-
-      return c.json(responseParseResult.data, 200);
+      return c.body(null, 204);
     } catch (error) {
       logger.error("ハンドラーで予期せぬエラーをキャッチ", error as Error);
       return c.json(

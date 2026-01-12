@@ -1,6 +1,7 @@
 import { test, expect, describe } from "vitest";
 import { CreateProjectUseCaseImpl } from "./create-project-use-case";
 import { ProjectRepositoryDummy } from "@/domain/model/project/project.repository.dummy";
+import { ProjectMemberRepositoryDummy } from "@/domain/model/project-member/project-member.repository.dummy";
 import { LoggerDummy } from "@/application/port/logger/dummy";
 import { buildFetchNowDummy } from "@/application/port/fetch-now/dummy";
 import { UnexpectedError } from "@/util/error-util";
@@ -12,6 +13,7 @@ describe("CreateProjectUseCaseのテスト", () => {
   const now = new Date("2024-01-01T00:00:00+09:00");
   const fetchNow = buildFetchNowDummy(now);
   const nowString = dateToIsoString(now);
+  const currentUserId = "test-user-id";
 
   describe("execute", () => {
     test("最小限の情報でプロジェクトを作成できること", async () => {
@@ -21,6 +23,9 @@ describe("CreateProjectUseCaseのテスト", () => {
           projectIdReturnValue: projectId,
           saveReturnValue: Result.ok(undefined),
         }),
+        projectMemberRepository: new ProjectMemberRepositoryDummy({
+          saveReturnValue: Result.ok(undefined),
+        }),
         logger: new LoggerDummy(),
         fetchNow,
       });
@@ -28,6 +33,7 @@ describe("CreateProjectUseCaseのテスト", () => {
       const result = await createProjectUseCase.execute({
         name: "テストプロジェクト",
         color: "#FF5733",
+        currentUserId,
       });
 
       expect(result.isOk()).toBe(true);
@@ -48,6 +54,9 @@ describe("CreateProjectUseCaseのテスト", () => {
           projectIdReturnValue: projectId,
           saveReturnValue: Result.ok(undefined),
         }),
+        projectMemberRepository: new ProjectMemberRepositoryDummy({
+          saveReturnValue: Result.ok(undefined),
+        }),
         logger: new LoggerDummy(),
         fetchNow,
       });
@@ -56,6 +65,7 @@ describe("CreateProjectUseCaseのテスト", () => {
         name: "完全なプロジェクト",
         description: "詳細な説明",
         color: "#3498DB",
+        currentUserId,
       });
 
       expect(result.isOk()).toBe(true);
@@ -67,9 +77,34 @@ describe("CreateProjectUseCaseのテスト", () => {
       }
     });
 
-    test("保存に失敗した場合はUnexpectedErrorを返すこと", async () => {
+    test("プロジェクト保存に失敗した場合はUnexpectedErrorを返すこと", async () => {
       const createProjectUseCase = new CreateProjectUseCaseImpl({
         projectRepository: new ProjectRepositoryDummy({
+          saveReturnValue: Result.err(new UnexpectedError()),
+        }),
+        projectMemberRepository: new ProjectMemberRepositoryDummy(),
+        logger: new LoggerDummy(),
+        fetchNow,
+      });
+
+      const result = await createProjectUseCase.execute({
+        name: "テストプロジェクト",
+        color: "#FF5733",
+        currentUserId,
+      });
+
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error).toBeInstanceOf(UnexpectedError);
+      }
+    });
+
+    test("オーナーメンバー保存に失敗した場合はUnexpectedErrorを返すこと", async () => {
+      const createProjectUseCase = new CreateProjectUseCaseImpl({
+        projectRepository: new ProjectRepositoryDummy({
+          saveReturnValue: Result.ok(undefined),
+        }),
+        projectMemberRepository: new ProjectMemberRepositoryDummy({
           saveReturnValue: Result.err(new UnexpectedError()),
         }),
         logger: new LoggerDummy(),
@@ -79,6 +114,7 @@ describe("CreateProjectUseCaseのテスト", () => {
       const result = await createProjectUseCase.execute({
         name: "テストプロジェクト",
         color: "#FF5733",
+        currentUserId,
       });
 
       expect(result.isErr()).toBe(true);
@@ -101,6 +137,9 @@ describe("CreateProjectUseCaseのテスト", () => {
           projectRepository: new ProjectRepositoryDummy({
             saveReturnValue: Result.ok(undefined),
           }),
+          projectMemberRepository: new ProjectMemberRepositoryDummy({
+            saveReturnValue: Result.ok(undefined),
+          }),
           logger: new LoggerDummy(),
           fetchNow,
         });
@@ -108,6 +147,7 @@ describe("CreateProjectUseCaseのテスト", () => {
         const result = await createProjectUseCase.execute({
           name: `プロジェクト_${color}`,
           color,
+          currentUserId,
         });
 
         expect(result.isOk()).toBe(true);
@@ -124,6 +164,9 @@ describe("CreateProjectUseCaseのテスト", () => {
           projectIdReturnValue: projectId,
           saveReturnValue: Result.ok(undefined),
         }),
+        projectMemberRepository: new ProjectMemberRepositoryDummy({
+          saveReturnValue: Result.ok(undefined),
+        }),
         logger: new LoggerDummy(),
         fetchNow,
       });
@@ -131,6 +174,7 @@ describe("CreateProjectUseCaseのテスト", () => {
       const result = await createProjectUseCase.execute({
         name: "検証用プロジェクト",
         color: "#E74C3C",
+        currentUserId,
       });
 
       expect(result.isOk()).toBe(true);

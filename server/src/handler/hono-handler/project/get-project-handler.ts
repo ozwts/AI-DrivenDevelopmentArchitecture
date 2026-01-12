@@ -1,4 +1,3 @@
-import type { Context } from "hono";
 import type { Container } from "inversify";
 import { schemas } from "@/generated/zod-schemas";
 import { serviceId } from "@/di-container/service-id";
@@ -7,37 +6,46 @@ import type { GetProjectUseCase } from "@/application/use-case/project/get-proje
 import { UnexpectedError, unexpectedErrorMessage } from "@/util/error-util";
 import { handleError } from "../../hono-handler-util/error-handler";
 import { convertToProjectResponse } from "./project-response-mapper";
+import { USER_SUB, type AppContext } from "../constants";
 
 export const buildGetProjectHandler =
   ({ container }: { container: Container }) =>
-  async (c: Context) => {
+  async (c: AppContext) => {
     const logger = container.get<Logger>(serviceId.LOGGER);
     const useCase = container.get<GetProjectUseCase>(
       serviceId.GET_PROJECT_USE_CASE,
     );
 
     try {
+      const userSub = c.get(USER_SUB);
+
+      if (userSub === "") {
+        logger.error("userSubがコンテキストに設定されていません");
+        return c.json(
+          {
+            name: new UnexpectedError().name,
+            message: unexpectedErrorMessage,
+          },
+          500,
+        );
+      }
+
       const projectId = c.req.param("projectId");
 
-      const result = await useCase.execute({ projectId });
+      const result = await useCase.execute({
+        projectId,
+        currentUserId: userSub,
+      });
 
       if (!result.isOk()) {
         return handleError(result.error, c, logger);
       }
 
-      // プロジェクトが存在しない場合
-      if (result.data === undefined) {
-        return c.json(
-          {
-            name: "NotFoundError",
-            message: "プロジェクトが見つかりませんでした",
-          },
-          404,
-        );
-      }
-
       // レスポンスのZodバリデーション
-      const responseData = convertToProjectResponse(result.data);
+      const responseData = convertToProjectResponse(
+        result.data.project,
+        result.data.myRole,
+      );
       const responseParseResult =
         schemas.ProjectResponse.safeParse(responseData);
       if (!responseParseResult.success) {

@@ -30,6 +30,8 @@ import type { UpdateCurrentUserUseCase } from "@/application/use-case/user/updat
 import { UpdateCurrentUserUseCaseImpl } from "@/application/use-case/user/update-current-user-use-case";
 import type { DeleteCurrentUserUseCase } from "@/application/use-case/user/delete-current-user-use-case";
 import { DeleteCurrentUserUseCaseImpl } from "@/application/use-case/user/delete-current-user-use-case";
+import type { SearchUsersUseCase } from "@/application/use-case/user/search-users-use-case";
+import { SearchUsersUseCaseImpl } from "@/application/use-case/user/search-users-use-case";
 import type { RegisterTodoUseCase } from "@/application/use-case/todo/register-todo-use-case";
 import { RegisterTodoUseCaseImpl } from "@/application/use-case/todo/register-todo-use-case";
 import type { ListTodosUseCase } from "@/application/use-case/todo/list-todos-use-case";
@@ -50,6 +52,8 @@ import type { DeleteAttachmentUseCase } from "@/application/use-case/todo/delete
 import { DeleteAttachmentUseCaseImpl } from "@/application/use-case/todo/delete-attachment-use-case";
 import type { ProjectRepository } from "@/domain/model/project/project.repository";
 import { ProjectRepositoryImpl } from "@/infrastructure/repository/project-repository";
+import type { ProjectMemberRepository } from "@/domain/model/project-member/project-member.repository";
+import { ProjectMemberRepositoryImpl } from "@/infrastructure/repository/project-member-repository";
 import type { ListProjectsUseCase } from "@/application/use-case/project/list-projects-use-case";
 import { ListProjectsUseCaseImpl } from "@/application/use-case/project/list-projects-use-case";
 import type { GetProjectUseCase } from "@/application/use-case/project/get-project-use-case";
@@ -63,6 +67,16 @@ import {
   DeleteProjectUseCaseImpl,
   type DeleteProjectUoWContext,
 } from "@/application/use-case/project/delete-project-use-case";
+import type { ListMembersUseCase } from "@/application/use-case/project-member/list-members-use-case";
+import { ListMembersUseCaseImpl } from "@/application/use-case/project-member/list-members-use-case";
+import type { InviteMemberUseCase } from "@/application/use-case/project-member/invite-member-use-case";
+import { InviteMemberUseCaseImpl } from "@/application/use-case/project-member/invite-member-use-case";
+import type { RemoveMemberUseCase } from "@/application/use-case/project-member/remove-member-use-case";
+import { RemoveMemberUseCaseImpl } from "@/application/use-case/project-member/remove-member-use-case";
+import type { ChangeMemberRoleUseCase } from "@/application/use-case/project-member/change-member-role-use-case";
+import { ChangeMemberRoleUseCaseImpl } from "@/application/use-case/project-member/change-member-role-use-case";
+import type { LeaveProjectUseCase } from "@/application/use-case/project-member/leave-project-use-case";
+import { LeaveProjectUseCaseImpl } from "@/application/use-case/project-member/leave-project-use-case";
 import type { UnitOfWorkRunner } from "@/application/port/unit-of-work";
 import { DynamoDBUnitOfWorkRunner } from "@/infrastructure/unit-of-work/dynamodb-unit-of-work-runner";
 import { unwrapEnv } from "./env-util";
@@ -97,6 +111,11 @@ export const registerLambdaContainer = (): Container => {
   container
     .bind(serviceId.PROJECTS_TABLE_NAME)
     .toDynamicValue(() => unwrapEnv("PROJECTS_TABLE_NAME"))
+    .inSingletonScope();
+
+  container
+    .bind(serviceId.PROJECT_MEMBERS_TABLE_NAME)
+    .toDynamicValue(() => unwrapEnv("PROJECT_MEMBERS_TABLE_NAME"))
     .inSingletonScope();
 
   container
@@ -311,6 +330,25 @@ export const registerLambdaContainer = (): Container => {
       return new ProjectRepositoryImpl({
         ddbDoc,
         projectsTableName,
+        logger,
+      });
+    })
+    .inSingletonScope();
+
+  container
+    .bind<ProjectMemberRepository>(serviceId.PROJECT_MEMBER_REPOSITORY)
+    .toDynamicValue((ctx) => {
+      const ddbDoc = ctx.container.get<DynamoDBDocumentClient>(
+        serviceId.DDB_DOC,
+      );
+      const projectMembersTableName = ctx.container.get<string>(
+        serviceId.PROJECT_MEMBERS_TABLE_NAME,
+      );
+      const logger = ctx.container.get<Logger>(serviceId.LOGGER);
+
+      return new ProjectMemberRepositoryImpl({
+        ddbDoc,
+        projectMembersTableName,
         logger,
       });
     })
@@ -542,10 +580,15 @@ export const registerLambdaContainer = (): Container => {
       const projectRepository = ctx.container.get<ProjectRepository>(
         serviceId.PROJECT_REPOSITORY,
       );
+      const projectMemberRepository =
+        ctx.container.get<ProjectMemberRepository>(
+          serviceId.PROJECT_MEMBER_REPOSITORY,
+        );
       const logger = ctx.container.get<Logger>(serviceId.LOGGER);
 
       return new ListProjectsUseCaseImpl({
         projectRepository,
+        projectMemberRepository,
         logger,
       });
     })
@@ -557,10 +600,15 @@ export const registerLambdaContainer = (): Container => {
       const projectRepository = ctx.container.get<ProjectRepository>(
         serviceId.PROJECT_REPOSITORY,
       );
+      const projectMemberRepository =
+        ctx.container.get<ProjectMemberRepository>(
+          serviceId.PROJECT_MEMBER_REPOSITORY,
+        );
       const logger = ctx.container.get<Logger>(serviceId.LOGGER);
 
       return new GetProjectUseCaseImpl({
         projectRepository,
+        projectMemberRepository,
         logger,
       });
     })
@@ -572,11 +620,16 @@ export const registerLambdaContainer = (): Container => {
       const projectRepository = ctx.container.get<ProjectRepository>(
         serviceId.PROJECT_REPOSITORY,
       );
+      const projectMemberRepository =
+        ctx.container.get<ProjectMemberRepository>(
+          serviceId.PROJECT_MEMBER_REPOSITORY,
+        );
       const logger = ctx.container.get<Logger>(serviceId.LOGGER);
       const fetchNow = ctx.container.get<FetchNow>(serviceId.FETCH_NOW);
 
       return new CreateProjectUseCaseImpl({
         projectRepository,
+        projectMemberRepository,
         logger,
         fetchNow,
       });
@@ -589,11 +642,16 @@ export const registerLambdaContainer = (): Container => {
       const projectRepository = ctx.container.get<ProjectRepository>(
         serviceId.PROJECT_REPOSITORY,
       );
+      const projectMemberRepository =
+        ctx.container.get<ProjectMemberRepository>(
+          serviceId.PROJECT_MEMBER_REPOSITORY,
+        );
       const logger = ctx.container.get<Logger>(serviceId.LOGGER);
       const fetchNow = ctx.container.get<FetchNow>(serviceId.FETCH_NOW);
 
       return new UpdateProjectUseCaseImpl({
         projectRepository,
+        projectMemberRepository,
         logger,
         fetchNow,
       });
@@ -656,6 +714,18 @@ export const registerLambdaContainer = (): Container => {
     .inSingletonScope();
 
   container
+    .bind<SearchUsersUseCase>(serviceId.SEARCH_USERS_USE_CASE)
+    .toDynamicValue((ctx) => {
+      const userRepository = ctx.container.get<UserRepository>(
+        serviceId.USER_REPOSITORY,
+      );
+      const logger = ctx.container.get<Logger>(serviceId.LOGGER);
+
+      return new SearchUsersUseCaseImpl({ userRepository, logger });
+    })
+    .inSingletonScope();
+
+  container
     .bind<RegisterCurrentUserUseCase>(serviceId.REGISTER_CURRENT_USER_USE_CASE)
     .toDynamicValue((ctx) => {
       const userRepository = ctx.container.get<UserRepository>(
@@ -706,6 +776,123 @@ export const registerLambdaContainer = (): Container => {
       return new DeleteCurrentUserUseCaseImpl({
         userRepository,
         authClient,
+        logger,
+      });
+    })
+    .inSingletonScope();
+
+  // Use Cases - ProjectMember
+  container
+    .bind<ListMembersUseCase>(serviceId.LIST_MEMBERS_USE_CASE)
+    .toDynamicValue((ctx) => {
+      const projectMemberRepository =
+        ctx.container.get<ProjectMemberRepository>(
+          serviceId.PROJECT_MEMBER_REPOSITORY,
+        );
+      const projectRepository = ctx.container.get<ProjectRepository>(
+        serviceId.PROJECT_REPOSITORY,
+      );
+      const userRepository = ctx.container.get<UserRepository>(
+        serviceId.USER_REPOSITORY,
+      );
+      const logger = ctx.container.get<Logger>(serviceId.LOGGER);
+
+      return new ListMembersUseCaseImpl({
+        projectMemberRepository,
+        projectRepository,
+        userRepository,
+        logger,
+      });
+    })
+    .inSingletonScope();
+
+  container
+    .bind<InviteMemberUseCase>(serviceId.INVITE_MEMBER_USE_CASE)
+    .toDynamicValue((ctx) => {
+      const projectMemberRepository =
+        ctx.container.get<ProjectMemberRepository>(
+          serviceId.PROJECT_MEMBER_REPOSITORY,
+        );
+      const projectRepository = ctx.container.get<ProjectRepository>(
+        serviceId.PROJECT_REPOSITORY,
+      );
+      const userRepository = ctx.container.get<UserRepository>(
+        serviceId.USER_REPOSITORY,
+      );
+      const logger = ctx.container.get<Logger>(serviceId.LOGGER);
+      const fetchNow = ctx.container.get<FetchNow>(serviceId.FETCH_NOW);
+
+      return new InviteMemberUseCaseImpl({
+        projectMemberRepository,
+        projectRepository,
+        userRepository,
+        logger,
+        fetchNow,
+      });
+    })
+    .inSingletonScope();
+
+  container
+    .bind<RemoveMemberUseCase>(serviceId.REMOVE_MEMBER_USE_CASE)
+    .toDynamicValue((ctx) => {
+      const projectMemberRepository =
+        ctx.container.get<ProjectMemberRepository>(
+          serviceId.PROJECT_MEMBER_REPOSITORY,
+        );
+      const projectRepository = ctx.container.get<ProjectRepository>(
+        serviceId.PROJECT_REPOSITORY,
+      );
+      const logger = ctx.container.get<Logger>(serviceId.LOGGER);
+
+      return new RemoveMemberUseCaseImpl({
+        projectMemberRepository,
+        projectRepository,
+        logger,
+      });
+    })
+    .inSingletonScope();
+
+  container
+    .bind<ChangeMemberRoleUseCase>(serviceId.CHANGE_MEMBER_ROLE_USE_CASE)
+    .toDynamicValue((ctx) => {
+      const projectMemberRepository =
+        ctx.container.get<ProjectMemberRepository>(
+          serviceId.PROJECT_MEMBER_REPOSITORY,
+        );
+      const projectRepository = ctx.container.get<ProjectRepository>(
+        serviceId.PROJECT_REPOSITORY,
+      );
+      const userRepository = ctx.container.get<UserRepository>(
+        serviceId.USER_REPOSITORY,
+      );
+      const logger = ctx.container.get<Logger>(serviceId.LOGGER);
+      const fetchNow = ctx.container.get<FetchNow>(serviceId.FETCH_NOW);
+
+      return new ChangeMemberRoleUseCaseImpl({
+        projectMemberRepository,
+        projectRepository,
+        userRepository,
+        logger,
+        fetchNow,
+      });
+    })
+    .inSingletonScope();
+
+  container
+    .bind<LeaveProjectUseCase>(serviceId.LEAVE_PROJECT_USE_CASE)
+    .toDynamicValue((ctx) => {
+      const projectMemberRepository =
+        ctx.container.get<ProjectMemberRepository>(
+          serviceId.PROJECT_MEMBER_REPOSITORY,
+        );
+      const projectRepository = ctx.container.get<ProjectRepository>(
+        serviceId.PROJECT_REPOSITORY,
+      );
+      const logger = ctx.container.get<Logger>(serviceId.LOGGER);
+
+      return new LeaveProjectUseCaseImpl({
+        projectMemberRepository,
+        projectRepository,
         logger,
       });
     })

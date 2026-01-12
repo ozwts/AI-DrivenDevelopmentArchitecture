@@ -1,7 +1,13 @@
 import type { Logger } from "@/application/port/logger";
-import { UnexpectedError, NotFoundError } from "@/util/error-util";
+import {
+  UnexpectedError,
+  NotFoundError,
+  ForbiddenError,
+} from "@/util/error-util";
 import type { ProjectRepository } from "@/domain/model/project/project.repository";
+import type { ProjectMemberRepository } from "@/domain/model/project-member/project-member.repository";
 import type { Project } from "@/domain/model/project/project.entity";
+import type { MemberRole } from "@/domain/model/project-member/member-role.vo";
 import type { FetchNow } from "@/application/port/fetch-now";
 import { Result } from "@/util/result";
 import { dateToIsoString } from "@/util/date-util";
@@ -9,14 +15,21 @@ import type { UseCase } from "../interfaces";
 
 export type UpdateProjectUseCaseInput = {
   projectId: string;
+  currentUserId: string;
   name?: string;
   description?: string;
   color?: string;
 };
 
-export type UpdateProjectUseCaseOutput = Project;
+export type UpdateProjectUseCaseOutput = {
+  project: Project;
+  myRole: MemberRole;
+};
 
-export type UpdateProjectUseCaseException = UnexpectedError | NotFoundError;
+export type UpdateProjectUseCaseException =
+  | UnexpectedError
+  | NotFoundError
+  | ForbiddenError;
 
 export type UpdateProjectUseCaseResult = Result<
   UpdateProjectUseCaseOutput,
@@ -25,6 +38,7 @@ export type UpdateProjectUseCaseResult = Result<
 
 export type UpdateProjectUseCaseProps = {
   readonly projectRepository: ProjectRepository;
+  readonly projectMemberRepository: ProjectMemberRepository;
   readonly logger: Logger;
   readonly fetchNow: FetchNow;
 };
@@ -45,16 +59,14 @@ export class UpdateProjectUseCaseImpl implements UpdateProjectUseCase {
   async execute(
     input: UpdateProjectUseCaseInput,
   ): Promise<UpdateProjectUseCaseResult> {
-    const { projectRepository, logger, fetchNow } = this.#props;
+    const { projectRepository, projectMemberRepository, logger, fetchNow } =
+      this.#props;
+    const { projectId, currentUserId } = input;
 
-    logger.debug("ユースケース: プロジェクト更新を開始", {
-      projectId: input.projectId,
-    });
+    logger.debug("ユースケース: プロジェクト更新を開始", { projectId });
 
     // 既存のプロジェクトを取得
-    const findResult = await projectRepository.findById({
-      id: input.projectId,
-    });
+    const findResult = await projectRepository.findById({ id: projectId });
 
     if (findResult.isErr()) {
       logger.error("プロジェクトの取得に失敗", findResult.error);
@@ -65,10 +77,27 @@ export class UpdateProjectUseCaseImpl implements UpdateProjectUseCase {
       const notFoundError = new NotFoundError(
         "プロジェクトが見つかりませんでした",
       );
-      logger.error("プロジェクトが存在しません", {
-        projectId: input.projectId,
-      });
+      logger.error("プロジェクトが存在しません", { projectId });
       return Result.err(notFoundError);
+    }
+
+    // 現在のユーザーがオーナーかどうか確認
+    const memberResult = await projectMemberRepository.findByProjectIdAndUserId({
+      projectId,
+      userId: currentUserId,
+    });
+    if (memberResult.isErr()) {
+      logger.error("メンバー情報の取得に失敗", memberResult.error);
+      return Result.err(memberResult.error);
+    }
+    if (memberResult.data?.role.isOwner() !== true) {
+      logger.warn("プロジェクト更新権限がありません", {
+        projectId,
+        currentUserId,
+      });
+      return Result.err(
+        new ForbiddenError("Only project owner can update the project"),
+      );
     }
 
     const now = dateToIsoString(fetchNow());
@@ -90,7 +119,8 @@ export class UpdateProjectUseCaseImpl implements UpdateProjectUseCase {
       );
 
     if (updatedResult.isErr()) {
-      return updatedResult;
+      logger.error("プロジェクトの更新に失敗", updatedResult.error);
+      return Result.err(new UnexpectedError());
     }
 
     const saveResult = await projectRepository.save({
@@ -102,10 +132,11 @@ export class UpdateProjectUseCaseImpl implements UpdateProjectUseCase {
       return Result.err(saveResult.error);
     }
 
-    logger.info("プロジェクト更新成功", {
-      projectId: updatedResult.data.id,
-    });
+    logger.info("プロジェクト更新成功", { projectId: updatedResult.data.id });
 
-    return Result.ok(updatedResult.data);
+    return Result.ok({
+      project: updatedResult.data,
+      myRole: memberResult.data.role,
+    });
   }
 }
