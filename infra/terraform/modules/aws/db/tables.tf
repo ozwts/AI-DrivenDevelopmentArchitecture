@@ -70,5 +70,23 @@ locals {
       global_secondary_indexes = []
       env_var_name             = "ATTACHMENTS_TABLE_NAME" # アプリケーションの環境変数名
     }
+    project_members = {
+      hash_key  = "projectId"
+      range_key = "projectMemberId"
+      attributes = [
+        { name = "projectId", type = "S" },
+        { name = "projectMemberId", type = "S" },
+        { name = "userId", type = "S" }
+      ]
+      global_secondary_indexes = [
+        {
+          name            = "UserIdIndex"
+          hash_key        = "userId"
+          range_key       = null
+          projection_type = "ALL"
+        }
+      ]
+      env_var_name = "PROJECT_MEMBERS_TABLE_NAME" # アプリケーションの環境変数名
+    }
   }
 }
