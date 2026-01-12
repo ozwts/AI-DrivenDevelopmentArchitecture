@@ -104,6 +104,56 @@ const buildGuidanceMessage = (
     "タスクの順番は `procedure/workflow/runbooks/10-development-overview.md` の考えを遵守すること。\n",
   );
 
+  // 必須タスクの指示を追加
+  lines.push("## 必須タスク（重要）\n");
+  lines.push("以下のタスクは**必ず**含めること:\n");
+  lines.push("### 1. Draft PR作成（タスクリストの最初）\n");
+  lines.push("```");
+  lines.push("1. **What**: Draft PRを作成する");
+  lines.push(
+    "   - **Why**: タスク進捗を可視化し、CIを動かすため",
+  );
+  lines.push(
+    "   - **Done when**: 空コミットでDraft PR作成、PRボディに全タスクをチェックリストとして記載",
+  );
+  lines.push("   - **Ref**: `procedure/workflow/runbooks/11-branch-strategy.md`");
+  lines.push("```\n");
+
+  lines.push("### 2. 各フェーズの最後に2つのタスク\n");
+  lines.push("各フェーズ（Contract, Policy, Frontend, Server, Infra, E2E）完了時に:\n");
+  lines.push("**(a) 後続計画の見直し**");
+  lines.push("```");
+  lines.push("N. **What**: 後続フェーズの作業計画を見直す");
+  lines.push(
+    "   - **Why**: このフェーズで得られた知見を後続タスクに反映するため",
+  );
+  lines.push(
+    "   - **Done when**: 後続タスクの追加・削除・修正を完了、または見直し不要を確認",
+  );
+  lines.push("   - **Ref**: 該当runbook");
+  lines.push("```\n");
+  lines.push("**(b) コミット・プッシュ・PR更新**");
+  lines.push("```");
+  lines.push("N+1. **What**: {フェーズ名}フェーズの成果物をコミット・プッシュ・PR更新");
+  lines.push(
+    "   - **Why**: フェーズ完了を記録し、PRの進捗と計画変更を反映するため",
+  );
+  lines.push(
+    "   - **Done when**: リモート同期 → コミット → プッシュ → PR更新（完了チェック＆見直し結果反映）",
+  );
+  lines.push("   - **Ref**: `procedure/workflow/runbooks/11-branch-strategy.md`");
+  lines.push("```\n");
+
+  lines.push("### 3. E2Eフェーズの最後にReady for Review\n");
+  lines.push("```");
+  lines.push("N. **What**: Draft PRをReady for Reviewに変更する");
+  lines.push("   - **Why**: 全フェーズ完了後、レビュー可能な状態にするため");
+  lines.push(
+    "   - **Done when**: `mcp__github__update_pull_request(draft=false)` で変更完了",
+  );
+  lines.push("   - **Ref**: `procedure/workflow/runbooks/70-e2e.md`");
+  lines.push("```\n");
+
   if (availableRunbooks.length > 0) {
     lines.push("## 利用可能なRunbooks\n");
     for (const runbook of availableRunbooks) {
