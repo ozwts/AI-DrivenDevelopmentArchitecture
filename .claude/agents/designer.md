@@ -124,7 +124,7 @@ mcp__playwright__browser_take_screenshot(fullPage=true)
 - ユーザー体験が向上したか
 - 一貫性が保たれているか
 
-## 8. 完了報告
+## 7. 完了報告
 
 ```markdown
 # デザインブラッシュアップ完了
