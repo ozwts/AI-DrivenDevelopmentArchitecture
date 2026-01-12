@@ -2,7 +2,7 @@
  * ワークフロー管理の責務定義
  */
 import { z } from "zod";
-import { getWorkflowMemory, type WorkflowTask, type Requirement } from "./memory";
+import { getWorkflowMemory, type WorkflowTask, type Requirement, type Notes } from "./memory";
 import { executePlan } from "./planner";
 import {
   formatTaskList,
@@ -66,6 +66,24 @@ const TaskSchema = z.object({
 });
 
 /**
+ * 特記事項スキーマ
+ */
+const NotesSchema = z.object({
+  designDecisions: z
+    .array(z.string())
+    .optional()
+    .describe("設計判断: 重要な設計判断とその理由"),
+  remainingWork: z
+    .array(z.string())
+    .optional()
+    .describe("後続作業・残件: やりきれなかったこと"),
+  breakingChanges: z
+    .array(z.string())
+    .optional()
+    .describe("破壊的変更: 既存機能への影響"),
+});
+
+/**
  * ワークフロー管理責務定義（統合版）
  *
  * 6つのアクション:
@@ -97,6 +115,9 @@ export const WORKFLOW_RESPONSIBILITIES: WorkflowResponsibility[] = [
         .array(TaskSchema)
         .optional()
         .describe("Tasks to register (for 'set' action)"),
+      notes: NotesSchema.optional().describe(
+        "Notes for handover (for 'set' action): designDecisions, remainingWork, breakingChanges",
+      ),
       index: z
         .number()
         .optional()
@@ -137,6 +158,7 @@ export const WORKFLOW_RESPONSIBILITIES: WorkflowResponsibility[] = [
 
         case "set": {
           const tasks = input.tasks as WorkflowTask[] | undefined;
+          const notes = input.notes as Partial<Notes> | undefined;
           if (tasks === undefined || tasks.length === 0) {
             throw new Error("tasks is required for 'set' action");
           }
@@ -146,6 +168,9 @@ export const WORKFLOW_RESPONSIBILITIES: WorkflowResponsibility[] = [
             );
           }
           memory.setTasks(tasks);
+          if (notes !== undefined) {
+            memory.setNotes(notes);
+          }
           return formatSetResult(memory.getGoal() ?? "", memory.getTasks());
         }
 
@@ -165,7 +190,8 @@ export const WORKFLOW_RESPONSIBILITIES: WorkflowResponsibility[] = [
           const goal = memory.getGoal();
           const requirements = memory.getRequirements();
           const tasks = memory.getTasks();
-          return formatTaskList(goal, requirements, tasks);
+          const notes = memory.getNotes();
+          return formatTaskList(goal, requirements, tasks, notes);
         }
 
         case "clear": {

@@ -4,7 +4,7 @@
  * ワークフロータスクの出力整形
  */
 
-import type { TaskWithStatus, Requirement } from "./memory";
+import type { TaskWithStatus, Requirement, Notes } from "./memory";
 
 /**
  * タスク名を短縮（長すぎる場合は省略）
@@ -96,6 +96,7 @@ export const formatTaskList = (
   goal: string | null,
   requirements: Requirement[],
   tasks: TaskWithStatus[],
+  notes: Notes,
 ): string => {
   if (goal === null && requirements.length === 0 && tasks.length === 0) {
     return "ワークフローが登録されていません。";
@@ -143,6 +144,40 @@ export const formatTaskList = (
         lines.push(`- **Ref**: \`${task.ref}\``);
       }
 
+      lines.push("");
+    }
+  }
+
+  // 特記事項
+  const hasNotes =
+    notes.designDecisions.length > 0 ||
+    notes.remainingWork.length > 0 ||
+    notes.breakingChanges.length > 0;
+
+  if (hasNotes) {
+    lines.push("### 特記事項", "");
+
+    if (notes.designDecisions.length > 0) {
+      lines.push("#### 設計判断", "");
+      for (const decision of notes.designDecisions) {
+        lines.push(`- ${decision}`);
+      }
+      lines.push("");
+    }
+
+    if (notes.remainingWork.length > 0) {
+      lines.push("#### 後続作業・残件", "");
+      for (const work of notes.remainingWork) {
+        lines.push(`- ${work}`);
+      }
+      lines.push("");
+    }
+
+    if (notes.breakingChanges.length > 0) {
+      lines.push("#### 破壊的変更", "");
+      for (const change of notes.breakingChanges) {
+        lines.push(`- ${change}`);
+      }
       lines.push("");
     }
   }

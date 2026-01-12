@@ -195,10 +195,7 @@ N. **What**: 後続フェーズ（Frontend/Server/Infra/E2E）の作業計画を
    - **Ref**: `procedure/workflow/runbooks/11-branch-strategy.md`
 ```
 
-**PRボディのフォーマット**:
-- `## Summary`: Goal
-- `## Tasks`: 全タスクを `- [ ]` 形式で列挙（省略しない）
-- `## Requirements`: 要件サマリー
+**PRボディのフォーマット**: `.github/PULL_REQUEST_TEMPLATE.md` に従う（全タスクを省略せず列挙）
 
 ### コミット・プッシュ・PR更新タスク
 

@@ -55,6 +55,18 @@ export type TaskWithStatus = WorkflowTask & {
 };
 
 /**
+ * 特記事項（人・AIへの引き継ぎ用）
+ */
+export type Notes = {
+  /** 設計判断: 重要な設計判断とその理由 */
+  designDecisions: string[];
+  /** 後続作業・残件: やりきれなかったこと */
+  remainingWork: string[];
+  /** 破壊的変更: 既存機能への影響 */
+  breakingChanges: string[];
+};
+
+/**
  * ワークフローメモリ
  * シングルトンでタスク状態を管理
  */
@@ -64,6 +76,12 @@ class WorkflowMemory {
   private goal: string | null = null;
 
   private tasks: TaskWithStatus[] = [];
+
+  private notes: Notes = {
+    designDecisions: [],
+    remainingWork: [],
+    breakingChanges: [],
+  };
 
   /**
    * 要件定義を設定
@@ -149,12 +167,60 @@ class WorkflowMemory {
   }
 
   /**
-   * 要件定義・ゴール・タスクをクリア
+   * 特記事項を取得
+   */
+  getNotes(): Notes {
+    return { ...this.notes };
+  }
+
+  /**
+   * 特記事項を設定
+   */
+  setNotes(notes: Partial<Notes>): void {
+    if (notes.designDecisions !== undefined) {
+      this.notes.designDecisions = notes.designDecisions;
+    }
+    if (notes.remainingWork !== undefined) {
+      this.notes.remainingWork = notes.remainingWork;
+    }
+    if (notes.breakingChanges !== undefined) {
+      this.notes.breakingChanges = notes.breakingChanges;
+    }
+  }
+
+  /**
+   * 設計判断を追加
+   */
+  addDesignDecision(decision: string): void {
+    this.notes.designDecisions.push(decision);
+  }
+
+  /**
+   * 後続作業・残件を追加
+   */
+  addRemainingWork(work: string): void {
+    this.notes.remainingWork.push(work);
+  }
+
+  /**
+   * 破壊的変更を追加
+   */
+  addBreakingChange(change: string): void {
+    this.notes.breakingChanges.push(change);
+  }
+
+  /**
+   * 要件定義・ゴール・タスク・特記事項をクリア
    */
   clear(): void {
     this.requirements = [];
     this.goal = null;
     this.tasks = [];
+    this.notes = {
+      designDecisions: [],
+      remainingWork: [],
+      breakingChanges: [],
+    };
   }
 
   /**
