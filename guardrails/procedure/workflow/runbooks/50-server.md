@@ -124,13 +124,23 @@ mcp__guardrails__review_static_analysis(
 
 ## ステップ 9: テストの実装
 
-**ポリシー:** `guardrails/constitution/co-evolution/testing-principles.md`
+**ポリシー:**
+
+- `guardrails/policy/server/domain-model/50-test-overview.md`
+- `guardrails/policy/server/domain-model/51-value-object-test-patterns.md`
+- `guardrails/policy/server/domain-model/52-entity-test-patterns.md`
+- `guardrails/policy/server/repository/40-test-patterns.md`
+- `guardrails/policy/server/use-case/30-testing-overview.md`
+
+**実装先:** `server/src/` 配下の `*.test.ts` ファイル
+
+**レビュー後にテスト実行:**
 
 ```
 mcp__guardrails__procedure_test(target='server')
 ```
 
-**完了条件:** テスト成功、コミット
+**完了条件:** 静的解析パス、定性レビューパス、テスト成功、コミット
 
 ---
 

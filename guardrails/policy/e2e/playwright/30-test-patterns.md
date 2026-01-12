@@ -7,6 +7,42 @@
 **根拠となる憲法**:
 - `testing-principles.md`: 1テスト = 1検証
 
+### ナビゲーションはUI経由で行う
+
+E2Eテストでは**実際のユーザー導線**を検証する。`page.goto(url)`による直接遷移ではなく、UIを通じた遷移を行う。
+
+| 状況 | 方法 |
+|------|------|
+| テスト開始時 | `goto()`で起点ページに遷移（許可） |
+| テスト中の画面遷移 | UI操作（リンク、ボタン）で遷移（必須） |
+
+#### ✅ Good
+
+```typescript
+// プロジェクト作成後、一覧から詳細へ遷移
+await projectsPage.clickNewProject();
+await projectsPage.fillProjectForm(name, description);
+await projectsPage.submitForm();
+
+// UI経由で詳細ページへ遷移
+await projectsPage.clickProject(projectName);
+await expect(projectDetailPage.heading).toBeVisible();
+```
+
+#### ❌ Bad
+
+```typescript
+// プロジェクト作成後、URLで直接遷移
+await projectsPage.submitForm();
+const response = await responsePromise;
+createdProjectId = response.id;
+
+// 直接遷移はユーザー導線を検証できない
+await projectDetailPage.goto(createdProjectId);
+```
+
+**理由**: 直接遷移ではナビゲーション導線（リンクの存在、クリック可能性、遷移先の正しさ）を検証できない。
+
 ### 検証の完結原則
 
 E2Eテストでは、**操作の結果がユーザーに見える形で正しく反映されているか**まで確認する。中間状態（トースト、URL変化、ローディング）だけで終わらせない。

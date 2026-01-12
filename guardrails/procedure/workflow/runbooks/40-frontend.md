@@ -134,11 +134,13 @@ Task(
 
 **実装先:** 各コンポーネントと同階層に `*.ct.test.tsx` を作成
 
+**レビュー後にテスト実行:**
+
 ```
 mcp__guardrails__procedure_test(target='web-component')
 ```
 
-**完了条件:** テスト成功、コミット
+**完了条件:** 静的解析パス、定性レビューパス、テスト成功、コミット
 
 ---
 
@@ -152,6 +154,8 @@ mcp__guardrails__procedure_test(target='web-component')
 
 **実装先:** ルートディレクトリ直下に `route.ss.test.ts` を作成
 
+**レビュー後にスナップショット取得:**
+
 ```
 mcp__guardrails__procedure_snapshot(action='update', file='...')
 ```
@@ -162,7 +166,7 @@ mcp__guardrails__procedure_snapshot(action='update', file='...')
 - テストケース名と内容が一致しているか
 - 問題があれば修正して再取得
 
-**完了条件:** スナップショット確認OK、コミット
+**完了条件:** 静的解析パス、定性レビューパス、スナップショット確認OK、コミット
 
 ---
 
