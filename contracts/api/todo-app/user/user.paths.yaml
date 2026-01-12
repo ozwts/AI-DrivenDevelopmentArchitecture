@@ -3,8 +3,18 @@
     tags:
       - users
     summary: ユーザーのリストを取得
+    description: 名前で部分一致検索が可能
     security:
       - CognitoAuthorizer: []
+    parameters:
+      - name: name
+        in: query
+        required: false
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description: ユーザー名で部分一致検索（省略時は全件取得）
     responses:
       "200":
         description: ユーザーリスト取得に成功

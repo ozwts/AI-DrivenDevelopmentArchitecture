@@ -13,6 +13,8 @@ tags:
     description: 添付ファイル
   - name: projects
     description: プロジェクト
+  - name: project-members
+    description: プロジェクトメンバー
   - name: users
     description: ユーザー
 paths:
@@ -763,13 +765,221 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /projects/{projectId}/members:
+    get:
+      tags:
+        - project-members
+      summary: プロジェクトメンバーのリストを取得
+      security:
+        - CognitoAuthorizer: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: プロジェクトID
+      responses:
+        '200':
+          description: プロジェクトメンバーリスト取得に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectMembersResponse'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: アクセス拒否、権限エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: プロジェクトが存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags:
+        - project-members
+      summary: プロジェクトにメンバーを招待
+      description: プロジェクトオーナーのみが実行可能
+      security:
+        - CognitoAuthorizer: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: プロジェクトID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InviteMemberParams'
+      responses:
+        '201':
+          description: メンバー招待に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectMemberResponse'
+        '400':
+          description: バリデーションエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: アクセス拒否、権限エラー（オーナーではない）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: プロジェクトまたはユーザーが存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: ドメインルールエラー（既にメンバーの場合など）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /projects/{projectId}/members/me:
+    delete:
+      tags:
+        - project-members
+      summary: プロジェクトから脱退
+      description: 自分自身をプロジェクトメンバーから削除する。オーナーは脱退不可。
+      security:
+        - CognitoAuthorizer: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: プロジェクトID
+      responses:
+        '204':
+          description: 脱退に成功
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: アクセス拒否、権限エラー（オーナーは脱退不可）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: プロジェクトが存在しない、またはメンバーではない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /projects/{projectId}/members/{userId}:
+    delete:
+      tags:
+        - project-members
+      summary: プロジェクトからメンバーを削除
+      description: プロジェクトオーナーのみが実行可能。オーナー自身は削除不可。
+      security:
+        - CognitoAuthorizer: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: プロジェクトID
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 削除するメンバーのユーザーID
+      responses:
+        '204':
+          description: メンバー削除に成功
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: アクセス拒否、権限エラー（オーナーではない、またはオーナー自身を削除しようとした）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: プロジェクトが存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /users:
     get:
       tags:
         - users
       summary: ユーザーのリストを取得
+      description: 名前で部分一致検索が可能
       security:
         - CognitoAuthorizer: []
+      parameters:
+        - name: name
+          in: query
+          required: false
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
+          description: ユーザー名で部分一致検索（省略時は全件取得）
       responses:
         '200':
           description: ユーザーリスト取得に成功
@@ -1308,6 +1518,47 @@ components:
           type: string
           description: プロジェクトのカラーコード（省略可能。#で始まる16進数6文字、例：#001964）
           pattern: ^#[0-9A-Fa-f]{6}$
+    MemberRole:
+      type: string
+      enum:
+        - owner
+        - member
+      description: 'メンバーロール（owner: オーナー, member: メンバー）'
+    ProjectMemberResponse:
+      type: object
+      required:
+        - id
+        - userId
+        - role
+        - user
+        - joinedAt
+      properties:
+        id:
+          type: string
+          description: プロジェクトメンバーの一意の識別子
+        userId:
+          type: string
+          description: ユーザーID
+        role:
+          $ref: '#/components/schemas/MemberRole'
+        user:
+          $ref: '#/components/schemas/UserResponse'
+        joinedAt:
+          type: string
+          format: date-time
+          description: 参加日時
+    ProjectMembersResponse:
+      type: array
+      items:
+        $ref: '#/components/schemas/ProjectMemberResponse'
+    InviteMemberParams:
+      type: object
+      required:
+        - userId
+      properties:
+        userId:
+          type: string
+          description: 招待するユーザーのID
     UserResponse:
       type: object
       required:

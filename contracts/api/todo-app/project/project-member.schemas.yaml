@@ -1,0 +1,44 @@
+MemberRole:
+  type: string
+  enum:
+    - owner
+    - member
+  description: "メンバーロール（owner: オーナー, member: メンバー）"
+
+ProjectMemberResponse:
+  type: object
+  required:
+    - id
+    - userId
+    - role
+    - user
+    - joinedAt
+  properties:
+    id:
+      type: string
+      description: プロジェクトメンバーの一意の識別子
+    userId:
+      type: string
+      description: ユーザーID
+    role:
+      $ref: "#/MemberRole"
+    user:
+      $ref: "../user/user.schemas.yaml#/UserResponse"
+    joinedAt:
+      type: string
+      format: date-time
+      description: 参加日時
+
+ProjectMembersResponse:
+  type: array
+  items:
+    $ref: "#/ProjectMemberResponse"
+
+InviteMemberParams:
+  type: object
+  required:
+    - userId
+  properties:
+    userId:
+      type: string
+      description: 招待するユーザーのID

@@ -1,0 +1,200 @@
+/projects/{projectId}/members:
+  get:
+    tags:
+      - project-members
+    summary: プロジェクトメンバーのリストを取得
+    security:
+      - CognitoAuthorizer: []
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: プロジェクトID
+    responses:
+      "200":
+        description: プロジェクトメンバーリスト取得に成功
+        content:
+          application/json:
+            schema:
+              $ref: "project-member.schemas.yaml#/ProjectMembersResponse"
+      "401":
+        description: 認証エラー
+        content:
+          application/json:
+            schema:
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
+      "403":
+        description: アクセス拒否、権限エラー
+        content:
+          application/json:
+            schema:
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
+      "404":
+        description: プロジェクトが存在しない
+        content:
+          application/json:
+            schema:
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
+      "500":
+        description: サーバーエラー
+        content:
+          application/json:
+            schema:
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
+  post:
+    tags:
+      - project-members
+    summary: プロジェクトにメンバーを招待
+    description: プロジェクトオーナーのみが実行可能
+    security:
+      - CognitoAuthorizer: []
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: プロジェクトID
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "project-member.schemas.yaml#/InviteMemberParams"
+    responses:
+      "201":
+        description: メンバー招待に成功
+        content:
+          application/json:
+            schema:
+              $ref: "project-member.schemas.yaml#/ProjectMemberResponse"
+      "400":
+        description: バリデーションエラー
+        content:
+          application/json:
+            schema:
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
+      "401":
+        description: 認証エラー
+        content:
+          application/json:
+            schema:
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
+      "403":
+        description: アクセス拒否、権限エラー（オーナーではない）
+        content:
+          application/json:
+            schema:
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
+      "404":
+        description: プロジェクトまたはユーザーが存在しない
+        content:
+          application/json:
+            schema:
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
+      "422":
+        description: ドメインルールエラー（既にメンバーの場合など）
+        content:
+          application/json:
+            schema:
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
+      "500":
+        description: サーバーエラー
+        content:
+          application/json:
+            schema:
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
+
+/projects/{projectId}/members/{userId}:
+  delete:
+    tags:
+      - project-members
+    summary: プロジェクトからメンバーを削除
+    description: プロジェクトオーナーのみが実行可能。オーナー自身は削除不可。
+    security:
+      - CognitoAuthorizer: []
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: プロジェクトID
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: 削除するメンバーのユーザーID
+    responses:
+      "204":
+        description: メンバー削除に成功
+      "401":
+        description: 認証エラー
+        content:
+          application/json:
+            schema:
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
+      "403":
+        description: アクセス拒否、権限エラー（オーナーではない、またはオーナー自身を削除しようとした）
+        content:
+          application/json:
+            schema:
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
+      "404":
+        description: プロジェクトが存在しない
+        content:
+          application/json:
+            schema:
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
+      "500":
+        description: サーバーエラー
+        content:
+          application/json:
+            schema:
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
+
+/projects/{projectId}/members/me:
+  delete:
+    tags:
+      - project-members
+    summary: プロジェクトから脱退
+    description: 自分自身をプロジェクトメンバーから削除する。オーナーは脱退不可。
+    security:
+      - CognitoAuthorizer: []
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: プロジェクトID
+    responses:
+      "204":
+        description: 脱退に成功
+      "401":
+        description: 認証エラー
+        content:
+          application/json:
+            schema:
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
+      "403":
+        description: アクセス拒否、権限エラー（オーナーは脱退不可）
+        content:
+          application/json:
+            schema:
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
+      "404":
+        description: プロジェクトが存在しない、またはメンバーではない
+        content:
+          application/json:
+            schema:
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
+      "500":
+        description: サーバーエラー
+        content:
+          application/json:
+            schema:
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"

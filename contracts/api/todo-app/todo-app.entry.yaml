@@ -11,6 +11,8 @@ tags:
     description: 添付ファイル
   - name: projects
     description: プロジェクト
+  - name: project-members
+    description: プロジェクトメンバー
   - name: users
     description: ユーザー
 
@@ -36,6 +38,14 @@ paths:
     $ref: "project/project.paths.yaml#/~1projects"
   /projects/{projectId}:
     $ref: "project/project.paths.yaml#/~1projects~1{projectId}"
+
+  # Project Member
+  /projects/{projectId}/members:
+    $ref: "project/project-member.paths.yaml#/~1projects~1{projectId}~1members"
+  /projects/{projectId}/members/me:
+    $ref: "project/project-member.paths.yaml#/~1projects~1{projectId}~1members~1me"
+  /projects/{projectId}/members/{userId}:
+    $ref: "project/project-member.paths.yaml#/~1projects~1{projectId}~1members~1{userId}"
 
   # User
   /users:
@@ -97,6 +107,16 @@ components:
       $ref: "project/project.schemas.yaml#/CreateProjectParams"
     UpdateProjectParams:
       $ref: "project/project.schemas.yaml#/UpdateProjectParams"
+
+    # Project Member
+    MemberRole:
+      $ref: "project/project-member.schemas.yaml#/MemberRole"
+    ProjectMemberResponse:
+      $ref: "project/project-member.schemas.yaml#/ProjectMemberResponse"
+    ProjectMembersResponse:
+      $ref: "project/project-member.schemas.yaml#/ProjectMembersResponse"
+    InviteMemberParams:
+      $ref: "project/project-member.schemas.yaml#/InviteMemberParams"
 
     # User
     UserResponse:
