@@ -236,14 +236,29 @@ export const executeDeploy = async (
       duration: Date.now() - startTime,
     };
   } catch (error: unknown) {
-    const execError = error as { stdout?: string; stderr?: string };
-    let output = "";
-    if (execError.stdout !== undefined && execError.stdout !== "") {
-      output = execError.stdout;
-    } else if (execError.stderr !== undefined && execError.stderr !== "") {
-      output = execError.stderr;
-    } else {
-      output = error instanceof Error ? error.message : String(error);
+    const execError = error as {
+      stdout?: string;
+      stderr?: string;
+      message?: string;
+    };
+
+    // stdout と stderr の両方を結合（エラー原因を見逃さないため）
+    const parts: string[] = [];
+
+    if (execError.stdout !== undefined && execError.stdout.trim() !== "") {
+      parts.push(execError.stdout.trim());
+    }
+
+    if (execError.stderr !== undefined && execError.stderr.trim() !== "") {
+      if (parts.length > 0) {
+        parts.push("\n--- stderr ---\n");
+      }
+      parts.push(execError.stderr.trim());
+    }
+
+    // stdout/stderr が両方空の場合はエラーメッセージを使用
+    if (parts.length === 0) {
+      parts.push(error instanceof Error ? error.message : String(error));
     }
 
     return {
@@ -252,7 +267,7 @@ export const executeDeploy = async (
       target,
       environment,
       branchSuffix,
-      output,
+      output: parts.join(""),
       duration: Date.now() - startTime,
     };
   }
