@@ -53,6 +53,7 @@ export class CreateProjectUseCaseImpl implements CreateProjectUseCase {
     const now = dateToIsoString(fetchNow());
 
     // プロジェクトの登録
+    // 注: メンバー管理機能実装時に、作成者をオーナーとして追加する処理を追加予定
     const newProject = Project.from({
       id: projectRepository.projectId(),
       name,
@@ -60,6 +61,7 @@ export class CreateProjectUseCaseImpl implements CreateProjectUseCase {
       color,
       createdAt: now,
       updatedAt: now,
+      members: [],
     });
 
     const saveResult = await projectRepository.save({

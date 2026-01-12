@@ -37,6 +37,7 @@ export const projectDdbItemToProject = (
   projectDdbItem: ProjectDdbItem,
 ): Project =>
   // DynamoDB色文字列をそのまま使用（ProjectはcolorをProject.fromで処理する）
+  // membersは別テーブルから取得するため、ここでは空配列を設定
   Project.from({
     id: projectDdbItem.projectId,
     name: projectDdbItem.name,
@@ -44,6 +45,7 @@ export const projectDdbItemToProject = (
     color: projectDdbItem.color,
     createdAt: projectDdbItem.createdAt,
     updatedAt: projectDdbItem.updatedAt,
+    members: [],
   });
 
 export const projectDdbItemFromProject = (
@@ -89,6 +91,10 @@ export class ProjectRepositoryImpl implements ProjectRepository {
   }
 
   projectId(): string {
+    return uuid();
+  }
+
+  projectMemberId(): string {
     return uuid();
   }
 

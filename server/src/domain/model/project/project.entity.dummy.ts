@@ -1,4 +1,5 @@
 import { Project } from "./project.entity";
+import type { ProjectMember } from "./project-member.entity";
 import {
   getDummyId,
   getDummyShortText,
@@ -14,6 +15,7 @@ export type ProjectDummyProps = Partial<{
   color: string;
   createdAt: string;
   updatedAt: string;
+  members: ProjectMember[];
 }>;
 
 /**
@@ -22,6 +24,7 @@ export type ProjectDummyProps = Partial<{
  * @example projectDummyFrom()
  * @example projectDummyFrom({ name: "カスタムプロジェクト" })
  * @example projectDummyFrom({ description: "プロジェクトの説明" })
+ * @example projectDummyFrom({ members: [projectMemberDummyFrom()] })
  */
 export const projectDummyFrom = (props?: ProjectDummyProps): Project => {
   const now = getDummyRecentDate();
@@ -36,5 +39,6 @@ export const projectDummyFrom = (props?: ProjectDummyProps): Project => {
     color: props?.color ?? getDummyProjectColor(),
     createdAt: props?.createdAt ?? now,
     updatedAt: props?.updatedAt ?? now,
+    members: props?.members ?? [],
   });
 };

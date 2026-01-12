@@ -1,3 +1,5 @@
+import type { ProjectMember } from "./project-member.entity";
+
 /**
  * Project コンストラクタのProps型
  */
@@ -8,6 +10,7 @@ export type ProjectProps = {
   color: string;
   createdAt: string;
   updatedAt: string;
+  members: ProjectMember[];
 };
 
 /**
@@ -82,6 +85,14 @@ export class Project {
    */
   readonly updatedAt: string;
 
+  /**
+   * プロジェクトメンバー
+   *
+   * このプロジェクトに参加しているメンバーのリスト。
+   * Projectアグリゲートの一部として管理される。
+   */
+  readonly members: ProjectMember[];
+
   private constructor(props: ProjectProps) {
     this.id = props.id;
     this.name = props.name;
@@ -89,6 +100,7 @@ export class Project {
     this.color = props.color;
     this.createdAt = props.createdAt;
     this.updatedAt = props.updatedAt;
+    this.members = props.members;
   }
 
   /**
@@ -144,5 +156,81 @@ export class Project {
       color,
       updatedAt,
     });
+  }
+
+  /**
+   * メンバーを追加する
+   *
+   * @param member - 追加するメンバー
+   * @param updatedAt - 更新日時（ISO 8601形式）
+   * @returns 新しいProjectインスタンス
+   */
+  addMember(member: ProjectMember, updatedAt: string): Project {
+    return new Project({
+      ...this,
+      members: [...this.members, member],
+      updatedAt,
+    });
+  }
+
+  /**
+   * メンバーを削除する
+   *
+   * @param memberId - 削除するメンバーのID
+   * @param updatedAt - 更新日時（ISO 8601形式）
+   * @returns 新しいProjectインスタンス
+   */
+  removeMember(memberId: string, updatedAt: string): Project {
+    return new Project({
+      ...this,
+      members: this.members.filter((m) => m.id !== memberId),
+      updatedAt,
+    });
+  }
+
+  /**
+   * メンバーを更新する
+   *
+   * @param updatedMember - 更新するメンバー
+   * @param updatedAt - 更新日時（ISO 8601形式）
+   * @returns 新しいProjectインスタンス
+   */
+  replaceMember(updatedMember: ProjectMember, updatedAt: string): Project {
+    return new Project({
+      ...this,
+      members: this.members.map((m) =>
+        m.id === updatedMember.id ? updatedMember : m,
+      ),
+      updatedAt,
+    });
+  }
+
+  /**
+   * オーナーを取得する
+   *
+   * @returns オーナーのProjectMember、見つからない場合はundefined
+   */
+  findOwner(): ProjectMember | undefined {
+    return this.members.find((m) => m.isOwner());
+  }
+
+  /**
+   * ユーザーIDでメンバーを検索する
+   *
+   * @param userId - 検索するユーザーID
+   * @returns 見つかったProjectMember、見つからない場合はundefined
+   */
+  findMemberByUserId(userId: string): ProjectMember | undefined {
+    return this.members.find((m) => m.userId === userId);
+  }
+
+  /**
+   * 指定したユーザーがメンバーかどうかを判定する
+   *
+   * @param userId - 判定するユーザーID
+   * @returns メンバーの場合true
+   */
+  hasMember(userId: string): boolean {
+    return this.members.some((m) => m.userId === userId);
   }
 }

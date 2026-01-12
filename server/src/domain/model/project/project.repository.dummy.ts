@@ -11,6 +11,7 @@ import type {
 
 export type ProjectRepositoryDummyProps = {
   projectIdReturnValue?: string | undefined;
+  projectMemberIdReturnValue?: string | undefined;
   findByIdReturnValue?: FindByIdResult | undefined;
   findAllReturnValue?: FindAllResult | undefined;
   saveReturnValue?: SaveResult | undefined;
@@ -26,6 +27,8 @@ export type ProjectRepositoryDummyProps = {
 export class ProjectRepositoryDummy implements ProjectRepository {
   readonly #projectIdReturnValue: string;
 
+  readonly #projectMemberIdReturnValue: string;
+
   readonly #findByIdReturnValue: FindByIdResult;
 
   readonly #findAllReturnValue: FindAllResult;
@@ -36,6 +39,7 @@ export class ProjectRepositoryDummy implements ProjectRepository {
 
   constructor(props?: ProjectRepositoryDummyProps) {
     this.#projectIdReturnValue = props?.projectIdReturnValue ?? uuid();
+    this.#projectMemberIdReturnValue = props?.projectMemberIdReturnValue ?? uuid();
     this.#findByIdReturnValue =
       props?.findByIdReturnValue ?? Result.ok(projectDummyFrom());
     this.#findAllReturnValue =
@@ -46,6 +50,10 @@ export class ProjectRepositoryDummy implements ProjectRepository {
 
   projectId(): string {
     return this.#projectIdReturnValue;
+  }
+
+  projectMemberId(): string {
+    return this.#projectMemberIdReturnValue;
   }
 
   findById(_props: { id: string }): Promise<FindByIdResult> {

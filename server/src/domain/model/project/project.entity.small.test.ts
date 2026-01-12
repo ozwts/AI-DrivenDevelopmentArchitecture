@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { projectDummyFrom } from "./project.entity.dummy";
+import { projectMemberDummyFrom } from "./project-member.entity.dummy";
+import { MemberRole } from "./member-role.vo";
 
 describe("Project", () => {
   describe("constructor", () => {
@@ -195,6 +197,194 @@ describe("Project", () => {
       expect(originalProject.description).toBe("元の説明");
       expect(originalProject.color).toBe("#FF5733");
       expect(originalProject.updatedAt).toBe("2024-01-01T00:00:00.000Z");
+    });
+  });
+
+  describe("addMember", () => {
+    it("メンバーを追加した新しいProjectインスタンスを返す", () => {
+      // Arrange
+      const project = projectDummyFrom({
+        members: [],
+        updatedAt: "2024-01-01T00:00:00.000Z",
+      });
+      const member = projectMemberDummyFrom({
+        id: "member-123",
+        userId: "user-456",
+        role: MemberRole.member(),
+      });
+
+      // Act
+      const updatedProject = project.addMember(
+        member,
+        "2024-01-02T00:00:00.000Z",
+      );
+
+      // Assert
+      expect(updatedProject.members).toHaveLength(1);
+      expect(updatedProject.members[0].id).toBe("member-123");
+      expect(updatedProject.updatedAt).toBe("2024-01-02T00:00:00.000Z");
+    });
+
+    it("元のProjectインスタンスは変更されない", () => {
+      // Arrange
+      const project = projectDummyFrom({ members: [] });
+      const member = projectMemberDummyFrom();
+
+      // Act
+      project.addMember(member, "2024-01-02T00:00:00.000Z");
+
+      // Assert
+      expect(project.members).toHaveLength(0);
+    });
+  });
+
+  describe("removeMember", () => {
+    it("メンバーを削除した新しいProjectインスタンスを返す", () => {
+      // Arrange
+      const member1 = projectMemberDummyFrom({ id: "member-1" });
+      const member2 = projectMemberDummyFrom({ id: "member-2" });
+      const project = projectDummyFrom({
+        members: [member1, member2],
+        updatedAt: "2024-01-01T00:00:00.000Z",
+      });
+
+      // Act
+      const updatedProject = project.removeMember(
+        "member-1",
+        "2024-01-02T00:00:00.000Z",
+      );
+
+      // Assert
+      expect(updatedProject.members).toHaveLength(1);
+      expect(updatedProject.members[0].id).toBe("member-2");
+      expect(updatedProject.updatedAt).toBe("2024-01-02T00:00:00.000Z");
+    });
+
+    it("存在しないメンバーIDを指定しても変更なし", () => {
+      // Arrange
+      const member = projectMemberDummyFrom({ id: "member-1" });
+      const project = projectDummyFrom({ members: [member] });
+
+      // Act
+      const updatedProject = project.removeMember(
+        "non-existent",
+        "2024-01-02T00:00:00.000Z",
+      );
+
+      // Assert
+      expect(updatedProject.members).toHaveLength(1);
+    });
+  });
+
+  describe("replaceMember", () => {
+    it("メンバーを更新した新しいProjectインスタンスを返す", () => {
+      // Arrange
+      const originalMember = projectMemberDummyFrom({
+        id: "member-1",
+        role: MemberRole.member(),
+      });
+      const project = projectDummyFrom({
+        members: [originalMember],
+        updatedAt: "2024-01-01T00:00:00.000Z",
+      });
+      const updatedMember = projectMemberDummyFrom({
+        id: "member-1",
+        role: MemberRole.owner(),
+      });
+
+      // Act
+      const updatedProject = project.replaceMember(
+        updatedMember,
+        "2024-01-02T00:00:00.000Z",
+      );
+
+      // Assert
+      expect(updatedProject.members).toHaveLength(1);
+      expect(updatedProject.members[0].role.isOwner()).toBe(true);
+      expect(updatedProject.updatedAt).toBe("2024-01-02T00:00:00.000Z");
+    });
+  });
+
+  describe("findOwner", () => {
+    it("オーナーメンバーを取得する", () => {
+      // Arrange
+      const ownerMember = projectMemberDummyFrom({
+        id: "owner-1",
+        role: MemberRole.owner(),
+      });
+      const regularMember = projectMemberDummyFrom({
+        id: "member-1",
+        role: MemberRole.member(),
+      });
+      const project = projectDummyFrom({
+        members: [ownerMember, regularMember],
+      });
+
+      // Act
+      const owner = project.findOwner();
+
+      // Assert
+      expect(owner).toBeDefined();
+      expect(owner?.id).toBe("owner-1");
+    });
+
+    it("オーナーがいない場合undefinedを返す", () => {
+      // Arrange
+      const project = projectDummyFrom({ members: [] });
+
+      // Act
+      const owner = project.findOwner();
+
+      // Assert
+      expect(owner).toBeUndefined();
+    });
+  });
+
+  describe("findMemberByUserId", () => {
+    it("ユーザーIDでメンバーを検索する", () => {
+      // Arrange
+      const member = projectMemberDummyFrom({
+        id: "member-1",
+        userId: "user-123",
+      });
+      const project = projectDummyFrom({ members: [member] });
+
+      // Act
+      const foundMember = project.findMemberByUserId("user-123");
+
+      // Assert
+      expect(foundMember).toBeDefined();
+      expect(foundMember?.id).toBe("member-1");
+    });
+
+    it("存在しないユーザーIDの場合undefinedを返す", () => {
+      // Arrange
+      const project = projectDummyFrom({ members: [] });
+
+      // Act
+      const foundMember = project.findMemberByUserId("non-existent");
+
+      // Assert
+      expect(foundMember).toBeUndefined();
+    });
+  });
+
+  describe("hasMember", () => {
+    it("メンバーが存在する場合trueを返す", () => {
+      // Arrange
+      const member = projectMemberDummyFrom({ userId: "user-123" });
+      const project = projectDummyFrom({ members: [member] });
+
+      // Act & Assert
+      expect(project.hasMember("user-123")).toBe(true);
+    });
+
+    it("メンバーが存在しない場合falseを返す", () => {
+      // Arrange
+      const project = projectDummyFrom({ members: [] });
+
+      // Act & Assert
+      expect(project.hasMember("user-123")).toBe(false);
     });
   });
 });

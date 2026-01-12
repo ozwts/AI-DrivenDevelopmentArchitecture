@@ -14,6 +14,11 @@ export type ProjectRepository = {
   projectId(): string;
 
   /**
+   * ProjectMember IDを生成する
+   */
+  projectMemberId(): string;
+
+  /**
    * プロジェクトをIDで検索する
    */
   findById(props: { id: string }): Promise<FindByIdResult>;
