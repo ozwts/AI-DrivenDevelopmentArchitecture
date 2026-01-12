@@ -6,7 +6,8 @@
     "web",
     "server",
     "infra",
-    "e2e"
+    "e2e",
+    "guardrails"
   ],
   "scripts": {
     "sort": "sort-package-json",
