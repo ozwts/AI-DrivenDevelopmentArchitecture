@@ -184,9 +184,32 @@ N. **What**: 後続フェーズ（Frontend/Server/Infra/E2E）の作業計画を
    - **Ref**: `procedure/workflow/runbooks/30-policy.md`
 ```
 
-### コミット・プッシュタスク
+### Draft PR作成タスク（タスクリストの最初）
 
-各フェーズ完了後、成果物をコミットしてリモートにプッシュする。見直しタスクの直後に配置すること。
+タスクリストの最初に、Draft PR作成タスクを追加すること。
+
+```
+1. **What**: Draft PRを作成する
+   - **Why**: タスク進捗を可視化し、CIを動かすため
+   - **Done when**: 空コミットでDraft PR作成、PRボディに全タスクをチェックリストとして記載
+   - **Ref**: `procedure/workflow/runbooks/11-branch-strategy.md`
+```
+
+**PRボディのフォーマット**:
+- `## Summary`: Goal
+- `## Tasks`: 全タスクを `- [ ]` 形式で列挙（省略しない）
+- `## Requirements`: 要件サマリー
+
+### コミット・プッシュ・PR更新タスク
+
+各フェーズ完了後、成果物をコミットしてリモートにプッシュし、PRを更新する。見直しタスクの直後に配置すること。
+
+**手順**:
+1. リモート同期: `git fetch origin && git rebase origin/{branch}`（CIとの競合防止）
+2. コミット＆プッシュ
+3. PR更新（`mcp__github__update_pull_request`）:
+   - 完了タスクにチェックを入れる
+   - 見直し結果を反映（タスクの追加・削除・修正）
 
 **コミットメッセージ形式**（`11-branch-strategy.md`参照）:
 ```
@@ -202,10 +225,21 @@ N. **What**: 後続フェーズ（Frontend/Server/Infra/E2E）の作業計画を
 - E2E: `test(e2e)`
 
 ```
-N+1. **What**: {フェーズ名}フェーズの成果物をコミット・プッシュ
-   - **Why**: フェーズ完了を記録し、変更をリモートに反映するため
-   - **Done when**: コミット規約に従ったメッセージでcommit & push完了
+N+1. **What**: {フェーズ名}フェーズの成果物をコミット・プッシュ・PR更新
+   - **Why**: フェーズ完了を記録し、PRの進捗と計画変更を反映するため
+   - **Done when**: リモート同期 → コミット → プッシュ → PR更新（完了チェック＆見直し結果反映）
    - **Ref**: `procedure/workflow/runbooks/11-branch-strategy.md`
+```
+
+### E2E完了時のReady for Review
+
+E2Eフェーズの最後に、Draft PRをReady for Reviewに変更するタスクを追加すること。
+
+```
+N. **What**: Draft PRをReady for Reviewに変更する
+   - **Why**: 全フェーズ完了後、レビュー可能な状態にするため
+   - **Done when**: `mcp__github__update_pull_request(draft=false)` で変更完了
+   - **Ref**: `procedure/workflow/runbooks/70-e2e.md`
 ```
 
 ### 注意事項

@@ -90,6 +90,23 @@ main
 
 ## コミット規約
 
+### リモート同期（コミット前の必須手順）
+
+CIでClaude Code Actionsが並行して動作する可能性があるため、**コミット前に必ずリモートの変更を取り込む**。
+
+```bash
+git fetch origin
+git rebase origin/{current-branch}
+```
+
+**コンフリクト発生時:**
+
+1. `git status` で競合ファイルを確認
+2. 競合を解決
+3. `git add {files}`
+4. `git rebase --continue`
+5. 解決できない場合は `git rebase --abort` で中断し、人間に相談
+
 ### フェーズごとのコミット
 
 各フェーズ完了時にコミット・プッシュを行う。フェーズの成果物を1コミットにまとめる。

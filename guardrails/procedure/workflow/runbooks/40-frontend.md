@@ -221,6 +221,42 @@ mcp__guardrails__procedure_workflow(action='set', tasks=[
 
 ---
 
+## ステップ 13: コミット＆PR更新
+
+### 1. リモート同期
+
+```bash
+git fetch origin && git rebase origin/{current-branch}
+```
+
+### 2. コミット＆プッシュ
+
+```bash
+git add -A
+git commit -m "feat(web): {message}"
+git push origin {current-branch}
+```
+
+### 3. PR更新
+
+GitHub MCPサーバーでPRボディを更新：
+
+- 完了タスクにチェックを入れる
+- 見直し結果を反映（タスクの追加・削除・修正）
+
+```
+mcp__github__update_pull_request(
+  owner='{owner}',
+  repo='{repo}',
+  pullNumber={PR番号},
+  body='## Summary\n{Goal}\n\n## Tasks\n- [x] {完了タスク}\n- [ ] {未完了タスク}\n- [ ] {追加タスク}（見直しで追加）\n...'
+)
+```
+
+**完了条件:** コミット成功、プッシュ成功、PR更新完了（進捗＆計画変更を反映）
+
+---
+
 ## 完了条件
 
 - コード生成完了
