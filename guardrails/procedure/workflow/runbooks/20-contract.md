@@ -49,8 +49,9 @@
 3. ユーザー回答を受けて要件を更新
    - procedure_workflow(action='requirements', ...) で要件追加
    ↓
-4. 必要に応じてタスク計画を見直し
+4. 後続タスクの見直し（必須）
    - procedure_workflow(action='set', tasks=[...])
+   - 要件変更により影響を受けるタスクを追加・修正・削除
    ↓
 5. 曖昧性が解消された状態で契約定義へ進む
 ```
