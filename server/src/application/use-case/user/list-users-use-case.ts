@@ -5,7 +5,9 @@ import { Result } from "@/util/result";
 import { UnexpectedError } from "@/util/error-util";
 import type { UseCase } from "../interfaces";
 
-export type ListUsersUseCaseInput = Record<string, never>;
+export type ListUsersUseCaseInput = {
+  readonly name?: string;
+};
 
 export type ListUsersUseCaseOutput = User[];
 
@@ -39,23 +41,27 @@ export class ListUsersUseCaseImpl implements ListUsersUseCase {
     this.#props = props;
   }
 
-  async execute(): Promise<ListUsersUseCaseResult> {
+  async execute(input: ListUsersUseCaseInput): Promise<ListUsersUseCaseResult> {
     const { userRepository, logger } = this.#props;
+    const { name } = input;
 
-    logger.debug("ユースケース: ユーザー一覧取得を開始");
+    logger.debug("ユースケース: ユーザー一覧取得を開始", { name });
 
-    // リポジトリから全ユーザーを取得
-    const findAllResult = await userRepository.findAll();
+    // nameが指定されている場合は名前で検索、それ以外は全ユーザーを取得
+    const result =
+      name !== undefined && name !== ""
+        ? await userRepository.findByNameContains({ name })
+        : await userRepository.findAll();
 
-    if (findAllResult.isErr()) {
-      logger.error("ユーザー一覧の取得に失敗", findAllResult.error);
-      return Result.err(findAllResult.error);
+    if (result.isErr()) {
+      logger.error("ユーザー一覧の取得に失敗", result.error);
+      return Result.err(result.error);
     }
 
     logger.debug("ユーザー一覧取得完了", {
-      count: findAllResult.data.length,
+      count: result.data.length,
     });
 
-    return Result.ok(findAllResult.data);
+    return Result.ok(result.data);
   }
 }

@@ -2,19 +2,19 @@ import type { Container } from "inversify";
 import { schemas } from "@/generated/zod-schemas";
 import { serviceId } from "@/di-container/service-id";
 import type { Logger } from "@/application/port/logger";
-import type { CreateProjectUseCase } from "@/application/use-case/project/create-project-use-case";
+import type { InviteMemberUseCase } from "@/application/use-case/project/invite-member-use-case";
 import { UnexpectedError, unexpectedErrorMessage } from "@/util/error-util";
 import { handleError } from "../../hono-handler-util/error-handler";
 import { formatZodError } from "../../hono-handler-util/validation-formatter";
-import { convertToProjectResponse } from "./project-response-mapper";
+import { convertToProjectMemberResponse } from "./project-member-response-mapper";
 import { USER_SUB, type AppContext } from "../constants";
 
-export const buildCreateProjectHandler =
+export const buildInviteMemberHandler =
   ({ container }: { container: Container }) =>
   async (c: AppContext) => {
     const logger = container.get<Logger>(serviceId.LOGGER);
-    const useCase = container.get<CreateProjectUseCase>(
-      serviceId.CREATE_PROJECT_USE_CASE,
+    const useCase = container.get<InviteMemberUseCase>(
+      serviceId.INVITE_MEMBER_USE_CASE,
     );
 
     try {
@@ -32,10 +32,11 @@ export const buildCreateProjectHandler =
         );
       }
 
+      const projectId = c.req.param("projectId");
       const rawBody: unknown = await c.req.json();
 
       // リクエストボディのZodバリデーション
-      const parseResult = schemas.CreateProjectParams.safeParse(rawBody);
+      const parseResult = schemas.InviteMemberParams.safeParse(rawBody);
       if (!parseResult.success) {
         logger.debug("リクエストバリデーションエラー", {
           errors: parseResult.error.errors,
@@ -52,15 +53,10 @@ export const buildCreateProjectHandler =
 
       const body = parseResult.data;
 
-      // 空文字列をundefinedに変換（POSTリクエストの正規化）
-      const description =
-        body.description?.trim() === "" ? undefined : body.description;
-
       const result = await useCase.execute({
-        name: body.name,
-        description,
-        color: body.color,
-        ownerSub: userSub,
+        projectId,
+        inviteeUserId: body.userId,
+        operatorSub: userSub,
       });
 
       if (!result.isOk()) {
@@ -68,9 +64,9 @@ export const buildCreateProjectHandler =
       }
 
       // レスポンスのZodバリデーション
-      const responseData = convertToProjectResponse(result.data);
+      const responseData = convertToProjectMemberResponse(result.data);
       const responseParseResult =
-        schemas.ProjectResponse.safeParse(responseData);
+        schemas.ProjectMemberResponse.safeParse(responseData);
       if (!responseParseResult.success) {
         logger.error("レスポンスバリデーションエラー", {
           errors: responseParseResult.error.errors,

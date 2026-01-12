@@ -5,6 +5,7 @@ import {
   buildTodosTableParams,
   buildAttachmentsTableParams,
   buildProjectsTableParams,
+  buildProjectMembersTableParams,
   getRandomIdentifier,
   refreshTable,
 } from "@/util/testing-util/dynamodb";
@@ -24,6 +25,7 @@ const { ddb, ddbDoc } = buildDdbClients();
 const todosTableName = getRandomIdentifier();
 const attachmentsTableName = getRandomIdentifier();
 const projectsTableName = getRandomIdentifier();
+const projectMembersTableName = getRandomIdentifier();
 
 const setUpDependencies = () => {
   const logger = new LoggerDummy();
@@ -36,6 +38,7 @@ const setUpDependencies = () => {
   const projectRepository = new ProjectRepositoryImpl({
     ddbDoc,
     projectsTableName,
+    projectMembersTableName,
     logger,
   });
 
@@ -52,6 +55,7 @@ const setUpDependencies = () => {
       projectRepository: new ProjectRepositoryImpl({
         ddbDoc,
         projectsTableName,
+        projectMembersTableName,
         logger,
         uow: uowInstance,
       }),
@@ -90,6 +94,12 @@ beforeEach(async () => {
       projectsTableName,
     }),
   );
+  await refreshTable(
+    buildProjectMembersTableParams({
+      ddb,
+      projectMembersTableName,
+    }),
+  );
 });
 
 afterAll(async () => {
@@ -106,6 +116,11 @@ afterAll(async () => {
   await ddb.send(
     new DeleteTableCommand({
       TableName: projectsTableName,
+    }),
+  );
+  await ddb.send(
+    new DeleteTableCommand({
+      TableName: projectMembersTableName,
     }),
   );
 });

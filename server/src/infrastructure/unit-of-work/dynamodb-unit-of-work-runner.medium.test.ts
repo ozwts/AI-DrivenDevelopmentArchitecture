@@ -5,6 +5,7 @@ import {
   buildTodosTableParams,
   buildAttachmentsTableParams,
   buildProjectsTableParams,
+  buildProjectMembersTableParams,
   buildUsersTableParams,
   getRandomIdentifier,
   refreshTable,
@@ -27,6 +28,7 @@ const { ddb, ddbDoc } = buildDdbClients();
 const todosTableName = getRandomIdentifier();
 const attachmentsTableName = getRandomIdentifier();
 const projectsTableName = getRandomIdentifier();
+const projectMembersTableName = getRandomIdentifier();
 const usersTableName = getRandomIdentifier();
 
 type UoWContext = {
@@ -46,6 +48,7 @@ const setUpDependencies = () => {
   const projectRepository = new ProjectRepositoryImpl({
     ddbDoc,
     projectsTableName,
+    projectMembersTableName,
     logger,
   });
   const userRepository = new UserRepositoryImpl({
@@ -67,6 +70,7 @@ const setUpDependencies = () => {
       projectRepository: new ProjectRepositoryImpl({
         ddbDoc,
         projectsTableName,
+        projectMembersTableName,
         logger,
         uow: uowInstance,
       }),
@@ -108,6 +112,12 @@ beforeEach(async () => {
     }),
   );
   await refreshTable(
+    buildProjectMembersTableParams({
+      ddb,
+      projectMembersTableName,
+    }),
+  );
+  await refreshTable(
     buildUsersTableParams({
       ddb,
       usersTableName,
@@ -129,6 +139,11 @@ afterAll(async () => {
   await ddb.send(
     new DeleteTableCommand({
       TableName: projectsTableName,
+    }),
+  );
+  await ddb.send(
+    new DeleteTableCommand({
+      TableName: projectMembersTableName,
     }),
   );
   await ddb.send(

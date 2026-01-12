@@ -1,25 +1,36 @@
 import { test, expect, describe } from "vitest";
 import { CreateProjectUseCaseImpl } from "./create-project-use-case";
 import { ProjectRepositoryDummy } from "@/domain/model/project/project.repository.dummy";
+import { UserRepositoryDummy } from "@/domain/model/user/user.repository.dummy";
 import { LoggerDummy } from "@/application/port/logger/dummy";
 import { buildFetchNowDummy } from "@/application/port/fetch-now/dummy";
-import { UnexpectedError } from "@/util/error-util";
+import { NotFoundError, UnexpectedError } from "@/util/error-util";
 import { Project } from "@/domain/model/project/project.entity";
 import { dateToIsoString } from "@/util/date-util";
 import { Result } from "@/util/result";
+import { userDummyFrom } from "@/domain/model/user/user.entity.dummy";
 
 describe("CreateProjectUseCaseのテスト", () => {
   const now = new Date("2024-01-01T00:00:00+09:00");
   const fetchNow = buildFetchNowDummy(now);
   const nowString = dateToIsoString(now);
+  const ownerSub = "test-owner-sub";
+  const ownerUserId = "test-owner-user-id";
 
   describe("execute", () => {
     test("最小限の情報でプロジェクトを作成できること", async () => {
       const projectId = "test-project-id-123";
+      const projectMemberId = "test-project-member-id-123";
       const createProjectUseCase = new CreateProjectUseCaseImpl({
         projectRepository: new ProjectRepositoryDummy({
           projectIdReturnValue: projectId,
+          projectMemberIdReturnValue: projectMemberId,
           saveReturnValue: Result.ok(undefined),
+        }),
+        userRepository: new UserRepositoryDummy({
+          findBySubReturnValue: Result.ok(
+            userDummyFrom({ id: ownerUserId, sub: ownerSub }),
+          ),
         }),
         logger: new LoggerDummy(),
         fetchNow,
@@ -28,6 +39,7 @@ describe("CreateProjectUseCaseのテスト", () => {
       const result = await createProjectUseCase.execute({
         name: "テストプロジェクト",
         color: "#FF5733",
+        ownerSub,
       });
 
       expect(result.isOk()).toBe(true);
@@ -38,15 +50,28 @@ describe("CreateProjectUseCaseのテスト", () => {
         expect(result.data.description).toBeUndefined();
         expect(result.data.createdAt).toBe(nowString);
         expect(result.data.updatedAt).toBe(nowString);
+        // オーナーとして作成者が追加されている
+        expect(result.data.members).toHaveLength(1);
+        expect(result.data.members[0].id).toBe(projectMemberId);
+        expect(result.data.members[0].userId).toBe(ownerUserId);
+        expect(result.data.members[0].isOwner()).toBe(true);
+        expect(result.data.members[0].joinedAt).toBe(nowString);
       }
     });
 
     test("全ての情報を指定してプロジェクトを作成できること", async () => {
       const projectId = "test-project-id-456";
+      const projectMemberId = "test-project-member-id-456";
       const createProjectUseCase = new CreateProjectUseCaseImpl({
         projectRepository: new ProjectRepositoryDummy({
           projectIdReturnValue: projectId,
+          projectMemberIdReturnValue: projectMemberId,
           saveReturnValue: Result.ok(undefined),
+        }),
+        userRepository: new UserRepositoryDummy({
+          findBySubReturnValue: Result.ok(
+            userDummyFrom({ id: ownerUserId, sub: ownerSub }),
+          ),
         }),
         logger: new LoggerDummy(),
         fetchNow,
@@ -56,6 +81,7 @@ describe("CreateProjectUseCaseのテスト", () => {
         name: "完全なプロジェクト",
         description: "詳細な説明",
         color: "#3498DB",
+        ownerSub,
       });
 
       expect(result.isOk()).toBe(true);
@@ -64,6 +90,7 @@ describe("CreateProjectUseCaseのテスト", () => {
         expect(result.data.name).toBe("完全なプロジェクト");
         expect(result.data.description).toBe("詳細な説明");
         expect(result.data.color).toBe("#3498DB");
+        expect(result.data.members).toHaveLength(1);
       }
     });
 
@@ -72,6 +99,11 @@ describe("CreateProjectUseCaseのテスト", () => {
         projectRepository: new ProjectRepositoryDummy({
           saveReturnValue: Result.err(new UnexpectedError()),
         }),
+        userRepository: new UserRepositoryDummy({
+          findBySubReturnValue: Result.ok(
+            userDummyFrom({ id: ownerUserId, sub: ownerSub }),
+          ),
+        }),
         logger: new LoggerDummy(),
         fetchNow,
       });
@@ -79,11 +111,37 @@ describe("CreateProjectUseCaseのテスト", () => {
       const result = await createProjectUseCase.execute({
         name: "テストプロジェクト",
         color: "#FF5733",
+        ownerSub,
       });
 
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
         expect(result.error).toBeInstanceOf(UnexpectedError);
+      }
+    });
+
+    test("ユーザーが見つからない場合はNotFoundErrorを返すこと", async () => {
+      const createProjectUseCase = new CreateProjectUseCaseImpl({
+        projectRepository: new ProjectRepositoryDummy({
+          saveReturnValue: Result.ok(undefined),
+        }),
+        userRepository: new UserRepositoryDummy({
+          findBySubReturnValue: Result.ok(undefined),
+        }),
+        logger: new LoggerDummy(),
+        fetchNow,
+      });
+
+      const result = await createProjectUseCase.execute({
+        name: "テストプロジェクト",
+        color: "#FF5733",
+        ownerSub: "non-existent-sub",
+      });
+
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error).toBeInstanceOf(NotFoundError);
+        expect(result.error.message).toBe("ユーザーが見つかりませんでした");
       }
     });
 
@@ -101,6 +159,11 @@ describe("CreateProjectUseCaseのテスト", () => {
           projectRepository: new ProjectRepositoryDummy({
             saveReturnValue: Result.ok(undefined),
           }),
+          userRepository: new UserRepositoryDummy({
+            findBySubReturnValue: Result.ok(
+              userDummyFrom({ id: ownerUserId, sub: ownerSub }),
+            ),
+          }),
           logger: new LoggerDummy(),
           fetchNow,
         });
@@ -108,6 +171,7 @@ describe("CreateProjectUseCaseのテスト", () => {
         const result = await createProjectUseCase.execute({
           name: `プロジェクト_${color}`,
           color,
+          ownerSub,
         });
 
         expect(result.isOk()).toBe(true);
@@ -124,6 +188,11 @@ describe("CreateProjectUseCaseのテスト", () => {
           projectIdReturnValue: projectId,
           saveReturnValue: Result.ok(undefined),
         }),
+        userRepository: new UserRepositoryDummy({
+          findBySubReturnValue: Result.ok(
+            userDummyFrom({ id: ownerUserId, sub: ownerSub }),
+          ),
+        }),
         logger: new LoggerDummy(),
         fetchNow,
       });
@@ -131,6 +200,7 @@ describe("CreateProjectUseCaseのテスト", () => {
       const result = await createProjectUseCase.execute({
         name: "検証用プロジェクト",
         color: "#E74C3C",
+        ownerSub,
       });
 
       expect(result.isOk()).toBe(true);
@@ -141,6 +211,7 @@ describe("CreateProjectUseCaseのテスト", () => {
         expect(typeof result.data.color).toBe("string");
         expect(typeof result.data.createdAt).toBe("string");
         expect(typeof result.data.updatedAt).toBe("string");
+        expect(Array.isArray(result.data.members)).toBe(true);
       }
     });
   });

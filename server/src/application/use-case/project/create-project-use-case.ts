@@ -1,9 +1,12 @@
 import type { Logger } from "@/application/port/logger";
 import { Result } from "@/util/result";
 import type { UseCase } from "../interfaces";
-import { UnexpectedError } from "@/util/error-util";
+import { NotFoundError, UnexpectedError } from "@/util/error-util";
 import type { ProjectRepository } from "@/domain/model/project/project.repository";
+import type { UserRepository } from "@/domain/model/user/user.repository";
 import { Project } from "@/domain/model/project/project.entity";
+import { ProjectMember } from "@/domain/model/project/project-member.entity";
+import { MemberRole } from "@/domain/model/project/member-role.vo";
 import type { FetchNow } from "@/application/port/fetch-now";
 import { dateToIsoString } from "@/util/date-util";
 
@@ -11,11 +14,12 @@ export type CreateProjectUseCaseInput = {
   name: string;
   description?: string;
   color: string;
+  ownerSub: string;
 };
 
 export type CreateProjectUseCaseOutput = Project;
 
-export type CreateProjectUseCaseException = UnexpectedError;
+export type CreateProjectUseCaseException = NotFoundError | UnexpectedError;
 
 export type CreateProjectUseCaseResult = Result<
   CreateProjectUseCaseOutput,
@@ -24,6 +28,7 @@ export type CreateProjectUseCaseResult = Result<
 
 export type CreateProjectUseCaseProps = {
   readonly projectRepository: ProjectRepository;
+  readonly userRepository: UserRepository;
   readonly logger: Logger;
   readonly fetchNow: FetchNow;
 };
@@ -44,16 +49,35 @@ export class CreateProjectUseCaseImpl implements CreateProjectUseCase {
   async execute(
     input: CreateProjectUseCaseInput,
   ): Promise<CreateProjectUseCaseResult> {
-    const { projectRepository, logger, fetchNow } = this.#props;
+    const { projectRepository, userRepository, logger, fetchNow } = this.#props;
 
     logger.debug("ユースケース: プロジェクト作成を開始");
 
-    const { name, description, color } = input;
+    const { name, description, color, ownerSub } = input;
+
+    // オーナーとなるユーザーを検索
+    const userResult = await userRepository.findBySub({ sub: ownerSub });
+    if (userResult.isErr()) {
+      logger.error("ユーザーの取得に失敗", userResult.error);
+      return Result.err(userResult.error);
+    }
+
+    if (userResult.data === undefined) {
+      logger.debug("ユーザーが見つかりませんでした", { ownerSub });
+      return Result.err(new NotFoundError("ユーザーが見つかりませんでした"));
+    }
 
     const now = dateToIsoString(fetchNow());
 
-    // プロジェクトの登録
-    // 注: メンバー管理機能実装時に、作成者をオーナーとして追加する処理を追加予定
+    // 作成者をオーナーとして追加
+    const ownerMember = ProjectMember.from({
+      id: projectRepository.projectMemberId(),
+      userId: userResult.data.id,
+      role: MemberRole.owner(),
+      joinedAt: now,
+    });
+
+    // プロジェクトの登録（作成者をオーナーとして設定）
     const newProject = Project.from({
       id: projectRepository.projectId(),
       name,
@@ -61,7 +85,7 @@ export class CreateProjectUseCaseImpl implements CreateProjectUseCase {
       color,
       createdAt: now,
       updatedAt: now,
-      members: [],
+      members: [ownerMember],
     });
 
     const saveResult = await projectRepository.save({
@@ -76,6 +100,7 @@ export class CreateProjectUseCaseImpl implements CreateProjectUseCase {
     logger.info("プロジェクト登録成功", {
       projectId: newProject.id,
       name: newProject.name,
+      ownerUserId: userResult.data.id,
     });
 
     return Result.ok(newProject);

@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
   type DynamoDBDocumentClient,
   GetCommand,
+  QueryCommand,
   paginateScan,
   TransactWriteCommand,
 } from "@aws-sdk/lib-dynamodb";
@@ -16,6 +17,8 @@ import {
   type ProjectRepository,
 } from "@/domain/model/project/project.repository";
 import { Project } from "@/domain/model/project/project.entity";
+import { ProjectMember } from "@/domain/model/project/project-member.entity";
+import { MemberRole } from "@/domain/model/project/member-role.vo";
 import { UnexpectedError } from "@/util/error-util";
 import { Result } from "@/util/result";
 
@@ -33,11 +36,61 @@ export const projectDdbItemSchema = z.object({
 
 export type ProjectDdbItem = z.infer<typeof projectDdbItemSchema>;
 
+/**
+ * ProjectMembersテーブル用のスキーマ
+ */
+export const projectMemberTableItemSchema = z.object({
+  projectId: z.string(),
+  projectMemberId: z.string(),
+  userId: z.string(),
+  role: z.enum(["owner", "member"]),
+  joinedAt: z.string(),
+});
+
+export type ProjectMemberTableItem = z.infer<typeof projectMemberTableItemSchema>;
+
+/**
+ * ProjectMemberTableItem → ProjectMember 変換
+ */
+export const projectMemberTableItemToProjectMember = (
+  item: ProjectMemberTableItem,
+): ProjectMember => {
+  const roleResult = MemberRole.from({ role: item.role });
+  if (!roleResult.isOk()) {
+    throw roleResult.error;
+  }
+
+  return ProjectMember.from({
+    id: item.projectMemberId,
+    userId: item.userId,
+    role: roleResult.data,
+    joinedAt: item.joinedAt,
+  });
+};
+
+/**
+ * ProjectMember → ProjectMemberTableItem 変換
+ */
+export const projectMemberTableItemFromProjectMember = (
+  projectId: string,
+  member: ProjectMember,
+): ProjectMemberTableItem => ({
+  projectId,
+  projectMemberId: member.id,
+  userId: member.userId,
+  role: member.role.role,
+  joinedAt: member.joinedAt,
+});
+
+/**
+ * ProjectDdbItem → Project 変換
+ *
+ * membersはProjectMembersテーブルから別途取得して渡す必要があります。
+ */
 export const projectDdbItemToProject = (
   projectDdbItem: ProjectDdbItem,
+  members: ProjectMember[] = [],
 ): Project =>
-  // DynamoDB色文字列をそのまま使用（ProjectはcolorをProject.fromで処理する）
-  // membersは別テーブルから取得するため、ここでは空配列を設定
   Project.from({
     id: projectDdbItem.projectId,
     name: projectDdbItem.name,
@@ -45,7 +98,7 @@ export const projectDdbItemToProject = (
     color: projectDdbItem.color,
     createdAt: projectDdbItem.createdAt,
     updatedAt: projectDdbItem.updatedAt,
-    members: [],
+    members,
   });
 
 export const projectDdbItemFromProject = (
@@ -65,6 +118,7 @@ export const projectDdbItemFromProject = (
 export type ProjectRepositoryProps = {
   ddbDoc: DynamoDBDocumentClient;
   projectsTableName: string;
+  projectMembersTableName: string;
   logger: Logger;
   uow?: DynamoDBUnitOfWork;
 };
@@ -74,6 +128,8 @@ export class ProjectRepositoryImpl implements ProjectRepository {
 
   readonly #projectsTableName: string;
 
+  readonly #projectMembersTableName: string;
+
   readonly #logger: Logger;
 
   readonly #uow?: DynamoDBUnitOfWork;
@@ -81,11 +137,13 @@ export class ProjectRepositoryImpl implements ProjectRepository {
   constructor({
     ddbDoc,
     projectsTableName,
+    projectMembersTableName,
     logger,
     uow,
   }: ProjectRepositoryProps) {
     this.#ddbDoc = ddbDoc;
     this.#projectsTableName = projectsTableName;
+    this.#projectMembersTableName = projectMembersTableName;
     this.#logger = logger;
     this.#uow = uow;
   }
@@ -100,19 +158,39 @@ export class ProjectRepositoryImpl implements ProjectRepository {
 
   async findById(props: { id: string }): Promise<FindByIdResult> {
     try {
-      const result = await this.#ddbDoc.send(
+      // Projectsテーブルから取得
+      const projectResult = await this.#ddbDoc.send(
         new GetCommand({
           TableName: this.#projectsTableName,
           Key: { projectId: props.id },
         }),
       );
 
-      if (result.Item === undefined) {
+      if (projectResult.Item === undefined) {
         return Result.ok(undefined);
       }
 
-      const projectDdbItem = projectDdbItemSchema.parse(result.Item);
-      const project = projectDdbItemToProject(projectDdbItem);
+      // ProjectMembersテーブルから取得
+      const membersResult = await this.#ddbDoc.send(
+        new QueryCommand({
+          TableName: this.#projectMembersTableName,
+          KeyConditionExpression: "projectId = :projectId",
+          ExpressionAttributeValues: {
+            ":projectId": props.id,
+          },
+        }),
+      );
+
+      const memberItems = (membersResult.Items ?? []).map((item) =>
+        projectMemberTableItemSchema.parse(item),
+      );
+
+      const members = memberItems.map((item) =>
+        projectMemberTableItemToProjectMember(item),
+      );
+
+      const projectDdbItem = projectDdbItemSchema.parse(projectResult.Item);
+      const project = projectDdbItemToProject(projectDdbItem, members);
 
       return Result.ok(project);
     } catch (error) {
@@ -123,7 +201,7 @@ export class ProjectRepositoryImpl implements ProjectRepository {
 
   async findAll(): Promise<FindAllResult> {
     try {
-      const projects: Project[] = [];
+      const projectDdbItems: ProjectDdbItem[] = [];
 
       const paginator = paginateScan(
         { client: this.#ddbDoc },
@@ -132,17 +210,39 @@ export class ProjectRepositoryImpl implements ProjectRepository {
 
       for await (const page of paginator) {
         if (page.Items !== undefined && page.Items.length > 0) {
-          const projectDdbItems = page.Items.map((item) =>
+          const parsedItems = page.Items.map((item) =>
             projectDdbItemSchema.parse(item),
           );
-          const fetchedProjects = projectDdbItems.map((projectDdbItem) =>
-            projectDdbItemToProject(projectDdbItem),
-          );
-          projects.push(...fetchedProjects);
+          projectDdbItems.push(...parsedItems);
         }
       }
 
-      return Result.ok(projects);
+      // 各プロジェクトのメンバーを取得（並列実行）
+      const projectsWithMembers = await Promise.all(
+        projectDdbItems.map(async (projectDdbItem) => {
+          const membersResult = await this.#ddbDoc.send(
+            new QueryCommand({
+              TableName: this.#projectMembersTableName,
+              KeyConditionExpression: "projectId = :projectId",
+              ExpressionAttributeValues: {
+                ":projectId": projectDdbItem.projectId,
+              },
+            }),
+          );
+
+          const memberItems = (membersResult.Items ?? []).map((item) =>
+            projectMemberTableItemSchema.parse(item),
+          );
+
+          const members = memberItems.map((item) =>
+            projectMemberTableItemToProjectMember(item),
+          );
+
+          return projectDdbItemToProject(projectDdbItem, members);
+        }),
+      );
+
+      return Result.ok(projectsWithMembers);
     } catch (error) {
       this.#logger.error(
         "プロジェクト一覧の取得に失敗しました",
@@ -154,22 +254,71 @@ export class ProjectRepositoryImpl implements ProjectRepository {
 
   async save(props: { project: Project }): Promise<SaveResult> {
     const projectDdbItem = projectDdbItemFromProject(props.project);
-    const operation = {
-      Put: {
-        TableName: this.#projectsTableName,
-        Item: projectDdbItem,
-      },
-    };
 
     try {
+      // 既存のmembersを取得（削除のため）
+      const existingMembersResult = await this.#ddbDoc.send(
+        new QueryCommand({
+          TableName: this.#projectMembersTableName,
+          KeyConditionExpression: "projectId = :projectId",
+          ExpressionAttributeValues: {
+            ":projectId": props.project.id,
+          },
+        }),
+      );
+
+      // Projectsテーブルへの操作
+      const projectOperation = {
+        Put: {
+          TableName: this.#projectsTableName,
+          Item: projectDdbItem,
+        },
+      };
+
+      // 新しいmembersのIDセット
+      const newMemberIds = new Set(
+        props.project.members.map((member) => member.id),
+      );
+
+      // 既存のmembersのうち、新しいmembersに含まれていないものを削除
+      const deleteMemberOperations = (existingMembersResult.Items ?? [])
+        .map((item) => projectMemberTableItemSchema.parse(item))
+        .filter((item) => !newMemberIds.has(item.projectMemberId))
+        .map((item) => ({
+          Delete: {
+            TableName: this.#projectMembersTableName,
+            Key: {
+              projectId: item.projectId,
+              projectMemberId: item.projectMemberId,
+            },
+          },
+        }));
+
+      // 新しいmembersを挿入する操作
+      const putMemberOperations = props.project.members.map((member) => ({
+        Put: {
+          TableName: this.#projectMembersTableName,
+          Item: projectMemberTableItemFromProjectMember(props.project.id, member),
+        },
+      }));
+
+      // すべての操作を結合
+      const operations = [
+        projectOperation,
+        ...deleteMemberOperations,
+        ...putMemberOperations,
+      ];
+
       if (this.#uow !== undefined) {
         // UoWが渡されている場合は操作を登録（コミットはrunner側で行う）
-        this.#uow.registerOperation(operation);
+        for (const operation of operations) {
+          this.#uow.registerOperation(operation);
+        }
       } else {
         // UoWなしの場合は即座に実行
         await this.#ddbDoc.send(
           new TransactWriteCommand({
-            TransactItems: [operation],
+            TransactItems: operations,
           }),
         );
       }
@@ -182,22 +331,52 @@ export class ProjectRepositoryImpl implements ProjectRepository {
   }
 
   async remove(props: { id: string }): Promise<RemoveResult> {
-    const operation = {
-      Delete: {
-        TableName: this.#projectsTableName,
-        Key: { projectId: props.id },
-      },
-    };
-
     try {
+      // 既存のmembersを取得（削除のため）
+      const existingMembersResult = await this.#ddbDoc.send(
+        new QueryCommand({
+          TableName: this.#projectMembersTableName,
+          KeyConditionExpression: "projectId = :projectId",
+          ExpressionAttributeValues: {
+            ":projectId": props.id,
+          },
+        }),
+      );
+
+      // Projectsテーブルからの削除操作
+      const projectOperation = {
+        Delete: {
+          TableName: this.#projectsTableName,
+          Key: { projectId: props.id },
+        },
+      };
+
+      // ProjectMembersテーブルからの削除操作
+      const deleteMemberOperations = (existingMembersResult.Items ?? [])
+        .map((item) => projectMemberTableItemSchema.parse(item))
+        .map((item) => ({
+          Delete: {
+            TableName: this.#projectMembersTableName,
+            Key: {
+              projectId: item.projectId,
+              projectMemberId: item.projectMemberId,
+            },
+          },
+        }));
+
+      // すべての操作を結合
+      const operations = [projectOperation, ...deleteMemberOperations];
+
       if (this.#uow !== undefined) {
         // UoWが渡されている場合は操作を登録（コミットはrunner側で行う）
-        this.#uow.registerOperation(operation);
+        for (const operation of operations) {
+          this.#uow.registerOperation(operation);
+        }
       } else {
         // UoWなしの場合は即座に実行
         await this.#ddbDoc.send(
           new TransactWriteCommand({
-            TransactItems: [operation],
+            TransactItems: operations,
           }),
         );
       }

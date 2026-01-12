@@ -4,7 +4,9 @@ import type { User } from "./user.entity";
 
 export type SaveResult = Result<void, UnexpectedError>;
 export type FindByIdResult = Result<User | undefined, UnexpectedError>;
+export type FindByIdsResult = Result<User[], UnexpectedError>;
 export type FindAllResult = Result<User[], UnexpectedError>;
+export type FindByNameResult = Result<User[], UnexpectedError>;
 export type RemoveResult = Result<void, UnexpectedError>;
 
 /**
@@ -30,6 +32,15 @@ export type UserRepository = {
   findById(props: { id: string }): Promise<FindByIdResult>;
 
   /**
+   * 複数のユーザーをIDで検索する
+   *
+   * @param props - 検索条件
+   * @param props.ids - ユーザーIDの配列
+   * @returns ユーザーのリスト（見つからないIDは結果に含まれない）
+   */
+  findByIds(props: { ids: string[] }): Promise<FindByIdsResult>;
+
+  /**
    * ユーザーをCognito User Subで検索する
    *
    * @param props - 検索条件
@@ -44,6 +55,15 @@ export type UserRepository = {
    * @returns 全ユーザーのリスト
    */
   findAll(): Promise<FindAllResult>;
+
+  /**
+   * ユーザーを名前で部分一致検索する
+   *
+   * @param props - 検索条件
+   * @param props.name - 検索文字列（名前の部分一致）
+   * @returns 条件に一致するユーザーのリスト
+   */
+  findByNameContains(props: { name: string }): Promise<FindByNameResult>;
 
   /**
    * ユーザーを保存する

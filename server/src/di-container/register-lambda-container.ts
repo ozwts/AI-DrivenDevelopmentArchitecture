@@ -63,6 +63,16 @@ import {
   DeleteProjectUseCaseImpl,
   type DeleteProjectUoWContext,
 } from "@/application/use-case/project/delete-project-use-case";
+import type { ListProjectMembersUseCase } from "@/application/use-case/project/list-project-members-use-case";
+import { ListProjectMembersUseCaseImpl } from "@/application/use-case/project/list-project-members-use-case";
+import type { InviteMemberUseCase } from "@/application/use-case/project/invite-member-use-case";
+import { InviteMemberUseCaseImpl } from "@/application/use-case/project/invite-member-use-case";
+import type { RemoveMemberUseCase } from "@/application/use-case/project/remove-member-use-case";
+import { RemoveMemberUseCaseImpl } from "@/application/use-case/project/remove-member-use-case";
+import type { LeaveProjectUseCase } from "@/application/use-case/project/leave-project-use-case";
+import { LeaveProjectUseCaseImpl } from "@/application/use-case/project/leave-project-use-case";
+import type { SearchUsersUseCase } from "@/application/use-case/user/search-users-use-case";
+import { SearchUsersUseCaseImpl } from "@/application/use-case/user/search-users-use-case";
 import type { UnitOfWorkRunner } from "@/application/port/unit-of-work";
 import { DynamoDBUnitOfWorkRunner } from "@/infrastructure/unit-of-work/dynamodb-unit-of-work-runner";
 import { unwrapEnv } from "./env-util";
@@ -97,6 +107,11 @@ export const registerLambdaContainer = (): Container => {
   container
     .bind(serviceId.PROJECTS_TABLE_NAME)
     .toDynamicValue(() => unwrapEnv("PROJECTS_TABLE_NAME"))
+    .inSingletonScope();
+
+  container
+    .bind(serviceId.PROJECT_MEMBERS_TABLE_NAME)
+    .toDynamicValue(() => unwrapEnv("PROJECT_MEMBERS_TABLE_NAME"))
     .inSingletonScope();
 
   container
@@ -306,11 +321,15 @@ export const registerLambdaContainer = (): Container => {
       const projectsTableName = ctx.container.get<string>(
         serviceId.PROJECTS_TABLE_NAME,
       );
+      const projectMembersTableName = ctx.container.get<string>(
+        serviceId.PROJECT_MEMBERS_TABLE_NAME,
+      );
       const logger = ctx.container.get<Logger>(serviceId.LOGGER);
 
       return new ProjectRepositoryImpl({
         ddbDoc,
         projectsTableName,
+        projectMembersTableName,
         logger,
       });
     })
@@ -512,6 +531,9 @@ export const registerLambdaContainer = (): Container => {
       const projectsTableName = ctx.container.get<string>(
         serviceId.PROJECTS_TABLE_NAME,
       );
+      const projectMembersTableName = ctx.container.get<string>(
+        serviceId.PROJECT_MEMBERS_TABLE_NAME,
+      );
       const logger = ctx.container.get<Logger>(serviceId.LOGGER);
 
       return new DynamoDBUnitOfWorkRunner<DeleteProjectUoWContext>(
@@ -527,6 +549,7 @@ export const registerLambdaContainer = (): Container => {
           projectRepository: new ProjectRepositoryImpl({
             ddbDoc,
             projectsTableName,
+            projectMembersTableName,
             logger,
             uow,
           }),
@@ -572,11 +595,15 @@ export const registerLambdaContainer = (): Container => {
       const projectRepository = ctx.container.get<ProjectRepository>(
         serviceId.PROJECT_REPOSITORY,
       );
+      const userRepository = ctx.container.get<UserRepository>(
+        serviceId.USER_REPOSITORY,
+      );
       const logger = ctx.container.get<Logger>(serviceId.LOGGER);
       const fetchNow = ctx.container.get<FetchNow>(serviceId.FETCH_NOW);
 
       return new CreateProjectUseCaseImpl({
         projectRepository,
+        userRepository,
         logger,
         fetchNow,
       });
@@ -611,6 +638,88 @@ export const registerLambdaContainer = (): Container => {
       return new DeleteProjectUseCaseImpl({
         logger,
         uowRunner,
+      });
+    })
+    .inSingletonScope();
+
+  container
+    .bind<ListProjectMembersUseCase>(serviceId.LIST_PROJECT_MEMBERS_USE_CASE)
+    .toDynamicValue((ctx) => {
+      const projectRepository = ctx.container.get<ProjectRepository>(
+        serviceId.PROJECT_REPOSITORY,
+      );
+      const userRepository = ctx.container.get<UserRepository>(
+        serviceId.USER_REPOSITORY,
+      );
+      const logger = ctx.container.get<Logger>(serviceId.LOGGER);
+
+      return new ListProjectMembersUseCaseImpl({
+        projectRepository,
+        userRepository,
+        logger,
+      });
+    })
+    .inSingletonScope();
+
+  container
+    .bind<InviteMemberUseCase>(serviceId.INVITE_MEMBER_USE_CASE)
+    .toDynamicValue((ctx) => {
+      const projectRepository = ctx.container.get<ProjectRepository>(
+        serviceId.PROJECT_REPOSITORY,
+      );
+      const userRepository = ctx.container.get<UserRepository>(
+        serviceId.USER_REPOSITORY,
+      );
+      const logger = ctx.container.get<Logger>(serviceId.LOGGER);
+      const fetchNow = ctx.container.get<FetchNow>(serviceId.FETCH_NOW);
+
+      return new InviteMemberUseCaseImpl({
+        projectRepository,
+        userRepository,
+        logger,
+        fetchNow,
+      });
+    })
+    .inSingletonScope();
+
+  container
+    .bind<RemoveMemberUseCase>(serviceId.REMOVE_MEMBER_USE_CASE)
+    .toDynamicValue((ctx) => {
+      const projectRepository = ctx.container.get<ProjectRepository>(
+        serviceId.PROJECT_REPOSITORY,
+      );
+      const userRepository = ctx.container.get<UserRepository>(
+        serviceId.USER_REPOSITORY,
+      );
+      const logger = ctx.container.get<Logger>(serviceId.LOGGER);
+      const fetchNow = ctx.container.get<FetchNow>(serviceId.FETCH_NOW);
+
+      return new RemoveMemberUseCaseImpl({
+        projectRepository,
+        userRepository,
+        logger,
+        fetchNow,
+      });
+    })
+    .inSingletonScope();
+
+  container
+    .bind<LeaveProjectUseCase>(serviceId.LEAVE_PROJECT_USE_CASE)
+    .toDynamicValue((ctx) => {
+      const projectRepository = ctx.container.get<ProjectRepository>(
+        serviceId.PROJECT_REPOSITORY,
+      );
+      const userRepository = ctx.container.get<UserRepository>(
+        serviceId.USER_REPOSITORY,
+      );
+      const logger = ctx.container.get<Logger>(serviceId.LOGGER);
+      const fetchNow = ctx.container.get<FetchNow>(serviceId.FETCH_NOW);
+
+      return new LeaveProjectUseCaseImpl({
+        projectRepository,
+        userRepository,
+        logger,
+        fetchNow,
       });
     })
     .inSingletonScope();
@@ -652,6 +761,18 @@ export const registerLambdaContainer = (): Container => {
       const logger = ctx.container.get<Logger>(serviceId.LOGGER);
 
       return new ListUsersUseCaseImpl({ userRepository, logger });
+    })
+    .inSingletonScope();
+
+  container
+    .bind<SearchUsersUseCase>(serviceId.SEARCH_USERS_USE_CASE)
+    .toDynamicValue((ctx) => {
+      const userRepository = ctx.container.get<UserRepository>(
+        serviceId.USER_REPOSITORY,
+      );
+      const logger = ctx.container.get<Logger>(serviceId.LOGGER);
+
+      return new SearchUsersUseCaseImpl({ userRepository, logger });
     })
     .inSingletonScope();
 

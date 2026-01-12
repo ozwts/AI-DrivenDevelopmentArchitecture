@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
   type DynamoDBDocumentClient,
   GetCommand,
+  BatchGetCommand,
   paginateScan,
   paginateQuery,
   TransactWriteCommand,
@@ -13,7 +14,9 @@ import {
   type SaveResult,
   type RemoveResult,
   type FindByIdResult,
+  type FindByIdsResult,
   type FindAllResult,
+  type FindByNameResult,
   type UserRepository,
 } from "@/domain/model/user/user.repository";
 import { User } from "@/domain/model/user/user.entity";
@@ -124,6 +127,50 @@ export class UserRepositoryImpl implements UserRepository {
     }
   }
 
+  async findByIds(props: { ids: string[] }): Promise<FindByIdsResult> {
+    if (props.ids.length === 0) {
+      return Result.ok([]);
+    }
+
+    try {
+      const users: User[] = [];
+      const uniqueIds = [...new Set(props.ids)];
+
+      // DynamoDB BatchGetItemは最大100件まで
+      const batchSize = 100;
+      for (let i = 0; i < uniqueIds.length; i += batchSize) {
+        const batchIds = uniqueIds.slice(i, i + batchSize);
+        const keys = batchIds.map((id) => ({ userId: id }));
+
+        const result = await this.#ddbDoc.send(
+          new BatchGetCommand({
+            RequestItems: {
+              [this.#usersTableName]: {
+                Keys: keys,
+              },
+            },
+          }),
+        );
+
+        const items = result.Responses?.[this.#usersTableName];
+        if (items !== undefined && items.length > 0) {
+          const userDdbItems = items.map((item) =>
+            userDdbItemSchema.parse(item),
+          );
+          const fetchedUsers = userDdbItems.map((userDdbItem) =>
+            userDdbItemToUser(userDdbItem),
+          );
+          users.push(...fetchedUsers);
+        }
+      }
+
+      return Result.ok(users);
+    } catch (error) {
+      this.#logger.error("ユーザー一括取得に失敗しました", error as Error);
+      return Result.err(new UnexpectedError());
+    }
+  }
+
   async findBySub(props: { sub: string }): Promise<FindByIdResult> {
     try {
       const users: User[] = [];
@@ -190,6 +237,52 @@ export class UserRepositoryImpl implements UserRepository {
       return Result.ok(users);
     } catch (error) {
       this.#logger.error("ユーザー一覧の取得に失敗しました", error as Error);
+      return Result.err(new UnexpectedError());
+    }
+  }
+
+  async findByNameContains(props: { name: string }): Promise<FindByNameResult> {
+    try {
+      const users: User[] = [];
+      const searchName = props.name.toLowerCase();
+
+      const paginator = paginateScan(
+        { client: this.#ddbDoc },
+        {
+          TableName: this.#usersTableName,
+          FilterExpression: "contains(#name, :name)",
+          ExpressionAttributeNames: {
+            "#name": "name",
+          },
+          ExpressionAttributeValues: {
+            ":name": props.name,
+          },
+        },
+      );
+
+      for await (const page of paginator) {
+        if (page.Items !== undefined && page.Items.length > 0) {
+          const userDdbItems = page.Items.map((item) =>
+            userDdbItemSchema.parse(item),
+          );
+          const fetchedUsers = userDdbItems.map((userDdbItem) =>
+            userDdbItemToUser(userDdbItem),
+          );
+          // DynamoDBのcontainsは大文字小文字を区別するため、
+          // アプリケーション側で大文字小文字を無視したフィルタリングを行う
+          const filteredUsers = fetchedUsers.filter((user) =>
+            user.name.toLowerCase().includes(searchName),
+          );
+          users.push(...filteredUsers);
+        }
+      }
+
+      return Result.ok(users);
+    } catch (error) {
+      this.#logger.error(
+        "名前によるユーザー検索に失敗しました",
+        error as Error,
+      );
       return Result.err(new UnexpectedError());
     }
   }

@@ -32,7 +32,7 @@ describe("ListUsersUseCase", () => {
         logger: new LoggerDummy(),
       });
 
-      const result = await useCase.execute();
+      const result = await useCase.execute({});
 
       expect(result.isOk()).toBe(true);
       if (result.isOk()) {
@@ -51,12 +51,33 @@ describe("ListUsersUseCase", () => {
         logger: new LoggerDummy(),
       });
 
-      const result = await useCase.execute();
+      const result = await useCase.execute({});
 
       expect(result.isOk()).toBe(true);
       if (result.isOk()) {
         expect(result.data).toHaveLength(0);
         expect(result.data).toEqual([]);
+      }
+    });
+
+    test("名前を指定して検索できる", async () => {
+      const user1 = userDummyFrom({ id: "user-1", name: "山田太郎" });
+      const user2 = userDummyFrom({ id: "user-2", name: "山田花子" });
+
+      const useCase = new ListUsersUseCaseImpl({
+        userRepository: new UserRepositoryDummy({
+          findByNameContainsReturnValue: Result.ok([user1, user2]),
+        }),
+        logger: new LoggerDummy(),
+      });
+
+      const result = await useCase.execute({ name: "山田" });
+
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
+        expect(result.data).toHaveLength(2);
+        expect(result.data[0].name).toBe("山田太郎");
+        expect(result.data[1].name).toBe("山田花子");
       }
     });
   });
@@ -70,7 +91,7 @@ describe("ListUsersUseCase", () => {
         logger: new LoggerDummy(),
       });
 
-      const result = await useCase.execute();
+      const result = await useCase.execute({});
 
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
