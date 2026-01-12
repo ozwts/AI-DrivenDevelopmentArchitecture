@@ -6,11 +6,14 @@ export default {
       colors: {
         // Primary colors (ライトベージュ系)
         primary: {
+          50: "#faf8f5", // 最も明るいベージュ
           100: "#f5f2ed", // 明るいベージュ
           200: "#f0ebe3", // メインのライトベージュ
           300: "#e6dfd4", // 中間のベージュ
           400: "#ddd4c5", // 暗めのベージュ
           500: "#c8beaa", // 濃いベージュ
+          700: "#a08a6e", // より濃いベージュ
+          800: "#7d6e5a", // 最も濃いベージュ
           DEFAULT: "#f0ebe3",
         },
         // Secondary colors (ダークブルー)
@@ -89,6 +92,7 @@ export default {
         // Border
         border: {
           DEFAULT: "#CCCCCC",
+          default: "#CCCCCC",
           light: "#E0E0E0",
         },
       },

@@ -1,6 +1,7 @@
 import { Outlet, useParams, useNavigate } from "react-router";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { Button, LoadingPage, Alert } from "@/app/lib/ui";
+import { ApiError } from "@/app/lib/api";
 import { useProject } from "@/app/features/project";
 import { useTodos } from "@/app/features/todo";
 import { z } from "zod";
@@ -33,10 +34,26 @@ export default function ProjectDetailLayout() {
   }
 
   if (error || !project) {
+    // エラーの種類に応じてメッセージを変更
+    let errorTitle = "エラーが発生しました";
+    let errorMessage = "プロジェクトの読み込みに失敗しました。";
+
+    if (error instanceof ApiError) {
+      if (error.isForbidden()) {
+        errorTitle = "アクセス権限がありません";
+        errorMessage =
+          "このプロジェクトにアクセスする権限がありません。プロジェクトのメンバーに招待されている必要があります。";
+      } else if (error.isNotFound()) {
+        errorTitle = "プロジェクトが見つかりません";
+        errorMessage =
+          "指定されたプロジェクトは存在しないか、削除された可能性があります。";
+      }
+    }
+
     return (
       <div className="max-w-2xl mx-auto">
-        <Alert variant="error" title="エラーが発生しました">
-          プロジェクトの読み込みに失敗しました。
+        <Alert variant="error" title={errorTitle}>
+          {errorMessage}
         </Alert>
         <Button
           variant="ghost"

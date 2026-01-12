@@ -7,6 +7,7 @@ import { request, requestVoid, normalizePatchRequest } from "@/app/lib/api";
 
 type UserResponse = z.infer<typeof schemas.UserResponse>;
 type UpdateUserParams = z.infer<typeof schemas.UpdateUserParams>;
+type SearchUserResponse = z.infer<typeof schemas.SearchUserResponse>;
 
 export const userApi = {
   getUsers: async (): Promise<UserResponse[]> => {
@@ -42,5 +43,10 @@ export const userApi = {
     return request("/users/me", schemas.UserResponse, {
       method: "POST",
     });
+  },
+
+  searchUsers: async (query: string): Promise<SearchUserResponse[]> => {
+    const params = new URLSearchParams({ query });
+    return request(`/users/search?${params}`, schemas.SearchUsersResponse);
   },
 };

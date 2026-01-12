@@ -21,8 +21,13 @@ type Toast = {
   message: string;
 };
 
+type ToastOptions = {
+  type: ToastType;
+  message: string;
+};
+
 export type ToastContextType = {
-  showToast: (type: ToastType, message: string) => void;
+  showToast: (options: ToastOptions) => void;
   success: (message: string) => void;
   error: (message: string) => void;
   warning: (message: string) => void;
@@ -74,7 +79,7 @@ export function useToast() {
 export function ToastProvider({ children }: ToastProviderProps) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  const showToast = useCallback((type: ToastType, message: string) => {
+  const showToast = useCallback(({ type, message }: ToastOptions) => {
     const id = Math.random().toString(36).substring(7);
     setToasts((prev) => [...prev, { id, type, message }]);
 
@@ -91,16 +96,16 @@ export function ToastProvider({ children }: ToastProviderProps) {
   const contextValue: ToastContextType = {
     showToast,
     success: (message) => {
-      showToast("success", message);
+      showToast({ type: "success", message });
     },
     error: (message) => {
-      showToast("error", message);
+      showToast({ type: "error", message });
     },
     warning: (message) => {
-      showToast("warning", message);
+      showToast({ type: "warning", message });
     },
     info: (message) => {
-      showToast("info", message);
+      showToast({ type: "info", message });
     },
   };
 

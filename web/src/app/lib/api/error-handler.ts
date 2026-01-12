@@ -16,6 +16,35 @@ type ErrorContext = {
 };
 
 /**
+ * APIエラークラス
+ * HTTPステータスコードを保持し、エラーハンドリングで使用
+ */
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+    public readonly statusText: string,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+
+  /**
+   * アクセス権限エラーかどうか
+   */
+  isForbidden(): boolean {
+    return this.status === 403;
+  }
+
+  /**
+   * 存在しないリソースエラーかどうか
+   */
+  isNotFound(): boolean {
+    return this.status === 404;
+  }
+}
+
+/**
  * HTTPエラーレスポンスを処理
  * 401の場合はリダイレクト、それ以外はエラーをスロー
  */
@@ -38,11 +67,17 @@ export const handleHttpError = (context: ErrorContext): never => {
 
   if (context.status === 401) {
     handleUnauthorized();
-    throw new Error("認証が必要です。ログインページに移動します。");
+    throw new ApiError(
+      "認証が必要です。ログインページに移動します。",
+      context.status,
+      context.statusText,
+    );
   }
 
-  throw new Error(
+  throw new ApiError(
     `API Error: ${context.status} ${context.statusText} - ${context.errorText}`,
+    context.status,
+    context.statusText,
   );
 };
 

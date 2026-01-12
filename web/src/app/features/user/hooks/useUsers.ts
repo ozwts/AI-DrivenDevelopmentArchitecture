@@ -9,6 +9,7 @@ type UpdateUserParams = z.infer<typeof schemas.UpdateUserParams>;
 const logger = buildLogger("useUsers");
 const QUERY_KEY = "users";
 const CURRENT_USER_QUERY_KEY = "currentUser";
+const SEARCH_USERS_QUERY_KEY = "searchUsers";
 
 /**
  * ユーザー一覧を取得するフック（TODO担当者選択用）
@@ -78,5 +79,24 @@ export function useDeleteCurrentUser() {
     onError: (error) => {
       logger.error("アカウント削除失敗", error);
     },
+  });
+}
+
+/**
+ * ユーザーを検索するフック（プロジェクトメンバー招待用）
+ * @param query 検索クエリ（名前またはメールアドレス）
+ * @param options enabled - クエリを有効にするかどうか
+ */
+export function useSearchUsers(
+  query: string,
+  options: { enabled?: boolean } = {},
+) {
+  const { enabled = true } = options;
+
+  return useQuery({
+    queryKey: [SEARCH_USERS_QUERY_KEY, query],
+    queryFn: () => userApi.searchUsers(query),
+    enabled: enabled && query.length > 0,
+    staleTime: 30 * 1000, // 30秒間キャッシュを新鮮とみなす
   });
 }

@@ -5,6 +5,8 @@ type UserResponse = z.infer<typeof schemas.UserResponse>;
 type ProjectResponse = z.infer<typeof schemas.ProjectResponse>;
 type TodoResponse = z.infer<typeof schemas.TodoResponse>;
 type AttachmentResponse = z.infer<typeof schemas.AttachmentResponse>;
+type ProjectMemberResponse = z.infer<typeof schemas.ProjectMemberResponse>;
+type SearchUserResponse = z.infer<typeof schemas.SearchUserResponse>;
 
 /**
  * コンポーネントテスト用のモックデータ
@@ -24,6 +26,7 @@ export const mockProject: ProjectResponse = {
   name: "既存プロジェクト",
   description: "既存プロジェクトの説明",
   color: "#FF5733",
+  myRole: "OWNER",
   createdAt: "2024-01-01T00:00:00Z",
   updatedAt: "2024-01-01T00:00:00Z",
 };
@@ -214,6 +217,7 @@ export const ProjectDummy1: ProjectResponse = {
   name: "システム刷新プロジェクト",
   description: "レガシーシステムのモダナイゼーション",
   color: "#001964",
+  myRole: "OWNER",
   createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
   updatedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
 };
@@ -223,6 +227,7 @@ export const ProjectDummy2: ProjectResponse = {
   name: "新規サービス開発",
   description: "AI活用の新サービス企画・開発",
   color: "#4CAF50",
+  myRole: "MEMBER",
   createdAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
   updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
 };
@@ -232,6 +237,93 @@ export const ProjectDummy3: ProjectResponse = {
   name: "運用改善プロジェクト",
   description: "DevOps体制の構築とCI/CD導入",
   color: "#FFA726",
+  myRole: "OWNER",
   createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
   updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+};
+
+// ユーザー検索結果ダミーデータ
+export const SearchUserDummy1: SearchUserResponse = {
+  id: "user-1",
+  name: "田中太郎",
+  email: "tanaka@example.com",
+};
+
+export const SearchUserDummy2: SearchUserResponse = {
+  id: "user-2",
+  name: "佐藤花子",
+  email: "sato@example.com",
+};
+
+export const SearchUserDummy3: SearchUserResponse = {
+  id: "user-3",
+  name: "鈴木一郎",
+  email: "suzuki@example.com",
+};
+
+export const SearchUserDummy4: SearchUserResponse = {
+  id: "user-4",
+  name: "高橋美咲",
+  email: "takahashi@example.com",
+};
+
+// プロジェクトメンバーダミーデータ
+export const ProjectMemberDummy1: ProjectMemberResponse = {
+  id: "member-1",
+  userId: "user-1",
+  projectId: "project-1",
+  role: "OWNER",
+  user: SearchUserDummy1,
+  createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+  updatedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+};
+
+export const ProjectMemberDummy2: ProjectMemberResponse = {
+  id: "member-2",
+  userId: "user-2",
+  projectId: "project-1",
+  role: "MEMBER",
+  user: SearchUserDummy2,
+  createdAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
+  updatedAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
+};
+
+export const ProjectMemberDummy3: ProjectMemberResponse = {
+  id: "member-3",
+  userId: "user-3",
+  projectId: "project-1",
+  role: "MEMBER",
+  user: SearchUserDummy3,
+  createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+  updatedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+};
+
+export const ProjectMemberDummy4: ProjectMemberResponse = {
+  id: "member-4",
+  userId: "user-1",
+  projectId: "project-2",
+  role: "MEMBER",
+  user: SearchUserDummy1,
+  createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+  updatedAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+};
+
+export const ProjectMemberDummy5: ProjectMemberResponse = {
+  id: "member-5",
+  userId: "user-2",
+  projectId: "project-2",
+  role: "OWNER",
+  user: SearchUserDummy2,
+  createdAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
+  updatedAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
+};
+
+export const ProjectMemberDummy6: ProjectMemberResponse = {
+  id: "member-6",
+  userId: "user-1",
+  projectId: "project-3",
+  role: "OWNER",
+  user: SearchUserDummy1,
+  createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+  updatedAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
 };

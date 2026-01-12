@@ -10,3 +10,4 @@ export {
 export type { GetAccessTokenFn } from "./auth-handler";
 export { uploadToSignedUrl } from "./external-upload";
 export { normalizePatchRequest, normalizePostRequest } from "./normalize";
+export { ApiError } from "./error-handler";

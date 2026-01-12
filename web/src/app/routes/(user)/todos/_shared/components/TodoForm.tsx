@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button, TextField, TextareaField, SelectField } from "@/app/lib/ui";
@@ -9,7 +9,7 @@ import {
 } from "@/app/features/todo";
 import { schemas } from "@/generated/zod-schemas";
 import { useUsers } from "@/app/features/user";
-import { useProjects } from "@/app/features/project";
+import { useProjects, useProjectMembers } from "@/app/features/project";
 import { FileUploadSection } from "./FileUploadSection";
 import { MAX_FILE_SIZE, ALLOWED_FILE_TYPES } from "../constants";
 
@@ -61,6 +61,8 @@ export const TodoForm = (props: TodoFormProps) => {
     handleSubmit,
     formState: { errors, dirtyFields },
     reset,
+    control,
+    setValue,
   } = useForm<RegisterTodoParams | UpdateTodoParams>({
     defaultValues: todo
       ? {
@@ -159,6 +161,30 @@ export const TodoForm = (props: TodoFormProps) => {
     }
   };
 
+  // プロジェクト選択を監視
+  const selectedProjectId = useWatch({
+    control,
+    name: "projectId",
+    defaultValue: todo?.projectId ?? "",
+  });
+
+  // 選択中のプロジェクトのメンバーを取得
+  const { data: projectMembers = [] } = useProjectMembers(
+    selectedProjectId ?? "",
+  );
+
+  // プロジェクト変更時に担当者をリセット
+  useEffect(() => {
+    if (selectedProjectId) {
+      // プロジェクトが選択された場合、現在の担当者がメンバーに含まれていなければリセット
+      const memberUserIds = projectMembers.map((m) => m.userId);
+      const currentAssignee = todo?.assigneeUserId ?? "";
+      if (currentAssignee && !memberUserIds.includes(currentAssignee)) {
+        setValue("assigneeUserId", "");
+      }
+    }
+  }, [selectedProjectId, projectMembers, setValue, todo?.assigneeUserId]);
+
   const projectOptions = [
     { value: "", label: "プロジェクトなし" },
     ...(projects ?? []).map((project) => ({
@@ -167,13 +193,22 @@ export const TodoForm = (props: TodoFormProps) => {
     })),
   ];
 
-  const assigneeOptions = [
-    { value: "", label: "担当者なし（自分が担当者になります）" },
-    ...(users ?? []).map((user) => ({
-      value: user.id,
-      label: user.name,
-    })),
-  ];
+  // プロジェクト選択時はメンバーのみ、未選択時は全ユーザーを表示
+  const assigneeOptions = selectedProjectId
+    ? [
+        { value: "", label: "担当者なし（自分が担当者になります）" },
+        ...projectMembers.map((member) => ({
+          value: member.userId,
+          label: member.user.name,
+        })),
+      ]
+    : [
+        { value: "", label: "担当者なし（自分が担当者になります）" },
+        ...(users ?? []).map((user) => ({
+          value: user.id,
+          label: user.name,
+        })),
+      ];
 
   return (
     <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">

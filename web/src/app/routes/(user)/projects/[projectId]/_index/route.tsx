@@ -1,8 +1,14 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useOutletContext, Link } from "react-router";
-import { PencilIcon, FolderIcon } from "@heroicons/react/24/outline";
+import {
+  PencilIcon,
+  FolderIcon,
+  ArrowRightStartOnRectangleIcon,
+} from "@heroicons/react/24/outline";
 import { Button, Card } from "@/app/lib/ui";
 import { buildLogger } from "@/app/lib/logger";
+import { useProjectMembers } from "@/app/features/project/hooks";
+import { MemberList, LeaveProjectConfirmDialog } from "../../_shared/components";
 import type { ProjectOutletContext } from "../route";
 
 const logger = buildLogger("ProjectDetailRoute");
@@ -13,6 +19,14 @@ const logger = buildLogger("ProjectDetailRoute");
  */
 export default function ProjectDetailRoute() {
   const { project, todoCount } = useOutletContext<ProjectOutletContext>();
+  const [isLeaveDialogOpen, setIsLeaveDialogOpen] = useState(false);
+
+  const { data: members = [] } = useProjectMembers(project.id);
+
+  // 最後のオーナーかどうかを判定
+  const ownerCount = members.filter((m) => m.role === "OWNER").length;
+  const isOwner = project.myRole === "OWNER";
+  const isLastOwner = isOwner && ownerCount <= 1;
 
   // ページ表示ログ
   useEffect(() => {
@@ -42,12 +56,23 @@ export default function ProjectDetailRoute() {
             <p className="text-text-secondary">{todoCount}件のTODO</p>
           </div>
         </div>
-        <Link to={`/projects/${project.id}/edit`}>
-          <Button variant="secondary">
-            <PencilIcon className="h-4 w-4 mr-2" />
-            編集
+        <div className="flex items-center gap-2">
+          <Link to={`/projects/${project.id}/edit`}>
+            <Button variant="secondary">
+              <PencilIcon className="h-4 w-4 mr-2" />
+              編集
+            </Button>
+          </Link>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setIsLeaveDialogOpen(true);
+            }}
+          >
+            <ArrowRightStartOnRectangleIcon className="h-4 w-4 mr-2" />
+            脱退
           </Button>
-        </Link>
+        </div>
       </div>
 
       {/* 詳細情報 */}
@@ -101,6 +126,11 @@ export default function ProjectDetailRoute() {
         </Card.Body>
       </Card>
 
+      {/* メンバー一覧 */}
+      <div className="mt-6">
+        <MemberList projectId={project.id} myRole={project.myRole} />
+      </div>
+
       {/* TODOへのリンク */}
       <div className="mt-6">
         <Link to={`/todos?projectId=${project.id}`} className="block">
@@ -109,6 +139,17 @@ export default function ProjectDetailRoute() {
           </Button>
         </Link>
       </div>
+
+      {/* 脱退確認ダイアログ */}
+      <LeaveProjectConfirmDialog
+        isOpen={isLeaveDialogOpen}
+        onClose={() => {
+          setIsLeaveDialogOpen(false);
+        }}
+        projectId={project.id}
+        projectName={project.name}
+        isLastOwner={isLastOwner}
+      />
     </>
   );
 }

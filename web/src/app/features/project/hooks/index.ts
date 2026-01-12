@@ -5,3 +5,11 @@ export {
   useUpdateProject,
   useDeleteProject,
 } from "./useProjects";
+
+export {
+  useProjectMembers,
+  useInviteMember,
+  useLeaveProject,
+  useRemoveMember,
+  useChangeMemberRole,
+} from "./useProjectMembers";

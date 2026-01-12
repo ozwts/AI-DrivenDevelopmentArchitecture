@@ -7,6 +7,7 @@ import { beforeMount } from "@playwright/experimental-ct-react/hooks";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router";
 import { AuthContext, AuthContextType } from "../src/app/features/auth";
+import { ToastProvider } from "../src/app/lib/contexts/ToastContext";
 
 // Initialize i18next for Zod (same as main.tsx)
 i18next.init({
@@ -52,7 +53,9 @@ beforeMount(async ({ App }) => {
     <QueryClientProvider client={queryClient}>
       <MemoryRouter>
         <AuthContext.Provider value={mockAuthContext}>
-          <App />
+          <ToastProvider>
+            <App />
+          </ToastProvider>
         </AuthContext.Provider>
       </MemoryRouter>
     </QueryClientProvider>
