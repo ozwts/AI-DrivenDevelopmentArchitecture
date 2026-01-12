@@ -73,10 +73,10 @@ plugin "aws" {
   version = "0.44.0"
   source  = "github.com/terraform-linters/tflint-ruleset-aws"
 
-  # Deep Checking: 無効化（AWS認証不要で実行可能にするため）
-  # デプロイ時は terraform plan/apply が実際の値を検証する
-  # 700+ の静的ルールはdeep_check=falseでも有効
-  deep_check = false
+  # Deep Checking: 有効化（AWS認証必要）
+  # terraform plan では検出できないエラーを事前に検出
+  # 例: 無効なインスタンスタイプ、存在しないAMI ID
+  deep_check = true
 }
 
 ##################################################

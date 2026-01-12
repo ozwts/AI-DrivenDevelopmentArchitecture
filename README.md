@@ -152,7 +152,7 @@ Issue/PR操作（issue_read/create_pull_request/merge_pull_request等）
 ### モード1: フルモック（AWS不要）
 
 ```bash
-npm run dev:mock    # Web + MSWモックAPI
+npm run dev         # Web + MSWモックAPI
 npm run test        # サーバーテスト + Webテスト
 npm run validate    # 静的解析
 ```
@@ -166,7 +166,7 @@ npm run validate    # 静的解析
 
 ```bash
 npm run deploy      # ブランチ専用のAWSリソースをデプロイ
-npm run dev         # Server（localhost）+ Web（localhost）起動
+npm run dev:branch     # Server（localhost）+ Web（localhost）起動
 npm run destroy     # ブランチ環境を削除
 ```
 
@@ -249,7 +249,19 @@ npm ci
 cd server && docker compose up -d && cd ..
 ```
 
-### 4. コード生成
+### 4. 初期設定
+
+```bash
+npm run config       # モック設定（AWS不要・推奨）
+```
+
+AWS接続が必要な場合は以下を使用：
+
+```bash
+npm run config:branch   # AWS接続設定（要AWSセッション）
+```
+
+### 5. コード生成
 
 ```bash
 npm run codegen
@@ -257,31 +269,40 @@ npm run codegen
 
 OpenAPIスキーマからAPIクライアント・型定義を生成する。サーバー起動前に必須。
 
-### 5. 動作確認
+### 6. 動作確認
 
 ```bash
-# テスト実行
-npm run test -w server
+# モック設定の場合
+npm run dev          # Web + MSWモックAPI
 
-# 開発サーバー起動
-npm run dev
+# AWS接続設定の場合
+npm run test -w server  # テスト実行
+npm run dev:branch         # ローカルサーバー + Web
 ```
 
 ブラウザで http://localhost:5173 にアクセス。
 
 ## コマンド
 
+### 初期設定
+
+```bash
+npm run config           # モック設定（AWS不要・初心者推奨）
+npm run config:branch       # AWS接続設定（要AWSセッション）
+```
+
 ### 開発
 
 ```bash
-npm run dev              # ローカルサーバー + Web（ブランチ環境に接続）
-npm run dev:mock         # Web + MSWモックAPI
+npm run dev              # Web + MSWモックAPI（AWS不要）
+npm run dev:branch          # ローカルサーバー + Web（ブランチ環境に接続）
 ```
 
 ### バリデーション・テスト
 
 ```bash
-npm run validate         # 型チェック・lint・スペルチェック
+npm run validate         # 型チェック・lint・スペルチェック（AWS不要）
+npm run validate:deep    # 上記 + TFLint deep check（要AWS認証）
 npm run fix              # 自動修正
 npm run test             # server + webテスト
 npm run codegen          # OpenAPIからコード生成

@@ -82,6 +82,31 @@ web/
 cd web
 ```
 
+### 初期設定
+
+初回セットアップ時に設定ファイルを生成する。
+
+```bash
+# モック設定（AWS不要・推奨）
+npm run config:mock
+
+# ローカルサーバー + AWS認証設定（要AWS認証 + config:fetch実行済み）
+npm run config:local
+
+# ブランチ環境API直接接続設定（要AWS認証 + config:fetch実行済み）
+npm run config:dev
+```
+
+**設定ファイル:**
+
+| 設定 | ファイル | API接続先 | AWS認証 |
+|------|---------|----------|--------|
+| `config:mock` | `config.mock.ts` | MSW (ブラウザ内) | 不要 |
+| `config:local` | `config.local.ts` | localhost:3000 | 必要 |
+| `config:dev` | `config.dev.ts` | ブランチ環境API | 必要 |
+
+AWS認証が必要な設定は、事前に `npm run config:fetch` で SSM から認証情報を取得する。
+
 ### 開発
 
 ```bash

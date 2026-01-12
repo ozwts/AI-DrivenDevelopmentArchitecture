@@ -31,7 +31,7 @@
     "test:ss:ui": "playwright test -c playwright-ss.config.ts --ui",
     "test:ss:update": "playwright test -c playwright-ss.config.ts --update-snapshots=all",
     "typegen": "react-router typegen",
-    "update:packages": "ncu -u",
+    "update:pkgs": "ncu -u",
     "validate": "run-p validate:lint validate:tsc",
     "validate:format": "prettier --cache -c '**/*.{ts,tsx,json,yml,yaml,md}'",
     "fix:knip": "knip --fix",

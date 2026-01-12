@@ -18,6 +18,7 @@ export type InfraAnalysisResponsibility = {
     analysisType: z.ZodDefault<
       z.ZodOptional<z.ZodEnum<["format", "lint", "security", "all"]>>
     >;
+    deepCheck: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
   };
 };
 
@@ -28,7 +29,7 @@ export const INFRA_ANALYSIS_RESPONSIBILITIES: InfraAnalysisResponsibility[] = [
   {
     id: "review_infra_static_analysis",
     toolDescription:
-      "指定されたTerraform環境ディレクトリの静的解析を実行します。terraform fmt（フォーマットチェック）、TFLint（Lintチェック）、Trivy（セキュリティスキャン）、または全てを選択できます。",
+      "指定されたTerraform環境ディレクトリの静的解析を実行します。terraform fmt（フォーマットチェック）、TFLint（Lintチェック）、Trivy（セキュリティスキャン）、または全てを選択できます。deepCheck有効時はAWS認証が必要です。",
     inputSchema: {
       targetDirectory: z
         .string()
@@ -41,6 +42,13 @@ export const INFRA_ANALYSIS_RESPONSIBILITIES: InfraAnalysisResponsibility[] = [
         .default("all")
         .describe(
           "実行する解析タイプ: 'format'（terraform fmt）、'lint'（TFLint）、'security'（Trivy）、'all'（全て）。デフォルトは 'all'。",
+        ),
+      deepCheck: z
+        .boolean()
+        .optional()
+        .default(false)
+        .describe(
+          "TFLintのdeep_checkを有効にするかどうか。有効時はAWS認証が必要。デフォルトは false。",
         ),
     },
   },

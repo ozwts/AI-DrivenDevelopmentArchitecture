@@ -17,6 +17,7 @@ export type InfraAnalysisHandlerInput = {
   targetDirectory: string;
   guardrailsRoot: string;
   analysisType?: InfraAnalysisType;
+  deepCheck?: boolean;
 };
 
 /**
@@ -25,7 +26,7 @@ export type InfraAnalysisHandlerInput = {
 export const createInfraAnalysisHandler =
   () =>
   async (args: InfraAnalysisHandlerInput): Promise<string> => {
-    const { targetDirectory, guardrailsRoot, analysisType = "all" } = args;
+    const { targetDirectory, guardrailsRoot, analysisType = "all", deepCheck = false } = args;
 
     // バリデーション
     if (
@@ -54,6 +55,7 @@ export const createInfraAnalysisHandler =
       targetDirectory,
       analysisType,
       terraformRoot,
+      deepCheck,
     });
 
     // 結果整形

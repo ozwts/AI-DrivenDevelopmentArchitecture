@@ -85,6 +85,8 @@ export type InfraAnalysisInput = {
   analysisType: InfraAnalysisType;
   /** Terraformルートディレクトリ */
   terraformRoot: string;
+  /** TFLint deep_check有効化（AWS認証必要） */
+  deepCheck?: boolean;
 };
 
 /**
@@ -106,7 +108,10 @@ const getStringOrDefault = (
 export const executeInfraAnalysis = async (
   input: InfraAnalysisInput,
 ): Promise<InfraAnalysisResult> => {
-  const { targetDirectory, analysisType, terraformRoot } = input;
+  const { targetDirectory, analysisType, terraformRoot, deepCheck = false } = input;
+
+  // deep_check有効時は.tflint.deep.hcl、無効時は.tflint.hclを使用
+  const tflintConfigFile = deepCheck ? ".tflint.deep.hcl" : ".tflint.hcl";
 
   /**
    * terraform fmt -check を実行（内部関数）
@@ -172,7 +177,7 @@ export const executeInfraAnalysis = async (
     try {
       // TFLintを初期化してから実行
       await execAsync(
-        `tflint --init --config="${terraformRoot}/.tflint.hcl"`,
+        `tflint --init --config="${terraformRoot}/${tflintConfigFile}"`,
         {
           cwd: targetDirectory,
           maxBuffer: 1024 * 1024 * 10,
@@ -180,7 +185,7 @@ export const executeInfraAnalysis = async (
       );
 
       const { stdout } = await execAsync(
-        `tflint --config="${terraformRoot}/.tflint.hcl" --format=json --call-module-type=all`,
+        `tflint --config="${terraformRoot}/${tflintConfigFile}" --format=json --call-module-type=all`,
         {
           cwd: targetDirectory,
           maxBuffer: 1024 * 1024 * 10,

@@ -17,6 +17,9 @@
     "lint:dev": "npm run lint:init && tflint --chdir=terraform/environments/dev --config=../../.tflint.hcl",
     "lint:stg": "npm run lint:init && tflint --chdir=terraform/environments/stg --config=../../.tflint.hcl",
     "lint:prd": "npm run lint:init && tflint --chdir=terraform/environments/prd --config=../../.tflint.hcl",
+    "lint:deep:dev": "npm run lint:init && tflint --chdir=terraform/environments/dev --config=../../.tflint.deep.hcl",
+    "lint:deep:stg": "npm run lint:init && tflint --chdir=terraform/environments/stg --config=../../.tflint.deep.hcl",
+    "lint:deep:prd": "npm run lint:init && tflint --chdir=terraform/environments/prd --config=../../.tflint.deep.hcl",
 
     "security": "npm run security:dev && npm run security:stg && npm run security:prd",
     "security:dev": "trivy config --config terraform/trivy.yaml --ignorefile terraform/environments/dev/.trivyignore terraform/environments/dev",
@@ -28,6 +31,10 @@
     "validate:stg": "npm run fix:check && npm run lint:stg && npm run security:stg",
     "validate:prd": "npm run fix:check && npm run lint:prd && npm run security:prd",
     "validate:all": "npm run fix:check && npm run lint && npm run security",
+    "validate:deep": "npm run validate:deep:dev",
+    "validate:deep:dev": "npm run fix:check && npm run lint:deep:dev && npm run security:dev",
+    "validate:deep:stg": "npm run fix:check && npm run lint:deep:stg && npm run security:stg",
+    "validate:deep:prd": "npm run fix:check && npm run lint:deep:prd && npm run security:prd",
 
     "config:dev": "terraform -chdir=terraform/environments/dev init --reconfigure",
     "config:stg": "terraform -chdir=terraform/environments/stg init --reconfigure",

@@ -18,7 +18,8 @@ infra/
 ├── package.json
 ├── README.md
 └── terraform/
-    ├── .tflint.hcl           # TFLint設定
+    ├── .tflint.hcl           # TFLint設定（deep_check無効、AWS認証不要）
+    ├── .tflint.deep.hcl      # TFLint設定（deep_check有効、AWS認証必要）
     ├── trivy.yaml            # Trivyセキュリティスキャン設定
     ├── policies/             # Trivyカスタムポリシー（Rego）
     │   ├── cognito_deletion_protection.rego
@@ -70,8 +71,11 @@ cd infra
 ### バリデーション
 
 ```bash
-# 開発環境のバリデーション（format + lint + security）
+# 開発環境のバリデーション（format + lint + security）AWS認証不要
 npm run validate:dev
+
+# deep check有効（AWS認証必要）
+npm run validate:deep:dev
 
 # 全環境
 npm run validate:all
@@ -79,6 +83,16 @@ npm run validate:all
 # フォーマット修正
 npm run fix
 ```
+
+**TFLint設定の違い:**
+
+| 設定ファイル | deep_check | AWS認証 | 用途 |
+|-------------|------------|--------|------|
+| `.tflint.hcl` | false | 不要 | ローカル開発、CI |
+| `.tflint.deep.hcl` | true | 必要 | AWS値の実検証 |
+
+`deep_check=true` は無効なインスタンスタイプや存在しないAMI IDを検出可能。
+ただし `terraform plan/apply` でも同等の検証が行われるため、通常は `deep_check=false` で十分。
 
 ### ブランチ環境デプロイ（デフォルト）
 
@@ -119,13 +133,18 @@ npm run destroy:dev
 ### Lint（TFLint）
 
 ```bash
-# 全環境
+# 全環境（AWS認証不要）
 npm run lint
 
-# 環境別
+# 環境別（AWS認証不要）
 npm run lint:dev
 npm run lint:stg
 npm run lint:prd
+
+# deep check有効（AWS認証必要）
+npm run lint:deep:dev
+npm run lint:deep:stg
+npm run lint:deep:prd
 ```
 
 ### セキュリティスキャン（Trivy）

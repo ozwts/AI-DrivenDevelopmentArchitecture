@@ -115,7 +115,7 @@ class DevServerManager {
       `VITE_API_URL=http://localhost:${apiPort}`,
     ];
 
-    const command = mode === "mock" ? "npm run dev:mock" : "npm run dev";
+    const command = mode === "mock" ? "npm run dev" : "npm run dev:branch";
     const fullCommand = `${envVars.join(" ")} ${command}`;
 
     this.process = spawn(fullCommand, [], {
