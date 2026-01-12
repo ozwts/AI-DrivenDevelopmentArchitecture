@@ -18,6 +18,11 @@ import {
   AttachmentDummy1,
   AttachmentDummy2,
   AttachmentDummy3,
+  ProjectMemberDummy1,
+  ProjectMemberDummy2,
+  ProjectMemberDummy3,
+  ProjectMemberDummy4,
+  ProjectMemberDummy5,
 } from "./mock-data";
 
 type TodoResponse = z.infer<typeof schemas.TodoResponse>;
@@ -31,6 +36,8 @@ type AttachmentsResponse = z.infer<typeof schemas.AttachmentsResponse>;
 type PrepareAttachmentResponse = z.infer<
   typeof schemas.PrepareAttachmentResponse
 >;
+type ProjectMemberResponse = z.infer<typeof schemas.ProjectMemberResponse>;
+type ProjectMembersResponse = z.infer<typeof schemas.ProjectMembersResponse>;
 
 const allProjects = [ProjectDummy1, ProjectDummy2, ProjectDummy3];
 let projects = [...allProjects];
@@ -43,6 +50,16 @@ let users = [...allUsers];
 
 const allAttachments = [AttachmentDummy1, AttachmentDummy2, AttachmentDummy3];
 let attachments = [...allAttachments];
+
+// プロジェクトメンバーの初期データ（projectId => members[]）
+const allProjectMembers: Record<string, ProjectMemberResponse[]> = {
+  "project-1": [ProjectMemberDummy1, ProjectMemberDummy2],
+  "project-2": [ProjectMemberDummy3],
+  "project-3": [ProjectMemberDummy4, ProjectMemberDummy5],
+};
+let projectMembers: Record<string, ProjectMemberResponse[]> = JSON.parse(
+  JSON.stringify(allProjectMembers),
+);
 
 // 現在のユーザー（モック用）
 let currentUser = UserDummy1;
@@ -256,9 +273,20 @@ export const DeleteProjectResponseDummy = [
 
 // ユーザーリストのハンドラー
 export const UsersResponseDummy = [
-  http.get(urlJoin(config.apiUrl, "/users"), async () => {
+  http.get(urlJoin(config.apiUrl, "/users"), async ({ request }) => {
+    const url = new URL(request.url);
+    const nameParam = url.searchParams.get("name");
+
+    let filteredUsers = users;
+    if (nameParam) {
+      // name パラメータで部分一致検索
+      filteredUsers = filteredUsers.filter((user) =>
+        user.name.toLowerCase().includes(nameParam.toLowerCase()),
+      );
+    }
+
     await delay(100);
-    return HttpResponse.json(users satisfies UsersResponse);
+    return HttpResponse.json(filteredUsers satisfies UsersResponse);
   }),
 ];
 
@@ -504,6 +532,162 @@ export const S3UploadResponseDummy = [
   ),
 ];
 
+// プロジェクトメンバー一覧取得のハンドラー
+export const ProjectMembersResponseDummy = [
+  http.get(
+    urlJoin(config.apiUrl, "/projects/:projectId/members"),
+    async ({ params }) => {
+      const { projectId } = params;
+      const members = projectMembers[projectId as string] ?? [];
+
+      await delay(100);
+      return HttpResponse.json(members satisfies ProjectMembersResponse);
+    },
+  ),
+];
+
+// メンバー招待のハンドラー
+export const InviteMemberResponseDummy = [
+  http.post(
+    urlJoin(config.apiUrl, "/projects/:projectId/members"),
+    async ({ params, request }) => {
+      const { projectId } = params;
+      const body = (await request.json()) as { userId: string };
+
+      // プロジェクト存在確認
+      const project = projects.find((p) => p.id === projectId);
+      if (!project) {
+        return HttpResponse.json(
+          { code: "NOT_FOUND", message: "Project not found" },
+          { status: 404 },
+        );
+      }
+
+      // ユーザー存在確認
+      const user = users.find((u) => u.id === body.userId);
+      if (!user) {
+        return HttpResponse.json(
+          { code: "NOT_FOUND", message: "User not found" },
+          { status: 404 },
+        );
+      }
+
+      // 既にメンバーかどうか確認
+      const members = projectMembers[projectId as string] ?? [];
+      const existingMember = members.find((m) => m.userId === body.userId);
+      if (existingMember) {
+        return HttpResponse.json(
+          { code: "DOMAIN_RULE_ERROR", message: "User is already a member" },
+          { status: 422 },
+        );
+      }
+
+      // 新しいメンバーを作成
+      const newMember: ProjectMemberResponse = {
+        id: `member-${Date.now()}`,
+        userId: body.userId,
+        role: "member",
+        user,
+        joinedAt: new Date().toISOString(),
+      };
+
+      if (!projectMembers[projectId as string]) {
+        projectMembers[projectId as string] = [];
+      }
+      projectMembers[projectId as string].push(newMember);
+
+      await delay(100);
+      return HttpResponse.json(newMember satisfies ProjectMemberResponse, {
+        status: 201,
+      });
+    },
+  ),
+];
+
+// メンバー削除のハンドラー（オーナーが他メンバーを削除）
+export const RemoveMemberResponseDummy = [
+  http.delete(
+    urlJoin(config.apiUrl, "/projects/:projectId/members/:userId"),
+    async ({ params }) => {
+      const { projectId, userId } = params;
+
+      // プロジェクト存在確認
+      const project = projects.find((p) => p.id === projectId);
+      if (!project) {
+        return HttpResponse.json(
+          { code: "NOT_FOUND", message: "Project not found" },
+          { status: 404 },
+        );
+      }
+
+      const members = projectMembers[projectId as string] ?? [];
+      const targetMember = members.find((m) => m.userId === userId);
+
+      // オーナーは削除不可
+      if (targetMember?.role === "owner") {
+        return HttpResponse.json(
+          { code: "FORBIDDEN", message: "Cannot remove owner" },
+          { status: 403 },
+        );
+      }
+
+      // メンバーを削除
+      projectMembers[projectId as string] = members.filter(
+        (m) => m.userId !== userId,
+      );
+
+      await delay(100);
+      return new HttpResponse(null, { status: 204 });
+    },
+  ),
+];
+
+// プロジェクト脱退のハンドラー（自分自身を削除）
+export const LeaveProjectResponseDummy = [
+  http.delete(
+    urlJoin(config.apiUrl, "/projects/:projectId/members/me"),
+    async ({ params }) => {
+      const { projectId } = params;
+
+      // プロジェクト存在確認
+      const project = projects.find((p) => p.id === projectId);
+      if (!project) {
+        return HttpResponse.json(
+          { code: "NOT_FOUND", message: "Project not found" },
+          { status: 404 },
+        );
+      }
+
+      const members = projectMembers[projectId as string] ?? [];
+      const currentMember = members.find((m) => m.userId === currentUser.id);
+
+      // メンバーでない場合
+      if (!currentMember) {
+        return HttpResponse.json(
+          { code: "NOT_FOUND", message: "Not a member" },
+          { status: 404 },
+        );
+      }
+
+      // オーナーは脱退不可
+      if (currentMember.role === "owner") {
+        return HttpResponse.json(
+          { code: "FORBIDDEN", message: "Owner cannot leave" },
+          { status: 403 },
+        );
+      }
+
+      // メンバーを削除
+      projectMembers[projectId as string] = members.filter(
+        (m) => m.userId !== currentUser.id,
+      );
+
+      await delay(100);
+      return new HttpResponse(null, { status: 204 });
+    },
+  ),
+];
+
 // ハンドラーセットの定義
 const getHandlersByType = (type: string) => {
   switch (type) {
@@ -512,6 +696,7 @@ const getHandlersByType = (type: string) => {
       todos = [...allTodos];
       projects = [...allProjects];
       attachments = [...allAttachments];
+      projectMembers = JSON.parse(JSON.stringify(allProjectMembers));
       return [
         ...TodosResponseDummy,
         ...TodoResponseDummy,
@@ -523,6 +708,10 @@ const getHandlersByType = (type: string) => {
         ...CreateProjectResponseDummy,
         ...UpdateProjectResponseDummy,
         ...DeleteProjectResponseDummy,
+        ...ProjectMembersResponseDummy,
+        ...InviteMemberResponseDummy,
+        ...RemoveMemberResponseDummy,
+        ...LeaveProjectResponseDummy,
         ...UsersResponseDummy,
         ...CurrentUserResponseDummy,
         ...UpdateCurrentUserResponseDummy,
@@ -542,6 +731,7 @@ const getHandlersByType = (type: string) => {
       todos = [];
       projects = [];
       attachments = [];
+      projectMembers = {};
       return [
         ...TodosResponseDummy,
         ...TodoResponseDummy,
@@ -553,6 +743,10 @@ const getHandlersByType = (type: string) => {
         ...CreateProjectResponseDummy,
         ...UpdateProjectResponseDummy,
         ...DeleteProjectResponseDummy,
+        ...ProjectMembersResponseDummy,
+        ...InviteMemberResponseDummy,
+        ...RemoveMemberResponseDummy,
+        ...LeaveProjectResponseDummy,
         ...UsersResponseDummy,
         ...CurrentUserResponseDummy,
         ...UpdateCurrentUserResponseDummy,
@@ -572,6 +766,10 @@ const getHandlersByType = (type: string) => {
         ...CreateProjectResponseDummy,
         ...UpdateProjectResponseDummy,
         ...DeleteProjectResponseDummy,
+        ...ProjectMembersResponseDummy,
+        ...InviteMemberResponseDummy,
+        ...RemoveMemberResponseDummy,
+        ...LeaveProjectResponseDummy,
         ...UsersResponseDummy,
         ...CurrentUserResponseDummy,
         ...UpdateCurrentUserResponseDummy,

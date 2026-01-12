@@ -5,6 +5,7 @@ type UserResponse = z.infer<typeof schemas.UserResponse>;
 type ProjectResponse = z.infer<typeof schemas.ProjectResponse>;
 type TodoResponse = z.infer<typeof schemas.TodoResponse>;
 type AttachmentResponse = z.infer<typeof schemas.AttachmentResponse>;
+type ProjectMemberResponse = z.infer<typeof schemas.ProjectMemberResponse>;
 
 /**
  * コンポーネントテスト用のモックデータ
@@ -52,6 +53,14 @@ export const mockTodo: TodoResponse = {
   attachments: [],
   createdAt: "2024-01-01T00:00:00Z",
   updatedAt: "2024-01-01T00:00:00Z",
+};
+
+export const mockProjectMember: ProjectMemberResponse = {
+  id: "test-member-id",
+  userId: "test-user-id",
+  role: "owner" as const,
+  user: mockUser,
+  joinedAt: "2024-01-01T00:00:00Z",
 };
 
 /**
@@ -235,3 +244,59 @@ export const ProjectDummy3: ProjectResponse = {
   createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
   updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
 };
+
+// プロジェクトメンバーダミーデータ
+// Project 1: User1(owner), User2(member)
+// Project 2: User2(owner)
+// Project 3: User3(owner), User1(member)
+
+export const ProjectMemberDummy1: ProjectMemberResponse = {
+  id: "member-1",
+  userId: "user-1",
+  role: "owner",
+  user: UserDummy1,
+  joinedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+};
+
+export const ProjectMemberDummy2: ProjectMemberResponse = {
+  id: "member-2",
+  userId: "user-2",
+  role: "member",
+  user: UserDummy2,
+  joinedAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
+};
+
+export const ProjectMemberDummy3: ProjectMemberResponse = {
+  id: "member-3",
+  userId: "user-2",
+  role: "owner",
+  user: UserDummy2,
+  joinedAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
+};
+
+export const ProjectMemberDummy4: ProjectMemberResponse = {
+  id: "member-4",
+  userId: "user-3",
+  role: "owner",
+  user: UserDummy3,
+  joinedAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+};
+
+export const ProjectMemberDummy5: ProjectMemberResponse = {
+  id: "member-5",
+  userId: "user-1",
+  role: "member",
+  user: UserDummy1,
+  joinedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+};
+
+// プロジェクトごとのメンバー配列
+export const Project1MembersResponseDummy = [
+  ProjectMemberDummy1,
+  ProjectMemberDummy2,
+];
+export const Project2MembersResponseDummy = [ProjectMemberDummy3];
+export const Project3MembersResponseDummy = [
+  ProjectMemberDummy4,
+  ProjectMemberDummy5,
+];

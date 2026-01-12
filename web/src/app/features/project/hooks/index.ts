@@ -4,4 +4,8 @@ export {
   useCreateProject,
   useUpdateProject,
   useDeleteProject,
+  useProjectMembers,
+  useInviteMember,
+  useRemoveMember,
+  useLeaveProject,
 } from "./useProjects";

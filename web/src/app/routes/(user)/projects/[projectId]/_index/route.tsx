@@ -4,6 +4,7 @@ import { PencilIcon, FolderIcon } from "@heroicons/react/24/outline";
 import { Button, Card } from "@/app/lib/ui";
 import { buildLogger } from "@/app/lib/logger";
 import type { ProjectOutletContext } from "../route";
+import { MemberListSection } from "./components";
 
 const logger = buildLogger("ProjectDetailRoute");
 
@@ -100,6 +101,11 @@ export default function ProjectDetailRoute() {
           </div>
         </Card.Body>
       </Card>
+
+      {/* メンバー一覧 */}
+      <div className="mt-6">
+        <MemberListSection projectId={project.id} />
+      </div>
 
       {/* TODOへのリンク */}
       <div className="mt-6">

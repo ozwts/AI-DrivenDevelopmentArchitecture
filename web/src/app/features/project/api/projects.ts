@@ -13,6 +13,8 @@ import {
 type ProjectResponse = z.infer<typeof schemas.ProjectResponse>;
 type CreateProjectParams = z.infer<typeof schemas.CreateProjectParams>;
 type UpdateProjectParams = z.infer<typeof schemas.UpdateProjectParams>;
+type ProjectMemberResponse = z.infer<typeof schemas.ProjectMemberResponse>;
+type InviteMemberParams = z.infer<typeof schemas.InviteMemberParams>;
 
 export const projectApi = {
   getProjects: async (): Promise<ProjectResponse[]> => {
@@ -47,6 +49,42 @@ export const projectApi = {
 
   deleteProject: async (projectId: string): Promise<void> => {
     return requestVoid(`/projects/${projectId}`, {
+      method: "DELETE",
+    });
+  },
+
+  // プロジェクトメンバー
+  getProjectMembers: async (
+    projectId: string,
+  ): Promise<ProjectMemberResponse[]> => {
+    return request(
+      `/projects/${projectId}/members`,
+      schemas.ProjectMembersResponse,
+    );
+  },
+
+  inviteMember: async (
+    projectId: string,
+    data: InviteMemberParams,
+  ): Promise<ProjectMemberResponse> => {
+    return request(
+      `/projects/${projectId}/members`,
+      schemas.ProjectMemberResponse,
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      },
+    );
+  },
+
+  removeMember: async (projectId: string, userId: string): Promise<void> => {
+    return requestVoid(`/projects/${projectId}/members/${userId}`, {
+      method: "DELETE",
+    });
+  },
+
+  leaveProject: async (projectId: string): Promise<void> => {
+    return requestVoid(`/projects/${projectId}/members/me`, {
       method: "DELETE",
     });
   },
