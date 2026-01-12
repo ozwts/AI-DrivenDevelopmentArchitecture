@@ -55,3 +55,27 @@ UpdateUserParams:
       description: ユーザー名（省略可能。100文字以下）
       minLength: 1
       maxLength: 100
+
+SearchUserResponse:
+  type: object
+  description: ユーザー検索結果の1件
+  required:
+    - id
+    - name
+    - email
+  properties:
+    id:
+      type: string
+      description: ユーザーID
+    name:
+      type: string
+      description: ユーザー名
+    email:
+      type: string
+      description: メールアドレス
+
+SearchUsersResponse:
+  type: array
+  description: ユーザー検索結果リスト
+  items:
+    $ref: "#/SearchUserResponse"

@@ -11,6 +11,8 @@ tags:
     description: 添付ファイル
   - name: projects
     description: プロジェクト
+  - name: project-members
+    description: プロジェクトメンバー
   - name: users
     description: ユーザー
 
@@ -37,7 +39,19 @@ paths:
   /projects/{projectId}:
     $ref: "project/project.paths.yaml#/~1projects~1{projectId}"
 
+  # Project Member
+  /projects/{projectId}/members:
+    $ref: "project/project-member.paths.yaml#/~1projects~1{projectId}~1members"
+  /projects/{projectId}/members/me:
+    $ref: "project/project-member.paths.yaml#/~1projects~1{projectId}~1members~1me"
+  /projects/{projectId}/members/{memberId}:
+    $ref: "project/project-member.paths.yaml#/~1projects~1{projectId}~1members~1{memberId}"
+  /projects/{projectId}/members/{memberId}/role:
+    $ref: "project/project-member.paths.yaml#/~1projects~1{projectId}~1members~1{memberId}~1role"
+
   # User
+  /users/search:
+    $ref: "user/user.paths.yaml#/~1users~1search"
   /users:
     $ref: "user/user.paths.yaml#/~1users"
   /users/me:
@@ -98,6 +112,18 @@ components:
     UpdateProjectParams:
       $ref: "project/project.schemas.yaml#/UpdateProjectParams"
 
+    # Project Member
+    MemberRole:
+      $ref: "project/project-member.schemas.yaml#/MemberRole"
+    ProjectMemberResponse:
+      $ref: "project/project-member.schemas.yaml#/ProjectMemberResponse"
+    ProjectMembersResponse:
+      $ref: "project/project-member.schemas.yaml#/ProjectMembersResponse"
+    InviteMemberParams:
+      $ref: "project/project-member.schemas.yaml#/InviteMemberParams"
+    ChangeMemberRoleParams:
+      $ref: "project/project-member.schemas.yaml#/ChangeMemberRoleParams"
+
     # User
     UserResponse:
       $ref: "user/user.schemas.yaml#/UserResponse"
@@ -107,3 +133,7 @@ components:
       $ref: "user/user.schemas.yaml#/RegisterUserParams"
     UpdateUserParams:
       $ref: "user/user.schemas.yaml#/UpdateUserParams"
+    SearchUserResponse:
+      $ref: "user/user.schemas.yaml#/SearchUserResponse"
+    SearchUsersResponse:
+      $ref: "user/user.schemas.yaml#/SearchUsersResponse"

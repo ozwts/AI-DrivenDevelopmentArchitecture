@@ -13,6 +13,8 @@ tags:
     description: 添付ファイル
   - name: projects
     description: プロジェクト
+  - name: project-members
+    description: プロジェクトメンバー
   - name: users
     description: ユーザー
 paths:
@@ -763,6 +765,317 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /projects/{projectId}/members:
+    get:
+      tags:
+        - project-members
+      summary: プロジェクトメンバー一覧を取得
+      description: 指定したプロジェクトのメンバー一覧を取得する
+      security:
+        - CognitoAuthorizer: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: プロジェクトID
+      responses:
+        '200':
+          description: メンバー一覧取得に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectMembersResponse'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: プロジェクトが存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags:
+        - project-members
+      summary: メンバーを招待
+      description: プロジェクトに新しいメンバーを招待する。オーナーのみ実行可能。
+      security:
+        - CognitoAuthorizer: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: プロジェクトID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InviteMemberParams'
+      responses:
+        '201':
+          description: メンバー招待に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectMemberResponse'
+        '400':
+          description: バリデーションエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: アクセス拒否（オーナー以外は招待できない）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: プロジェクトまたはユーザーが存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: ドメインルールエラー（既にメンバーなど）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /projects/{projectId}/members/me:
+    delete:
+      tags:
+        - project-members
+      summary: プロジェクトから脱退
+      description: 自分自身をプロジェクトから脱退させる。最後のオーナーは脱退できない。
+      security:
+        - CognitoAuthorizer: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: プロジェクトID
+      responses:
+        '204':
+          description: プロジェクト脱退に成功
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: プロジェクトが存在しない、またはメンバーでない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: ドメインルールエラー（最後のオーナーは脱退できない）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /projects/{projectId}/members/{memberId}:
+    delete:
+      tags:
+        - project-members
+      summary: メンバーを削除
+      description: 指定したメンバーをプロジェクトから削除する。オーナーのみ実行可能。最後のオーナーは削除できない。
+      security:
+        - CognitoAuthorizer: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: プロジェクトID
+        - name: memberId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 削除するメンバーID
+      responses:
+        '204':
+          description: メンバー削除に成功
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: アクセス拒否（オーナー以外は削除できない）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: プロジェクトまたはメンバーが存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: ドメインルールエラー（最後のオーナーは削除できない）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /projects/{projectId}/members/{memberId}/role:
+    patch:
+      tags:
+        - project-members
+      summary: メンバーの権限を変更
+      description: メンバーの権限（オーナー/メンバー）を変更する。オーナーのみ実行可能。最後のオーナーは降格できない。
+      security:
+        - CognitoAuthorizer: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: プロジェクトID
+        - name: memberId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 権限変更するメンバーID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeMemberRoleParams'
+      responses:
+        '200':
+          description: 権限変更に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectMemberResponse'
+        '400':
+          description: バリデーションエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: アクセス拒否（オーナー以外は権限変更できない）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: プロジェクトまたはメンバーが存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: ドメインルールエラー（最後のオーナーは降格できない、既に同じ権限など）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /users/search:
+    get:
+      tags:
+        - users
+      summary: ユーザーを検索
+      description: 名前またはメールアドレスでユーザーを検索する。自分自身は検索結果から除外される。
+      security:
+        - CognitoAuthorizer: []
+      parameters:
+        - name: query
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
+          description: 検索キーワード（名前またはメールアドレスの部分一致）
+      responses:
+        '200':
+          description: ユーザー検索に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchUsersResponse'
+        '400':
+          description: バリデーションエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /users:
     get:
       tags:
@@ -1244,6 +1557,7 @@ components:
         - id
         - name
         - color
+        - myRole
         - createdAt
         - updatedAt
       properties:
@@ -1260,6 +1574,9 @@ components:
           type: string
           description: プロジェクトのカラーコード（例：#001964）
           pattern: ^#[0-9A-Fa-f]{6}$
+        myRole:
+          $ref: '#/components/schemas/MemberRole'
+          description: 現在のユーザーのロール
         createdAt:
           type: string
           format: date-time
@@ -1308,6 +1625,70 @@ components:
           type: string
           description: プロジェクトのカラーコード（省略可能。#で始まる16進数6文字、例：#001964）
           pattern: ^#[0-9A-Fa-f]{6}$
+    MemberRole:
+      type: string
+      description: メンバーの権限種別
+      enum:
+        - OWNER
+        - MEMBER
+    ProjectMemberResponse:
+      type: object
+      description: プロジェクトメンバー情報
+      required:
+        - id
+        - userId
+        - projectId
+        - role
+        - user
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: プロジェクトメンバーID
+        userId:
+          type: string
+          description: ユーザーID
+        projectId:
+          type: string
+          description: プロジェクトID
+        role:
+          $ref: '#/components/schemas/MemberRole'
+        user:
+          $ref: '#/components/schemas/SearchUserResponse'
+        createdAt:
+          type: string
+          format: date-time
+          description: 登録日時
+        updatedAt:
+          type: string
+          format: date-time
+          description: 更新日時
+    ProjectMembersResponse:
+      type: array
+      description: プロジェクトメンバーリスト
+      items:
+        $ref: '#/components/schemas/ProjectMemberResponse'
+    InviteMemberParams:
+      type: object
+      description: メンバー招待パラメータ
+      required:
+        - userId
+      properties:
+        userId:
+          type: string
+          description: 招待するユーザーID
+        role:
+          $ref: '#/components/schemas/MemberRole'
+          description: 付与するロール（省略時はmember）
+    ChangeMemberRoleParams:
+      type: object
+      description: 権限変更パラメータ
+      required:
+        - role
+      properties:
+        role:
+          $ref: '#/components/schemas/MemberRole'
     UserResponse:
       type: object
       required:
@@ -1362,3 +1743,25 @@ components:
           description: ユーザー名（省略可能。100文字以下）
           minLength: 1
           maxLength: 100
+    SearchUserResponse:
+      type: object
+      description: ユーザー検索結果の1件
+      required:
+        - id
+        - name
+        - email
+      properties:
+        id:
+          type: string
+          description: ユーザーID
+        name:
+          type: string
+          description: ユーザー名
+        email:
+          type: string
+          description: メールアドレス
+    SearchUsersResponse:
+      type: array
+      description: ユーザー検索結果リスト
+      items:
+        $ref: '#/components/schemas/SearchUserResponse'

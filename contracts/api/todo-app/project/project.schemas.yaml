@@ -4,6 +4,7 @@ ProjectResponse:
     - id
     - name
     - color
+    - myRole
     - createdAt
     - updatedAt
   properties:
@@ -20,6 +21,9 @@ ProjectResponse:
       type: string
       description: プロジェクトのカラーコード（例：#001964）
       pattern: "^#[0-9A-Fa-f]{6}$"
+    myRole:
+      $ref: "project-member.schemas.yaml#/MemberRole"
+      description: 現在のユーザーのロール
     createdAt:
       type: string
       format: date-time

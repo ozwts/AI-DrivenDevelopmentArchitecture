@@ -1,3 +1,46 @@
+/users/search:
+  get:
+    tags:
+      - users
+    summary: ユーザーを検索
+    description: 名前またはメールアドレスでユーザーを検索する。自分自身は検索結果から除外される。
+    security:
+      - CognitoAuthorizer: []
+    parameters:
+      - name: query
+        in: query
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description: 検索キーワード（名前またはメールアドレスの部分一致）
+    responses:
+      "200":
+        description: ユーザー検索に成功
+        content:
+          application/json:
+            schema:
+              $ref: "user.schemas.yaml#/SearchUsersResponse"
+      "400":
+        description: バリデーションエラー
+        content:
+          application/json:
+            schema:
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
+      "401":
+        description: 認証エラー
+        content:
+          application/json:
+            schema:
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
+      "500":
+        description: サーバーエラー
+        content:
+          application/json:
+            schema:
+              $ref: "../../_shared/error.schemas.yaml#/ErrorResponse"
+
 /users:
   get:
     tags:

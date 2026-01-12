@@ -1,0 +1,68 @@
+MemberRole:
+  type: string
+  description: メンバーの権限種別
+  enum:
+    - OWNER
+    - MEMBER
+
+ProjectMemberResponse:
+  type: object
+  description: プロジェクトメンバー情報
+  required:
+    - id
+    - userId
+    - projectId
+    - role
+    - user
+    - createdAt
+    - updatedAt
+  properties:
+    id:
+      type: string
+      description: プロジェクトメンバーID
+    userId:
+      type: string
+      description: ユーザーID
+    projectId:
+      type: string
+      description: プロジェクトID
+    role:
+      $ref: "#/MemberRole"
+    user:
+      $ref: "../user/user.schemas.yaml#/SearchUserResponse"
+    createdAt:
+      type: string
+      format: date-time
+      description: 登録日時
+    updatedAt:
+      type: string
+      format: date-time
+      description: 更新日時
+
+ProjectMembersResponse:
+  type: array
+  description: プロジェクトメンバーリスト
+  items:
+    $ref: "#/ProjectMemberResponse"
+
+InviteMemberParams:
+  type: object
+  description: メンバー招待パラメータ
+  required:
+    - userId
+  properties:
+    userId:
+      type: string
+      description: 招待するユーザーID
+    role:
+      $ref: "#/MemberRole"
+      description: 付与するロール（省略時はmember）
+
+ChangeMemberRoleParams:
+  type: object
+  description: 権限変更パラメータ
+  required:
+    - role
+  properties:
+    role:
+      $ref: "#/MemberRole"
