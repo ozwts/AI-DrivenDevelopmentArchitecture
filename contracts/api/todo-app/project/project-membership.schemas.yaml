@@ -1,0 +1,55 @@
+ProjectRole:
+  type: string
+  enum:
+    - OWNER
+    - MEMBER
+  description: プロジェクト内での権限レベル（OWNER=管理権限、MEMBER=Todo操作のみ）
+
+ProjectMembershipResponse:
+  type: object
+  required:
+    - userId
+    - projectId
+    - role
+    - userName
+    - userEmail
+    - joinedAt
+  properties:
+    userId:
+      type: string
+      description: ユーザーの一意の識別子
+    projectId:
+      type: string
+      description: プロジェクトの一意の識別子
+    role:
+      $ref: "#/ProjectRole"
+    userName:
+      type: string
+      description: ユーザー名
+    userEmail:
+      type: string
+      description: ユーザーのメールアドレス
+    joinedAt:
+      type: string
+      format: date-time
+      description: プロジェクト参加日時
+
+ProjectMembershipsResponse:
+  type: array
+  items:
+    $ref: "#/ProjectMembershipResponse"
+
+InviteMemberParams:
+  type: object
+  required:
+    - userId
+  properties:
+    userId:
+      type: string
+      description: 招待するユーザーのID
+
+UpdateMemberRoleParams:
+  type: object
+  properties:
+    role:
+      $ref: "#/ProjectRole"

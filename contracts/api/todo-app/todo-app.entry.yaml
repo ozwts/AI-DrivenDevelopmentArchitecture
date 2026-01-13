@@ -11,6 +11,8 @@ tags:
     description: 添付ファイル
   - name: projects
     description: プロジェクト
+  - name: project-memberships
+    description: プロジェクトメンバーシップ
   - name: users
     description: ユーザー
 
@@ -36,6 +38,14 @@ paths:
     $ref: "project/project.paths.yaml#/~1projects"
   /projects/{projectId}:
     $ref: "project/project.paths.yaml#/~1projects~1{projectId}"
+
+  # Project Membership
+  /projects/{projectId}/members:
+    $ref: "project/project-membership.paths.yaml#/~1projects~1{projectId}~1members"
+  /projects/{projectId}/members/{userId}:
+    $ref: "project/project-membership.paths.yaml#/~1projects~1{projectId}~1members~1{userId}"
+  /projects/{projectId}/leave:
+    $ref: "project/project-membership.paths.yaml#/~1projects~1{projectId}~1leave"
 
   # User
   /users:
@@ -97,6 +107,18 @@ components:
       $ref: "project/project.schemas.yaml#/CreateProjectParams"
     UpdateProjectParams:
       $ref: "project/project.schemas.yaml#/UpdateProjectParams"
+
+    # Project Membership
+    ProjectRole:
+      $ref: "project/project-membership.schemas.yaml#/ProjectRole"
+    ProjectMembershipResponse:
+      $ref: "project/project-membership.schemas.yaml#/ProjectMembershipResponse"
+    ProjectMembershipsResponse:
+      $ref: "project/project-membership.schemas.yaml#/ProjectMembershipsResponse"
+    InviteMemberParams:
+      $ref: "project/project-membership.schemas.yaml#/InviteMemberParams"
+    UpdateMemberRoleParams:
+      $ref: "project/project-membership.schemas.yaml#/UpdateMemberRoleParams"
 
     # User
     UserResponse:
