@@ -57,6 +57,7 @@ export default defineConfig(
       "**/*.test.tsx",
       "**/*.ct.test.tsx",
       "**/*.ss.test.ts",
+      "scripts/**",
       "eslint.config.js",
       "eslint-local-rules/**",
       "eslint-local-rules.cjs",
@@ -187,6 +188,26 @@ export default defineConfig(
       "local-rules/ui/require-omit-classname": "error",
       // UIプリミティブ設計: Compositeコンポーネントにテスト必須
       "local-rules/ui/require-composite-test": "error",
+      // UIプリミティブ設計: バリアントを持つコンポーネントはCVA使用
+      "local-rules/ui/cva-required": "warn",
+      // UIプリミティブ設計: forwardRef必須
+      "local-rules/ui/forwardref-required": "warn",
+
+      // Hooks設計: QueryKey定数化
+      "local-rules/hooks/query-key-constant": "warn",
+      // Hooks設計: Mutation後のinvalidate推奨
+      "local-rules/hooks/mutation-invalidate-pattern": "warn",
+      // Hooks設計: Query結果マッピング禁止
+      "local-rules/hooks/no-query-result-mapping": "warn",
+
+      // 共通: console.log禁止
+      "local-rules/common/no-console-log": "warn",
+
+      // コンポーネント: フォームでdirtyFields推奨
+      "local-rules/component/form-dirty-fields": "warn",
+
+      // API: 生成型使用
+      "local-rules/api/use-generated-types": "warn",
     },
   },
 

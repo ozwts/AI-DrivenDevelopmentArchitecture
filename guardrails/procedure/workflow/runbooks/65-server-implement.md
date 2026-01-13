@@ -90,7 +90,7 @@ mcp__guardrails__procedure_dev(action='start', mode='full')
 - DynamoDB操作の実装
 - ドメインモデルとDBフォーマット間の変換
 
-**完了条件:** 静的解析パス、定性レビューパス、コミット
+**完了条件:** 静的解析パス、コミット
 
 ---
 
@@ -105,7 +105,9 @@ mcp__guardrails__procedure_dev(action='start', mode='full')
 - Result型パターンの適用
 - リポジトリとポートの呼び出し
 
-**完了条件:** 静的解析パス、定性レビューパス、コミット
+**完了条件:** 静的解析パス、コミット
+
+**注意:** 多くのポリシー違反はカスタムESLintルールで検出される。
 
 ---
 
@@ -126,7 +128,7 @@ mcp__guardrails__procedure_dev(action='start', mode='full')
 - 入力バリデーション（OpenAPI生成型による型制約）
 - 依存性の解決とComposition Root
 
-**完了条件:** 静的解析パス、定性レビューパス（各ポリシーを並列実行）、コミット
+**完了条件:** 静的解析パス、コミット
 
 ---
 
@@ -145,7 +147,7 @@ mcp__guardrails__procedure_dev(action='start', mode='full')
 - ポートインターフェースの具象実装
 - 外部サービスとの連携実装
 
-**完了条件:** 静的解析パス、定性レビューパス、コミット
+**完了条件:** 静的解析パス、コミット
 
 ---
 
@@ -164,7 +166,7 @@ mcp__guardrails__procedure_dev(action='start', mode='full')
 mcp__guardrails__procedure_test(target='server')
 ```
 
-**完了条件:** 静的解析パス、定性レビューパス、テスト成功、コミット
+**完了条件:** 静的解析パス、テスト成功、コミット
 
 ---
 
@@ -177,9 +179,9 @@ mcp__guardrails__procedure_fix(workspace='server')
 mcp__guardrails__procedure_dev(action='start', mode='full')
 ```
 
-今回実装した箇所に関わる全ての観点で定性レビューを実施する（並列実行可能）。
+**完了条件:** 静的解析パス、未使用エクスポートなし、開発サーバー起動確認
 
-**完了条件:** 全レビューパス、開発サーバー起動確認
+**注意:** 定性レビューはE2Eフェーズ開始前にまとめて実施。このフェーズでは静的解析のみ。
 
 ---
 

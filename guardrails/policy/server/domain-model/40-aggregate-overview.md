@@ -118,9 +118,14 @@ export class Project {
 member.update({ role: newRole });
 ```
 
-### 3. リポジトリは集約単位で作る（1集約 = 1リポジトリ）
+### 3. リポジトリは集約単位で作る（1集約 = 1リポジトリ = 1ディレクトリ）
 
-**禁止**: 子エンティティ専用のリポジトリ（`{子Entity名}Repository`）を作成してはならない。また、集約ルートのリポジトリに子エンティティ専用のCRUDメソッド（`save{子Entity名}`, `find{子Entity名}*`, `remove{子Entity名}*`）を設けてはならない。
+**禁止**:
+- 子エンティティ専用のリポジトリ（`{子Entity名}Repository`）を作成してはならない
+- 1つの集約ディレクトリに複数のリポジトリインターフェースを配置してはならない
+- 集約ルートのリポジトリに子エンティティ専用のCRUDメソッド（`save{子Entity名}`, `find{子Entity名}*`, `remove{子Entity名}*`）を設けてはならない
+
+**ESLintで検出**: `local-rules/domain-model/single-repository-per-aggregate`
 
 #### ✅ Good
 

@@ -60,7 +60,35 @@ const formatProgressTable = (tasks: TaskWithStatus[]): string => {
 };
 
 /**
- * 次のタスク詳細を表示するヘルパー
+ * 次のタスク詳細を表示するヘルパー（簡潔版）
+ */
+const formatNextTaskCompact = (tasks: TaskWithStatus[]): string => {
+  const pendingTasks = tasks.filter((t) => !t.done);
+  const completed = tasks.filter((t) => t.done).length;
+  const total = tasks.length;
+
+  if (pendingTasks.length === 0) {
+    return `(${completed}/${total}) 🎉 フェーズ完了`;
+  }
+
+  const nextTask = pendingTasks[0];
+  const lines: string[] = [
+    `(${completed}/${total})`,
+    "",
+    `▶ **[${nextTask.index}] ${nextTask.what}**`,
+  ];
+
+  if (nextTask.refs !== undefined && nextTask.refs.length > 0) {
+    lines.push(`  Refs: ${nextTask.refs.map((r) => `\`${r}\``).join(", ")}`);
+  }
+
+  lines.push(`  Done: \`procedure_workflow(action: 'done', index: ${nextTask.index})\``);
+
+  return lines.join("\n");
+};
+
+/**
+ * 次のタスク詳細を表示するヘルパー（フル版 - list用）
  */
 const formatNextTaskDetail = (tasks: TaskWithStatus[]): string => {
   const pendingTasks = tasks.filter((t) => !t.done);
@@ -258,16 +286,24 @@ export const formatRequirementsResult = (
 };
 
 /**
- * タスク登録結果をフォーマット
+ * タスク登録結果をフォーマット（簡潔版）
  */
 export const formatSetResult = (goal: string, tasks: TaskWithStatus[]): string => {
   const taskCount = tasks.length;
-  const base = `**Goal**: ${goal}\n\n${taskCount}件のタスクを登録しました。`;
-  return base + formatProgressAndNextTask(tasks);
+  const lines: string[] = [
+    `**Goal**: ${goal}`,
+    "",
+    `${taskCount}件のタスクを登録しました。`,
+    "",
+    formatNextTaskCompact(tasks),
+    "",
+    "_全タスク: `procedure_workflow(action: 'list')`_",
+  ];
+  return lines.join("\n");
 };
 
 /**
- * タスク完了結果をフォーマット
+ * タスク完了結果をフォーマット（簡潔版）
  */
 export const formatDoneResult = (
   success: boolean,
@@ -279,8 +315,17 @@ export const formatDoneResult = (
     return `エラー: インデックス ${index} のタスクが見つかりません。`;
   }
 
-  const base = `✅ タスク [${index}] を完了しました: ${task?.what}`;
-  return base + formatProgressAndNextTask(remainingTasks);
+  const lines: string[] = [
+    `✅ [${index}] ${task?.what}`,
+    "",
+    formatNextTaskCompact(remainingTasks),
+  ];
+
+  // 全タスク表示への誘導
+  lines.push("");
+  lines.push("_全タスク: `procedure_workflow(action: 'list')`_");
+
+  return lines.join("\n");
 };
 
 /**
@@ -289,7 +334,7 @@ export const formatDoneResult = (
 export const formatClearResult = (): string => "すべてのタスクをクリアしました。";
 
 /**
- * フェーズ遷移結果をフォーマット
+ * フェーズ遷移結果をフォーマット（簡潔版）
  */
 export const formatAdvanceResult = (
   previousPhase: Phase,
@@ -300,20 +345,12 @@ export const formatAdvanceResult = (
   const nextPhaseDef = getPhaseDefinition(nextPhase);
 
   const lines: string[] = [
-    `✅ **${prevPhaseDef?.name ?? previousPhase}** フェーズが完了しました。`,
-    "",
-    `## 次のフェーズ: ${nextPhaseDef?.name ?? nextPhase}`,
-    "",
+    `✅ **${prevPhaseDef?.name ?? previousPhase}** → **${nextPhaseDef?.name ?? nextPhase}**`,
   ];
 
   if (runbook !== undefined) {
-    lines.push(`**参照Runbook**: \`${runbook}\``);
-    lines.push("");
+    lines.push(`  Runbook: \`${runbook}\``);
   }
-
-  lines.push("次のステップ:");
-  lines.push("1. `procedure_workflow(action: 'plan')` で次フェーズのタスクを計画");
-  lines.push("2. `procedure_workflow(action: 'set', tasks: [...])` でタスクを登録");
 
   return lines.join("\n");
 };

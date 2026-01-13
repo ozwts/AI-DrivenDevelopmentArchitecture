@@ -49,74 +49,36 @@ const scanRunbooks = async (runbooksDir: string): Promise<string[]> => {
 };
 
 /**
- * フェーズ別ガイダンスメッセージを生成
+ * フェーズ別ガイダンスメッセージを生成（簡潔版）
  */
 const buildPhaseGuidanceMessage = (
   targetPhase: Phase,
   goal: string,
-  requirements: Requirement[],
-  context: WorkflowContext,
+  _requirements: Requirement[],
+  _context: WorkflowContext,
 ): string => {
   const lines: string[] = [];
   const phaseDef = getPhaseDefinition(targetPhase);
 
-  // ヘッダーと即時アクション
-  lines.push(`# ${phaseDef?.name ?? targetPhase} フェーズの計画`);
+  // 簡潔なヘッダー
+  lines.push(`## ${phaseDef?.name ?? targetPhase} フェーズ`);
   lines.push("");
-  lines.push("## ▶ 次のアクション");
-  lines.push("");
-  lines.push(
-    "**`workflow-planner` サブエージェントを起動**し、以下のコンテキストを渡してタスクを計画・登録させてください。",
-  );
-  lines.push("");
-  lines.push("---");
-  lines.push("");
-
-  // ゴールと要件
   lines.push(`**Goal**: ${goal}`);
   lines.push("");
 
-  lines.push("## 要件定義");
-  lines.push("");
-  for (let i = 0; i < requirements.length; i += 1) {
-    const req = requirements[i];
-    lines.push(`${i + 1}. **${req.actor}** が **${req.want}**`);
-    lines.push(`   - Because: ${req.because}`);
-    lines.push(`   - Acceptance: ${req.acceptance}`);
-    if (req.constraints !== undefined && req.constraints.length > 0) {
-      lines.push(`   - Constraints: ${req.constraints.join(", ")}`);
-    }
-  }
+  // サブエージェント起動指示
+  lines.push("▶ **`workflow-planner` サブエージェントを起動**");
   lines.push("");
 
-  // コンテキスト（前のフェーズからの引き継ぎ）
-  const contextStr = formatContextForGuidance(context);
-  if (contextStr.length > 0) {
-    lines.push("## 前フェーズからのコンテキスト");
-    lines.push("");
-    lines.push(contextStr);
-  }
-
-  // フェーズ固有の指示
-  lines.push("## フェーズ固有の指示");
-  lines.push("");
   if (phaseDef !== undefined) {
-    lines.push(`**参照Runbook**: \`${phaseDef.runbook}\``);
-    lines.push("");
+    lines.push(`  Runbook: \`${phaseDef.runbook}\``);
     if (phaseDef.devMode !== undefined) {
-      lines.push(`**開発モード**: \`${phaseDef.devMode}\``);
-      lines.push("");
+      lines.push(`  Mode: \`${phaseDef.devMode}\``);
     }
   }
 
-  // サブエージェントへの指示
-  lines.push("## サブエージェントへの指示");
   lines.push("");
-  lines.push(`- **${phaseDef?.name ?? targetPhase}フェーズのタスクのみ**を計画・登録`);
-  lines.push("- 上記のコンテキスト（コミット履歴、PRコメント、完了タスク）を考慮");
-  lines.push("- runbookの各ステップを具体化（1成果物=1タスク）");
-  lines.push("- 各タスクに`phase`フィールドを設定");
-  lines.push("- **タスク作成後、`procedure_workflow(action='set')`で登録すること**");
+  lines.push("_要件: `procedure_workflow(action: 'list')`_");
 
   return lines.join("\n");
 };

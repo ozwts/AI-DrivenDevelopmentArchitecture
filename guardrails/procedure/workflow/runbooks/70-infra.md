@@ -65,7 +65,7 @@
 
 **実装先:** `infra/terraform/`
 
-**完了条件:** 静的解析パス、定性レビューパス、コミット
+**完了条件:** 静的解析パス、コミット
 
 ---
 
@@ -115,9 +115,9 @@ mcp__guardrails__review_infra_static_analysis(
 mcp__guardrails__procedure_fix(workspace='infra')
 ```
 
-今回実装した箇所に関わる全ての観点で定性レビューを実施する（並列実行可能）。
+**完了条件:** 静的解析パス
 
-**完了条件:** 全レビューパス
+**注意:** 定性レビューはE2Eフェーズ開始前にまとめて実施。このフェーズでは静的解析のみ。
 
 ---
 
@@ -179,7 +179,8 @@ GitHub MCPサーバーでPRボディを更新（`.github/PULL_REQUEST_TEMPLATE.m
 ## 完了条件
 
 - 静的解析（format, lint, security）通過
-- ポリシーレビュー通過
 - Plan で意図した変更のみ表示
 - Apply 成功
 - Destroy 成功
+
+**注意:** 定性レビューはE2Eフェーズ開始前にまとめて実施。このフェーズでは静的解析のみ。

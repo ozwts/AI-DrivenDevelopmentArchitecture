@@ -10,6 +10,12 @@
  * - no-null: null禁止（undefined使用）
  * - no-external-deps: 外部依存禁止
  * - repository-interface: リポジトリIF要件
+ * - entity-jsdoc-required: EntityにJSDoc必須
+ * - entity-method-naming: Entityメソッドのドメイン命名
+ * - single-repository-per-aggregate: 1集約=1リポジトリ強制
+ * - es2022-private-field: ES2022プライベートフィールド強制
+ * - no-parameter-property: パラメータプロパティ禁止
+ * - vo-always-validates: VO常時バリデーション
  *
  * 参照: guardrails/policy/server/domain-model/
  */
@@ -25,4 +31,10 @@ module.exports = {
   "no-null": require("./no-null.cjs"),
   "no-external-deps": require("./no-external-deps.cjs"),
   "repository-interface": require("./repository-interface.cjs"),
+  "entity-jsdoc-required": require("./entity-jsdoc-required.cjs"),
+  "entity-method-naming": require("./entity-method-naming.cjs"),
+  "single-repository-per-aggregate": require("./single-repository-per-aggregate.cjs"),
+  "es2022-private-field": require("./es2022-private-field.cjs"),
+  "no-parameter-property": require("./no-parameter-property.cjs"),
+  "vo-always-validates": require("./vo-always-validates.cjs"),
 };

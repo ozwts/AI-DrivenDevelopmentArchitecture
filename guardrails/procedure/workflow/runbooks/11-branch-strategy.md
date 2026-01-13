@@ -80,7 +80,7 @@ main
 
 ## ブランチ環境との関係
 
-`90-environment.md` 参照。
+`100-environment.md` 参照。
 
 - ブランチ名から環境名のハッシュを生成
 - `feature/xxx` → `sandbox-dev-{hash}-*`

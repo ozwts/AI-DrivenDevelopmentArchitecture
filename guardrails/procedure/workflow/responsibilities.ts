@@ -69,6 +69,7 @@ const PhaseSchema = z.enum([
   "server-core",
   "server-implement",
   "infra",
+  "final-review",
   "e2e",
 ]);
 

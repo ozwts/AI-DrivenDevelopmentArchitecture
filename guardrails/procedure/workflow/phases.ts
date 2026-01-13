@@ -14,6 +14,7 @@ export type Phase =
   | "server-core"
   | "server-implement"
   | "infra"
+  | "final-review"
   | "e2e";
 
 /**
@@ -85,9 +86,15 @@ export const PHASES: PhaseDefinition[] = [
     requiredForScope: ["full"],
   },
   {
+    id: "final-review",
+    name: "Final Review",
+    runbook: "procedure/workflow/runbooks/80-final-review.md",
+    requiredForScope: ["full"],
+  },
+  {
     id: "e2e",
     name: "E2E",
-    runbook: "procedure/workflow/runbooks/80-e2e.md",
+    runbook: "procedure/workflow/runbooks/90-e2e.md",
     requiredForScope: ["full"],
   },
 ];

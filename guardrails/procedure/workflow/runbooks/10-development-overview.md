@@ -58,13 +58,15 @@ mcp__guardrails__procedure_dev(action='start', mode='mock')
         ↓               → 65-server-implement.md
 [Phase 6: Infra]        インフラ変更（必要な場合）
         ↓               → 70-infra.md
-[Phase 7: E2E]          E2Eテスト・統合検証
-                        → 80-e2e.md
+[Phase 7: Final Review] 最終レビュー
+        ↓               → 80-final-review.md
+[Phase 8: E2E]          E2Eテスト・統合検証
+                        → 90-e2e.md
 ```
 
 **並列処理**: 各Phase内での機能単位での並列実行を推奨。ベースラインの成熟度に応じて、粒度を調整する（API単位で並列、ドメインモデル単位で並列など）
 
-**環境管理**: `90-environment.md` を参照
+**環境管理**: `100-environment.md` を参照
 
 ---
 

@@ -176,3 +176,6 @@ generated/*
 
 # Playwright MCP
 .playwright-mcp/
+
+# Guardrails MCP
+.guardrails-mcp/

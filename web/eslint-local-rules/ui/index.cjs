@@ -4,6 +4,8 @@
  * - no-classname-in-props: Props型での明示的なclassName定義を禁止
  * - require-omit-classname: HTML属性型継承時にclassNameをOmitで除外必須
  * - require-composite-test: Compositeコンポーネントにテスト必須
+ * - cva-required: バリアントを持つコンポーネントはCVA使用必須
+ * - forwardref-required: UIプリミティブはforwardRef必須
  *
  * 責務分担:
  * - ESLint: 明示的な `{ className?: string }` の検出
@@ -22,4 +24,6 @@ module.exports = {
   "no-classname-in-props": require("./no-classname-in-props.cjs"),
   "require-omit-classname": require("./require-omit-classname.cjs"),
   "require-composite-test": require("./require-composite-test.cjs"),
+  "cva-required": require("./cva-required.cjs"),
+  "forwardref-required": require("./forwardref-required.cjs"),
 };

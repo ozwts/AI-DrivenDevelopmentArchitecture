@@ -8,4 +8,5 @@
 
 module.exports = {
   "no-new-date": require("./no-new-date.cjs"),
+  "no-date-toisostring": require("./no-date-toisostring.cjs"),
 };

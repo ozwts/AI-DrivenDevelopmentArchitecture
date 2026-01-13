@@ -58,12 +58,19 @@
   - Done when: 完了条件
   - Refs: `procedure/workflow/runbooks/70-infra.md`
 
+### Final Review フェーズ
+
+- [ ] **[N] タスク名**
+  - Why: なぜするか
+  - Done when: 完了条件
+  - Refs: `procedure/workflow/runbooks/80-final-review.md`
+
 ### E2E フェーズ
 
 - [ ] **[N] タスク名**
   - Why: なぜするか
   - Done when: 完了条件
-  - Refs: `procedure/workflow/runbooks/80-e2e.md`
+  - Refs: `procedure/workflow/runbooks/90-e2e.md`
 -->
 
 ## 特記事項

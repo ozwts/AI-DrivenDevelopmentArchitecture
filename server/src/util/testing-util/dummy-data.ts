@@ -1,13 +1,14 @@
 import { fakerJA as faker } from "@faker-js/faker";
 import type { TodoPriority } from "@/domain/model/todo/todo.entity";
+import { dateToIsoString } from "@/util/date-util";
 
 // Basic data generators
 export const getDummyId = () => faker.string.uuid();
 export const getDummyEmail = () => faker.internet.email();
 
 // Date generators
-export const getDummyFutureDate = () => faker.date.future().toISOString();
-export const getDummyRecentDate = () => faker.date.recent().toISOString();
+export const getDummyFutureDate = () => dateToIsoString(faker.date.future());
+export const getDummyRecentDate = () => dateToIsoString(faker.date.recent());
 
 // Content generators
 export const getDummyDescription = () => faker.lorem.paragraph();

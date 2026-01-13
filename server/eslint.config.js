@@ -83,6 +83,7 @@ export default defineConfig(
 
       // local-rules（共通）
       "local-rules/common/no-new-date": "error",
+      "local-rules/common/no-date-toisostring": "error",
 
       // local-rules（DDD用）
       "local-rules/domain-model/entity-structure": "error",
@@ -93,9 +94,17 @@ export default defineConfig(
       "local-rules/domain-model/no-null": "error",
       "local-rules/domain-model/no-external-deps": "error",
       "local-rules/domain-model/repository-interface": "error",
+      "local-rules/domain-model/entity-jsdoc-required": "warn",
+      "local-rules/domain-model/entity-method-naming": "warn",
+      "local-rules/domain-model/single-repository-per-aggregate": "error",
+      "local-rules/domain-model/es2022-private-field": "error",
+      "local-rules/domain-model/no-parameter-property": "error",
+      "local-rules/domain-model/vo-always-validates": "warn",
+      "local-rules/aggregate/no-parent-id-in-child": "error",
       "local-rules/use-case/use-case-structure": "error",
       "local-rules/use-case/no-throw": "error",
       "local-rules/use-case/file-requirements": "warn",
+      "local-rules/use-case/result-return-type": "error",
 
       // local-rules（DIコンテナ用）
       "local-rules/di-container/interface-impl-import-pattern": "error",
@@ -103,9 +112,12 @@ export default defineConfig(
       // local-rules（ハンドラー層用）
       "local-rules/handler/container-get-restriction": "error",
       "local-rules/handler/single-usecase-call": "error",
+      "local-rules/handler/no-repository-import": "error",
+      "local-rules/handler/response-mapper-required": "warn",
 
       // local-rules（リポジトリ用）
       "local-rules/repository/file-requirements": "warn",
+      "local-rules/repository/props-pattern": "warn",
     },
   },
 );
