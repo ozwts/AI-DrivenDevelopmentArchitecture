@@ -46,7 +46,7 @@ export type WorkflowTask = {
   why: string;
   /** 完了条件 */
   doneWhen: string;
-  /** 参照先runbook相対パス（例: ["procedure/workflow/runbooks/50-server-domain.md"]） */
+  /** 参照先runbook相対パス（例: ["procedure/workflow/runbooks/60-server-core.md"]） */
   refs?: string[];
   /** 完了状態（計画見直し時に完了済みタスクを保持するために使用） */
   done?: boolean;

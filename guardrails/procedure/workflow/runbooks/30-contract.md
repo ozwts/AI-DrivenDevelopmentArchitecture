@@ -1,5 +1,47 @@
 # 契約定義ワークフロー
 
+## タスク計画ガイド
+
+このフェーズで作成する成果物と、タスク分割の指針。
+
+### 主要成果物
+
+| 成果物 | 実装先 | 粒度 |
+|--------|--------|------|
+| 用語集更新 | `contracts/business/glossary.md` | 1タスク |
+| エンティティ定義 | `contracts/business/{domain}/definition.md` | ドメインごとに1タスク |
+| シナリオ | `contracts/business/{domain}/scenario/{action}.md` | アクションごとに1タスク |
+| ビジネス契約レビュー | - | 全ビジネス契約をまとめて1タスク |
+| スキーマ定義 | `contracts/api/{app}/{aggregate}/*.schemas.yaml` | 集約ごとに1タスク |
+| エンドポイント定義 | `contracts/api/{app}/{aggregate}/*.paths.yaml` | 集約ごとに1タスク |
+| API契約レビュー | - | 全API契約をまとめて1タスク |
+| コード生成 | - | 1タスク |
+
+### タスク分割ルール
+
+1. **1成果物 = 1タスク**: definition.md と scenario/create.md は別タスク
+2. **レビューは複数ファイルをまとめて**: 「ビジネス契約レビュー」で複数ファイルを一括
+3. **必須の終了タスク**: 「計画見直し」「コミット・PR更新」を最後に追加
+
+### タスク例（新規ドメイン「Project」追加の場合）
+
+```
+1. glossary.md にプロジェクト関連用語を追加
+2. contracts/business/project/definition.md を作成
+3. contracts/business/project/scenario/create-project.md を作成
+4. contracts/business/project/scenario/update-project.md を作成
+5. contracts/business/project/scenario/delete-project.md を作成
+6. ビジネス契約をレビュー
+7. contracts/api/todo-app/project/project.schemas.yaml を作成
+8. contracts/api/todo-app/project/project.paths.yaml を作成
+9. API契約をレビュー
+10. コード生成
+11. 後続フェーズの作業計画を見直す
+12. Contractフェーズの成果物をコミット・プッシュ・PR更新
+```
+
+---
+
 ## 対象スコープ
 
 - `contracts/business/` - ビジネス契約

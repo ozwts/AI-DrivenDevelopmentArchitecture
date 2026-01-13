@@ -10,16 +10,16 @@
 | ----- | ---- | ------- | ---------- | ----------- |
 |       |      |         |            |             |
 
-## 実施したタスク
+## タスク
 
-<!-- procedure_workflow(action='set') で登録した全タスクを記載。フェーズごとにグループ化 -->
+<!-- procedure_workflow(action='set') で登録した全タスクを記載。フェーズごとにグループ化。完了したらチェックを入れる -->
 
 ### Contract フェーズ
 
 - [ ] **[0] タスク名**
   - Why: なぜするか
   - Done when: 完了条件
-  - Refs: `procedure/workflow/runbooks/20-contract.md`
+  - Refs: `procedure/workflow/runbooks/30-contract.md`
 
 <!-- フェーズが複数ある場合は以下を追加 -->
 <!--
@@ -28,42 +28,42 @@
 - [ ] **[N] タスク名**
   - Why: なぜするか
   - Done when: 完了条件
-  - Refs: `procedure/workflow/runbooks/30-policy.md`
+  - Refs: `procedure/workflow/runbooks/40-policy.md`
 
 ### Frontend フェーズ
 
 - [ ] **[N] タスク名**
   - Why: なぜするか
   - Done when: 完了条件
-  - Refs: `procedure/workflow/runbooks/40-frontend.md`
+  - Refs: `procedure/workflow/runbooks/50-frontend.md`
 
-### Server/Domain フェーズ
+### Server/Core フェーズ
 
 - [ ] **[N] タスク名**
   - Why: なぜするか
   - Done when: 完了条件
-  - Refs: `procedure/workflow/runbooks/50-server-domain.md`
+  - Refs: `procedure/workflow/runbooks/60-server-core.md`
 
 ### Server/Implement フェーズ
 
 - [ ] **[N] タスク名**
   - Why: なぜするか
   - Done when: 完了条件
-  - Refs: `procedure/workflow/runbooks/55-server-implement.md`
+  - Refs: `procedure/workflow/runbooks/65-server-implement.md`
 
 ### Infra フェーズ
 
 - [ ] **[N] タスク名**
   - Why: なぜするか
   - Done when: 完了条件
-  - Refs: `procedure/workflow/runbooks/60-infra.md`
+  - Refs: `procedure/workflow/runbooks/70-infra.md`
 
 ### E2E フェーズ
 
 - [ ] **[N] タスク名**
   - Why: なぜするか
   - Done when: 完了条件
-  - Refs: `procedure/workflow/runbooks/70-e2e.md`
+  - Refs: `procedure/workflow/runbooks/80-e2e.md`
 -->
 
 ## 特記事項

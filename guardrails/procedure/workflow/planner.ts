@@ -2,7 +2,8 @@
  * Workflow Planner（ワークフロープランナー）
  *
  * フェーズ単位でのタスク計画を支援
- * サブエージェント起動を誘導するガイダンスを生成
+ * サブエージェント（workflow-planner）起動を誘導するガイダンスを生成
+ * サブエージェントがタスクを計画・登録する
  */
 
 import * as fs from "fs/promises";
@@ -65,7 +66,7 @@ const buildPhaseGuidanceMessage = (
   lines.push("## ▶ 次のアクション");
   lines.push("");
   lines.push(
-    "**`workflow-planner` サブエージェントを起動**し、以下のコンテキストを渡してタスクを提案させてください。",
+    "**`workflow-planner` サブエージェントを起動**し、以下のコンテキストを渡してタスクを計画・登録させてください。",
   );
   lines.push("");
   lines.push("---");
@@ -111,36 +112,11 @@ const buildPhaseGuidanceMessage = (
   // サブエージェントへの指示
   lines.push("## サブエージェントへの指示");
   lines.push("");
-  lines.push(`- **${phaseDef?.name ?? targetPhase}フェーズのタスクのみ**を提案`);
+  lines.push(`- **${phaseDef?.name ?? targetPhase}フェーズのタスクのみ**を計画・登録`);
   lines.push("- 上記のコンテキスト（コミット履歴、PRコメント、完了タスク）を考慮");
   lines.push("- runbookの各ステップを具体化（1成果物=1タスク）");
   lines.push("- 各タスクに`phase`フィールドを設定");
-  lines.push("");
-
-  // タスクフォーマット
-  lines.push("## タスク登録フォーマット");
-  lines.push("");
-  lines.push("```typescript");
-  lines.push("procedure_workflow(action: 'set', tasks: [");
-  lines.push("  // 既存の完了済みタスク（必要な場合）");
-  lines.push("  { what: '完了済みタスク', ..., done: true },");
-  lines.push("  // 新規タスク");
-  lines.push("  {");
-  lines.push('    what: "何をするか",');
-  lines.push('    why: "なぜするか",');
-  lines.push('    doneWhen: "完了条件",');
-  lines.push(`    refs: ["${phaseDef?.runbook ?? "procedure/workflow/runbooks/xxx.md"}"],`);
-  lines.push(`    phase: "${targetPhase}"`);
-  lines.push("  }");
-  lines.push("])");
-  lines.push("```");
-  lines.push("");
-
-  // フェーズ完了後の流れ
-  lines.push("## フェーズ完了後");
-  lines.push("");
-  lines.push("1. 全タスク完了後: `procedure_workflow(action='advance')`");
-  lines.push("2. 次フェーズの計画: `procedure_workflow(action='plan')`");
+  lines.push("- **タスク作成後、`procedure_workflow(action='set')`で登録すること**");
 
   return lines.join("\n");
 };
@@ -160,7 +136,7 @@ const buildRequirementsRequiredMessage = (): string => {
   lines.push("```typescript");
   lines.push("procedure_workflow(action: 'requirements',");
   lines.push('  goal: "全体のゴール",');
-  lines.push("  scope: 'full',  // 'policy' | 'frontend' | 'server-domain' | 'full'");
+  lines.push("  scope: 'full',  // 'policy' | 'frontend' | 'server-core' | 'full'");
   lines.push("  requirements: [");
   lines.push("    {");
   lines.push('      actor: "誰が",');
@@ -178,7 +154,7 @@ const buildRequirementsRequiredMessage = (): string => {
   lines.push("|----------|-----------------|");
   lines.push("| `policy` | Contract → Policy |");
   lines.push("| `frontend` | + Frontend |");
-  lines.push("| `server-domain` | + Server/Domain |");
+  lines.push("| `server-core` | + Server/Core |");
   lines.push("| `full` | + Server/Implement → Infra → E2E |");
 
   return lines.join("\n");

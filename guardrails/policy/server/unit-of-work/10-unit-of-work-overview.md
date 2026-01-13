@@ -146,7 +146,7 @@ export class TodoRepositoryImpl implements TodoRepository {
 UseCase層のテストでは`UnitOfWorkRunnerDummy`を使用し、トランザクション処理をスキップする。
 
 ```typescript
-import { LoggerDummy } from "@/domain/support/logger/dummy";
+import { LoggerDummy } from "@/application/port/logger/dummy";
 import { buildFetchNowDummy } from "@/application/port/fetch-now/dummy";
 
 describe("CreateTodoUseCase", () => {
@@ -199,7 +199,7 @@ infrastructure/unit-of-work/
 ### Medium Testケース例
 
 ```typescript
-import { LoggerDummy } from "@/domain/support/logger/dummy";
+import { LoggerDummy } from "@/application/port/logger/dummy";
 
 describe("DynamoDBUnitOfWork with NewEntityRepository", () => {
   test("[正常系] UoWを使って新エンティティを保存する", async () => {

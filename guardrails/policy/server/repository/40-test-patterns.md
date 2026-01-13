@@ -368,7 +368,7 @@ infrastructure/unit-of-work/
 
 ```typescript
 import { todoDummyFrom } from "@/domain/model/todo/todo.entity.dummy";
-import { LoggerDummy } from "@/domain/support/logger/dummy";
+import { LoggerDummy } from "@/application/port/logger/dummy";
 
 describe("DynamoDBUnitOfWork with TodoRepository", () => {
   test("[正常系] UoWを使ってTodoを保存する", async () => {

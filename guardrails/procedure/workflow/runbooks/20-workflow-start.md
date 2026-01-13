@@ -1,0 +1,233 @@
+# ワークフロー開始手順
+
+新しい機能実装を開始する際の標準手順。
+
+## 前提条件
+
+- セッション開始時にコンテキスト情報（憲法・契約）が読み込まれていること
+- 既存PRから再開する場合は `procedure_workflow(action='restore')` を使用
+
+---
+
+## Step 1: ブランチ確認
+
+作業開始前に現在のブランチを確認し、適切なブランチで作業を開始する。
+
+→ `procedure/workflow/runbooks/11-branch-strategy.md` 参照
+
+---
+
+## Step 2: Goal登録
+
+ユーザーの発言をそのままGoalとして記録する。
+
+---
+
+## Step 3: 実装範囲の確認
+
+**AskUserQuestionツール**で以下の4択を提示し、実装範囲を確認する：
+
+| 選択肢 | 内容 |
+|--------|------|
+| ポリシーまで | 契約 + ポリシー（起草）まで |
+| フロントエンドまで | フロントエンド（Mock）実装まで |
+| ドメインモデルおよびポートまで | サーバードメインモデル + ポート(外部IF)実装まで |
+| 最後まで | バックエンド、インフラ、E2Eを含む全レイヤーを実装 |
+
+---
+
+## Step 4: 深掘りインタビュー
+
+**AskUserQuestionツール**を使い、要件がクリアになるまで繰り返し質問する。
+
+### 終了条件
+
+以下の全てが明確になるまで質問を続ける：
+
+- **Actor**: 誰が使うか
+- **Want**: 何をしたいか
+- **Because**: なぜ必要か
+- **Acceptance**: どうなれば成功か
+- **Constraints**: 制約があるか（オプション）
+
+### 質問の深さ（抽象度と規模に応じて調整）
+
+| ユーザーの発言 | 質問の深さ |
+|---------------|-----------|
+| 抽象的・大規模（例: 「メンバー管理機能がほしい」） | 多くの質問が必要。Actor/Want/Acceptanceを詳細に確認 |
+| 具体的・小規模（例: 「削除ボタンにconfirmを追加」） | 少ない質問で済む。確認程度でOK |
+
+### 質問のルール
+
+- **選択肢形式を優先**: 自由記述より選択肢（2〜4個）を提示
+- **推奨を明示**: 推奨オプションを最初に配置し「(Recommended)」を付ける
+- **1質問1観点**: 複数の観点を1つの質問に詰め込まない
+- **段階的に深掘り**: 回答に応じて追加質問で詳細化
+- **クリアになるまで繰り返す**: 曖昧さが残る場合は追加質問
+
+### 最終確認
+
+要件が明確になったら、要件登録の前に要件サマリーを提示して確認する：
+
+```
+## 要件サマリー
+
+| Actor | Want | Because | Acceptance | Constraints |
+|-------|------|---------|------------|-------------|
+| 〇〇 | 〇〇 | 〇〇 | 〇〇 | 〇〇 |
+
+他に追加や修正があればお知らせください。なければこのまま要件登録に進めます。
+```
+
+ユーザーが追加・修正を伝えてきたら反映し、再度サマリーを提示する。
+
+---
+
+## Step 5: 要件登録
+
+対話で明確化した要件を登録（スコープも設定）：
+
+```
+mcp__guardrails__procedure_workflow(action='requirements', goal='全体のゴール', scope='full', requirements=[
+  {
+    actor: '誰が',
+    want: '何をしたい',
+    because: 'なぜ（課題）',
+    acceptance: '成功基準',
+    constraints: ['制約1', '制約2']  // オプション
+  }
+])
+```
+
+**スコープの選択肢:**
+
+| スコープ | 含まれるフェーズ |
+|----------|-----------------|
+| `policy` | Contract → Policy |
+| `frontend` | + Frontend |
+| `server-core` | + Server/Core |
+| `full` | + Server/Implement → Infra → E2E |
+
+---
+
+## Step 6: タスク計画と自動登録
+
+**重要: タスク計画はフェーズ単位で行う。**
+
+要件登録後、現在のフェーズのタスクを計画し、即座に登録する：
+
+```
+mcp__guardrails__procedure_workflow(action='plan')
+```
+
+これにより、workflow-plannerサブエージェントが**現在のフェーズのrunbook**を参照してタスクを提案し、**自動的に登録**します。
+
+**タスク粒度の原則: ステップを具体化してタスクにする**
+
+runbookの各ステップで「何を作るか」を具体化する。1成果物=1タスク。タスク数が多くなっても構わない。
+
+**重要**:
+- ブランチ確認 → Goal登録 → 深掘りインタビュー → 要件登録 → タスク計画・登録の順序を守ること
+- サブエージェントから提案されたタスクは自動登録される（ユーザー承認は不要）
+
+---
+
+## Step 7: Draft PR作成
+
+タスク登録完了後、空コミットでDraft PRを作成する。
+
+### 1. 空コミット＆プッシュ
+
+```bash
+git commit --allow-empty -m "chore: start {feature-name}"
+git push -u origin {current-branch}
+```
+
+### 2. GitHub MCPサーバーでDraft PR作成
+
+```
+mcp__github__create_pull_request(
+  owner='{owner}',
+  repo='{repo}',
+  title='{Goal}',
+  head='{current-branch}',
+  base='main',
+  draft=true,
+  body='...'
+)
+```
+
+**PRボディのフォーマット:** `.github/PULL_REQUEST_TEMPLATE.md` に厳密に従う
+
+- **要件定義**: 表形式（Actor/Want/Because/Acceptance/Constraints）
+- **タスク**: フェーズごとにグループ化、各タスクにWhat/Why/Done when/Refsを記載
+- 省略・集約は禁止
+
+**フェーズ完了時のPR更新:**
+
+各フェーズ完了時に `mcp__github__update_pull_request` でPRボディを更新する:
+
+- 完了タスクにチェックを入れる
+- 見直し結果を反映（タスクの追加・削除・修正）
+
+---
+
+## Step 8: タスク実行と自動フェーズ遷移
+
+タスク登録後、進捗サマリーと次のタスクが自動表示される。
+
+### タスク実行サイクル
+
+1. 次のタスクを実行
+2. 品質ゲート（後述）を通過
+3. 完了マーク: `procedure_workflow(action='done', index=N)`
+4. 次のタスクが自動表示される
+5. 全タスク完了まで繰り返す
+
+### 自動フェーズ遷移
+
+**フェーズの全タスクが完了すると、自動的に次フェーズに遷移する。**
+
+1. `procedure_workflow(action='done')` で最後のタスクを完了
+2. システムが自動で `advance` を実行
+3. 次フェーズのタスクが自動計画・登録される
+4. 次のタスクが表示される
+
+**手動遷移が必要な場合:**
+
+```
+mcp__guardrails__procedure_workflow(action='advance')
+```
+
+---
+
+## 品質ゲート
+
+各タスクの実装後、以下の順序で品質を確認する:
+
+1. **静的解析**（最速フィードバック）
+   `mcp__guardrails__review_static_analysis` → エラーがあれば修正
+
+2. **定性レビュー**
+   `guardrails-reviewer` サブエージェント → 違反があれば `violation-fixer` で修正
+
+3. **循環**: 違反ゼロになるまで 1 → 2 を繰り返す
+
+**静的解析は定性レビューより先に実施すること。静的解析が最も早いフィードバック。**
+
+---
+
+## PRからの再開（restore）
+
+セッションが切れた場合やClaude Code Actionsから再開する場合：
+
+```
+mcp__guardrails__procedure_workflow(action='restore')
+```
+
+これにより、`workflow-restorer` サブエージェントがPRボディを解析し、ワークフロー状態（Goal、要件、タスク、フェーズ進捗）を復元します。
+
+**サブエージェントが実行する処理:**
+1. PRボディを取得・解析
+2. `procedure_workflow(action='requirements')` で要件を復元
+3. `procedure_workflow(action='set')` でタスクを復元

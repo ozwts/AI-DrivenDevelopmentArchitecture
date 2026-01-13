@@ -11,6 +11,7 @@ import {
   type Scope,
 } from "./memory";
 import { executePlan } from "./planner";
+import { executeRestore } from "./restorer";
 import { getPRForCurrentBranch } from "./context-collector";
 import {
   formatTaskList,
@@ -65,7 +66,7 @@ const PhaseSchema = z.enum([
   "contract",
   "policy",
   "frontend",
-  "server-domain",
+  "server-core",
   "server-implement",
   "infra",
   "e2e",
@@ -74,7 +75,7 @@ const PhaseSchema = z.enum([
 /**
  * スコープスキーマ
  */
-const ScopeSchema = z.enum(["policy", "frontend", "server-domain", "full"]);
+const ScopeSchema = z.enum(["policy", "frontend", "server-core", "full"]);
 
 /**
  * タスク入力スキーマ
@@ -87,7 +88,7 @@ const TaskSchema = z.object({
     .array(z.string())
     .optional()
     .describe(
-      '参照先runbook相対パス（例: ["procedure/workflow/runbooks/50-server-domain.md"]）',
+      '参照先runbook相対パス（例: ["procedure/workflow/runbooks/60-server-core.md"]）',
     ),
   done: z
     .boolean()
@@ -124,7 +125,7 @@ const NotesSchema = z.object({
  * - done: 完了マーク
  * - list: 全タスク表示
  * - advance: フェーズ遷移
- * - set-pr: PR情報設定
+ * - restore: PRボディからワークフロー状態を復元
  * - clear: クリア
  */
 export const WORKFLOW_RESPONSIBILITIES: WorkflowResponsibility[] = [
@@ -138,6 +139,7 @@ export const WORKFLOW_RESPONSIBILITIES: WorkflowResponsibility[] = [
       "'done' (mark task complete), " +
       "'list' (show all tasks), " +
       "'advance' (move to next phase), " +
+      "'restore' (restore workflow state from PR body), " +
       "'clear' (clear all tasks).",
     inputSchema: {
       action: z
@@ -148,17 +150,18 @@ export const WORKFLOW_RESPONSIBILITIES: WorkflowResponsibility[] = [
           "done",
           "list",
           "advance",
+          "restore",
           "clear",
         ])
         .describe(
-          "Action to perform: plan, requirements, set, done, list, advance, clear",
+          "Action to perform: plan, requirements, set, done, list, advance, restore, clear",
         ),
       goal: z
         .string()
         .optional()
         .describe("Overall goal for this workflow (for 'requirements' action)"),
       scope: ScopeSchema.optional().describe(
-        "Implementation scope: 'policy' (Contract+Policy), 'frontend' (+Frontend), 'server-domain' (+Server Domain), 'full' (all phases). Default: 'full' (for 'requirements' action)",
+        "Implementation scope: 'policy' (Contract+Policy), 'frontend' (+Frontend), 'server-core' (+Server Domain), 'full' (all phases). Default: 'full' (for 'requirements' action)",
       ),
       phase: PhaseSchema.optional().describe(
         "Target phase for planning (for 'plan' action). If not specified, uses next phase.",
@@ -178,6 +181,12 @@ export const WORKFLOW_RESPONSIBILITIES: WorkflowResponsibility[] = [
         .number()
         .optional()
         .describe("Task index to mark as done (for 'done' action)"),
+      prNumber: z
+        .number()
+        .optional()
+        .describe(
+          "PR number to restore from (for 'restore' action). If not specified, uses current branch's PR.",
+        ),
     },
     handler: async (input, guardrailsRoot): Promise<string> => {
       const memory = getWorkflowMemory();
@@ -188,6 +197,7 @@ export const WORKFLOW_RESPONSIBILITIES: WorkflowResponsibility[] = [
         | "done"
         | "list"
         | "advance"
+        | "restore"
         | "clear";
 
       switch (action) {
@@ -255,7 +265,48 @@ export const WORKFLOW_RESPONSIBILITIES: WorkflowResponsibility[] = [
           const success = memory.markDone(index);
           const tasksAfter = memory.getTasks();
 
-          return formatDoneResult(success, index, task, tasksAfter);
+          // 基本の完了メッセージ
+          let result = formatDoneResult(success, index, task, tasksAfter);
+
+          // 自動フェーズ遷移: 現在フェーズの全タスク完了時
+          const currentPhase = memory.getCurrentPhase();
+          if (currentPhase !== null) {
+            const phaseTasks = memory.getTasksForPhase(currentPhase);
+            const allPhaseTasksDone = phaseTasks.every((t) => t.done);
+
+            if (allPhaseTasksDone && phaseTasks.length > 0) {
+              // フェーズ完了処理
+              memory.completePhase(currentPhase);
+              const nextPhase = memory.getNextPhase();
+
+              if (nextPhase === null) {
+                // ワークフロー完了
+                const completeMsg = formatWorkflowCompleteResult(
+                  memory.getCompletedPhases(),
+                );
+                result = `${result}\n\n${completeMsg}`;
+              } else {
+                // 次フェーズに遷移
+                memory.setCurrentPhase(nextPhase);
+                const nextPhaseDef = getPhaseDefinition(nextPhase);
+                const advanceMsg = formatAdvanceResult(
+                  currentPhase,
+                  nextPhase,
+                  nextPhaseDef?.runbook,
+                );
+                result = `${result}\n\n${advanceMsg}`;
+
+                // 自動プラン実行のガイダンス
+                result = `${result}\n\n**自動的に次フェーズのタスクを計画します...**`;
+                const planResult = await executePlan(guardrailsRoot, nextPhase);
+                if (planResult.success) {
+                  result = `${result}\n\n${planResult.guidance}`;
+                }
+              }
+            }
+          }
+
+          return result;
         }
 
         case "list": {
@@ -314,6 +365,17 @@ export const WORKFLOW_RESPONSIBILITIES: WorkflowResponsibility[] = [
             nextPhase,
             nextPhaseDef?.runbook,
           );
+        }
+
+        case "restore": {
+          const prNumber = input.prNumber as number | undefined;
+
+          // サブエージェント誘発用のガイダンスを生成
+          const result = await executeRestore(prNumber);
+          if (!result.success) {
+            throw new Error(result.error ?? "Unknown error during restore");
+          }
+          return result.guidance;
         }
 
         case "clear": {

@@ -367,3 +367,4 @@ export const formatWorkflowCompleteResult = (completedPhases: Phase[]): string =
 
   return lines.join("\n");
 };
+

@@ -2,6 +2,54 @@
 
 リポジトリ実装、ユースケース、ハンドラ、DIコンテナを実装する。
 
+## タスク計画ガイド
+
+このフェーズで作成する成果物と、タスク分割の指針。
+
+### 主要成果物
+
+| 成果物 | 実装先 | 粒度 |
+|--------|--------|------|
+| リポジトリ実装 | `server/src/infrastructure/repository/{aggregate}/` | 集約ごとに1タスク |
+| リポジトリレビュー | - | 全リポジトリをまとめて1タスク |
+| ユースケース | `server/src/application/use-case/{domain}/{action}.ts` | アクションごとに1タスク |
+| ユースケースレビュー | - | ドメインごとに1タスク |
+| ハンドラ | `server/src/handler/hono-handler/{domain}/` | ドメインごとに1タスク |
+| DI設定 | `server/src/di-container/` | 1タスク |
+| ハンドラ・DIレビュー | - | 1タスク |
+| ポート実装 | `server/src/infrastructure/{port}/` | ポートごとに1タスク（必要な場合） |
+| テスト | `*.test.ts` | レイヤーごとに1タスク |
+| 最終検証 | - | 1タスク |
+
+### タスク分割ルール
+
+1. **レイヤー順に実装**: Repository → UseCase → Handler → DI
+2. **ユースケースはアクション単位**: create, update, delete は別タスク
+3. **ハンドラはドメイン単位**: 同一ドメインのエンドポイントをまとめて実装
+4. **テストはレイヤーごと**: Repository, UseCase それぞれでテスト
+5. **必須の終了タスク**: 「計画見直し」「コミット・プッシュ・PR更新」を最後に追加
+
+### タスク例（Project機能を実装する場合）
+
+```
+1. server/src/infrastructure/repository/project/ にリポジトリ実装
+2. リポジトリ実装をレビュー
+3. server/src/application/use-case/project/create-project.ts を実装
+4. server/src/application/use-case/project/update-project.ts を実装
+5. server/src/application/use-case/project/delete-project.ts を実装
+6. Projectユースケースをレビュー
+7. server/src/handler/hono-handler/project/ にハンドラを実装
+8. server/src/di-container/ にDI設定を追加
+9. ハンドラ・DI設定をレビュー
+10. リポジトリのテストを実装・実行
+11. ユースケースのテストを実装・実行
+12. 最終検証（静的解析、未使用エクスポート、開発サーバー起動）
+13. 後続フェーズの作業計画を見直す
+14. Server/Implementフェーズの成果物をコミット・プッシュ・PR更新
+```
+
+---
+
 ## 対象スコープ
 
 - `server/src/infrastructure/repository/` - リポジトリ実装
@@ -11,7 +59,7 @@
 
 ## 前提条件
 
-Server/Domainフェーズが完了していること（ドメインモデルとポートが定義済み）
+Server/Coreフェーズが完了していること（ドメインモデルとポートが定義済み）
 
 ## 開発モード
 
@@ -25,8 +73,8 @@ mcp__guardrails__procedure_dev(action='start', mode='full')
 
 **読むもの:**
 
-- `server/src/domain/model/` - ドメインモデル（Server/Domainフェーズで実装済み）
-- `server/src/domain/support/` - ポートインターフェース
+- `server/src/domain/model/` - ドメインモデル（Server/Coreフェーズで実装済み）
+- `server/src/application/port/` - ポートインターフェース
 - `contracts/api/` - API契約
 
 ---

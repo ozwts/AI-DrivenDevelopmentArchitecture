@@ -1,11 +1,52 @@
-# サーバードメイン実装ワークフロー
+# サーバーコア実装ワークフロー
 
 ドメインモデル（Entity/Value Object）とポート（外部インターフェース定義）を実装する。
+
+## タスク計画ガイド
+
+このフェーズで作成する成果物と、タスク分割の指針。
+
+### 主要成果物
+
+| 成果物 | 実装先 | 粒度 |
+|--------|--------|------|
+| コード生成 | - | 1タスク |
+| Entity | `server/src/domain/model/{aggregate}/{entity}.ts` | エンティティごとに1タスク |
+| Value Object | `server/src/domain/model/{aggregate}/{vo}.ts` | 値オブジェクトごとに1タスク |
+| Repository IF | `server/src/domain/model/{aggregate}/{entity}-repository.ts` | リポジトリごとに1タスク |
+| ドメインモデルレビュー | - | 集約ごとに1タスク |
+| Port IF | `server/src/application/port/{port}/` | ポートごとに1タスク |
+| ポートレビュー | - | 全ポートをまとめて1タスク |
+| DynamoDBスキーマ | `server/src/util/testing-util/dynamodb.ts` | 1タスク（必要な場合） |
+| ドメインモデルテスト | `*.test.ts` | 集約ごとに1タスク |
+
+### タスク分割ルール
+
+1. **集約単位で作業**: Entity → Value Object → Repository IF の順
+2. **ポートは新規追加時のみ**: 既存ポートで足りる場合はスキップ
+3. **テストは集約ごと**: Entity + VO + Repository をまとめてテスト
+4. **必須の終了タスク**: 「計画見直し」「コミット・PR更新」を最後に追加
+
+### タスク例（Project集約を追加する場合）
+
+```
+1. コード生成
+2. server/src/domain/model/project/project.ts（Projectエンティティ）を実装
+3. server/src/domain/model/project/project-color.ts（ProjectColor値オブジェクト）を実装
+4. server/src/domain/model/project/project-repository.ts（リポジトリIF）を実装
+5. Project集約のドメインモデルをレビュー
+6. server/src/util/testing-util/dynamodb.ts にProjectテーブルスキーマを追加
+7. Project集約のテストを実装・実行
+8. 後続フェーズの作業計画を見直す
+9. Server/Coreフェーズの成果物をコミット・プッシュ・PR更新
+```
+
+---
 
 ## 対象スコープ
 
 - `server/src/domain/model/` - ドメインモデル
-- `server/src/domain/support/` - ポートインターフェース
+- `server/src/application/port/` - ポートインターフェース
 
 ## 開発モード
 
@@ -73,7 +114,7 @@ mcp__guardrails__review_static_analysis(
 - `guardrails/policy/server/logger/`
 - `guardrails/policy/server/fetch-now/`
 
-**実装先:** `server/src/domain/support/`
+**実装先:** `server/src/application/port/`
 
 **実装内容:**
 - 外部サービスへのインターフェース定義

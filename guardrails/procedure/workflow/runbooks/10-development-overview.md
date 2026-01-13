@@ -47,22 +47,24 @@ mcp__guardrails__procedure_dev(action='start', mode='mock')
 
 ```
 [Phase 1: Contract]     契約定義（ビジネス + API）
-        ↓               → 20-contract.md
+        ↓               → 30-contract.md
 [Phase 2: Policy]       立法（ポリシー修正・新設の要否確認）
-        ↓               → 30-policy.md
+        ↓               → 40-policy.md
 [Phase 3: Frontend]     フロントエンド実装（先行・mockモード）
-        ↓               → 40-frontend.md
-[Phase 4: Server]       サーバーサイド実装（fullモード）
-        ↓               → 50-server.md
-[Phase 5: Infra]        インフラ変更（必要な場合）
-        ↓               → 60-infra.md
-[Phase 6: E2E]          E2Eテスト・統合検証
-                        → 70-e2e.md
+        ↓               → 50-frontend.md
+[Phase 4: Server/Core]  サーバーコア実装（ドメインモデル・ポート）
+        ↓               → 60-server-core.md
+[Phase 5: Server/Impl]  サーバー実装（リポジトリ・ユースケース）
+        ↓               → 65-server-implement.md
+[Phase 6: Infra]        インフラ変更（必要な場合）
+        ↓               → 70-infra.md
+[Phase 7: E2E]          E2Eテスト・統合検証
+                        → 80-e2e.md
 ```
 
 **並列処理**: 各Phase内での機能単位での並列実行を推奨。ベースラインの成熟度に応じて、粒度を調整する（API単位で並列、ドメインモデル単位で並列など）
 
-**環境管理**: `80-environment.md` を参照
+**環境管理**: `90-environment.md` を参照
 
 ---
 

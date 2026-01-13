@@ -45,6 +45,8 @@ export {
 export {
   collectContext,
   formatContextForGuidance,
+  getPRBody,
+  getPRForCurrentBranch,
   type WorkflowContext,
   type CommitInfo,
   type PRComment,
@@ -52,6 +54,9 @@ export {
 
 // プランナー（内部利用）
 export { executePlan, type PlannerResult } from "./planner";
+
+// リストアラー（内部利用）
+export { executeRestore, type RestorerResult } from "./restorer";
 
 // フォーマッター（内部利用）
 export {

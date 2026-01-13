@@ -80,7 +80,7 @@ main
 
 ## ブランチ環境との関係
 
-`80-environment.md` 参照。
+`90-environment.md` 参照。
 
 - ブランチ名から環境名のハッシュを生成
 - `feature/xxx` → `sandbox-dev-{hash}-*`
@@ -113,10 +113,12 @@ git rebase origin/{current-branch}
 
 ### コミットメッセージ形式
 
-```
-{prefix}({scope}): {簡潔な説明}
+**説明は日本語で記載する。** prefix と scope は英語を使用。
 
-{詳細（任意）}
+```
+{prefix}({scope}): {簡潔な説明（日本語）}
+
+{詳細（日本語・任意）}
 ```
 
 ### Prefix（フェーズ対応）

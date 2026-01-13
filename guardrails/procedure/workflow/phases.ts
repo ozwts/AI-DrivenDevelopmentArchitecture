@@ -11,7 +11,7 @@ export type Phase =
   | "contract"
   | "policy"
   | "frontend"
-  | "server-domain"
+  | "server-core"
   | "server-implement"
   | "infra"
   | "e2e";
@@ -20,10 +20,10 @@ export type Phase =
  * 実装スコープ
  * - policy: Contract + Policy まで
  * - frontend: + Frontend（mockモード）
- * - server-domain: + Server Domain Model + Ports
+ * - server-core: + Server Domain Model + Ports
  * - full: + Server Implement + Infra + E2E
  */
-export type Scope = "policy" | "frontend" | "server-domain" | "full";
+export type Scope = "policy" | "frontend" | "server-core" | "full";
 
 /**
  * フェーズ定義
@@ -48,46 +48,46 @@ export const PHASES: PhaseDefinition[] = [
   {
     id: "contract",
     name: "Contract",
-    runbook: "procedure/workflow/runbooks/20-contract.md",
-    requiredForScope: ["policy", "frontend", "server-domain", "full"],
+    runbook: "procedure/workflow/runbooks/30-contract.md",
+    requiredForScope: ["policy", "frontend", "server-core", "full"],
   },
   {
     id: "policy",
     name: "Policy",
-    runbook: "procedure/workflow/runbooks/30-policy.md",
-    requiredForScope: ["policy", "frontend", "server-domain", "full"],
+    runbook: "procedure/workflow/runbooks/40-policy.md",
+    requiredForScope: ["policy", "frontend", "server-core", "full"],
   },
   {
     id: "frontend",
     name: "Frontend",
-    runbook: "procedure/workflow/runbooks/40-frontend.md",
-    requiredForScope: ["frontend", "server-domain", "full"],
+    runbook: "procedure/workflow/runbooks/50-frontend.md",
+    requiredForScope: ["frontend", "server-core", "full"],
     devMode: "mock",
   },
   {
-    id: "server-domain",
-    name: "Server/Domain",
-    runbook: "procedure/workflow/runbooks/50-server-domain.md",
-    requiredForScope: ["server-domain", "full"],
+    id: "server-core",
+    name: "Server/Core",
+    runbook: "procedure/workflow/runbooks/60-server-core.md",
+    requiredForScope: ["server-core", "full"],
     devMode: "full",
   },
   {
     id: "server-implement",
     name: "Server/Implement",
-    runbook: "procedure/workflow/runbooks/55-server-implement.md",
+    runbook: "procedure/workflow/runbooks/65-server-implement.md",
     requiredForScope: ["full"],
     devMode: "full",
   },
   {
     id: "infra",
     name: "Infra",
-    runbook: "procedure/workflow/runbooks/60-infra.md",
+    runbook: "procedure/workflow/runbooks/70-infra.md",
     requiredForScope: ["full"],
   },
   {
     id: "e2e",
     name: "E2E",
-    runbook: "procedure/workflow/runbooks/70-e2e.md",
+    runbook: "procedure/workflow/runbooks/80-e2e.md",
     requiredForScope: ["full"],
   },
 ];

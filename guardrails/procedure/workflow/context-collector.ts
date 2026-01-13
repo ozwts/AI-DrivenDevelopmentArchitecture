@@ -108,6 +108,26 @@ export const getPRForCurrentBranch = (): {
 };
 
 /**
+ * PRボディを取得（gh CLI使用）
+ */
+export const getPRBody = (prNumber?: number): string | null => {
+  try {
+    const command =
+      prNumber !== undefined
+        ? `gh pr view ${prNumber} --json body`
+        : "gh pr view --json body";
+    const output = execSync(command, {
+      encoding: "utf-8",
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    const data = JSON.parse(output) as { body: string };
+    return data.body;
+  } catch {
+    return null;
+  }
+};
+
+/**
  * PRコメントを取得（gh CLI使用）
  */
 const getPRComments = async (prNumber: number): Promise<PRComment[]> => {
