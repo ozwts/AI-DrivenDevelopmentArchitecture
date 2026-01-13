@@ -182,6 +182,12 @@ export default defineConfig(
       // ルート設計: route.tsxにroute.ss.test.tsが必須
       "local-rules/route/require-snapshot-test": "error",
 
+      // ルート設計: app/components/使用禁止（コロケーション）
+      "local-rules/route/no-global-components": "error",
+
+      // ルート設計: ルートディレクトリにroute.tsx必須
+      "local-rules/route/require-route-file": "warn",
+
       // UIプリミティブ設計: Leaf/CompositeのProps型でclassName禁止
       "local-rules/ui/no-classname-in-props": "error",
       // UIプリミティブ設計: HTML属性型使用時はOmit<..., "className">必須
@@ -192,6 +198,8 @@ export default defineConfig(
       "local-rules/ui/cva-required": "warn",
       // UIプリミティブ設計: forwardRef必須
       "local-rules/ui/forwardref-required": "warn",
+      // UIプリミティブ設計: 条件分岐によるclassName生成禁止
+      "local-rules/ui/no-conditional-classname": "warn",
 
       // Hooks設計: QueryKey定数化
       "local-rules/hooks/query-key-constant": "warn",
@@ -199,6 +207,10 @@ export default defineConfig(
       "local-rules/hooks/mutation-invalidate-pattern": "warn",
       // Hooks設計: Query結果マッピング禁止
       "local-rules/hooks/no-query-result-mapping": "warn",
+      // Hooks設計: useQuery/useMutationオプションスプレッド禁止
+      "local-rules/hooks/no-options-spread": "warn",
+      // Hooks設計: useQuery使用時のuseState併用禁止
+      "local-rules/hooks/no-usestate-with-query": "warn",
 
       // 共通: console.log禁止
       "local-rules/common/no-console-log": "warn",
@@ -206,8 +218,17 @@ export default defineConfig(
       // コンポーネント: フォームでdirtyFields推奨
       "local-rules/component/form-dirty-fields": "warn",
 
+      // コンポーネント: フォームでOpenAPI生成スキーマ使用必須
+      "local-rules/component/form-generated-schema": "warn",
+
       // API: 生成型使用
       "local-rules/api/use-generated-types": "warn",
+
+      // API: PATCHリクエストでnormalizePatchRequest使用
+      "local-rules/api/normalize-patch-request": "warn",
+
+      // テスト: getByRole/getByLabel優先
+      "local-rules/test/selector-priority": "warn",
     },
   },
 

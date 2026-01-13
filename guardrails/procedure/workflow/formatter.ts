@@ -15,51 +15,6 @@ import type {
 import { getPhaseDefinition } from "./phases";
 
 /**
- * タスク名を短縮（長すぎる場合は省略）
- */
-const truncateTaskName = (name: string, maxLength: number = 40): string => {
-  if (name.length <= maxLength) {
-    return name;
-  }
-  return `${name.substring(0, maxLength - 3)}...`;
-};
-
-/**
- * 進捗サマリーテーブルを生成
- */
-const formatProgressTable = (tasks: TaskWithStatus[]): string => {
-  const completed = tasks.filter((t) => t.done).length;
-  const total = tasks.length;
-  const pendingTasks = tasks.filter((t) => !t.done);
-  const nextIndex = pendingTasks.length > 0 ? pendingTasks[0].index : -1;
-
-  const lines: string[] = [
-    "",
-    `## 進捗: ${completed}/${total} 完了`,
-    "",
-    "| # | タスク | 状態 |",
-    "|---|--------|------|",
-  ];
-
-  for (const task of tasks) {
-    let status: string;
-    if (task.done) {
-      status = "✅";
-    } else if (task.index === nextIndex) {
-      status = "▶ 次";
-    } else {
-      status = "⬜";
-    }
-    lines.push(`| ${task.index} | ${truncateTaskName(task.what)} | ${status} |`);
-  }
-
-  lines.push("");
-  lines.push("_詳細: `procedure_workflow(action: 'list')`_");
-
-  return lines.join("\n");
-};
-
-/**
  * 次のタスク詳細を表示するヘルパー（簡潔版）
  */
 const formatNextTaskCompact = (tasks: TaskWithStatus[]): string => {
@@ -68,7 +23,11 @@ const formatNextTaskCompact = (tasks: TaskWithStatus[]): string => {
   const total = tasks.length;
 
   if (pendingTasks.length === 0) {
-    return `(${completed}/${total}) 🎉 フェーズ完了`;
+    return [
+      `(${completed}/${total}) 🎉 フェーズ完了`,
+      "",
+      "⏭️ **ユーザーの介入なしに `procedure_workflow(action: 'advance')` を実行し、次フェーズに進んでください。**",
+    ].join("\n");
   }
 
   const nextTask = pendingTasks[0];
@@ -83,53 +42,11 @@ const formatNextTaskCompact = (tasks: TaskWithStatus[]): string => {
   }
 
   lines.push(`  Done: \`procedure_workflow(action: 'done', index: ${nextTask.index})\``);
-
-  return lines.join("\n");
-};
-
-/**
- * 次のタスク詳細を表示するヘルパー（フル版 - list用）
- */
-const formatNextTaskDetail = (tasks: TaskWithStatus[]): string => {
-  const pendingTasks = tasks.filter((t) => !t.done);
-  if (pendingTasks.length === 0) {
-    return [
-      "",
-      "",
-      "🎉 **現在フェーズの全タスク完了！**",
-      "",
-      "次のステップ: `procedure_workflow(action: 'advance')` でフェーズを進める",
-    ].join("\n");
-  }
-
-  const nextTask = pendingTasks[0];
-  const lines: string[] = [
-    "",
-    "---",
-    "",
-    "## ▶ 次のタスク",
-    "",
-    `### [${nextTask.index}] ${nextTask.what}`,
-    "",
-    `- **Why**: ${nextTask.why}`,
-    `- **Done when**: ${nextTask.doneWhen}`,
-  ];
-
-  if (nextTask.refs !== undefined && nextTask.refs.length > 0) {
-    lines.push(`- **Refs**: ${nextTask.refs.map((r) => `\`${r}\``).join(", ")}`);
-  }
-
   lines.push("");
-  lines.push(`完了後: \`procedure_workflow(action: 'done', index: ${nextTask.index})\``);
+  lines.push("⏭️ **ユーザーの介入なしに次のタスクを即座に実行してください。**");
 
   return lines.join("\n");
 };
-
-/**
- * 進捗サマリー + 次タスク詳細を表示
- */
-const formatProgressAndNextTask = (tasks: TaskWithStatus[]): string =>
-  formatProgressTable(tasks) + formatNextTaskDetail(tasks);
 
 /**
  * タスクリストをチェックリスト形式でフォーマット

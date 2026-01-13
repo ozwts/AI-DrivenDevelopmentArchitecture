@@ -14,6 +14,7 @@
  * - hooks/: カスタムhooks・TanStack Query用ルール
  * - mock/: MSWモック用ルール
  * - api/: API通信用ルール
+ * - test/: テスト用ルール
  *
  * 参照: guardrails/policy/web/
  */
@@ -30,6 +31,7 @@ const uiRules = require("./eslint-local-rules/ui/index.cjs");
 const hooksRules = require("./eslint-local-rules/hooks/index.cjs");
 const mockRules = require("./eslint-local-rules/mock/index.cjs");
 const apiRules = require("./eslint-local-rules/api/index.cjs");
+const testRules = require("./eslint-local-rules/test/index.cjs");
 
 module.exports = {
   // 共通ルール（プレフィックス: common/）
@@ -41,6 +43,7 @@ module.exports = {
   "component/props-readonly": componentRules["props-readonly"],
   "component/require-component-test": componentRules["require-component-test"],
   "component/form-dirty-fields": componentRules["form-dirty-fields"],
+  "component/form-generated-schema": componentRules["form-generated-schema"],
 
   // Feature設計用ルール（プレフィックス: feature/）
   "feature/no-cross-feature-import": featureRules["no-cross-feature-import"],
@@ -55,6 +58,8 @@ module.exports = {
   "route/require-outlet-context-type": routeRules["require-outlet-context-type"],
   "route/outlet-requires-context": routeRules["outlet-requires-context"],
   "route/require-snapshot-test": routeRules["require-snapshot-test"],
+  "route/no-global-components": routeRules["no-global-components"],
+  "route/require-route-file": routeRules["require-route-file"],
 
   // UIプリミティブ設計用ルール（プレフィックス: ui/）
   "ui/no-classname-in-props": uiRules["no-classname-in-props"],
@@ -62,11 +67,14 @@ module.exports = {
   "ui/require-composite-test": uiRules["require-composite-test"],
   "ui/cva-required": uiRules["cva-required"],
   "ui/forwardref-required": uiRules["forwardref-required"],
+  "ui/no-conditional-classname": uiRules["no-conditional-classname"],
 
   // Hooks用ルール（プレフィックス: hooks/）
   "hooks/query-key-constant": hooksRules["query-key-constant"],
   "hooks/mutation-invalidate-pattern": hooksRules["mutation-invalidate-pattern"],
   "hooks/no-query-result-mapping": hooksRules["no-query-result-mapping"],
+  "hooks/no-options-spread": hooksRules["no-options-spread"],
+  "hooks/no-usestate-with-query": hooksRules["no-usestate-with-query"],
 
   // Mock用ルール（プレフィックス: mock/）
   "mock/data-naming": mockRules["data-naming"],
@@ -74,4 +82,8 @@ module.exports = {
 
   // API用ルール（プレフィックス: api/）
   "api/use-generated-types": apiRules["use-generated-types"],
+  "api/normalize-patch-request": apiRules["normalize-patch-request"],
+
+  // テスト用ルール（プレフィックス: test/）
+  "test/selector-priority": testRules["selector-priority"],
 };

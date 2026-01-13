@@ -6,6 +6,7 @@
  * - require-composite-test: Compositeコンポーネントにテスト必須
  * - cva-required: バリアントを持つコンポーネントはCVA使用必須
  * - forwardref-required: UIプリミティブはforwardRef必須
+ * - no-conditional-classname: 条件分岐によるclassName生成禁止
  *
  * 責務分担:
  * - ESLint: 明示的な `{ className?: string }` の検出
@@ -26,4 +27,5 @@ module.exports = {
   "require-composite-test": require("./require-composite-test.cjs"),
   "cva-required": require("./cva-required.cjs"),
   "forwardref-required": require("./forwardref-required.cjs"),
+  "no-conditional-classname": require("./no-conditional-classname.cjs"),
 };

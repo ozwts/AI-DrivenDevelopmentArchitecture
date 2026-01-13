@@ -51,6 +51,9 @@ export const CONTEXT_RESPONSIBILITIES: ContextResponsibility[] = [
           memory.getGoal(),
           memory.getRequirements(),
           memory.getTasks(),
+          memory.getNotes(),
+          memory.getPhaseState(),
+          null, // PR情報はコンテキスト復元時には不要
         );
 
         // ワークフローが登録されている場合のみ追加

@@ -16,6 +16,10 @@
  * - es2022-private-field: ES2022プライベートフィールド強制
  * - no-parameter-property: パラメータプロパティ禁止
  * - vo-always-validates: VO常時バリデーション
+ * - entity-id-required: Entity idプロパティ必須
+ * - repository-type-definition: Repository type定義必須
+ * - vo-from-method-required: VO from()メソッド必須
+ * - vo-required-methods: VO equals/toString必須
  *
  * 参照: guardrails/policy/server/domain-model/
  */
@@ -37,4 +41,12 @@ module.exports = {
   "es2022-private-field": require("./es2022-private-field.cjs"),
   "no-parameter-property": require("./no-parameter-property.cjs"),
   "vo-always-validates": require("./vo-always-validates.cjs"),
+  "entity-id-required": require("./entity-id-required.cjs"),
+  "repository-type-definition": require("./repository-type-definition.cjs"),
+  "vo-from-method-required": require("./vo-from-method-required.cjs"),
+  "vo-required-methods": require("./vo-required-methods.cjs"),
+  "vo-private-constructor": require("./vo-private-constructor.cjs"),
+  "vo-meaningful-field-name": require("./vo-meaningful-field-name.cjs"),
+  "no-logger": require("./no-logger.cjs"),
+  "no-utility-vo": require("./no-utility-vo.cjs"),
 };

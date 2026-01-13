@@ -100,11 +100,23 @@ export default defineConfig(
       "local-rules/domain-model/es2022-private-field": "error",
       "local-rules/domain-model/no-parameter-property": "error",
       "local-rules/domain-model/vo-always-validates": "warn",
+      "local-rules/domain-model/entity-id-required": "error",
+      "local-rules/domain-model/repository-type-definition": "error",
+      "local-rules/domain-model/vo-from-method-required": "error",
+      "local-rules/domain-model/vo-required-methods": "error",
+      "local-rules/domain-model/vo-private-constructor": "error",
+      "local-rules/domain-model/vo-meaningful-field-name": "warn",
+      "local-rules/domain-model/no-logger": "error",
+      "local-rules/domain-model/no-utility-vo": "warn",
       "local-rules/aggregate/no-parent-id-in-child": "error",
       "local-rules/use-case/use-case-structure": "error",
       "local-rules/use-case/no-throw": "error",
       "local-rules/use-case/file-requirements": "warn",
       "local-rules/use-case/result-return-type": "error",
+      "local-rules/use-case/props-readonly": "warn",
+      "local-rules/use-case/no-private-method": "warn",
+      "local-rules/use-case/in-operator-pattern": "warn",
+      "local-rules/use-case/no-nullish-coalescing-in-patch": "warn",
 
       // local-rules（DIコンテナ用）
       "local-rules/di-container/interface-impl-import-pattern": "error",
@@ -114,10 +126,12 @@ export default defineConfig(
       "local-rules/handler/single-usecase-call": "error",
       "local-rules/handler/no-repository-import": "error",
       "local-rules/handler/response-mapper-required": "warn",
+      "local-rules/handler/enforce-null-to-undefined": "warn",
 
       // local-rules（リポジトリ用）
       "local-rules/repository/file-requirements": "warn",
       "local-rules/repository/props-pattern": "warn",
+      "local-rules/repository/entity-from-required": "error",
     },
   },
 );

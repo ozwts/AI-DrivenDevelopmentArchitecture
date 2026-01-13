@@ -10,4 +10,5 @@
 
 module.exports = {
   "use-generated-types": require("./use-generated-types.cjs"),
+  "normalize-patch-request": require("./normalize-patch-request.cjs"),
 };

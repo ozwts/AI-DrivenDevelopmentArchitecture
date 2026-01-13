@@ -10,11 +10,7 @@ import * as fs from "fs/promises";
 import * as path from "path";
 import { getWorkflowMemory, type Requirement, type Phase } from "./memory";
 import { getPhaseDefinition, PHASES } from "./phases";
-import {
-  collectContext,
-  formatContextForGuidance,
-  type WorkflowContext,
-} from "./context-collector";
+import { collectContext, type WorkflowContext } from "./context-collector";
 
 /**
  * プランナー結果

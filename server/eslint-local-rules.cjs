@@ -48,6 +48,14 @@ module.exports = {
   "domain-model/es2022-private-field": domainModelRules["es2022-private-field"],
   "domain-model/no-parameter-property": domainModelRules["no-parameter-property"],
   "domain-model/vo-always-validates": domainModelRules["vo-always-validates"],
+  "domain-model/entity-id-required": domainModelRules["entity-id-required"],
+  "domain-model/repository-type-definition": domainModelRules["repository-type-definition"],
+  "domain-model/vo-from-method-required": domainModelRules["vo-from-method-required"],
+  "domain-model/vo-required-methods": domainModelRules["vo-required-methods"],
+  "domain-model/vo-private-constructor": domainModelRules["vo-private-constructor"],
+  "domain-model/vo-meaningful-field-name": domainModelRules["vo-meaningful-field-name"],
+  "domain-model/no-logger": domainModelRules["no-logger"],
+  "domain-model/no-utility-vo": domainModelRules["no-utility-vo"],
 
   // アグリゲート用ルール（プレフィックス: aggregate/）
   "aggregate/no-parent-id-in-child": aggregateRules["no-parent-id-in-child"],
@@ -57,6 +65,10 @@ module.exports = {
   "use-case/no-throw": useCaseRules["no-throw"],
   "use-case/file-requirements": useCaseRules["file-requirements"],
   "use-case/result-return-type": useCaseRules["result-return-type"],
+  "use-case/props-readonly": useCaseRules["props-readonly"],
+  "use-case/no-private-method": useCaseRules["no-private-method"],
+  "use-case/in-operator-pattern": useCaseRules["in-operator-pattern"],
+  "use-case/no-nullish-coalescing-in-patch": useCaseRules["no-nullish-coalescing-in-patch"],
 
   // DIコンテナ用ルール（プレフィックス: di-container/）
   "di-container/interface-impl-import-pattern": diContainerRules["interface-impl-import-pattern"],
@@ -66,8 +78,10 @@ module.exports = {
   "handler/single-usecase-call": handlerRules["single-usecase-call"],
   "handler/no-repository-import": handlerRules["no-repository-import"],
   "handler/response-mapper-required": handlerRules["response-mapper-required"],
+  "handler/enforce-null-to-undefined": handlerRules["enforce-null-to-undefined"],
 
   // リポジトリ用ルール（プレフィックス: repository/）
   "repository/file-requirements": repositoryRules["file-requirements"],
   "repository/props-pattern": repositoryRules["props-pattern"],
+  "repository/entity-from-required": repositoryRules["entity-from-required"],
 };
