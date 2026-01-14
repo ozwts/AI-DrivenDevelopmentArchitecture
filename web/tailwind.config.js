@@ -31,6 +31,11 @@ export default {
           surface: "#FFFFFF", // 白サーフェス（カード、入力エリア用）
           container: "#f5f2ed", // 薄いベージュコンテナ
         },
+        // Surface colors (カード内の階層）
+        surface: {
+          DEFAULT: "#FFFFFF", // 白サーフェス（カード、入力エリア用）
+          secondary: "#f5f2ed", // 薄いベージュ（カード内の要素背景）
+        },
         // Text colors (階層的な命名)
         text: {
           primary: "#000000", // プライマリテキスト（見出し、強調）

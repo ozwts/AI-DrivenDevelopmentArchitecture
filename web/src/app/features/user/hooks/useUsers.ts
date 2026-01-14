@@ -21,6 +21,18 @@ export function useUsers() {
 }
 
 /**
+ * ユーザー検索フック（メンバー招待時のユーザー検索用）
+ * @param query 検索クエリ（名前またはメールアドレスで部分一致）
+ */
+export function useSearchUsers(query: string) {
+  return useQuery({
+    queryKey: [QUERY_KEY, "search", query],
+    queryFn: () => userApi.searchUsers(query),
+    enabled: query.length > 0,
+  });
+}
+
+/**
  * 現在のユーザー情報を取得するフック
  */
 export function useCurrentUser() {

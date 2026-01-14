@@ -25,6 +25,7 @@ export default [
     route("projects/:projectId", "routes/(user)/projects/[projectId]/route.tsx", [
       index("routes/(user)/projects/[projectId]/_index/route.tsx"),
       route("edit", "routes/(user)/projects/[projectId]/edit/route.tsx"),
+      route("members", "routes/(user)/projects/[projectId]/members/route.tsx"),
     ]),
 
     // Todos

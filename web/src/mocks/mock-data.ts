@@ -5,6 +5,9 @@ type UserResponse = z.infer<typeof schemas.UserResponse>;
 type ProjectResponse = z.infer<typeof schemas.ProjectResponse>;
 type TodoResponse = z.infer<typeof schemas.TodoResponse>;
 type AttachmentResponse = z.infer<typeof schemas.AttachmentResponse>;
+type ProjectMembershipResponse = z.infer<
+  typeof schemas.ProjectMembershipResponse
+>;
 
 /**
  * コンポーネントテスト用のモックデータ
@@ -234,4 +237,63 @@ export const ProjectDummy3: ProjectResponse = {
   color: "#FFA726",
   createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
   updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+};
+
+// プロジェクトメンバーシップダミーデータ
+// project-1: UserDummy1(OWNER), UserDummy2(MEMBER), UserDummy3(MEMBER)
+// project-2: UserDummy2(OWNER), UserDummy3(MEMBER)
+// project-3: UserDummy1(OWNER)
+
+export const MembershipDummy1: ProjectMembershipResponse = {
+  userId: UserDummy1.id,
+  projectId: ProjectDummy1.id,
+  role: "OWNER",
+  userName: UserDummy1.name,
+  userEmail: UserDummy1.email,
+  joinedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+};
+
+export const MembershipDummy2: ProjectMembershipResponse = {
+  userId: UserDummy2.id,
+  projectId: ProjectDummy1.id,
+  role: "MEMBER",
+  userName: UserDummy2.name,
+  userEmail: UserDummy2.email,
+  joinedAt: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000).toISOString(),
+};
+
+export const MembershipDummy3: ProjectMembershipResponse = {
+  userId: UserDummy3.id,
+  projectId: ProjectDummy1.id,
+  role: "MEMBER",
+  userName: UserDummy3.name,
+  userEmail: UserDummy3.email,
+  joinedAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
+};
+
+export const MembershipDummy4: ProjectMembershipResponse = {
+  userId: UserDummy2.id,
+  projectId: ProjectDummy2.id,
+  role: "OWNER",
+  userName: UserDummy2.name,
+  userEmail: UserDummy2.email,
+  joinedAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
+};
+
+export const MembershipDummy5: ProjectMembershipResponse = {
+  userId: UserDummy3.id,
+  projectId: ProjectDummy2.id,
+  role: "MEMBER",
+  userName: UserDummy3.name,
+  userEmail: UserDummy3.email,
+  joinedAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+};
+
+export const MembershipDummy6: ProjectMembershipResponse = {
+  userId: UserDummy1.id,
+  projectId: ProjectDummy3.id,
+  role: "OWNER",
+  userName: UserDummy1.name,
+  userEmail: UserDummy1.email,
+  joinedAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
 };

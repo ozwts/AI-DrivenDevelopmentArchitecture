@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useOutletContext, Link } from "react-router";
-import { PencilIcon, FolderIcon } from "@heroicons/react/24/outline";
+import { PencilIcon, FolderIcon, UsersIcon } from "@heroicons/react/24/outline";
 import { Button, Card } from "@/app/lib/ui";
 import { buildLogger } from "@/app/lib/logger";
 import type { ProjectOutletContext } from "../route";
@@ -42,12 +42,20 @@ export default function ProjectDetailRoute() {
             <p className="text-text-secondary">{todoCount}件のTODO</p>
           </div>
         </div>
-        <Link to={`/projects/${project.id}/edit`}>
-          <Button variant="secondary">
-            <PencilIcon className="h-4 w-4 mr-2" />
-            編集
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link to={`/projects/${project.id}/members`}>
+            <Button variant="secondary">
+              <UsersIcon className="h-4 w-4 mr-2" />
+              メンバー
+            </Button>
+          </Link>
+          <Link to={`/projects/${project.id}/edit`}>
+            <Button variant="secondary">
+              <PencilIcon className="h-4 w-4 mr-2" />
+              編集
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* 詳細情報 */}

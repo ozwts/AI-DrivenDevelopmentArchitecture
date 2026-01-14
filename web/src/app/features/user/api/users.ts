@@ -13,6 +13,16 @@ export const userApi = {
     return request("/users", schemas.UsersResponse);
   },
 
+  searchUsers: async (query: string): Promise<UserResponse[]> => {
+    const params = new URLSearchParams();
+    if (query) {
+      params.set("q", query);
+    }
+    const queryString = params.toString();
+    const url = queryString ? `/users?${queryString}` : "/users";
+    return request(url, schemas.UsersResponse);
+  },
+
   getUser: async (userId: string): Promise<UserResponse> => {
     return request(`/users/${userId}`, schemas.UserResponse);
   },

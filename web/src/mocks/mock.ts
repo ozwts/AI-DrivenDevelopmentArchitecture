@@ -18,6 +18,12 @@ import {
   AttachmentDummy1,
   AttachmentDummy2,
   AttachmentDummy3,
+  MembershipDummy1,
+  MembershipDummy2,
+  MembershipDummy3,
+  MembershipDummy4,
+  MembershipDummy5,
+  MembershipDummy6,
 } from "./mock-data";
 
 type TodoResponse = z.infer<typeof schemas.TodoResponse>;
@@ -31,6 +37,12 @@ type AttachmentsResponse = z.infer<typeof schemas.AttachmentsResponse>;
 type PrepareAttachmentResponse = z.infer<
   typeof schemas.PrepareAttachmentResponse
 >;
+type ProjectMembershipResponse = z.infer<
+  typeof schemas.ProjectMembershipResponse
+>;
+type ProjectMembershipsResponse = z.infer<
+  typeof schemas.ProjectMembershipsResponse
+>;
 
 const allProjects = [ProjectDummy1, ProjectDummy2, ProjectDummy3];
 let projects = [...allProjects];
@@ -43,6 +55,16 @@ let users = [...allUsers];
 
 const allAttachments = [AttachmentDummy1, AttachmentDummy2, AttachmentDummy3];
 let attachments = [...allAttachments];
+
+const allMemberships = [
+  MembershipDummy1,
+  MembershipDummy2,
+  MembershipDummy3,
+  MembershipDummy4,
+  MembershipDummy5,
+  MembershipDummy6,
+];
+let memberships = [...allMemberships];
 
 // 現在のユーザー（モック用）
 let currentUser = UserDummy1;
@@ -254,11 +276,24 @@ export const DeleteProjectResponseDummy = [
   ),
 ];
 
-// ユーザーリストのハンドラー
+// ユーザーリストのハンドラー（検索対応）
 export const UsersResponseDummy = [
-  http.get(urlJoin(config.apiUrl, "/users"), async () => {
+  http.get(urlJoin(config.apiUrl, "/users"), async ({ request }) => {
+    const url = new URL(request.url);
+    const query = url.searchParams.get("q");
+
+    let filteredUsers = users;
+    if (query) {
+      const lowerQuery = query.toLowerCase();
+      filteredUsers = users.filter(
+        (u) =>
+          u.name.toLowerCase().includes(lowerQuery) ||
+          u.email.toLowerCase().includes(lowerQuery),
+      );
+    }
+
     await delay(100);
-    return HttpResponse.json(users satisfies UsersResponse);
+    return HttpResponse.json(filteredUsers satisfies UsersResponse);
   }),
 ];
 
@@ -504,6 +539,266 @@ export const S3UploadResponseDummy = [
   ),
 ];
 
+// プロジェクトメンバー一覧のハンドラー
+export const ProjectMembersResponseDummy = [
+  http.get(
+    urlJoin(config.apiUrl, "/projects/:projectId/members"),
+    async ({ params }) => {
+      const { projectId } = params;
+
+      // 現在のユーザーがプロジェクトのメンバーかチェック
+      const currentMembership = memberships.find(
+        (m) => m.projectId === projectId && m.userId === currentUser.id,
+      );
+      if (!currentMembership) {
+        return HttpResponse.json(
+          { error: "Not a member of this project" },
+          { status: 403 },
+        );
+      }
+
+      const projectMembers = memberships.filter(
+        (m) => m.projectId === projectId,
+      );
+
+      await delay(100);
+      return HttpResponse.json(
+        projectMembers satisfies ProjectMembershipsResponse,
+      );
+    },
+  ),
+];
+
+// メンバー招待のハンドラー
+export const InviteMemberResponseDummy = [
+  http.post(
+    urlJoin(config.apiUrl, "/projects/:projectId/members"),
+    async ({ params, request }) => {
+      const { projectId } = params;
+      const body = (await request.json()) as { userId: string };
+
+      // 現在のユーザーがオーナーかチェック
+      const currentMembership = memberships.find(
+        (m) =>
+          m.projectId === projectId &&
+          m.userId === currentUser.id &&
+          m.role === "OWNER",
+      );
+      if (!currentMembership) {
+        return HttpResponse.json(
+          { error: "Only project owner can invite members" },
+          { status: 403 },
+        );
+      }
+
+      // 招待するユーザーが存在するかチェック
+      const invitedUser = users.find((u) => u.id === body.userId);
+      if (!invitedUser) {
+        return HttpResponse.json({ error: "User not found" }, { status: 404 });
+      }
+
+      // 既にメンバーかチェック
+      const existingMembership = memberships.find(
+        (m) => m.projectId === projectId && m.userId === body.userId,
+      );
+      if (existingMembership) {
+        return HttpResponse.json(
+          { error: "User is already a member" },
+          { status: 409 },
+        );
+      }
+
+      const newMembership: ProjectMembershipResponse = {
+        userId: invitedUser.id,
+        projectId: projectId as string,
+        role: "MEMBER",
+        userName: invitedUser.name,
+        userEmail: invitedUser.email,
+        joinedAt: new Date().toISOString(),
+      };
+
+      memberships.push(newMembership);
+
+      await delay(100);
+      return HttpResponse.json(
+        newMembership satisfies ProjectMembershipResponse,
+        { status: 201 },
+      );
+    },
+  ),
+];
+
+// メンバーロール変更のハンドラー
+export const UpdateMemberRoleResponseDummy = [
+  http.patch(
+    urlJoin(config.apiUrl, "/projects/:projectId/members/:userId"),
+    async ({ params, request }) => {
+      const { projectId, userId } = params;
+      const body = (await request.json()) as { role?: "OWNER" | "MEMBER" };
+
+      // 現在のユーザーがオーナーかチェック
+      const currentMembership = memberships.find(
+        (m) =>
+          m.projectId === projectId &&
+          m.userId === currentUser.id &&
+          m.role === "OWNER",
+      );
+      if (!currentMembership) {
+        return HttpResponse.json(
+          { error: "Only project owner can change roles" },
+          { status: 403 },
+        );
+      }
+
+      // 対象メンバーを探す
+      const memberIndex = memberships.findIndex(
+        (m) => m.projectId === projectId && m.userId === userId,
+      );
+      if (memberIndex === -1) {
+        return HttpResponse.json({ error: "Member not found" }, { status: 404 });
+      }
+
+      // 最後のオーナーをメンバーに降格する場合はエラー
+      if (
+        body.role === "MEMBER" &&
+        memberships[memberIndex].role === "OWNER"
+      ) {
+        const ownerCount = memberships.filter(
+          (m) => m.projectId === projectId && m.role === "OWNER",
+        ).length;
+        if (ownerCount <= 1) {
+          return HttpResponse.json(
+            { error: "Cannot demote the last owner" },
+            { status: 422 },
+          );
+        }
+      }
+
+      const updatedMembership: ProjectMembershipResponse = {
+        ...memberships[memberIndex],
+        role: body.role ?? memberships[memberIndex].role,
+      };
+
+      memberships[memberIndex] = updatedMembership;
+
+      await delay(100);
+      return HttpResponse.json(
+        updatedMembership satisfies ProjectMembershipResponse,
+      );
+    },
+  ),
+];
+
+// メンバー削除のハンドラー
+export const RemoveMemberResponseDummy = [
+  http.delete(
+    urlJoin(config.apiUrl, "/projects/:projectId/members/:userId"),
+    async ({ params }) => {
+      const { projectId, userId } = params;
+
+      // 現在のユーザーがオーナーかチェック
+      const currentMembership = memberships.find(
+        (m) =>
+          m.projectId === projectId &&
+          m.userId === currentUser.id &&
+          m.role === "OWNER",
+      );
+      if (!currentMembership) {
+        return HttpResponse.json(
+          { error: "Only project owner can remove members" },
+          { status: 403 },
+        );
+      }
+
+      // 対象メンバーを探す
+      const memberIndex = memberships.findIndex(
+        (m) => m.projectId === projectId && m.userId === userId,
+      );
+      if (memberIndex === -1) {
+        // 冪等性のため、存在しない場合も成功として扱う
+        return new HttpResponse(null, { status: 204 });
+      }
+
+      // 最後のオーナーを削除する場合はエラー
+      if (memberships[memberIndex].role === "OWNER") {
+        const ownerCount = memberships.filter(
+          (m) => m.projectId === projectId && m.role === "OWNER",
+        ).length;
+        if (ownerCount <= 1) {
+          return HttpResponse.json(
+            { error: "Cannot remove the last owner" },
+            { status: 422 },
+          );
+        }
+      }
+
+      // メンバーを削除
+      memberships = memberships.filter(
+        (m) => !(m.projectId === projectId && m.userId === userId),
+      );
+
+      // 削除されたメンバーが担当しているTODOの担当者をnullに
+      todos = todos.map((t) =>
+        t.projectId === projectId && t.assigneeUserId === userId
+          ? { ...t, assigneeUserId: undefined }
+          : t,
+      );
+
+      await delay(100);
+      return new HttpResponse(null, { status: 204 });
+    },
+  ),
+];
+
+// プロジェクト脱退のハンドラー
+export const LeaveProjectResponseDummy = [
+  http.post(
+    urlJoin(config.apiUrl, "/projects/:projectId/leave"),
+    async ({ params }) => {
+      const { projectId } = params;
+
+      // 現在のユーザーがプロジェクトのメンバーかチェック
+      const currentMembership = memberships.find(
+        (m) => m.projectId === projectId && m.userId === currentUser.id,
+      );
+      if (!currentMembership) {
+        return HttpResponse.json(
+          { error: "Not a member of this project" },
+          { status: 404 },
+        );
+      }
+
+      // 最後のオーナーが脱退する場合はエラー
+      if (currentMembership.role === "OWNER") {
+        const ownerCount = memberships.filter(
+          (m) => m.projectId === projectId && m.role === "OWNER",
+        ).length;
+        if (ownerCount <= 1) {
+          return HttpResponse.json(
+            { error: "Last owner cannot leave the project" },
+            { status: 422 },
+          );
+        }
+      }
+
+      // メンバーシップを削除
+      memberships = memberships.filter(
+        (m) => !(m.projectId === projectId && m.userId === currentUser.id),
+      );
+
+      // 脱退したユーザーが担当しているTODOの担当者をnullに
+      todos = todos.map((t) =>
+        t.projectId === projectId && t.assigneeUserId === currentUser.id
+          ? { ...t, assigneeUserId: undefined }
+          : t,
+      );
+
+      await delay(100);
+      return new HttpResponse(null, { status: 204 });
+    },
+  ),
+];
+
 // ハンドラーセットの定義
 const getHandlersByType = (type: string) => {
   switch (type) {
@@ -512,6 +807,7 @@ const getHandlersByType = (type: string) => {
       todos = [...allTodos];
       projects = [...allProjects];
       attachments = [...allAttachments];
+      memberships = [...allMemberships];
       return [
         ...TodosResponseDummy,
         ...TodoResponseDummy,
@@ -536,12 +832,18 @@ const getHandlersByType = (type: string) => {
         ...DeleteAttachmentResponseDummy,
         ...DownloadUrlResponseDummy,
         ...S3UploadResponseDummy,
+        ...ProjectMembersResponseDummy,
+        ...InviteMemberResponseDummy,
+        ...UpdateMemberRoleResponseDummy,
+        ...RemoveMemberResponseDummy,
+        ...LeaveProjectResponseDummy,
       ];
     case "EMPTY":
       // 空データのみ（CRUD操作は可能だが、初期状態は空）
       todos = [];
       projects = [];
       attachments = [];
+      memberships = [];
       return [
         ...TodosResponseDummy,
         ...TodoResponseDummy,
@@ -559,6 +861,11 @@ const getHandlersByType = (type: string) => {
         ...DeleteCurrentUserResponseDummy,
         ...UserResponseDummy,
         ...RegisterUserResponseDummy,
+        ...ProjectMembersResponseDummy,
+        ...InviteMemberResponseDummy,
+        ...UpdateMemberRoleResponseDummy,
+        ...RemoveMemberResponseDummy,
+        ...LeaveProjectResponseDummy,
       ];
     default:
       return [
@@ -578,6 +885,11 @@ const getHandlersByType = (type: string) => {
         ...DeleteCurrentUserResponseDummy,
         ...UserResponseDummy,
         ...RegisterUserResponseDummy,
+        ...ProjectMembersResponseDummy,
+        ...InviteMemberResponseDummy,
+        ...UpdateMemberRoleResponseDummy,
+        ...RemoveMemberResponseDummy,
+        ...LeaveProjectResponseDummy,
       ];
   }
 };
