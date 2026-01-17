@@ -70,7 +70,38 @@
  */
 
 import * as ts from "typescript";
+import * as path from "path";
+import { glob } from "glob";
 import { createASTChecker } from "../../../ast-checker";
+
+// ========================================
+// Entity名の動的取得
+// ========================================
+
+/**
+ * ドメインモデルから Entity 名を取得
+ * *.entity.ts ファイルからEntity名を特定
+ */
+const getEntityNamesFromDomain = (workspaceRoot: string): string[] => {
+  const entityPattern = path.join(
+    workspaceRoot,
+    "server/src/domain/model/**/*.entity.ts"
+  );
+  const entityFiles = glob.sync(entityPattern);
+
+  const entityNames: string[] = [];
+  for (const file of entityFiles) {
+    // ファイル名からEntity名を抽出: todo.entity.ts -> Todo
+    const basename = path.basename(file, ".entity.ts");
+    const entityName = basename.charAt(0).toUpperCase() + basename.slice(1);
+    entityNames.push(entityName);
+  }
+
+  return entityNames;
+};
+
+// キャッシュ（パフォーマンス向上）
+let cachedEntityNames: string[] | null = null;
 
 /**
  * 変数がletで宣言されているかチェック
@@ -242,12 +273,30 @@ export const policyCheck = createASTChecker({
 
     // 右辺のオブジェクトが左辺と同じ変数名かチェック
     if (ts.isIdentifier(rightObjExpr) && rightObjExpr.text === varName) {
+      // ========================================
+      // TypeCheckerで変数の型を取得し、Entityかどうか判定
+      // ========================================
+      const typeChecker = ctx.program.getTypeChecker();
+      const type = typeChecker.getTypeAtLocation(node.left);
+      const typeName = typeChecker.typeToString(type);
+
+      // ワークスペースルートを取得してEntity名を収集
+      const workspaceRoot = fileName.split("/server/")[0];
+      if (cachedEntityNames === null) {
+        cachedEntityNames = getEntityNamesFromDomain(workspaceRoot);
+      }
+
+      // 型名がEntity名リストに含まれていない場合はスキップ
+      if (cachedEntityNames.length > 0 && !cachedEntityNames.includes(typeName)) {
+        return;
+      }
+
       // letで宣言されているかチェック（より堅牢な検出）
       const isLetDeclaration = isDeclaredWithLet(varName, node);
 
       ctx.report(
         node,
-        `変数再代入パターンを使用しています: "${varName} = ${varName}.${methodName}()"${isLetDeclaration ? "（let宣言）" : ""}\n` +
+        `Entity変数の再代入パターンを使用しています: "${varName} = ${varName}.${methodName}()" (型: ${typeName})${isLetDeclaration ? "（let宣言）" : ""}\n` +
           "■ ❌ Bad: let updated = existing; updated = updated.retitle(...);\n" +
           "■ ✅ Good (Method Chain): const updatedResult = Result.ok(existing).map((t) => t.retitle(...));\n" +
           "■ ✅ Good (Single Call): const completed = existing.complete(now);\n" +

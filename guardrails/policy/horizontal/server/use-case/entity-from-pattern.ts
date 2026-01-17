@@ -65,17 +65,38 @@
  */
 
 import * as ts from "typescript";
+import * as path from "path";
+import { glob } from "glob";
 import { createASTChecker } from "../../../ast-checker";
 
-/**
- * PascalCaseかチェック（EntityやValueObjectの命名規則）
- */
-const isPascalCase = (name: string): boolean => /^[A-Z][a-zA-Z0-9]*$/.test(name);
+// ========================================
+// Entity名の動的取得
+// ========================================
 
 /**
- * 除外するクラス名（標準ライブラリや一般的なクラス）
+ * ドメインモデルから Entity 名を取得
+ * *.entity.ts ファイルからEntity名を特定
  */
-const EXCLUDED_CLASSES = ["Date", "Error", "Map", "Set", "Promise", "Array"];
+const getEntityNamesFromDomain = (workspaceRoot: string): string[] => {
+  const entityPattern = path.join(
+    workspaceRoot,
+    "server/src/domain/model/**/*.entity.ts"
+  );
+  const entityFiles = glob.sync(entityPattern);
+
+  const entityNames: string[] = [];
+  for (const file of entityFiles) {
+    // ファイル名からEntity名を抽出: todo.entity.ts -> Todo
+    const basename = path.basename(file, ".entity.ts");
+    const entityName = basename.charAt(0).toUpperCase() + basename.slice(1);
+    entityNames.push(entityName);
+  }
+
+  return entityNames;
+};
+
+// キャッシュ（パフォーマンス向上）
+let cachedEntityNames: string[] | null = null;
 
 export const policyCheck = createASTChecker({
   filePattern: /-use-case\.ts$/,
@@ -96,19 +117,24 @@ export const policyCheck = createASTChecker({
       return;
     }
 
-    // PascalCaseクラスのnew呼び出しかチェック
+    // クラス名を取得
     if (ts.isIdentifier(node.expression)) {
       const className = node.expression.text;
 
-      // PascalCaseかつ除外リストにない場合、Entity/ValueObjectの可能性
-      if (isPascalCase(className) && !EXCLUDED_CLASSES.includes(className)) {
+      // Entity名リストを取得（キャッシュ）
+      const workspaceRoot = fileName.split("/server/")[0];
+      if (cachedEntityNames === null) {
+        cachedEntityNames = getEntityNamesFromDomain(workspaceRoot);
+      }
+
+      // Entity名リストに含まれている場合のみ警告
+      if (cachedEntityNames.length > 0 && cachedEntityNames.includes(className)) {
         ctx.report(
           node,
-          `PascalCaseクラス生成にnew ${className}()を使用しています。\n` +
+          `Entity生成にnew ${className}()を使用しています。\n` +
             `■ ❌ Bad: const entity = new ${className}({ ... });\n` +
             `■ ✅ Good: const entity = ${className}.from({ ... });\n` +
-            "■ 理由: Entity/ValueObject生成はファクトリメソッドパターン（.from()）で統一すべきです。\n" +
-            "■ 注意: 標準ライブラリクラス以外のPascalCaseクラスを検出しています。誤検知の場合は無視してください。"
+            "■ 理由: Entity生成はファクトリメソッドパターン（.from()）で統一すべきです。"
         );
       }
     }

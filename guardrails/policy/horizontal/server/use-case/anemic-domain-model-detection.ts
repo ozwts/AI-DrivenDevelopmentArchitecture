@@ -56,12 +56,38 @@
  */
 
 import * as ts from "typescript";
+import * as path from "path";
+import { glob } from "glob";
 import { createASTChecker } from "../../../ast-checker";
 
+// ========================================
+// Entity名の動的取得
+// ========================================
+
 /**
- * PascalCaseかチェック（EntityやValueObjectの命名規則）
+ * ドメインモデルから Entity 名を取得
+ * *.entity.ts ファイルからEntity名を特定
  */
-const isPascalCase = (name: string): boolean => /^[A-Z][a-zA-Z0-9]*$/.test(name);
+const getEntityNamesFromDomain = (workspaceRoot: string): string[] => {
+  const entityPattern = path.join(
+    workspaceRoot,
+    "server/src/domain/model/**/*.entity.ts"
+  );
+  const entityFiles = glob.sync(entityPattern);
+
+  const entityNames: string[] = [];
+  for (const file of entityFiles) {
+    // ファイル名からEntity名を抽出: todo.entity.ts -> Todo
+    const basename = path.basename(file, ".entity.ts");
+    const entityName = basename.charAt(0).toUpperCase() + basename.slice(1);
+    entityNames.push(entityName);
+  }
+
+  return entityNames;
+};
+
+// キャッシュ（パフォーマンス向上）
+let cachedEntityNames: string[] | null = null;
 
 export const policyCheck = createASTChecker({
   filePattern: /-use-case\.ts$/,
@@ -74,14 +100,22 @@ export const policyCheck = createASTChecker({
       return;
     }
 
-    // パターン1: PascalCaseクラスの複数フィールド手動更新を検出
+    // パターン1: Entityクラスの複数フィールド手動更新を検出
     // new SomeEntity({ ...existing, field1, field2, field3 })
     if (ts.isNewExpression(node)) {
       if (ts.isIdentifier(node.expression)) {
         const className = node.expression.text;
 
-        // PascalCaseクラスのみチェック（Entity/ValueObjectの可能性）
-        if (!isPascalCase(className)) return;
+        // Entity名リストを取得（キャッシュ）
+        const workspaceRoot = fileName.split("/server/")[0];
+        if (cachedEntityNames === null) {
+          cachedEntityNames = getEntityNamesFromDomain(workspaceRoot);
+        }
+
+        // Entity名リストに含まれていない場合はスキップ
+        if (cachedEntityNames.length > 0 && !cachedEntityNames.includes(className)) {
+          return;
+        }
 
         // コンストラクタ引数をチェック
         if (
