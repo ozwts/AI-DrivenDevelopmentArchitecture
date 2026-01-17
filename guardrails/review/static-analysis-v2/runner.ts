@@ -14,10 +14,11 @@ export class CheckRunner {
   private checks: CheckModule[] = [];
 
   /**
-   * 指定されたレイヤーのチェックを動的に読み込んで登録
-   * workspace, layer が undefined の場合は全体を走査
+   * 指定されたワークスペースのチェックを動的に読み込んで登録
+   * workspace が undefined の場合は全ワークスペースを走査
+   * フラット構造: policy/horizontal/{workspace}/*.ts
    */
-  async loadChecks(workspace?: "server" | "web" | "infra", layer?: string): Promise<void> {
+  async loadChecks(workspace?: "server" | "web" | "infra"): Promise<void> {
     const basePolicyDir = path.resolve(__dirname, "../../policy/horizontal");
 
     if (!fs.existsSync(basePolicyDir)) {
@@ -35,24 +36,7 @@ export class CheckRunner {
           return [];
         }
 
-        // レイヤー一覧を決定
-        const layers =
-          layer !== undefined && layer !== ""
-            ? [layer]
-            : fs
-                .readdirSync(workspaceDir, { withFileTypes: true })
-                .filter((entry) => entry.isDirectory())
-                .map((entry) => entry.name);
-
-        return layers
-          .filter((ly) => {
-            const layerDir = path.join(workspaceDir, ly);
-            return fs.existsSync(layerDir);
-          })
-          .map((ly) => {
-            const layerDir = path.join(workspaceDir, ly);
-            return this.loadChecksFromDirectory(layerDir);
-          });
+        return [this.loadChecksFromDirectory(workspaceDir)];
       })
       .flat();
 
@@ -177,18 +161,16 @@ export class CheckRunner {
 /**
  * 静的解析を実行するエントリーポイント
  * @param workspace - ワークスペース (server, web, infra) - 省略時は全ワークスペース
- * @param layer - レイヤー (domain-model, use-case, handler, repository, etc.) - 省略時は全レイヤー
  * @param targetDirectories - チェック対象のディレクトリ
  */
 export const runStaticAnalysisV2 = async (
   workspace?: "server" | "web" | "infra",
-  layer?: string,
   targetDirectories: string[] = []
 ): Promise<Violation[]> => {
   const runner = new CheckRunner();
 
-  // 指定されたワークスペース・レイヤーのチェックを動的に読み込み
-  await runner.loadChecks(workspace, layer);
+  // 指定されたワークスペースのチェックを動的に読み込み
+  await runner.loadChecks(workspace);
 
   // チェックを実行
   const violations = await runner.runChecks(targetDirectories);

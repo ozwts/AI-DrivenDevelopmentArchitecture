@@ -14,19 +14,12 @@ export type CheckInfo = {
 }
 
 /**
- * レイヤー情報
- */
-export type LayerInfo = {
-  layer: string;
-  checks: CheckInfo[];
-}
-
-/**
  * ワークスペース情報
+ * フラット構造: workspace直下にchecksが配置される
  */
 export type WorkspaceInfo = {
   workspace: string;
-  layers: LayerInfo[];
+  checks: CheckInfo[];
 }
 
 /**
@@ -58,7 +51,7 @@ export const LIST_HORIZONTAL_POLICIES_RESPONSIBILITY: ListPoliciesResponsibility
   {
     id: "policy_list_horizontal",
     toolDescription:
-      "List all available horizontal policies (workspaces, layers, and checks). Horizontal policies are organized by workspace (server/web/infra) and layer (domain-model, use-case, etc.). Use this to discover what checks are available before running review_horizontal_static or review_horizontal_semantic.",
+      "List all available horizontal policies (workspaces and checks). Horizontal policies are organized by workspace (server/web/infra). Use this to discover what checks are available before running review_custom_static_analysis.",
     inputSchema: {
       type: z
         .enum(["static", "semantic"])

@@ -15,7 +15,6 @@ export type CustomWorkspace = "server" | "web" | "infra";
  */
 export type CustomStaticAnalysisHandlerInput = {
   workspace?: CustomWorkspace;
-  layer?: string;
   targetDirectories: string[];
   guardrailsRoot: string;
 };
@@ -26,7 +25,7 @@ export type CustomStaticAnalysisHandlerInput = {
 export const createCustomStaticAnalysisHandler =
   () =>
   async (args: CustomStaticAnalysisHandlerInput): Promise<string> => {
-    const { workspace, layer, targetDirectories, guardrailsRoot } = args;
+    const { workspace, targetDirectories, guardrailsRoot } = args;
 
     // バリデーション
     if (
@@ -49,7 +48,6 @@ export const createCustomStaticAnalysisHandler =
     // カスタム静的解析実行
     const violations = await runStaticAnalysisV2(
       workspace,
-      layer,
       targetDirectories
     );
 

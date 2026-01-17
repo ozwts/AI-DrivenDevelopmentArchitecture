@@ -4,7 +4,7 @@
 
 import * as path from "path";
 import * as fs from "fs";
-import type { WorkspaceInfo, LayerInfo, CheckInfo } from "./responsibilities";
+import type { WorkspaceInfo, CheckInfo } from "./responsibilities";
 
 /**
  * ファイルからJSDocの@what説明を抽出
@@ -20,7 +20,8 @@ const extractDescriptionFromFile = (filePath: string): string => {
 };
 
 /**
- * 指定されたディレクトリをスキャンしてワークスペース・レイヤー・チェック情報を取得
+ * 指定されたディレクトリをスキャンしてワークスペース・チェック情報を取得
+ * フラット構造: policy/horizontal/{workspace}/*.ts
  */
 const scanPolicyDirectory = (basePolicyDir: string): WorkspaceInfo[] => {
   if (!fs.existsSync(basePolicyDir)) {
@@ -36,47 +37,30 @@ const scanPolicyDirectory = (basePolicyDir: string): WorkspaceInfo[] => {
 
   for (const workspace of workspaceDirs) {
     const workspaceDir = path.join(basePolicyDir, workspace);
-    const layers: LayerInfo[] = [];
+    const checks: CheckInfo[] = [];
 
-    // レイヤー一覧
-    const layerDirs = fs.readdirSync(workspaceDir, { withFileTypes: true })
-      .filter((entry) => entry.isDirectory())
-      .map((entry) => entry.name);
+    // チェックファイル一覧（フラット構造）
+    const files = fs.readdirSync(workspaceDir)
+      .filter((file) => file.endsWith(".ts") && file !== "index.ts" && !file.endsWith(".d.ts"));
 
-    for (const layer of layerDirs) {
-      const layerDir = path.join(workspaceDir, layer);
-      const checks: CheckInfo[] = [];
+    for (const file of files) {
+      const filePath = path.join(workspaceDir, file);
+      const checkId = path.basename(file, ".ts");
 
-      // チェックファイル一覧
-      const files = fs.readdirSync(layerDir)
-        .filter((file) => file.endsWith(".ts") && file !== "index.ts" && !file.endsWith(".d.ts"));
+      // JSDocから説明を抽出
+      const description = extractDescriptionFromFile(filePath);
 
-      for (const file of files) {
-        const filePath = path.join(layerDir, file);
-        const checkId = path.basename(file, ".ts");
-
-        // JSDocから説明を抽出
-        const description = extractDescriptionFromFile(filePath);
-
-        checks.push({
-          id: checkId,
-          file,
-          description,
-        });
-      }
-
-      if (checks.length > 0) {
-        layers.push({
-          layer,
-          checks,
-        });
-      }
+      checks.push({
+        id: checkId,
+        file,
+        description,
+      });
     }
 
-    if (layers.length > 0) {
+    if (checks.length > 0) {
       workspaces.push({
         workspace,
-        layers,
+        checks,
       });
     }
   }

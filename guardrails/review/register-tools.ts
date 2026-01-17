@@ -195,11 +195,10 @@ export function registerReviewTools(
         description: responsibility.toolDescription,
         inputSchema: responsibility.inputSchema,
       },
-      async ({ workspace, layer, targetDirectories }): Promise<any> => {
+      async ({ workspace, targetDirectories }): Promise<any> => {
         try {
           const result = await handler({
             workspace,
-            layer,
             targetDirectories,
             guardrailsRoot,
           });

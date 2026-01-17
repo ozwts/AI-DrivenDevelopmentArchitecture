@@ -19,7 +19,6 @@ export {
   type ListPoliciesResponsibility,
   type ListPoliciesHandlerInput,
   type WorkspaceInfo,
-  type LayerInfo,
   type CheckInfo,
   LIST_HORIZONTAL_POLICIES_RESPONSIBILITY,
   LIST_VERTICAL_POLICIES_RESPONSIBILITY,

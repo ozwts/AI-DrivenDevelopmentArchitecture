@@ -15,7 +15,6 @@ export type CustomStaticAnalysisResponsibility = {
   /** 入力スキーマ */
   inputSchema: {
     workspace: z.ZodOptional<z.ZodEnum<["server", "web", "infra"]>>;
-    layer: z.ZodOptional<z.ZodString>;
     targetDirectories: z.ZodArray<z.ZodString>;
   };
 };
@@ -28,19 +27,13 @@ export const CUSTOM_STATIC_ANALYSIS_RESPONSIBILITIES: CustomStaticAnalysisRespon
     {
       id: "review_custom_static_analysis",
       toolDescription:
-        "Runs custom static analysis using TypeScript Compiler API. Dynamically loads policy checks from the specified layer/workspace. If layer is omitted, loads all layers in the workspace. If workspace is omitted, loads all workspaces (server, web, infra).",
+        "Runs custom static analysis using TypeScript Compiler API. Dynamically loads policy checks from the specified workspace. If workspace is omitted, loads all workspaces (server, web, infra).",
       inputSchema: {
         workspace: z
           .enum(["server", "web", "infra"])
           .optional()
           .describe(
             "Workspace to run custom static analysis: 'server' (server-side), 'web' (frontend), 'infra' (infrastructure). If omitted, all workspaces are checked.",
-          ),
-        layer: z
-          .string()
-          .optional()
-          .describe(
-            "Layer to check (e.g., 'domain-model', 'use-case', 'handler', 'repository'). If omitted, all layers in the workspace are checked.",
           ),
         targetDirectories: z
           .array(z.string())

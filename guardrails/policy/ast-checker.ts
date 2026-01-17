@@ -134,22 +134,53 @@ const extractJSDocFromFile = (filePath: string): string => {
 };
 
 /**
+ * ファイル名からレイヤープレフィックスを抽出
+ * 例: "domain-model-no-throw.ts" → "domain-model"
+ * 例: "common-no-new-date.ts" → "common"
+ */
+const extractLayerFromFileName = (fileName: string): string => {
+  // 既知のレイヤープレフィックス（長い順にマッチ）
+  const knownPrefixes = [
+    "domain-model",
+    "use-case",
+    "di-container",
+    "handler",
+    "repository",
+    "port",
+    "logger",
+    "common",
+  ];
+
+  for (const prefix of knownPrefixes) {
+    if (fileName.startsWith(`${prefix}-`)) {
+      return prefix;
+    }
+  }
+
+  // プレフィックスが見つからない場合は空文字
+  return "";
+};
+
+/**
  * ファイルパスとJSDocコメントからメタデータを生成
  */
 const extractMetadata = (filePath: string, jsDoc: string): CheckMetadata => {
   const tags = parseJSDoc(jsDoc);
 
-  // ファイルパスから layer と id を自動生成
-  const relativePath = filePath.split("/policy/horizontal/static/")[1];
+  // ファイルパスから workspace と id を自動生成
+  // フラット構造: policy/horizontal/{workspace}/{file}.ts
+  const relativePath = filePath.split("/policy/horizontal/")[1];
   const parts =
     typeof relativePath === "string" && relativePath.length > 0
       ? relativePath.split("/")
       : [];
   const workspace = parts[0]; // server, web, infra
-  const layer = parts[1]; // domain-model, use-case, etc.
   const fileName = path.basename(filePath, ".ts");
 
-  const id = `${workspace}/${layer}/${fileName}`;
+  // ファイル名からレイヤーを抽出
+  const layer = extractLayerFromFileName(fileName);
+
+  const id = `${workspace}/${fileName}`;
 
   return {
     id,
@@ -230,8 +261,8 @@ export const createASTChecker = (
   const metadata = extractMetadata(callerPath, jsDoc);
 
   // ポリシーパスを相対パスに変換
-  const policyPath = callerPath.includes("/policy/horizontal/static/")
-    ? `policy/horizontal/static/${callerPath.split("/policy/horizontal/static/")[1]}`
+  const policyPath = callerPath.includes("/policy/horizontal/")
+    ? `policy/horizontal/${callerPath.split("/policy/horizontal/")[1]}`
     : callerPath;
 
   // チェック関数を生成
