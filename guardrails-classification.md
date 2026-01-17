@@ -190,7 +190,7 @@ AIが利用可能なポリシーを発見するためのツール：
 
 **重要な変更**:
 - **@ruleタグは廃止**: ファイルパスから自動生成（例: `server/domain-model/readonly-properties`）
-- **@example-bad/@example-goodは削除**: Check Builderが不要に
+- **@example-good/@example-bad**: LLMがコード生成時に参照するための具体例（ツール出力には含めない）
 
 **例**:
 

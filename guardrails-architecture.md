@@ -119,6 +119,16 @@ TypeScript実装には以下のアノテーションを付けることで、LLM�
  * @what 複数の書き込みを行うUseCaseがトランザクションで保護されているか検査
  * @why 複数書き込みを非トランザクションで行うと部分的コミットが発生するため
  * @failure 書き込み>=2 かつトランザクションなしのメソッドを検出した場合にエラー
+ *
+ * @example-good
+ * ```typescript
+ * // 正しい実装例
+ * ```
+ *
+ * @example-bad
+ * ```typescript
+ * // 違反コード例
+ * ```
  */
 
 import * as ts from 'typescript';
@@ -132,6 +142,21 @@ export default createCheck({
   }
 });
 ```
+
+### @example-good / @example-bad の目的
+
+**LLMがコード生成時に参照するための具体例を提供する**
+
+| 項目 | 説明 |
+|------|------|
+| **目的** | LLMがチェックファイルを読み込んだ際、正しい/間違ったパターンを理解できる |
+| **ツール表示** | 不要（MCPツールの出力には含めない） |
+| **生成への影響** | `horizontal/generated/semantic/`へのMarkdown生成時に具体例が含まれる |
+
+**ベストプラクティス**:
+- 違反箇所に`// NG:`でコメントを付ける
+- 現実的なコード例を使用（単純すぎない）
+- 複数の違反パターンがあれば`@example-bad`内で網羅
 
 ### Check Builderパターン
 

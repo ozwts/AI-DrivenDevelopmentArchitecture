@@ -472,7 +472,48 @@ export default function createCheck(definition: CheckDefinition): CheckModule {
 
 **重要な変更**:
 - **@ruleタグは廃止**: ファイルパスから自動生成されるため不要
-- **@example-bad/@example-goodは削除**: LLM生成時に自動生成
+
+### @example-good / @example-bad の目的
+
+**LLMがコード生成時に参照するための具体例を提供する**
+
+| 項目 | 説明 |
+|------|------|
+| **目的** | LLMがチェックファイルを読み込んだ際、正しい/間違ったパターンを理解できる |
+| **ツール表示** | 不要（MCPツールの出力には含めない） |
+| **生成への影響** | `horizontal/generated/semantic/`へのMarkdown生成時に具体例が含まれる |
+
+**記述例**:
+
+```typescript
+/**
+ * @what Entity/Value Objectのプロパティがreadonlyで宣言されているか検査
+ * @why mutableなプロパティは不変性を破壊し、予期しない副作用を生むため
+ * @failure readonly修飾子がないEntityプロパティを検出した場合にエラー
+ *
+ * @example-good
+ * ```typescript
+ * export class UserEntity {
+ *   readonly id: UserId;
+ *   readonly name: UserName;
+ *   readonly email: Email;
+ * }
+ * ```
+ *
+ * @example-bad
+ * ```typescript
+ * export class UserEntity {
+ *   id: UserId;           // NG: readonly修飾子がない
+ *   public name: UserName; // NG: publicでもreadonlyが必要
+ * }
+ * ```
+ */
+```
+
+**ベストプラクティス**:
+- 違反箇所に`// NG:`でコメントを付ける
+- 現実的なコード例を使用（単純すぎない）
+- 複数の違反パターンがあれば`@example-bad`内で網羅
 
 ### 2. ファイル命名規則
 
