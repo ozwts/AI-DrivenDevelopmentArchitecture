@@ -12,7 +12,7 @@
 - 機能に依存しない共通原則
 - レイヤーの責務境界を守るための構造的制約
 - 全機能（Todo/Project/User等）に横断的に適用
-- **全てカスタムESLintで実装**（P1/P2/P3すべて）
+- **全てTypeScript Compiler APIで自前実装**（P1/P2/P3すべて）
 
 ### Vertical（縦のガードレール）
 
@@ -27,12 +27,12 @@
 
 ## 基本方針
 
-### カスタムlintがSSOT（Single Source of Truth）
+### TypeScript実装がSSOT（Single Source of Truth）
 
-**非機能検証の唯一の真実は、実装されたカスタムESLintルールである**
+**非機能検証の唯一の真実は、TypeScript Compiler APIで実装された静的解析チェックである**
 
 ```
-カスタムlint（TypeScript実装）
+TypeScript実装（TypeScript Compiler API）
     ↓ LLMで自動生成
 horizontal/generated/（Markdownポリシー）
 ```
@@ -40,62 +40,79 @@ horizontal/generated/（Markdownポリシー）
 ### なぜこの方向なのか
 
 1. **実行可能な検証が正**: コードで動くルールこそが信頼できる真実
-2. **セマンティックレビュー用のドキュメント**: 人とAIがポリシーを理解しやすくするため、カスタムlintからMarkdownを生成
-3. **ドキュメント腐敗の防止**: カスタムlintを更新したら、自動的にポリシーも更新される
+2. **セマンティックレビュー用のドキュメント**: 人とAIがポリシーを理解しやすくするため、TypeScript実装からMarkdownを生成
+3. **ドキュメント腐敗の防止**: TypeScript実装を更新したら、自動的にポリシーも更新される
 
 ---
 
 ## ディレクトリ構造
 
 ```
-# カスタムlint実装（SSOT）
-server/guardrails/
-├── handler/
-│   ├── container-get-restriction.ts
-│   ├── single-usecase-call.ts
-│   └── no-repository-import.ts
-├── use-case/
-│   ├── transaction-protection.ts
-│   ├── result-type-return.ts
-│   └── execute-method-single.ts
-├── domain-model/
-│   ├── readonly-properties.ts
-│   ├── no-external-dependencies.ts
-│   └── no-throw.ts
-└── di-container/
-    ├── import-type-usage.ts
-    └── interface-impl-pattern.ts
-
-# セマンティックレビュー用ポリシー（派生物）
-guardrails/policy/horizontal/generated/
-├── server/
-│   ├── handler/
-│   │   ├── container-get-restriction.md          # ← LLM生成
-│   │   ├── single-usecase-call.md                # ← LLM生成
-│   │   └── no-repository-import.md               # ← LLM生成
-│   ├── use-case/
-│   │   ├── transaction-protection.md             # ← LLM生成
-│   │   ├── result-type-return.md                 # ← LLM生成
-│   │   └── execute-method-single.md              # ← LLM生成
-│   ├── domain-model/
-│   │   ├── readonly-properties.md                # ← LLM生成
-│   │   ├── no-external-dependencies.md           # ← LLM生成
-│   │   └── no-throw.md                           # ← LLM生成
-│   └── di-container/
-│       ├── import-type-usage.md                  # ← LLM生成
-│       └── interface-impl-pattern.md             # ← LLM生成
-└── web/
-    ├── component/
-    │   └── selector-strategy.md                  # ← LLM生成
-    └── hooks/
-        └── tanstack-query-pattern.md             # ← LLM生成
+guardrails/policy/
+├── horizontal/                     # 横のガードレール（技術的ルール）
+│   ├── static/                    # TypeScript実装（SSOT）
+│   │   ├── server/
+│   │   │   ├── handler/
+│   │   │   │   ├── container-get-restriction.ts
+│   │   │   │   ├── single-usecase-call.ts
+│   │   │   │   └── no-repository-import.ts
+│   │   │   ├── use-case/
+│   │   │   │   ├── transaction-protection.ts
+│   │   │   │   ├── result-type-return.ts
+│   │   │   │   └── execute-method-single.ts
+│   │   │   ├── domain-model/
+│   │   │   │   ├── readonly-properties.ts
+│   │   │   │   ├── no-external-dependencies.ts
+│   │   │   │   └── no-throw.ts
+│   │   │   └── di-container/
+│   │   │       ├── import-type-usage.ts
+│   │   │       └── interface-impl-pattern.ts
+│   │   ├── web/
+│   │   │   ├── component/
+│   │   │   │   └── selector-strategy.ts
+│   │   │   └── hooks/
+│   │   │       └── tanstack-query-pattern.ts
+│   │   └── infra/
+│   │       └── terraform/
+│   └── generated/
+│       └── semantic/              # LLM生成Markdownポリシー（派生物）
+│           ├── server/
+│           │   ├── handler/
+│           │   │   ├── container-get-restriction.md
+│           │   │   ├── single-usecase-call.md
+│           │   │   └── no-repository-import.md
+│           │   ├── use-case/
+│           │   │   ├── transaction-protection.md
+│           │   │   ├── result-type-return.md
+│           │   │   └── execute-method-single.md
+│           │   ├── domain-model/
+│           │   │   ├── readonly-properties.md
+│           │   │   ├── no-external-dependencies.md
+│           │   │   └── no-throw.md
+│           │   └── di-container/
+│           │       ├── import-type-usage.md
+│           │       └── interface-impl-pattern.md
+│           ├── web/
+│           │   ├── component/
+│           │   │   └── selector-strategy.md
+│           │   └── hooks/
+│           │       └── tanstack-query-pattern.md
+│           └── infra/
+│               └── terraform/
+└── vertical/                      # 縦のガードレール（ビジネス契約検証）
+    └── semantic/
+        ├── contract/              # 契約ポリシー
+        │   ├── business/
+        │   └── api/
+        ├── server/                # サーバー機能検証
+        └── web/                   # Web機能検証
 ```
 
 ---
 
-## カスタムlintのアノテーション形式
+## TypeScript実装のアノテーション形式
 
-カスタムlintには以下のアノテーションを付けることで、LLMがセマンティックなポリシーを生成できる：
+TypeScript実装には以下のアノテーションを付けることで、LLMがセマンティックなポリシーを生成できる：
 
 ```typescript
 /**
@@ -104,20 +121,33 @@ guardrails/policy/horizontal/generated/
  * @failure 書き込み>=2 かつトランザクションなしのメソッドを検出した場合にエラー
  */
 
-import { ESLintUtils } from '@typescript-eslint/utils';
+import * as ts from 'typescript';
+import { CheckModule, Violation, CheckMetadata } from '../../types';
 
-export default ESLintUtils.RuleCreator.withoutDocs({
-  meta: {
-    type: 'problem',
-    messages: {
-      multipleWritesWithoutTransaction:
-        '複数の書き込み操作({{count}}個)がトランザクション保護されていません。',
-    },
-  },
-  create(context) {
+export const metadata: CheckMetadata = {
+  id: 'use-case/transaction-protection',
+  name: 'トランザクション保護',
+  description: '複数の書き込みを行うUseCaseがトランザクションで保護されているか検査',
+  layer: 'use-case',
+  priority: 'P3',
+  what: '複数の書き込みを行うUseCaseがトランザクションで保護されているか検査',
+  why: '複数書き込みを非トランザクションで行うと部分的コミットが発生するため',
+  failure: '書き込み>=2 かつトランザクションなしのメソッドを検出した場合にエラー',
+};
+
+export function check(sourceFile: ts.SourceFile, program: ts.Program): Violation[] {
+  const violations: Violation[] = [];
+
+  // TypeScript Compiler APIでAST解析
+  ts.forEachChild(sourceFile, function visit(node) {
     // 実装...
-  },
-});
+    ts.forEachChild(node, visit);
+  });
+
+  return violations;
+}
+
+export default { metadata, check } as CheckModule;
 ```
 
 ---
@@ -126,15 +156,15 @@ export default ESLintUtils.RuleCreator.withoutDocs({
 
 ### 生成フロー
 
-1. **カスタムlintのアノテーション読み取り**: `@what`, `@why`, `@failure`
+1. **TypeScript実装のアノテーション読み取り**: `@what`, `@why`, `@failure`
 2. **AST解析**: 実装ロジックから検証パターンを抽出
-3. **Markdownポリシー生成**: `horizontal/generated/` 配下に配置
+3. **Markdownポリシー生成**: `horizontal/generated/semantic/` 配下に配置
 
 ### 生成例
 
-**Input**: `server/guardrails/use-case/transaction-protection.ts`
+**Input**: `guardrails/policy/horizontal/static/server/use-case/transaction-protection.ts`
 
-**Output**: `guardrails/policy/horizontal/generated/server/use-case/transaction-protection.md`
+**Output**: `guardrails/policy/horizontal/generated/semantic/server/use-case/transaction-protection.md`
 
 ```markdown
 # UseCase: トランザクション保護
@@ -183,7 +213,7 @@ async execute(input: DeleteProjectUseCaseInput) {
 
 ```typescript
 // 読み取り専用操作のためトランザクション不要
-// eslint-disable-next-line use-case/transaction-protection -- 読み取り専用のため不要
+// @guardrails-ignore use-case/transaction-protection -- 読み取り専用のため不要
 async execute(input: GetProjectWithTodosUseCaseInput) {
   const project = await this.#projectRepository.findById({ id: input.projectId });
   const todos = await this.#todoRepository.findByProjectId({ projectId: input.projectId });
@@ -192,7 +222,6 @@ async execute(input: GetProjectWithTodosUseCaseInput) {
 ```
 
 **重要**: ignoreコメントには必ず理由（`--` の後）を記述してください。
-```
 
 ---
 
@@ -202,7 +231,7 @@ async execute(input: GetProjectWithTodosUseCaseInput) {
 
 **誤検知するくらいのガードレール + ignore（理由付き）がAI駆動では丁度良い**
 
-- カスタムlintは**積極的に誤検知する**設計を許容
+- 静的解析は**積極的に誤検知する**設計を許容
 - 見逃しより誤検知の方が安全
 - 誤検知箇所は理由を明示してignore
 
@@ -210,12 +239,12 @@ async execute(input: GetProjectWithTodosUseCaseInput) {
 
 ```typescript
 // ✅ Good: 理由を明示
-// eslint-disable-next-line use-case/transaction-protection -- 読み取り専用操作のため不要
-// eslint-disable-next-line domain-model/readonly-properties -- 内部状態の一時的な変更のため
-// eslint-disable-next-line handler/container-get-restriction -- テスト用のモック取得のため
+// @guardrails-ignore use-case/transaction-protection -- 読み取り専用操作のため不要
+// @guardrails-ignore domain-model/readonly-properties -- 内部状態の一時的な変更のため
+// @guardrails-ignore handler/container-get-restriction -- テスト用のモック取得のため
 
 // ❌ Bad: 理由なし
-// eslint-disable-next-line use-case/transaction-protection
+// @guardrails-ignore use-case/transaction-protection
 ```
 
 **理由記述のガイドライン**:
@@ -329,15 +358,15 @@ guardrails/policy/
 
 ## 段階的実装手順
 
-### Step 1: カスタムlint実装
+### Step 1: TypeScript実装
 
-既存ポリシーを忠実に再現する形でカスタムlintを実装：
+既存ポリシーを忠実に再現する形でTypeScript Compiler APIによる検証を実装：
 
 1. **既存ポリシーの分析**
    - 対象: `guardrails/policy/server/use-case/20-result-type-return.md`
    - 抽出: ルールの意図（What）、理由（Why）、違反条件（Failure）
 
-2. **アノテーション付きカスタムlint作成**
+2. **アノテーション付きTypeScript実装作成**
    ```typescript
    /**
     * @what UseCaseのexecuteメソッドはResult型を返す必要がある
@@ -346,22 +375,22 @@ guardrails/policy/
     */
    ```
 
-3. **AST実装**
-   - 既存ポリシーの検証ロジックをTypeScriptで実装
+3. **TypeScript Compiler APIでAST実装**
+   - 既存ポリシーの検証ロジックをTypeScript Compiler APIで実装
    - テストケースで検証精度を確認
 
 ### Step 2: LLM生成ツール構築
 
-カスタムlintからMarkdownポリシーを生成するツールを実装：
+TypeScript実装からMarkdownポリシーを生成するツールを実装：
 
 ```typescript
-// tools/generate-policy-from-lint.ts
-async function generatePolicy(lintFilePath: string): Promise<string> {
+// tools/generate-policy-from-check.ts
+async function generatePolicy(checkFilePath: string): Promise<string> {
   // 1. アノテーション読み取り
-  const annotations = extractAnnotations(lintFilePath);
+  const annotations = extractAnnotations(checkFilePath);
 
   // 2. AST実装解析
-  const astLogic = analyzeASTLogic(lintFilePath);
+  const astLogic = analyzeASTLogic(checkFilePath);
 
   // 3. LLMでMarkdown生成
   const markdown = await generateMarkdownWithLLM({
@@ -374,68 +403,6 @@ async function generatePolicy(lintFilePath: string): Promise<string> {
   return markdown;
 }
 ```
-
-### Step 2.5: MCPツールの実装変更
-
-新アーキテクチャに対応するため、MCPツールの動作を変更：
-
-**現在の動作**:
-```
-mcp__guardrails__review_static_analysis
-  → ESLint実行（既存のTypeScriptチェック + カスタムルール）
-
-mcp__guardrails__review_qualitative
-  → guardrails/policy/{workspace}/{policyId}/ を参照
-  → LLMでセマンティックレビュー
-```
-
-**移行後の動作**:
-```
-mcp__guardrails__review_static_analysis
-  → ESLint実行（カスタムlintを含む）
-  → server/guardrails/ のルールを適用
-  → 構造的違反を100%検出
-
-mcp__guardrails__review_qualitative
-  → guardrails/policy/horizontal/generated/{workspace}/{layer}/ を参照
-  → LLMでセマンティックレビュー
-  → カスタムlintで検出できない意図・文脈の違反を検出
-```
-
-**実装変更内容**:
-
-1. **静的解析ツール（変更なし）**
-   - カスタムlintはESLintの仕組みで実行される
-   - 既存のツールがそのまま動作
-
-2. **定性レビューツール（参照先変更）**
-   ```typescript
-   // 修正前
-   const policyPath = `guardrails/policy/${workspace}/${policyId}/`;
-
-   // 修正後（移行中）
-   const policyPath = (() => {
-     // generated/に対応ポリシーがあればそちらを優先
-     const generatedPath = `guardrails/policy/horizontal/generated/${workspace}/${policyId}/`;
-     if (fs.existsSync(generatedPath)) {
-       return generatedPath;
-     }
-     // なければ既存ポリシーを参照（後方互換性）
-     return `guardrails/policy/${workspace}/${policyId}/`;
-   })();
-
-   // 修正後（移行完了後）
-   const policyPath = `guardrails/policy/horizontal/generated/${workspace}/${layer}/`;
-   ```
-
-3. **policyIdの変更**
-   - 移行前: `policyId="server/domain-model"`（既存ディレクトリ構造）
-   - 移行後: `policyId="server/domain-model"`（generated/配下の構造に対応）
-
-**移行期間の互換性**:
-- generated/にポリシーがあればそちらを参照
-- なければ既存ポリシーを参照（フォールバック）
-- 段階的な移行をサポート
 
 ### Step 3: コンテキスト品質検証
 
@@ -453,10 +420,10 @@ mcp__guardrails__review_qualitative
 
 **検証プロセス**:
 
-1. カスタムlint実装 → generated/にMarkdown生成
+1. TypeScript実装 → generated/semantic/にMarkdown生成
 2. 既存ポリシーと生成ポリシーを比較
 3. 不足している内容を特定
-4. カスタムlintのアノテーションまたは生成ロジックを改善
+4. TypeScript実装のアノテーションまたは生成ロジックを改善
 5. 再生成して再検証
 6. 同等以上のコンテキストになるまで繰り返し
 
@@ -466,14 +433,14 @@ mcp__guardrails__review_qualitative
 
 ```
 Phase 1: domain-model/ （最も独立性が高い）
-  ├── カスタムlint実装
-  ├── generated/生成
+  ├── TypeScript実装
+  ├── generated/semantic/生成
   ├── 品質検証
   └── ✅ 移行完了
 
 Phase 2: use-case/
-  ├── カスタムlint実装
-  ├── generated/生成
+  ├── TypeScript実装
+  ├── generated/semantic/生成
   ├── 品質検証
   └── ✅ 移行完了
 
@@ -498,8 +465,8 @@ rm -rf guardrails/policy/contract/
 ```
 
 **破棄条件**:
-- 全カスタムlintが実装済み
-- 全generated/ポリシーが生成済み
+- 全TypeScript実装が完了
+- 全generated/semantic/ポリシーが生成済み
 - コンテキスト品質検証が完了（既存ポリシーと同等以上）
 - 最低1ヶ月の本格運用期間を経過
 - 問題が発生していないことを確認
@@ -511,7 +478,7 @@ rm -rf guardrails/policy/contract/
 
 ### 品質チェックリスト
 
-各カスタムlint実装時に以下を確認：
+各TypeScript実装時に以下を確認：
 
 - [ ] `@what`アノテーションが明確に記述されている
 - [ ] `@why`アノテーションがビジネス/技術的理由を説明している
@@ -545,17 +512,12 @@ rm -rf guardrails/policy/contract/
 
 以下の条件を全て満たした時点で移行完了とする：
 
-1. ✅ 全既存ポリシーに対応するカスタムlintが実装済み
-2. ✅ 全カスタムlintからgenerated/ポリシーが生成済み
+1. ✅ 全既存ポリシーに対応するTypeScript実装が完了
+2. ✅ 全TypeScript実装からgenerated/semantic/ポリシーが生成済み
 3. ✅ コンテキスト品質検証が完了（同等以上を確認）
 4. ✅ 本格運用期間（最低1ヶ月）を経過
 5. ✅ 誤検知率が目標範囲内（P1: <5%, P2: <15%, P3: <30%）
 6. ✅ ignoreコメントの理由記述が習慣化
 7. ✅ 問題が発生していない（または発生時に速やかに修正できた）
 
-移行完了後、既存ポリシーは破棄され、カスタムlintがSSOTとして機能する体制に移行する
-
-**移行完了後のツール動作**:
-- `mcp__guardrails__review_static_analysis`: カスタムlintで構造的違反を検出
-- `mcp__guardrails__review_qualitative`: `generated/`ポリシーでセマンティックレビュー
-- 既存ポリシーへのフォールバックは削除（参照先が存在しない）
+移行完了後、既存ポリシーは破棄され、TypeScript実装がSSOTとして機能する体制に移行する

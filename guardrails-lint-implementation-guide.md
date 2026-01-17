@@ -1,6 +1,6 @@
-# カスタムlint実装ガイド
+# TypeScript静的解析実装ガイド
 
-本ドキュメントは、既存ポリシーからカスタムESLintルール（TypeScript実装）を段階的に実装するための実践的ガイドです。
+本ドキュメントは、既存ポリシーからTypeScript Compiler APIによる静的解析を段階的に実装するための実践的ガイドです。
 
 ---
 
@@ -16,7 +16,7 @@
 - 機能に依存しない共通原則
 - レイヤーの責務境界を守るための構造的制約
 - 全機能（Todo/Project/User等）に横断的に適用
-- **全てカスタムESLintで実装**（P1/P2/P3すべて）
+- **全てTypeScript Compiler APIで自前実装**（P1/P2/P3すべて）
 
 ### Vertical（縦のガードレール）
 
@@ -24,7 +24,7 @@
 
 **特徴**:
 - 機能ごとのビジネス契約（用語集・シナリオ）と照合
-- **カスタムlintでは実装しない**
+- **TypeScript実装では対象外**
 - 専用の検証ツールまたはqualitativeレビューで対応
 
 **重要**: Verticalの検証項目（Entity名が用語集に記載されているか、メソッド名がシナリオと対応しているか等）は、このドキュメントの対象外です。
@@ -33,21 +33,21 @@
 
 ## 基本方針
 
-### SSOTはカスタムlint
+### SSOTはTypeScript実装
 
-**非機能検証の唯一の真実は、実装されたカスタムESLintルールである**
+**非機能検証の唯一の真実は、TypeScript Compiler APIで実装された静的解析である**
 
 ```
-カスタムlint（TypeScript）← SSOT
+TypeScript実装（TypeScript Compiler API）← SSOT
     ↓ LLMで自動生成
-horizontal/generated/（Markdown）← 派生物（人とAIがポリシーを理解するため）
+horizontal/generated/semantic/（Markdown）← 派生物（人とAIがポリシーを理解するため）
 ```
 
 ### 誤検知許容
 
 **誤検知するくらいのガードレール + ignore（理由付き）がAI駆動では丁度良い**
 
-- カスタムlintは**積極的に誤検知する**設計を許容
+- 静的解析は**積極的に誤検知する**設計を許容
 - 見逃しより誤検知の方が安全
 - 誤検知箇所は理由を明示してignore
 

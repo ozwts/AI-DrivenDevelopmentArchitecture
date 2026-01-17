@@ -29,26 +29,31 @@ https://zenn.dev/hideyuki_toyama/articles/ai-transaction-boundary-guard
 
 **実装方法**:
 
-- **全てカスタムESLintで実装**（P1/P2/P3すべて）
-- 誤検知>30%のP3ルールも含めて、カスタムlintがSSOT
-- カスタムlint → `horizontal/generated/` Markdown → qualitativeレビューで使用
+- **全てTypeScript Compiler APIで自前実装**（P1/P2/P3すべて）
+- 誤検知>30%のP3ルールも含めて、TypeScript実装がSSOT
+- TypeScript実装 → `horizontal/generated/semantic/` Markdown → qualitativeレビューで使用
 
 **配置先**:
 
 ```
-server/guardrails/           # カスタムlint（SSOT）
-├── handler/
-├── use-case/
-├── domain-model/
-└── repository/
-
-guardrails/policy/horizontal/generated/  # 自動生成Markdown
-├── server/
-│   ├── handler/
-│   ├── use-case/
-│   ├── domain-model/
-│   └── repository/
-└── web/
+guardrails/policy/horizontal/
+├── static/                  # TypeScript実装（SSOT）
+│   ├── server/
+│   │   ├── handler/
+│   │   ├── use-case/
+│   │   ├── domain-model/
+│   │   └── repository/
+│   ├── web/
+│   └── infra/
+└── generated/
+    └── semantic/            # 自動生成Markdown
+        ├── server/
+        │   ├── handler/
+        │   ├── use-case/
+        │   ├── domain-model/
+        │   └── repository/
+        ├── web/
+        └── infra/
 ```
 
 ---
@@ -97,23 +102,23 @@ guardrails/policy/vertical/  # 機能ごとの検証ポリシー
 
 ---
 
-## カスタムlint自動生成の方針
+## TypeScript実装からMarkdown生成の方針
 
 ### 基本方針
 
-**非機能のSSOT（Single Source of Truth）はカスタムlintである**
+**非機能のSSOT（Single Source of Truth）はTypeScript実装である**
 
-カスタムESLintルール（TypeScript実装）が唯一の真実（SSOT）であり、そこから `guardrails/policy/horizontal/generated/` 配下にセマンティックレビュー用のポリシードキュメント（Markdown）を自動生成します。
+TypeScript Compiler APIによる検証実装が唯一の真実（SSOT）であり、そこから `guardrails/policy/horizontal/generated/semantic/` 配下にセマンティックレビュー用のポリシードキュメント（Markdown）を自動生成します。
 
 ```
-カスタムlint（TypeScript）← SSOT
+TypeScript実装（TypeScript Compiler API）← SSOT
     ↓ LLMで自動生成
-horizontal/generated/（Markdown）← 派生物（人とAIがポリシーを理解するため）
+horizontal/generated/semantic/（Markdown）← 派生物（人とAIがポリシーを理解するため）
 ```
 
 ### アノテーション形式
 
-各カスタムlintルールには、以下のアノテーションを付けてセマンティックな文脈を示唆します。
+各TypeScript実装には、以下のアノテーションを付けてセマンティックな文脈を示唆します。
 
 - `@what`: 何をチェックするか
 - `@why`: なぜチェックするか（ビジネス上の理由、技術的な理由）
@@ -148,19 +153,19 @@ horizontal/generated/（Markdown）← 派生物（人とAIがポリシーを理
 
 **誤検知するくらいのガードレール + ignore（理由付き）がAI駆動では丁度良い**
 
-- カスタムlintは**積極的に誤検知する**設計を許容
+- 静的解析は**積極的に誤検知する**設計を許容
 - AI駆動開発では、「見逃し」より「誤検知」の方が安全
-- 誤検知箇所は `// eslint-disable-next-line` で個別にignore
+- 誤検知箇所は `// @guardrails-ignore` で個別にignore
 
 #### ignoreコメントには必ず理由を明示
 
 ```typescript
 // ✅ Good: 理由を明示
-// eslint-disable-next-line use-case/transaction-protection -- 読み取り専用操作のため不要
-// eslint-disable-next-line domain-model/readonly-properties -- 内部状態の一時的な変更のため
+// @guardrails-ignore use-case/transaction-protection -- 読み取り専用操作のため不要
+// @guardrails-ignore domain-model/readonly-properties -- 内部状態の一時的な変更のため
 
 // ❌ Bad: 理由なし
-// eslint-disable-next-line use-case/transaction-protection
+// @guardrails-ignore use-case/transaction-protection
 ```
 
 ---
