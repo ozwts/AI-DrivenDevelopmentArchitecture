@@ -85,10 +85,10 @@ const scanPolicyDirectory = (basePolicyDir: string): WorkspaceInfo[] => {
 };
 
 /**
- * horizontal static をスキャン
+ * horizontal をスキャン (.tsファイル)
  */
 export const scanHorizontalStatic = (guardrailsRoot: string): WorkspaceInfo[] => {
-  const basePolicyDir = path.join(guardrailsRoot, "policy/horizontal/static");
+  const basePolicyDir = path.join(guardrailsRoot, "policy/horizontal");
   return scanPolicyDirectory(basePolicyDir);
 };
 
@@ -101,9 +101,9 @@ export const scanHorizontalSemantic = (guardrailsRoot: string): WorkspaceInfo[] 
 };
 
 /**
- * vertical semantic をスキャン
+ * vertical をスキャン (.mdファイル)
  */
 export const scanVerticalSemantic = (guardrailsRoot: string): WorkspaceInfo[] => {
-  const basePolicyDir = path.join(guardrailsRoot, "policy/vertical/semantic");
+  const basePolicyDir = path.join(guardrailsRoot, "policy/vertical");
   return scanPolicyDirectory(basePolicyDir);
 };

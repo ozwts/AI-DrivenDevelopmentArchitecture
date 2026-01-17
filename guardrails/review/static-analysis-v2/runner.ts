@@ -18,7 +18,7 @@ export class CheckRunner {
    * workspace, layer が undefined の場合は全体を走査
    */
   async loadChecks(workspace?: "server" | "web" | "infra", layer?: string): Promise<void> {
-    const basePolicyDir = path.resolve(__dirname, "../../policy/horizontal/static");
+    const basePolicyDir = path.resolve(__dirname, "../../policy/horizontal");
 
     if (!fs.existsSync(basePolicyDir)) {
       throw new Error(`Policy base directory not found: ${basePolicyDir}`);
