@@ -4,26 +4,15 @@
  * Guardrails MCP Server
  *
  * 三権分立システムのMCPサーバー
+ * - Policy (立法): ポリシーの定義と一覧
+ * - Procedure (行政): Policyに従って手順を実行
  * - Review (司法): Policyに基づいてコードを審査
- * - Procedure (行政): Policyに従って手順を実行 (将来対応)
  */
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import * as path from "path";
 import { fileURLToPath } from "url";
-import {
-  buildUnifiedReviewResponsibility,
-  createUnifiedReviewHandler,
-  STATIC_ANALYSIS_RESPONSIBILITIES,
-  createStaticAnalysisHandler,
-  UNUSED_EXPORTS_RESPONSIBILITIES,
-  createUnusedExportsHandler,
-  INFRA_ANALYSIS_RESPONSIBILITIES,
-  createInfraAnalysisHandler,
-  CUSTOM_STATIC_ANALYSIS_RESPONSIBILITIES,
-  createCustomStaticAnalysisHandler,
-} from "./review";
 import {
   LIST_HORIZONTAL_POLICIES_RESPONSIBILITY,
   LIST_VERTICAL_POLICIES_RESPONSIBILITY,
@@ -45,6 +34,18 @@ import { executeFix, type FixType, type FixWorkspace } from "./procedure/fix/fix
 import { formatFixResult } from "./procedure/fix/formatter";
 import { executeGenerate, type GenerateWorkspace } from "./procedure/codegen/generator";
 import { formatGenerateResult } from "./procedure/codegen/formatter";
+import {
+  buildUnifiedReviewResponsibility,
+  createUnifiedReviewHandler,
+  STATIC_ANALYSIS_RESPONSIBILITIES,
+  createStaticAnalysisHandler,
+  UNUSED_EXPORTS_RESPONSIBILITIES,
+  createUnusedExportsHandler,
+  INFRA_ANALYSIS_RESPONSIBILITIES,
+  createInfraAnalysisHandler,
+  CUSTOM_STATIC_ANALYSIS_RESPONSIBILITIES,
+  createCustomStaticAnalysisHandler,
+} from "./review";
 
 // ESMで__dirnameを取得
 const __filename = fileURLToPath(import.meta.url);
@@ -52,6 +53,9 @@ const __dirname = path.dirname(__filename);
 
 // guardrailsルートディレクトリ（index.tsの位置）
 const GUARDRAILS_ROOT = __dirname;
+
+// プロジェクトルートディレクトリ（guardrailsの親）
+const PROJECT_ROOT = path.dirname(GUARDRAILS_ROOT);
 
 /**
  * MCPサーバーを起動
@@ -63,234 +67,8 @@ const main = async (): Promise<void> => {
   });
 
   // ========================================
-  // Review (司法): ポリシーに基づくコードレビュー
+  // Policy (立法): ポリシーの定義と一覧
   // ========================================
-
-  // ----- 定性的レビュー (Qualitative Review) -----
-  // サブエージェント起動を促すガイダンスメッセージを返す
-  // policy/配下のmeta.jsonから動的にスキャンし、単一ツールに統合
-  // 新しいレビュー責務を追加する場合は、meta.jsonを配置するだけで自動認識
-  const qualitativeReview = buildUnifiedReviewResponsibility(GUARDRAILS_ROOT);
-  const qualitativeHandler = createUnifiedReviewHandler(qualitativeReview);
-
-  server.registerTool(
-    qualitativeReview.id,
-    {
-      description: qualitativeReview.toolDescription,
-      inputSchema: qualitativeReview.inputSchema,
-    },
-    async ({ policyId, targetDirectories }) => {
-      try {
-        const result = await qualitativeHandler({
-          policyId,
-          targetDirectories,
-          guardrailsRoot: GUARDRAILS_ROOT,
-        });
-
-        return {
-          content: [{ type: "text", text: result }],
-        };
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : String(error);
-        return {
-          content: [{ type: "text", text: `エラー: ${errorMessage}` }],
-          isError: true,
-        };
-      }
-    },
-  );
-
-  // ----- 静的解析レビュー (Static Analysis Review) -----
-  // TypeScript型チェック・ESLintによる静的解析
-  // 責務定義（review/responsibilities.ts）から動的にツールを登録
-  //
-  // 例: review_server_static_analysis
-  for (const responsibility of STATIC_ANALYSIS_RESPONSIBILITIES) {
-    const handler = createStaticAnalysisHandler();
-
-    server.registerTool(
-      responsibility.id,
-      {
-        description: responsibility.toolDescription,
-        inputSchema: responsibility.inputSchema,
-      },
-      async ({ workspace, targetDirectories, analysisType }) => {
-        try {
-          const result = await handler({
-            workspace,
-            targetDirectories,
-            analysisType,
-            guardrailsRoot: GUARDRAILS_ROOT,
-          });
-
-          return {
-            content: [
-              {
-                type: "text",
-                text: result,
-              },
-            ],
-          };
-        } catch (error) {
-          const errorMessage =
-            error instanceof Error ? error.message : String(error);
-          return {
-            content: [
-              {
-                type: "text",
-                text: `エラー: ${errorMessage}`,
-              },
-            ],
-            isError: true,
-          };
-        }
-      },
-    );
-  }
-
-  // ----- 未使用export検出 (Unused Exports Detection) -----
-  // knipを使用した未使用export検出
-  // 責務定義（review/responsibilities.ts）から動的にツールを登録
-  //
-  // 例: review_unused_exports
-  for (const responsibility of UNUSED_EXPORTS_RESPONSIBILITIES) {
-    const handler = createUnusedExportsHandler();
-
-    server.registerTool(
-      responsibility.id,
-      {
-        description: responsibility.toolDescription,
-        inputSchema: responsibility.inputSchema,
-      },
-      async ({ workspace, targetDirectories }) => {
-        try {
-          const result = await handler({
-            workspace,
-            targetDirectories,
-            guardrailsRoot: GUARDRAILS_ROOT,
-          });
-
-          return {
-            content: [
-              {
-                type: "text",
-                text: result,
-              },
-            ],
-          };
-        } catch (error) {
-          const errorMessage =
-            error instanceof Error ? error.message : String(error);
-          return {
-            content: [
-              {
-                type: "text",
-                text: `エラー: ${errorMessage}`,
-              },
-            ],
-            isError: true,
-          };
-        }
-      },
-    );
-  }
-
-  // ----- インフラ静的解析 (Infra Static Analysis) -----
-  // Terraform環境のフォーマット・Lint・セキュリティスキャン
-  // 責務定義（review/static-analysis-infra/responsibilities.ts）から動的にツールを登録
-  //
-  // 例: review_infra_static_analysis
-  for (const responsibility of INFRA_ANALYSIS_RESPONSIBILITIES) {
-    const handler = createInfraAnalysisHandler();
-
-    server.registerTool(
-      responsibility.id,
-      {
-        description: responsibility.toolDescription,
-        inputSchema: responsibility.inputSchema,
-      },
-      async ({ targetDirectory, analysisType }) => {
-        try {
-          const result = await handler({
-            targetDirectory,
-            analysisType,
-            guardrailsRoot: GUARDRAILS_ROOT,
-          });
-
-          return {
-            content: [
-              {
-                type: "text",
-                text: result,
-              },
-            ],
-          };
-        } catch (error) {
-          const errorMessage =
-            error instanceof Error ? error.message : String(error);
-          return {
-            content: [
-              {
-                type: "text",
-                text: `エラー: ${errorMessage}`,
-              },
-            ],
-            isError: true,
-          };
-        }
-      },
-    );
-  }
-
-  // ----- カスタム静的解析 (Custom Static Analysis - TypeScript Compiler API) -----
-  // TypeScript Compiler APIによるカスタムチェック
-  // policy/horizontal/static配下のチェックを動的にロード
-  // レイヤー単位で実行（server/domain-model, server/repository, etc.）
-  //
-  // 例: review_custom_static_analysis
-  for (const responsibility of CUSTOM_STATIC_ANALYSIS_RESPONSIBILITIES) {
-    const handler = createCustomStaticAnalysisHandler();
-
-    server.registerTool(
-      responsibility.id,
-      {
-        description: responsibility.toolDescription,
-        inputSchema: responsibility.inputSchema,
-      },
-      async ({ workspace, layer, targetDirectories }) => {
-        try {
-          const result = await handler({
-            workspace,
-            layer,
-            targetDirectories,
-            guardrailsRoot: GUARDRAILS_ROOT,
-          });
-
-          return {
-            content: [
-              {
-                type: "text",
-                text: result,
-              },
-            ],
-          };
-        } catch (error) {
-          const errorMessage =
-            error instanceof Error ? error.message : String(error);
-          return {
-            content: [
-              {
-                type: "text",
-                text: `エラー: ${errorMessage}`,
-              },
-            ],
-            isError: true,
-          };
-        }
-      },
-    );
-  }
 
   // ----- ポリシー一覧 (List Policies) -----
   // 利用可能なポリシーを一覧表示
@@ -303,8 +81,9 @@ const main = async (): Promise<void> => {
       description: LIST_HORIZONTAL_POLICIES_RESPONSIBILITY.toolDescription,
       inputSchema: LIST_HORIZONTAL_POLICIES_RESPONSIBILITY.inputSchema,
     },
-    async ({ type }) => {
+    async (input: Record<string, unknown>) => {
       try {
+        const type = input.type as "static" | "semantic" | undefined;
         const result = await horizontalHandler({
           type,
           guardrailsRoot: GUARDRAILS_ROOT,
@@ -342,8 +121,9 @@ const main = async (): Promise<void> => {
       description: LIST_VERTICAL_POLICIES_RESPONSIBILITY.toolDescription,
       inputSchema: LIST_VERTICAL_POLICIES_RESPONSIBILITY.inputSchema,
     },
-    async ({ type }) => {
+    async (input: Record<string, unknown>) => {
       try {
+        const type = input.type as "static" | "semantic" | undefined;
         const result = await verticalHandler({
           type,
           guardrailsRoot: GUARDRAILS_ROOT,
@@ -376,9 +156,6 @@ const main = async (): Promise<void> => {
   // ========================================
   // Procedure (行政): ポリシーに従った手順実行
   // ========================================
-
-  // プロジェクトルートディレクトリ（guardrailsの親）
-  const PROJECT_ROOT = path.dirname(GUARDRAILS_ROOT);
 
   // ----- 開発サーバー管理 (Dev Server Management) -----
   // 開発サーバーの起動・停止・状態確認・ログ取得
@@ -702,6 +479,236 @@ const main = async (): Promise<void> => {
               {
                 type: "text" as const,
                 text: `エラー: ${msg}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+      },
+    );
+  }
+
+  // ========================================
+  // Review (司法): ポリシーに基づくコードレビュー
+  // ========================================
+
+  // ----- 定性的レビュー (Qualitative Review) -----
+  // サブエージェント起動を促すガイダンスメッセージを返す
+  // policy/配下のmeta.jsonから動的にスキャンし、単一ツールに統合
+  // 新しいレビュー責務を追加する場合は、meta.jsonを配置するだけで自動認識
+  const qualitativeReview = buildUnifiedReviewResponsibility(GUARDRAILS_ROOT);
+  const qualitativeHandler = createUnifiedReviewHandler(qualitativeReview);
+
+  server.registerTool(
+    qualitativeReview.id,
+    {
+      description: qualitativeReview.toolDescription,
+      inputSchema: qualitativeReview.inputSchema,
+    },
+    async ({ policyId, targetDirectories }) => {
+      try {
+        const result = await qualitativeHandler({
+          policyId,
+          targetDirectories,
+          guardrailsRoot: GUARDRAILS_ROOT,
+        });
+
+        return {
+          content: [{ type: "text", text: result }],
+        };
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        return {
+          content: [{ type: "text", text: `エラー: ${errorMessage}` }],
+          isError: true,
+        };
+      }
+    },
+  );
+
+  // ----- 静的解析レビュー (Static Analysis Review) -----
+  // TypeScript型チェック・ESLintによる静的解析
+  // 責務定義（review/responsibilities.ts）から動的にツールを登録
+  //
+  // 例: review_server_static_analysis
+  for (const responsibility of STATIC_ANALYSIS_RESPONSIBILITIES) {
+    const handler = createStaticAnalysisHandler();
+
+    server.registerTool(
+      responsibility.id,
+      {
+        description: responsibility.toolDescription,
+        inputSchema: responsibility.inputSchema,
+      },
+      async ({ workspace, targetDirectories, analysisType }) => {
+        try {
+          const result = await handler({
+            workspace,
+            targetDirectories,
+            analysisType,
+            guardrailsRoot: GUARDRAILS_ROOT,
+          });
+
+          return {
+            content: [
+              {
+                type: "text",
+                text: result,
+              },
+            ],
+          };
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          return {
+            content: [
+              {
+                type: "text",
+                text: `エラー: ${errorMessage}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+      },
+    );
+  }
+
+  // ----- 未使用export検出 (Unused Exports Detection) -----
+  // knipを使用した未使用export検出
+  // 責務定義（review/responsibilities.ts）から動的にツールを登録
+  //
+  // 例: review_unused_exports
+  for (const responsibility of UNUSED_EXPORTS_RESPONSIBILITIES) {
+    const handler = createUnusedExportsHandler();
+
+    server.registerTool(
+      responsibility.id,
+      {
+        description: responsibility.toolDescription,
+        inputSchema: responsibility.inputSchema,
+      },
+      async ({ workspace, targetDirectories }) => {
+        try {
+          const result = await handler({
+            workspace,
+            targetDirectories,
+            guardrailsRoot: GUARDRAILS_ROOT,
+          });
+
+          return {
+            content: [
+              {
+                type: "text",
+                text: result,
+              },
+            ],
+          };
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          return {
+            content: [
+              {
+                type: "text",
+                text: `エラー: ${errorMessage}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+      },
+    );
+  }
+
+  // ----- インフラ静的解析 (Infra Static Analysis) -----
+  // Terraform環境のフォーマット・Lint・セキュリティスキャン
+  // 責務定義（review/static-analysis-infra/responsibilities.ts）から動的にツールを登録
+  //
+  // 例: review_infra_static_analysis
+  for (const responsibility of INFRA_ANALYSIS_RESPONSIBILITIES) {
+    const handler = createInfraAnalysisHandler();
+
+    server.registerTool(
+      responsibility.id,
+      {
+        description: responsibility.toolDescription,
+        inputSchema: responsibility.inputSchema,
+      },
+      async ({ targetDirectory, analysisType }) => {
+        try {
+          const result = await handler({
+            targetDirectory,
+            analysisType,
+            guardrailsRoot: GUARDRAILS_ROOT,
+          });
+
+          return {
+            content: [
+              {
+                type: "text",
+                text: result,
+              },
+            ],
+          };
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          return {
+            content: [
+              {
+                type: "text",
+                text: `エラー: ${errorMessage}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+      },
+    );
+  }
+
+  // ----- カスタム静的解析 (Custom Static Analysis - TypeScript Compiler API) -----
+  // TypeScript Compiler APIによるカスタムチェック
+  // policy/horizontal/static配下のチェックを動的にロード
+  // レイヤー単位で実行（server/domain-model, server/repository, etc.）
+  //
+  // 例: review_custom_static_analysis
+  for (const responsibility of CUSTOM_STATIC_ANALYSIS_RESPONSIBILITIES) {
+    const handler = createCustomStaticAnalysisHandler();
+
+    server.registerTool(
+      responsibility.id,
+      {
+        description: responsibility.toolDescription,
+        inputSchema: responsibility.inputSchema,
+      },
+      async ({ workspace, layer, targetDirectories }) => {
+        try {
+          const result = await handler({
+            workspace,
+            layer,
+            targetDirectories,
+            guardrailsRoot: GUARDRAILS_ROOT,
+          });
+
+          return {
+            content: [
+              {
+                type: "text",
+                text: result,
+              },
+            ],
+          };
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          return {
+            content: [
+              {
+                type: "text",
+                text: `エラー: ${errorMessage}`,
               },
             ],
             isError: true,
