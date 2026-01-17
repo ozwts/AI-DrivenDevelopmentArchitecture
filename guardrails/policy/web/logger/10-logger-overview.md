@@ -1,4 +1,25 @@
-# Logger: ログ出力基盤
+# Logger：概要
+
+> **Note:** Loggerのポリシーは横のガードレール（非機能・アーキテクチャ制約）として再編成されました。
+
+## 横のガードレール（静的解析）
+
+以下のポリシーは静的解析で検証されます。
+
+| ファイル | 検証内容 |
+|---------|---------|
+| [`no-console-log.ts`](../../horizontal/web/logger/no-console-log.ts) | console.logの直接使用禁止 |
+| [`no-ui-logging.ts`](../../horizontal/web/logger/no-ui-logging.ts) | UIコンポーネント層でのログ出力禁止 |
+
+## 横のガードレール（セマンティックレビュー）
+
+以下のポリシーはAI/人間によるレビューで検証されます。
+
+| ファイル | 検証内容 |
+|---------|---------|
+| [`logger-responsibility.md`](../../horizontal/web/logger/logger-responsibility.md) | Logger使用の責務（機密情報、構造化ログ、ログレベル） |
+
+---
 
 ## 核心原則
 
