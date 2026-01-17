@@ -52,3 +52,15 @@ export {
   createInfraAnalysisHandler,
   type InfraAnalysisHandlerInput,
 } from "./static-analysis-infra";
+
+// ========================================
+// Custom Static Analysis Review（カスタム静的解析 - TypeScript Compiler API）
+// ========================================
+export {
+  // 責務定義
+  type CustomStaticAnalysisResponsibility,
+  CUSTOM_STATIC_ANALYSIS_RESPONSIBILITIES,
+  // ハンドラー
+  createCustomStaticAnalysisHandler,
+  type CustomStaticAnalysisHandlerInput,
+} from "./static-analysis-v2";

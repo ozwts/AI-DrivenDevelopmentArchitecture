@@ -21,7 +21,15 @@ import {
   createUnusedExportsHandler,
   INFRA_ANALYSIS_RESPONSIBILITIES,
   createInfraAnalysisHandler,
+  CUSTOM_STATIC_ANALYSIS_RESPONSIBILITIES,
+  createCustomStaticAnalysisHandler,
 } from "./review";
+import {
+  LIST_HORIZONTAL_POLICIES_RESPONSIBILITY,
+  LIST_VERTICAL_POLICIES_RESPONSIBILITY,
+  createListHorizontalPoliciesHandler,
+  createListVerticalPoliciesHandler,
+} from "./policy";
 import {
   DEV_SERVER_RESPONSIBILITIES,
   TEST_RESPONSIBILITIES,
@@ -234,6 +242,136 @@ const main = async (): Promise<void> => {
       },
     );
   }
+
+  // ----- カスタム静的解析 (Custom Static Analysis - TypeScript Compiler API) -----
+  // TypeScript Compiler APIによるカスタムチェック
+  // policy/horizontal/static配下のチェックを動的にロード
+  // レイヤー単位で実行（server/domain-model, server/repository, etc.）
+  //
+  // 例: review_custom_static_analysis
+  for (const responsibility of CUSTOM_STATIC_ANALYSIS_RESPONSIBILITIES) {
+    const handler = createCustomStaticAnalysisHandler();
+
+    server.registerTool(
+      responsibility.id,
+      {
+        description: responsibility.toolDescription,
+        inputSchema: responsibility.inputSchema,
+      },
+      async ({ workspace, layer, targetDirectories }) => {
+        try {
+          const result = await handler({
+            workspace,
+            layer,
+            targetDirectories,
+            guardrailsRoot: GUARDRAILS_ROOT,
+          });
+
+          return {
+            content: [
+              {
+                type: "text",
+                text: result,
+              },
+            ],
+          };
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          return {
+            content: [
+              {
+                type: "text",
+                text: `エラー: ${errorMessage}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+      },
+    );
+  }
+
+  // ----- ポリシー一覧 (List Policies) -----
+  // 利用可能なポリシーを一覧表示
+  //
+  // Horizontal Policies
+  const horizontalHandler = createListHorizontalPoliciesHandler();
+  server.registerTool(
+    LIST_HORIZONTAL_POLICIES_RESPONSIBILITY.id,
+    {
+      description: LIST_HORIZONTAL_POLICIES_RESPONSIBILITY.toolDescription,
+      inputSchema: LIST_HORIZONTAL_POLICIES_RESPONSIBILITY.inputSchema,
+    },
+    async ({ type }) => {
+      try {
+        const result = await horizontalHandler({
+          type,
+          guardrailsRoot: GUARDRAILS_ROOT,
+        });
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: result,
+            },
+          ],
+        };
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        return {
+          content: [
+            {
+              type: "text",
+              text: `エラー: ${errorMessage}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  // Vertical Policies
+  const verticalHandler = createListVerticalPoliciesHandler();
+  server.registerTool(
+    LIST_VERTICAL_POLICIES_RESPONSIBILITY.id,
+    {
+      description: LIST_VERTICAL_POLICIES_RESPONSIBILITY.toolDescription,
+      inputSchema: LIST_VERTICAL_POLICIES_RESPONSIBILITY.inputSchema,
+    },
+    async ({ type }) => {
+      try {
+        const result = await verticalHandler({
+          type,
+          guardrailsRoot: GUARDRAILS_ROOT,
+        });
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: result,
+            },
+          ],
+        };
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        return {
+          content: [
+            {
+              type: "text",
+              text: `エラー: ${errorMessage}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
 
   // ========================================
   // Procedure (行政): ポリシーに従った手順実行

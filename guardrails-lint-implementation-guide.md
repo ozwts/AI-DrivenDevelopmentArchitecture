@@ -85,57 +85,40 @@ horizontal/generated/semantic/（Markdown）← 派生物（人とAIがポリシ
 
 #### 実装例：readonly修飾子検証
 
-**カスタムlintルール**: `server/guardrails/domain-model/readonly-properties.ts`
+**TypeScript実装**: `policy/horizontal/static/server/domain-model/readonly-properties.ts`
 
 ```typescript
 /**
  * @what Entity/Value Objectのプロパティがreadonlyで宣言されているか検査
  * @why mutableなプロパティは不変性を破壊し、予期しない副作用を生むため
- * @failure readonly修飾子がないEntityプロパティを検出した場合に非0終了
+ * @failure readonly修飾子がないEntityプロパティを検出した場合にエラー
  */
 
-import { ESLintUtils, TSESTree } from '@typescript-eslint/utils';
+import * as ts from 'typescript';
+import createCheck from '../../check-builder';
 
-export default ESLintUtils.RuleCreator.withoutDocs({
-  meta: {
-    type: 'problem',
-    docs: {
-      description: 'Entity/Value Objectのプロパティはreadonlyでなければならない',
-      recommended: 'error',
-    },
-    messages: {
-      missingReadonly:
-        'プロパティ "{{propertyName}}" にreadonly修飾子がありません。',
-    },
-    schema: [],
-  },
-  defaultOptions: [],
-
-  create(context) {
-    const filename = context.getFilename();
-
-    // .entity.ts または .vo.ts ファイルのみチェック
-    if (!filename.endsWith('.entity.ts') && !filename.endsWith('.vo.ts')) {
-      return {};
+export default createCheck({
+  filePattern: /\.(entity|vo)\.ts$/,
+  visitor: (node, ctx) => {
+    if (!ts.isClassDeclaration(node)) return;
+    for (const member of node.members) {
+      if (!ts.isPropertyDeclaration(member)) continue;
+      const hasReadonly = member.modifiers?.some(
+        m => m.kind === ts.SyntaxKind.ReadonlyKeyword
+      );
+      if (!hasReadonly && member.name && ts.isIdentifier(member.name)) {
+        ctx.report(member, `プロパティ "${member.name.text}" にreadonly修飾子がありません。`);
+      }
     }
-
-    return {
-      PropertyDefinition(node: TSESTree.PropertyDefinition) {
-        // readonly修飾子があるかチェック
-        const hasReadonly = node.readonly === true;
-
-        if (!hasReadonly && node.key.type === 'Identifier') {
-          context.report({
-            node,
-            messageId: 'missingReadonly',
-            data: { propertyName: node.key.name },
-          });
-        }
-      },
-    };
-  },
+  }
 });
 ```
+
+**Check Builderパターンの利点**:
+- **68行→25行に簡素化**: ボイラープレートを削減
+- **自動メタデータ抽出**: ファイルパスから`id`を自動生成（例: `server/domain-model/readonly-properties`）
+- **JSDoc解析**: `@what`/`@why`/`@failure`を自動抽出
+- **統一されたインターフェース**: 全チェックが同じパターンで実装可能
 
 #### 生成されるMarkdownポリシー
 
@@ -390,26 +373,106 @@ export default ESLintUtils.RuleCreator.withoutDocs({
 
 ---
 
+## Check Builderパターン
+
+### 概要
+
+Check Builderパターンは、TypeScript Compiler APIを使った静的解析チェックの実装を簡素化する。
+
+**Before（68行）**:
+```typescript
+export const metadata: CheckMetadata = { ... };
+export function check(sourceFile: ts.SourceFile, program: ts.Program): Violation[] { ... }
+export default { metadata, check } as CheckModule;
+```
+
+**After（25行）**:
+```typescript
+export default createCheck({
+  filePattern: /\.(entity|vo)\.ts$/,
+  visitor: (node, ctx) => { ... }
+});
+```
+
+### Check Builder内部実装
+
+```typescript
+// check-builder.ts
+export default function createCheck(definition: CheckDefinition): CheckModule {
+  // 1. スタックトレースから呼び出し元ファイルパスを取得
+  const callerPath = extractCallerPath();
+
+  // 2. JSDocアノテーションを抽出
+  const jsDoc = extractJSDocFromFile(callerPath);
+  const metadata = extractMetadata(callerPath, jsDoc);
+
+  // 3. ポリシーパスを自動設定
+  const policyPath = callerPath.includes('/policy/horizontal/static/')
+    ? 'policy/horizontal/static/' + callerPath.split('/policy/horizontal/static/')[1]
+    : callerPath;
+
+  // 4. チェック関数を生成
+  const check = (sourceFile: ts.SourceFile, program: ts.Program): Violation[] => {
+    const violations: Violation[] = [];
+    const fileName = sourceFile.fileName;
+
+    if (definition.filePattern && !definition.filePattern.test(fileName)) {
+      return violations;
+    }
+
+    const ctx: CheckContext = {
+      report: (node: ts.Node, message: string, severity = 'error') => {
+        const { line, character } = sourceFile.getLineAndCharacterOfPosition(
+          node.getStart(sourceFile)
+        );
+        violations.push({
+          file: fileName,
+          line: line + 1,
+          column: character + 1,
+          severity,
+          ruleId: metadata.id,
+          message,
+          what: metadata.what,
+          why: metadata.why,
+          policyPath,
+        });
+      },
+      sourceFile,
+      program,
+    };
+
+    function visit(node: ts.Node) {
+      definition.visitor(node, ctx);
+      ts.forEachChild(node, visit);
+    }
+
+    visit(sourceFile);
+    return violations;
+  };
+
+  return { metadata, check };
+}
+```
+
+---
+
 ## カスタムlint実装のベストプラクティス
 
 ### 1. アノテーション形式の統一
 
-すべてのカスタムlintに以下のアノテーションを付与：
+すべてのチェックに以下のアノテーションを付与：
 
 ```typescript
 /**
  * @what 何をチェックするか（明確な検証対象）
  * @why なぜチェックするか（ビジネス理由または技術理由）
  * @failure 違反を検出した場合の終了条件
- * @example-bad 違反コード例（LLM生成時に使用）
- * @example-good 正しいコード例（LLM生成時に使用）
  */
 ```
 
-**アノテーションの記述ガイドライン**:
-
-- `@what`, `@why`, `@failure`, `@example-bad`, `@example-good`は必須
-- コード例は複数行になる場合、継続行にスペースでインデント
+**重要な変更**:
+- **@ruleタグは廃止**: ファイルパスから自動生成されるため不要
+- **@example-bad/@example-goodは削除**: LLM生成時に自動生成
 
 ### 2. ファイル命名規則
 
@@ -672,19 +735,28 @@ const policyPath = (() => {
 
 ## 実装ロードマップ
 
+### 完了した実装（2026-01-17）
+
+- [x] Check Builderパターンの実装
+- [x] アノテーション自動抽出（@what/@why/@failure）
+- [x] ファイルパスからID自動生成
+- [x] readonly修飾子検証（実装例完成）
+- [x] コンパクトな出力フォーマット（単行+詳細行）
+- [x] 柔軟な実行粒度（workspace/layer省略可能）
+- [x] ポリシー発見ツール（policy_list_horizontal/vertical）
+
 ### Week 1-2: P1ルール実装
 
-- [x] ファイル命名規則検証
-- [ ] readonly修飾子検証
 - [ ] private constructor検証
 - [ ] throw文検出
 - [ ] null使用禁止
 - [ ] JSDocコメント有無
 - [ ] ES2022プライベートフィールド
+- [ ] ファイル命名規則検証
 
 ### Week 3-4: LLM生成ツール構築
 
-- [ ] アノテーション読み取り機能
+- [ ] アノテーション読み取り機能（Check Builderで部分実装済み）
 - [ ] AST解析機能
 - [ ] LLM呼び出し機能
 - [ ] Markdown生成機能

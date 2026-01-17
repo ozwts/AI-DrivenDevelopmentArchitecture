@@ -122,32 +122,51 @@ TypeScript実装には以下のアノテーションを付けることで、LLM�
  */
 
 import * as ts from 'typescript';
-import { CheckModule, Violation, CheckMetadata } from '../../types';
+import createCheck from '../../check-builder';
 
-export const metadata: CheckMetadata = {
-  id: 'use-case/transaction-protection',
-  name: 'トランザクション保護',
-  description: '複数の書き込みを行うUseCaseがトランザクションで保護されているか検査',
-  layer: 'use-case',
-  priority: 'P3',
-  what: '複数の書き込みを行うUseCaseがトランザクションで保護されているか検査',
-  why: '複数書き込みを非トランザクションで行うと部分的コミットが発生するため',
-  failure: '書き込み>=2 かつトランザクションなしのメソッドを検出した場合にエラー',
-};
+export default createCheck({
+  filePattern: /use-case\.ts$/,
+  visitor: (node, ctx) => {
+    // チェックロジックを実装
+    // 違反時: ctx.report(node, 'エラーメッセージ')
+  }
+});
+```
 
-export function check(sourceFile: ts.SourceFile, program: ts.Program): Violation[] {
-  const violations: Violation[] = [];
+### Check Builderパターン
 
-  // TypeScript Compiler APIでAST解析
-  ts.forEachChild(sourceFile, function visit(node) {
-    // 実装...
-    ts.forEachChild(node, visit);
-  });
+**実装の簡素化**: 68行のボイラープレートを25行に削減
 
-  return violations;
-}
+Check Builderパターンにより、以下が自動化される：
+- メタデータの自動抽出（ファイルパスから`id`を生成）
+- JSDocアノテーションの解析
+- `CheckModule`インターフェースの実装
+- `policyPath`の自動設定
 
-export default { metadata, check } as CheckModule;
+**自動生成される情報**:
+- `id`: ファイルパスから自動生成（例: `server/domain-model/readonly-properties`）
+- `what`/`why`/`failure`: JSDocから抽出
+- `policyPath`: ファイルの相対パスを自動設定
+
+**Check Builder実装例**:
+
+```typescript
+// readonly-properties.ts
+export default createCheck({
+  filePattern: /\.(entity|vo)\.ts$/,
+  visitor: (node, ctx) => {
+    if (!ts.isClassDeclaration(node)) return;
+    for (const member of node.members) {
+      if (!ts.isPropertyDeclaration(member)) continue;
+      const hasReadonly = member.modifiers?.some(
+        m => m.kind === ts.SyntaxKind.ReadonlyKeyword
+      );
+      if (!hasReadonly && member.name && ts.isIdentifier(member.name)) {
+        ctx.report(member, `プロパティ "${member.name.text}" にreadonly修飾子がありません。`);
+      }
+    }
+  }
+});
 ```
 
 ---
@@ -272,6 +291,56 @@ async execute(input: GetProjectWithTodosUseCaseInput) {
 2. **開発効率**: IDEの補完が効く
 3. **保守性**: 型があるため意図が明確
 4. **統一性**: プロダクトコードと同じ技術スタック
+5. **実装の簡素化**: Check Builderパターンで68行→25行に削減
+
+---
+
+## 出力フォーマット
+
+### コンパクトな単行フォーマット
+
+AI互換性を考慮し、違反情報を1行にまとめる：
+
+```
+❌ [server/domain-model/readonly-properties] L7:3 プロパティ "id" にreadonly修飾子がありません。
+  ↳ What: Entity/Value Objectのプロパティがreadonlyで宣言されているか検査 | Why: mutableなプロパティは不変性を破壊し、予期しない副作用を生むため | Policy: policy/horizontal/static/server/domain-model/readonly-properties.ts
+```
+
+**利点**:
+- トークン消費を最小化
+- 大量の違反でもAIがコンテキストに収められる
+- 必要な情報（what/why/policy）を詳細行で提供
+
+---
+
+## ポリシー発見ツール
+
+### policy_list_horizontal / policy_list_vertical
+
+AIがポリシーを発見するためのツール：
+
+```typescript
+// policy_list_horizontal
+// → server/domain-model, server/use-case, web/component等を表示
+
+// policy_list_vertical
+// → todo, project, user等の機能検証ポリシーを表示
+```
+
+**配置**: `guardrails/policy/horizontal/` に実装（立法の責務）
+
+**出力例**:
+```markdown
+# Horizontal Policies
+
+## Static Checks
+
+### server
+**Layer: domain-model** (1 check)
+  - server/domain-model/readonly-properties: Entity/Value Objectのプロパティがreadonlyで宣言されているか検査
+
+**Layer: use-case** (0 checks)
+```
 
 ---
 

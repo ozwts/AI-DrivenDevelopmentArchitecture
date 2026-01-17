@@ -30,8 +30,37 @@ https://zenn.dev/hideyuki_toyama/articles/ai-transaction-boundary-guard
 **実装方法**:
 
 - **全てTypeScript Compiler APIで自前実装**（P1/P2/P3すべて）
+- **Check Builderパターン**で実装を簡素化（68行→25行）
 - 誤検知>30%のP3ルールも含めて、TypeScript実装がSSOT
 - TypeScript実装 → `horizontal/generated/semantic/` Markdown → qualitativeレビューで使用
+
+**実装例**:
+
+```typescript
+/**
+ * @what Entity/Value Objectのプロパティがreadonlyで宣言されているか検査
+ * @why mutableなプロパティは不変性を破壊し、予期しない副作用を生むため
+ * @failure readonly修飾子がないEntityプロパティを検出した場合にエラー
+ */
+import * as ts from 'typescript';
+import createCheck from '../../check-builder';
+
+export default createCheck({
+  filePattern: /\.(entity|vo)\.ts$/,
+  visitor: (node, ctx) => {
+    if (!ts.isClassDeclaration(node)) return;
+    for (const member of node.members) {
+      if (!ts.isPropertyDeclaration(member)) continue;
+      const hasReadonly = member.modifiers?.some(
+        m => m.kind === ts.SyntaxKind.ReadonlyKeyword
+      );
+      if (!hasReadonly && member.name && ts.isIdentifier(member.name)) {
+        ctx.report(member, `プロパティ "${member.name.text}" にreadonly修飾子がありません。`);
+      }
+    }
+  }
+});
+```
 
 **配置先**:
 
@@ -116,6 +145,41 @@ TypeScript実装（TypeScript Compiler API）← SSOT
 horizontal/generated/semantic/（Markdown）← 派生物（人とAIがポリシーを理解するため）
 ```
 
+### 柔軟な実行粒度
+
+TypeScript実装は柔軟な粒度で実行可能：
+
+```typescript
+// 特定レイヤー
+runStaticAnalysisV2('server', 'domain-model', ['/path/to/src'])
+
+// ワークスペース全体（全レイヤー）
+runStaticAnalysisV2('server', undefined, ['/path/to/src'])
+
+// 全ワークスペース・全レイヤー
+runStaticAnalysisV2(undefined, undefined, ['/path/to/src'])
+```
+
+### ポリシー発見ツール
+
+AIが利用可能なポリシーを発見するためのツール：
+
+| ツール | 説明 | 配置 |
+|--------|------|------|
+| `policy_list_horizontal` | Horizontal policies一覧（workspace/layer/checks） | `policy/horizontal/` |
+| `policy_list_vertical` | Vertical policies一覧 | `policy/vertical/` |
+
+**出力例**:
+```markdown
+# Horizontal Policies
+
+## Static Checks
+
+### server
+**Layer: domain-model** (1 check)
+  - server/domain-model/readonly-properties: Entity/Value Objectのプロパティがreadonlyで宣言されているか検査
+```
+
 ### アノテーション形式
 
 各TypeScript実装には、以下のアノテーションを付けてセマンティックな文脈を示唆します。
@@ -123,8 +187,10 @@ horizontal/generated/semantic/（Markdown）← 派生物（人とAIがポリシ
 - `@what`: 何をチェックするか
 - `@why`: なぜチェックするか（ビジネス上の理由、技術的な理由）
 - `@failure`: 違反を検出した場合の終了条件
-- `@example-bad`: 違反コード例（LLM生成時に使用）
-- `@example-good`: 正しいコード例（LLM生成時に使用）
+
+**重要な変更**:
+- **@ruleタグは廃止**: ファイルパスから自動生成（例: `server/domain-model/readonly-properties`）
+- **@example-bad/@example-goodは削除**: Check Builderが不要に
 
 **例**:
 
@@ -132,21 +198,18 @@ horizontal/generated/semantic/（Markdown）← 派生物（人とAIがポリシ
 /**
  * @what 複数の書き込みを行うUseCaseがトランザクションで保護されているか検査
  * @why 複数書き込みを非トランザクションで行うと部分的コミットが発生するため
- * @failure 書き込み>=2 かつトランザクションなしのメソッドを検出した場合に非0終了
- * @example-bad
- *   async execute(input) {
- *     await this.projectRepo.delete({ id: input.id });
- *     await this.todoRepo.deleteByProject({ projectId: input.id });
- *   }
- * @example-good
- *   async execute(input) {
- *     return this.uowRunner.run(async (uow) => {
- *       await uow.projectRepo.delete({ id: input.id });
- *       await uow.todoRepo.deleteByProject({ projectId: input.id });
- *       return Result.ok(undefined);
- *     });
- *   }
+ * @failure 書き込み>=2 かつトランザクションなしのメソッドを検出した場合にエラー
  */
+
+import * as ts from 'typescript';
+import createCheck from '../../check-builder';
+
+export default createCheck({
+  filePattern: /use-case\.ts$/,
+  visitor: (node, ctx) => {
+    // チェックロジック実装
+  }
+});
 ```
 
 ### 誤検知許容の方針
