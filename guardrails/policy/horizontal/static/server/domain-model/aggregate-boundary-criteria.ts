@@ -73,8 +73,8 @@
  * ```
  */
 
-import * as ts from 'typescript';
-import createCheck from '../../check-builder';
+import * as ts from "typescript";
+import { createASTChecker } from "../../../../ast-checker";
 
 // 別集約を示唆するエンティティ名パターン（これらへの直接参照は避けるべき）
 const OTHER_AGGREGATE_PATTERNS = [
@@ -92,20 +92,20 @@ const ID_REFERENCE_PATTERNS = [
   /Ids$/,
 ];
 
-export default createCheck({
+export const policyCheck = createASTChecker({
   filePattern: /\.entity\.ts$/,
 
   visitor: (node, ctx) => {
     if (!ts.isClassDeclaration(node)) return;
 
-    const className = node.name?.text ?? 'Anonymous';
+    const className = node.name?.text ?? "Anonymous";
 
     // 集約ルートかどうかを判断（ディレクトリ名と一致するか）
     const sourceFile = node.getSourceFile();
     const filePath = sourceFile.fileName;
 
     // domain/model 配下のみ対象
-    if (!filePath.includes('/domain/model/')) return;
+    if (!filePath.includes("/domain/model/")) return;
 
     // プロパティを走査して、不適切な参照パターンを検出
     for (const member of node.members) {
@@ -115,11 +115,11 @@ export default createCheck({
       const propName = member.name.text;
       const typeNode = member.type;
 
-      if (!typeNode) continue;
+      if (typeNode === undefined) continue;
 
       // 1. 別集約への直接参照をチェック（ID参照でないもの）
       if (ts.isTypeReferenceNode(typeNode)) {
-        const typeName = typeNode.typeName;
+        const {typeName} = typeNode;
         if (ts.isIdentifier(typeName)) {
           const refTypeName = typeName.text;
 
@@ -132,7 +132,7 @@ export default createCheck({
               member,
               `エンティティ "${className}" のプロパティ "${propName}" が別集約 "${refTypeName}" を直接参照しています。\n` +
                 `■ 別集約への参照はID参照（例: ${propName}Id: string）にしてください。\n` +
-                `■ 直接参照すると集約の境界が曖昧になり、トランザクション整合性が損なわれます。`
+                "■ 直接参照すると集約の境界が曖昧になり、トランザクション整合性が損なわれます。"
             );
           }
         }
@@ -140,10 +140,10 @@ export default createCheck({
 
       // 2. 配列型の場合のチェック
       if (ts.isArrayTypeNode(typeNode)) {
-        const elementType = typeNode.elementType;
+        const {elementType} = typeNode;
 
         if (ts.isTypeReferenceNode(elementType)) {
-          const typeName = elementType.typeName;
+          const {typeName} = elementType;
           if (ts.isIdentifier(typeName)) {
             const refTypeName = typeName.text;
 
@@ -153,7 +153,7 @@ export default createCheck({
               ctx.report(
                 member,
                 `エンティティ "${className}" が別集約 "${refTypeName}" の配列を保持しています。\n` +
-                  `■ 独立したライフサイクルを持つエンティティは別集約とすべきです。\n` +
+                  "■ 独立したライフサイクルを持つエンティティは別集約とすべきです。\n" +
                   `■ ID参照の配列（例: ${propName}Ids: string[]）を検討してください。`
               );
             }
@@ -162,7 +162,7 @@ export default createCheck({
             // 大文字始まりの型名 = エンティティの可能性が高い
             if (/^[A-Z]/.test(refTypeName) && !isOtherAggregate) {
               // 子エンティティ配列のプロパティ名をチェック
-              const expectedSingular = propName.endsWith('s')
+              const expectedSingular = propName.endsWith("s")
                 ? propName.slice(0, -1)
                 : propName;
 
@@ -171,8 +171,8 @@ export default createCheck({
                 ctx.report(
                   member,
                   `エンティティ "${className}" のプロパティ "${propName}" と型 "${refTypeName}" の命名が一致しません。\n` +
-                    `■ ドメイン言語の一貫性のため、プロパティ名は型名に基づいてください。\n` +
-                    `■ 例: attachments: Attachment[], items: OrderItem[]`
+                    "■ ドメイン言語の一貫性のため、プロパティ名は型名に基づいてください。\n" +
+                    "■ 例: attachments: Attachment[], items: OrderItem[]"
                 );
               }
             }
@@ -184,7 +184,7 @@ export default createCheck({
       if (ts.isUnionTypeNode(typeNode)) {
         for (const unionMember of typeNode.types) {
           if (ts.isTypeReferenceNode(unionMember)) {
-            const typeName = unionMember.typeName;
+            const {typeName} = unionMember;
             if (ts.isIdentifier(typeName)) {
               const refTypeName = typeName.text;
 

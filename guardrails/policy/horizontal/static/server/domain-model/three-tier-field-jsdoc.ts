@@ -59,10 +59,10 @@
  * ```
  */
 
-import * as ts from 'typescript';
-import createCheck from '../../check-builder';
+import * as ts from "typescript";
+import { createASTChecker } from "../../../../ast-checker";
 
-export default createCheck({
+export const policyCheck = createASTChecker({
   filePattern: /\.entity\.ts$/,
 
   visitor: (node, ctx) => {
@@ -72,7 +72,7 @@ export default createCheck({
     const propName = node.name.text;
     const typeNode = node.type;
 
-    if (!typeNode) return;
+    if (typeNode === undefined) return;
 
     // Union型で undefined を含むかチェック
     let hasUndefined = false;
@@ -97,11 +97,11 @@ export default createCheck({
     const leadingComments = ts.getLeadingCommentRanges(sourceText, nodeStart);
 
     let hasJsDoc = false;
-    if (leadingComments) {
+    if (leadingComments !== undefined) {
       for (const comment of leadingComments) {
         const commentText = sourceText.substring(comment.pos, comment.end);
         // JSDoc形式（/** で始まる）かチェック
-        if (commentText.startsWith('/**')) {
+        if (commentText.startsWith("/**")) {
           hasJsDoc = true;
           break;
         }
@@ -112,10 +112,10 @@ export default createCheck({
       ctx.report(
         node,
         `【3-Tier分類違反】プロパティ "${propName}" は "| undefined" 型（Tier 2またはTier 3）ですが、JSDocがありません。\n` +
-          `■ Tier 2 (Special Case): undefinedがビジネス状態を表す場合\n` +
-          `  例: /** 期限日 - undefined: 「期限なし」を意味する */\n` +
-          `■ Tier 3 (Optional): undefinedが単に「未設定」の場合\n` +
-          `  例: /** 説明 - 設定は任意 */`
+          "■ Tier 2 (Special Case): undefinedがビジネス状態を表す場合\n" +
+          "  例: /** 期限日 - undefined: 「期限なし」を意味する */\n" +
+          "■ Tier 3 (Optional): undefinedが単に「未設定」の場合\n" +
+          "  例: /** 説明 - 設定は任意 */"
       );
     }
   },

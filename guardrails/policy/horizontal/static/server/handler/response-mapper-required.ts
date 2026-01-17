@@ -58,24 +58,24 @@
  * ```
  */
 
-import * as ts from 'typescript';
-import createCheck from '../../check-builder';
+import * as ts from "typescript";
+import { createASTChecker } from "../../../../ast-checker";
 
 // ハンドラー名からエンティティ名を抽出するパターン
 const HANDLER_PATTERN = /^build([A-Z][a-zA-Z]+)([A-Z][a-zA-Z]+)Handler$/;
 
 // 複数形から単数形に変換
-function toSingular(name: string): string {
-  if (name.endsWith('ies')) {
-    return name.slice(0, -3) + 'y';
+const toSingular = (name: string): string => {
+  if (name.endsWith("ies")) {
+    return `${name.slice(0, -3)  }y`;
   }
-  if (name.endsWith('s') && !name.endsWith('ss')) {
+  if (name.endsWith("s") && !name.endsWith("ss")) {
     return name.slice(0, -1);
   }
   return name;
-}
+};
 
-export default createCheck({
+export const policyCheck = createASTChecker({
   filePattern: /-handler\.ts$/,
 
   visitor: (node, ctx) => {
@@ -85,7 +85,7 @@ export default createCheck({
     const hasExport = node.modifiers?.some(
       (mod) => mod.kind === ts.SyntaxKind.ExportKeyword
     );
-    if (!hasExport) return;
+    if (hasExport !== true) return;
 
     for (const declaration of node.declarationList.declarations) {
       if (!ts.isIdentifier(declaration.name)) continue;
@@ -93,11 +93,11 @@ export default createCheck({
       const varName = declaration.name.text;
 
       // Handlerで終わる名前のみチェック
-      if (!varName.endsWith('Handler')) continue;
+      if (!varName.endsWith("Handler")) continue;
 
       // 初期化子を取得
-      const initializer = declaration.initializer;
-      if (!initializer) continue;
+      const {initializer} = declaration;
+      if (initializer === undefined) continue;
 
       // 関数全体のテキストを取得
       const functionText = initializer.getText();
@@ -108,7 +108,7 @@ export default createCheck({
 
       // convertTo...Response 関数の呼び出しがあるかチェック
       const convertToMatch = functionText.match(/convertTo(\w+)Response\s*\(/);
-      const hasConvertTo = !!convertToMatch;
+      const hasConvertTo = convertToMatch !== null;
 
       // c.json() で成功レスポンスを返しているかチェック
       const hasSuccessJsonResponse = /return\s+c\.json\s*\([^,]+,\s*(200|201)\)/.test(functionText);
@@ -118,18 +118,18 @@ export default createCheck({
         ctx.report(
           declaration,
           `ハンドラー関数 "${varName}" でレスポンス変換関数が使用されていません。\n` +
-            `■ convertTo{Entity}Response() 関数を使用してください。\n` +
-            `■ ハンドラー内でレスポンスオブジェクトを直接構築しないでください。`
+            "■ convertTo{Entity}Response() 関数を使用してください。\n" +
+            "■ ハンドラー内でレスポンスオブジェクトを直接構築しないでください。"
         );
         continue;
       }
 
       // ハンドラー名とレスポンスマッパー名の整合性チェック
-      if (hasConvertTo && convertToMatch) {
+      if (convertToMatch !== null) {
         const mapperEntity = convertToMatch[1];
         const handlerMatch = HANDLER_PATTERN.exec(varName);
 
-        if (handlerMatch) {
+        if (handlerMatch !== null) {
           const handlerEntity = toSingular(handlerMatch[2]);
 
           // エンティティ名が一致しない場合（大文字小文字を区別しない比較）

@@ -5,6 +5,31 @@
 import { z } from "zod";
 
 /**
+ * チェック情報
+ */
+export type CheckInfo = {
+  id: string;
+  file: string;
+  description: string;
+}
+
+/**
+ * レイヤー情報
+ */
+export type LayerInfo = {
+  layer: string;
+  checks: CheckInfo[];
+}
+
+/**
+ * ワークスペース情報
+ */
+export type WorkspaceInfo = {
+  workspace: string;
+  layers: LayerInfo[];
+}
+
+/**
  * ポリシーリスト責務定義
  */
 export type ListPoliciesResponsibility = {
@@ -16,6 +41,14 @@ export type ListPoliciesResponsibility = {
   inputSchema: {
     type?: z.ZodOptional<z.ZodEnum<["static", "semantic"]>>;
   };
+};
+
+/**
+ * ポリシーリストハンドラー入力
+ */
+export type ListPoliciesHandlerInput = {
+  type?: "static" | "semantic";
+  guardrailsRoot: string;
 };
 
 /**

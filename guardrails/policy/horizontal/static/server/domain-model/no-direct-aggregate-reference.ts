@@ -41,11 +41,11 @@
  * ```
  */
 
-import * as ts from 'typescript';
-import * as path from 'path';
-import createCheck from '../../check-builder';
+import * as ts from "typescript";
+import * as path from "path";
+import { createASTChecker } from "../../../../ast-checker";
 
-export default createCheck({
+export const policyCheck = createASTChecker({
   filePattern: /\.entity\.ts$/,
 
   visitor: (node, ctx) => {
@@ -61,14 +61,18 @@ export default createCheck({
     const localEntityImports = new Set<string>();
     ts.forEachChild(sourceFile, (child) => {
       if (ts.isImportDeclaration(child)) {
-        const moduleSpecifier = child.moduleSpecifier;
+        const {moduleSpecifier} = child;
         if (ts.isStringLiteral(moduleSpecifier)) {
           const importPath = moduleSpecifier.text;
 
           // @/domain/model/{集約名}/ からのインポートは同一集約内
           if (importPath.includes(`@/domain/model/${dirName}/`)) {
-            const importClause = child.importClause;
-            if (importClause?.namedBindings && ts.isNamedImports(importClause.namedBindings)) {
+            const {importClause} = child;
+            if (
+              importClause !== undefined &&
+              importClause.namedBindings !== undefined &&
+              ts.isNamedImports(importClause.namedBindings)
+            ) {
               for (const element of importClause.namedBindings.elements) {
                 localEntityImports.add(element.name.text);
               }
@@ -86,7 +90,7 @@ export default createCheck({
       const propName = member.name.text;
       const typeNode = member.type;
 
-      if (!typeNode) continue;
+      if (typeNode === undefined) continue;
 
       // Union型の場合は各要素をチェック
       const typesToCheck: ts.TypeNode[] = [];
@@ -108,18 +112,18 @@ export default createCheck({
         // TypeReferenceかチェック
         if (!ts.isTypeReferenceNode(elementType)) continue;
 
-        const typeName = elementType.typeName;
+        const {typeName} = elementType;
         if (!ts.isIdentifier(typeName)) continue;
 
         const refTypeName = typeName.text;
 
         // undefined, string, number, boolean などのプリミティブ型はスキップ
-        if (['undefined', 'string', 'number', 'boolean', 'Date'].includes(refTypeName)) {
+        if (["undefined", "string", "number", "boolean", "Date"].includes(refTypeName)) {
           continue;
         }
 
         // Result, DomainError などのユーティリティ型はスキップ
-        if (['Result', 'DomainError'].includes(refTypeName)) {
+        if (["Result", "DomainError"].includes(refTypeName)) {
           continue;
         }
 
@@ -136,7 +140,7 @@ export default createCheck({
         // 別集約のEntityを直接参照している可能性が高い
         // プロパティ名が xxxId で終わっていない場合かつ、型名がEntityっぽい場合に警告
         // (型名がEntityクラスかどうかは静的解析では完全に判定できないため、ヒューリスティック)
-        if (!propName.endsWith('Id') && !propName.endsWith('Ids')) {
+        if (!propName.endsWith("Id") && !propName.endsWith("Ids")) {
           // 型名がPascalCaseで、Status, Type, Kind, Value, Props で終わらない場合は
           // Entityの可能性が高いと判断
           const isPascalCase = /^[A-Z][a-zA-Z0-9]*$/.test(refTypeName);
@@ -147,7 +151,7 @@ export default createCheck({
               member,
               `プロパティ "${propName}" が別集約のエンティティ "${refTypeName}" を直接参照している可能性があります。` +
                 `別集約への参照は "${propName}Id: string" のようにID参照にしてください。` +
-                `同一集約内の参照であれば、このエラーは無視できます。`
+                "同一集約内の参照であれば、このエラーは無視できます。"
             );
           }
         }

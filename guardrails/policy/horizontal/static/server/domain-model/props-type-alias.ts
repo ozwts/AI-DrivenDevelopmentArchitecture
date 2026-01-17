@@ -83,10 +83,10 @@
  * ```
  */
 
-import * as ts from 'typescript';
-import createCheck from '../../check-builder';
+import * as ts from "typescript";
+import { createASTChecker } from "../../../../ast-checker";
 
-export default createCheck({
+export const policyCheck = createASTChecker({
   filePattern: /\.(entity|vo)\.ts$/,
 
   visitor: (node, ctx) => {
@@ -97,7 +97,7 @@ export default createCheck({
     // クラス宣言を探す
     const classes: ts.ClassDeclaration[] = [];
     ts.forEachChild(sourceFile, (child) => {
-      if (ts.isClassDeclaration(child) && child.name) {
+      if (ts.isClassDeclaration(child) && child.name !== undefined) {
         classes.push(child);
       }
     });
@@ -107,7 +107,7 @@ export default createCheck({
     ts.forEachChild(sourceFile, (child) => {
       if (ts.isTypeAliasDeclaration(child)) {
         const typeName = child.name.text;
-        if (typeName.endsWith('Props')) {
+        if (typeName.endsWith("Props")) {
           propsTypes.push(typeName);
         }
       }
@@ -115,14 +115,14 @@ export default createCheck({
 
     // 各クラスに対応するProps型があるかチェック
     for (const classDecl of classes) {
-      const className = classDecl.name?.text ?? 'Anonymous';
+      const className = classDecl.name?.text ?? "Anonymous";
       const expectedPropsName = `${className}Props`;
 
       if (!propsTypes.includes(expectedPropsName)) {
         ctx.report(
           classDecl,
           `クラス "${className}" に対応する Props型エイリアス "${expectedPropsName}" が定義されていません。` +
-            `コンストラクタ引数を型エイリアスで定義して、from()メソッドと共有してください。`
+            "コンストラクタ引数を型エイリアスで定義して、from()メソッドと共有してください。"
         );
       }
     }

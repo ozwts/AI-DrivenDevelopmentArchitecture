@@ -55,10 +55,10 @@
  * ```
  */
 
-import * as ts from 'typescript';
-import createCheck from '../../check-builder';
+import * as ts from "typescript";
+import { createASTChecker } from "../../../../ast-checker";
 
-export default createCheck({
+export const policyCheck = createASTChecker({
   filePattern: /\.(entity|vo)\.ts$/,
 
   visitor: (node, ctx) => {
@@ -67,7 +67,7 @@ export default createCheck({
       const typeName = node.name.text;
 
       // xxxProps 型かチェック
-      if (!typeName.endsWith('Props')) return;
+      if (!typeName.endsWith("Props")) return;
 
       const typeNode = node.type;
 
@@ -79,16 +79,16 @@ export default createCheck({
         if (!ts.isPropertySignature(member)) continue;
 
         // オプショナル(?)かチェック
-        if (member.questionToken) {
+        if (member.questionToken !== undefined) {
           const propName = ts.isIdentifier(member.name)
             ? member.name.text
-            : 'unknown';
+            : "unknown";
 
           ctx.report(
             member,
             `【3-Tier分類違反】Props型 "${typeName}" のプロパティ "${propName}" がオプショナル(?)です。\n` +
               `■ 修正方法: "${propName}?: T" → "${propName}: T | undefined"\n` +
-              `■ 理由: Tier 2/3フィールドも必須引数にすることで、undefinedの明示的な渡しを強制`
+              "■ 理由: Tier 2/3フィールドも必須引数にすることで、undefinedの明示的な渡しを強制"
           );
         }
       }

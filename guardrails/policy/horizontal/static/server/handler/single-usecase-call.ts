@@ -41,10 +41,10 @@
  * ```
  */
 
-import * as ts from 'typescript';
-import createCheck from '../../check-builder';
+import * as ts from "typescript";
+import { createASTChecker } from "../../../../ast-checker";
 
-export default createCheck({
+export const policyCheck = createASTChecker({
   filePattern: /-handler\.ts$/,
 
   visitor: (node, ctx) => {
@@ -52,8 +52,8 @@ export default createCheck({
     if (!ts.isArrowFunction(node) && !ts.isFunctionDeclaration(node)) return;
 
     // 関数ボディを取得
-    const body = node.body;
-    if (!body) return;
+    const {body} = node;
+    if (body === undefined) return;
     if (!ts.isBlock(body)) return;
 
     // UseCase.execute呼び出しをカウント
@@ -63,15 +63,15 @@ export default createCheck({
     const countUseCaseExecute = (n: ts.Node) => {
       // xxx.execute(...) パターンを検出
       if (ts.isCallExpression(n)) {
-        const expression = n.expression;
+        const {expression} = n;
         if (ts.isPropertyAccessExpression(expression)) {
-          if (expression.name.text === 'execute') {
+          if (expression.name.text === "execute") {
             const object = expression.expression;
             // 変数名に UseCase が含まれているかチェック
             if (ts.isIdentifier(object)) {
               const varName = object.text;
-              if (/[Uu]se[Cc]ase/.test(varName) || varName.endsWith('UseCase')) {
-                useCaseExecuteCount++;
+              if (/[Uu]se[Cc]ase/.test(varName) || varName.endsWith("UseCase")) {
+                useCaseExecuteCount += 1;
                 useCaseExecuteCalls.push(n);
               }
             }
@@ -87,8 +87,8 @@ export default createCheck({
       ctx.report(
         node,
         `ハンドラー内で複数のUseCase.execute()が呼び出されています（${useCaseExecuteCount}回）。\n` +
-          `■ ハンドラーは単一のUseCaseのみを呼び出すべきです。\n` +
-          `■ 複数のUseCaseが必要な場合は、それらを統合した新しいUseCaseを作成してください。`
+          "■ ハンドラーは単一のUseCaseのみを呼び出すべきです。\n" +
+          "■ 複数のUseCaseが必要な場合は、それらを統合した新しいUseCaseを作成してください。"
       );
     }
   },

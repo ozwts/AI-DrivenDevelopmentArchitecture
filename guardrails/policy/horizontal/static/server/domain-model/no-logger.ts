@@ -41,31 +41,35 @@
  * ```
  */
 
-import * as ts from 'typescript';
-import createCheck from '../../check-builder';
+import * as ts from "typescript";
+import { createASTChecker } from "../../../../ast-checker";
 
-export default createCheck({
+export const policyCheck = createASTChecker({
   filePattern: /\.(entity|vo|repository)\.ts$/,
 
   visitor: (node, ctx) => {
     // 1. Loggerインポートのチェック
     if (ts.isImportDeclaration(node)) {
-      const moduleSpecifier = node.moduleSpecifier;
+      const {moduleSpecifier} = node;
       if (!ts.isStringLiteral(moduleSpecifier)) return;
 
       const importPath = moduleSpecifier.text;
 
       // logger関連のインポートをチェック
-      if (importPath.includes('/logger') || importPath.includes('logger/')) {
-        const importClause = node.importClause;
-        if (importClause?.namedBindings && ts.isNamedImports(importClause.namedBindings)) {
+      if (importPath.includes("/logger") || importPath.includes("logger/")) {
+        const {importClause} = node;
+        if (
+          importClause !== undefined &&
+          importClause.namedBindings !== undefined &&
+          ts.isNamedImports(importClause.namedBindings)
+        ) {
           for (const element of importClause.namedBindings.elements) {
             const name = element.name.text;
-            if (name === 'Logger' || name === 'logger') {
+            if (name === "Logger" || name === "logger") {
               ctx.report(
                 node,
-                `ドメインモデルでのLoggerインポートは禁止されています。` +
-                  `ログ出力はアプリケーション層（UseCase, Handler）で行ってください。`
+                "ドメインモデルでのLoggerインポートは禁止されています。" +
+                  "ログ出力はアプリケーション層（UseCase, Handler）で行ってください。"
               );
             }
           }
@@ -75,14 +79,14 @@ export default createCheck({
 
     // 2. logger.xxx() 呼び出しのチェック
     if (ts.isCallExpression(node)) {
-      const expression = node.expression;
+      const {expression} = node;
       if (ts.isPropertyAccessExpression(expression)) {
         const obj = expression.expression;
-        if (ts.isIdentifier(obj) && obj.text === 'logger') {
+        if (ts.isIdentifier(obj) && obj.text === "logger") {
           ctx.report(
             node,
-            `ドメインモデルでのログ出力は禁止されています。` +
-              `ログはアプリケーション層（UseCase, Handler）で行ってください。`
+            "ドメインモデルでのログ出力は禁止されています。" +
+              "ログはアプリケーション層（UseCase, Handler）で行ってください。"
           );
         }
       }

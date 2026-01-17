@@ -50,8 +50,8 @@
  * ```
  */
 
-import * as ts from 'typescript';
-import createCheck from '../../check-builder';
+import * as ts from "typescript";
+import { createASTChecker } from "../../../../ast-checker";
 
 // 禁止するメソッド名パターン
 const FORBIDDEN_METHOD_PATTERNS = [
@@ -63,12 +63,12 @@ const FORBIDDEN_METHOD_PATTERNS = [
 
 // 例外: 許可するメソッド名
 const ALLOWED_METHODS = [
-  'setup',          // セットアップは許可
-  'settings',       // 設定関連は許可
-  'setter',         // setterという名前は許可（ただし実際にはgetterを使うべき）
+  "setup",          // セットアップは許可
+  "settings",       // 設定関連は許可
+  "setter",         // setterという名前は許可（ただし実際にはgetterを使うべき）
 ];
 
-export default createCheck({
+export const policyCheck = createASTChecker({
   filePattern: /\.entity\.ts$/,
 
   visitor: (node, ctx) => {

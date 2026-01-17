@@ -30,12 +30,12 @@
  * ```
  */
 
-import * as ts from 'typescript';
-import * as fs from 'fs';
-import * as path from 'path';
-import createCheck from '../../check-builder';
+import * as ts from "typescript";
+import * as fs from "fs";
+import * as path from "path";
+import { createASTChecker } from "../../../../ast-checker";
 
-export default createCheck({
+export const policyCheck = createASTChecker({
   filePattern: /\.(entity|vo)\.ts$/,
 
   visitor: (node, ctx) => {
@@ -45,13 +45,13 @@ export default createCheck({
     const filePath = node.fileName;
 
     // domain/model 配下のみ
-    if (!filePath.includes('/domain/model/')) return;
+    if (!filePath.includes("/domain/model/")) return;
 
     // テスト・ダミー・リポジトリは除外
     if (
-      filePath.includes('.test.') ||
-      filePath.includes('.dummy.') ||
-      filePath.endsWith('.repository.ts')
+      filePath.includes(".test.") ||
+      filePath.includes(".dummy.") ||
+      filePath.endsWith(".repository.ts")
     ) {
       return;
     }
@@ -62,12 +62,12 @@ export default createCheck({
     // 拡張子を判定（.entity.ts or .vo.ts）
     let baseName: string;
     let type: string;
-    if (fileName.endsWith('.entity.ts')) {
-      baseName = fileName.replace('.entity.ts', '.entity');
-      type = 'Entity';
-    } else if (fileName.endsWith('.vo.ts')) {
-      baseName = fileName.replace('.vo.ts', '.vo');
-      type = 'Value Object';
+    if (fileName.endsWith(".entity.ts")) {
+      baseName = fileName.replace(".entity.ts", ".entity");
+      type = "Entity";
+    } else if (fileName.endsWith(".vo.ts")) {
+      baseName = fileName.replace(".vo.ts", ".vo");
+      type = "Value Object";
     } else {
       return;
     }

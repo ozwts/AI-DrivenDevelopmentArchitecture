@@ -33,10 +33,10 @@
  * ```
  */
 
-import * as ts from 'typescript';
-import createCheck from '../../check-builder';
+import * as ts from "typescript";
+import { createASTChecker } from "../../../../ast-checker";
 
-export default createCheck({
+export const policyCheck = createASTChecker({
   filePattern: /\.vo\.ts$/,
 
   visitor: (node, ctx) => {
@@ -52,10 +52,10 @@ export default createCheck({
           m.kind === ts.SyntaxKind.ReadonlyKeyword
       );
 
-      if (hasModifier) {
+      if (hasModifier === true) {
         const paramName = ts.isIdentifier(param.name)
           ? param.name.text
-          : 'unknown';
+          : "unknown";
         ctx.report(
           param,
           `パラメータプロパティ "${paramName}" の使用は禁止されています。` +

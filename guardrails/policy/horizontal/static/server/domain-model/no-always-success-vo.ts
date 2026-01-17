@@ -50,52 +50,19 @@
  * ```
  */
 
-import * as ts from 'typescript';
-import createCheck from '../../check-builder';
-
-export default createCheck({
-  filePattern: /\.vo\.ts$/,
-
-  visitor: (node, ctx) => {
-    if (!ts.isMethodDeclaration(node)) return;
-
-    // from メソッドかチェック
-    if (!ts.isIdentifier(node.name) || node.name.text !== 'from') return;
-
-    // static メソッドかチェック
-    const isStatic = node.modifiers?.some(
-      (mod) => mod.kind === ts.SyntaxKind.StaticKeyword
-    );
-    if (!isStatic) return;
-
-    // 戻り値型をチェック
-    const returnType = node.type;
-    if (!returnType) return;
-
-    // 戻り値型がResult<T, never>かチェック
-    const hasNeverError = checkForNeverInResult(returnType);
-
-    if (hasNeverError) {
-      ctx.report(
-        node,
-        `from()メソッドの戻り値型が "Result<T, never>" になっています。` +
-          `これは必ず成功するValue Objectを意味します。` +
-          `バリデーションがないならVO化せず、プリミティブ型のまま使用してください。`
-      );
-    }
-  },
-});
+import * as ts from "typescript";
+import { createASTChecker } from "../../../../ast-checker";
 
 /**
  * Result<T, never> パターンを検出
  */
-function checkForNeverInResult(typeNode: ts.TypeNode): boolean {
+const checkForNeverInResult = (typeNode: ts.TypeNode): boolean => {
   // Promise<Result<T, never>> の場合
   if (ts.isTypeReferenceNode(typeNode)) {
-    const typeName = typeNode.typeName;
-    if (ts.isIdentifier(typeName) && typeName.text === 'Promise') {
+    const {typeName} = typeNode;
+    if (ts.isIdentifier(typeName) && typeName.text === "Promise") {
       const typeArgs = typeNode.typeArguments;
-      if (typeArgs && typeArgs.length > 0) {
+      if (typeArgs !== undefined && typeArgs.length > 0) {
         return checkForNeverInResult(typeArgs[0]);
       }
     }
@@ -103,10 +70,10 @@ function checkForNeverInResult(typeNode: ts.TypeNode): boolean {
 
   // Result<T, never> の場合
   if (ts.isTypeReferenceNode(typeNode)) {
-    const typeName = typeNode.typeName;
-    if (ts.isIdentifier(typeName) && typeName.text === 'Result') {
+    const {typeName} = typeNode;
+    if (ts.isIdentifier(typeName) && typeName.text === "Result") {
       const typeArgs = typeNode.typeArguments;
-      if (typeArgs && typeArgs.length >= 2) {
+      if (typeArgs !== undefined && typeArgs.length >= 2) {
         const errorType = typeArgs[1];
         // never型かチェック
         if (errorType.kind === ts.SyntaxKind.NeverKeyword) {
@@ -117,4 +84,37 @@ function checkForNeverInResult(typeNode: ts.TypeNode): boolean {
   }
 
   return false;
-}
+};
+
+export const policyCheck = createASTChecker({
+  filePattern: /\.vo\.ts$/,
+
+  visitor: (node, ctx) => {
+    if (!ts.isMethodDeclaration(node)) return;
+
+    // from メソッドかチェック
+    if (!ts.isIdentifier(node.name) || node.name.text !== "from") return;
+
+    // static メソッドかチェック
+    const isStatic = node.modifiers?.some(
+      (mod) => mod.kind === ts.SyntaxKind.StaticKeyword
+    );
+    if (isStatic !== true) return;
+
+    // 戻り値型をチェック
+    const returnType = node.type;
+    if (returnType === undefined) return;
+
+    // 戻り値型がResult<T, never>かチェック
+    const hasNeverError = checkForNeverInResult(returnType);
+
+    if (hasNeverError) {
+      ctx.report(
+        node,
+        "from()メソッドの戻り値型が \"Result<T, never>\" になっています。" +
+          "これは必ず成功するValue Objectを意味します。" +
+          "バリデーションがないならVO化せず、プリミティブ型のまま使用してください。"
+      );
+    }
+  },
+});

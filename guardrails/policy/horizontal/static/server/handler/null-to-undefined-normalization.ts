@@ -53,35 +53,36 @@
  * ```
  */
 
-import * as ts from 'typescript';
-import * as path from 'path';
-import createCheck from '../../check-builder';
+import * as ts from "typescript";
+import * as path from "path";
+import { createASTChecker } from "../../../../ast-checker";
 
 // Zodスキーマからnullableフィールドを動的に取得
-function getNullableFieldsFromZodSchemas(workspaceRoot: string): Map<string, string[]> {
+const getNullableFieldsFromZodSchemas = (workspaceRoot: string): Map<string, string[]> => {
   const result = new Map<string, string[]>();
 
   try {
     // 生成されたZodスキーマをrequireして直接解析
-    const schemaPath = path.join(workspaceRoot, 'server/src/generated/zod-schemas');
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const schemaPath = path.join(workspaceRoot, "server/src/generated/zod-schemas");
+    // eslint-disable-next-line @typescript-eslint/no-require-imports, import/no-dynamic-require, global-require
     const { schemas } = require(schemaPath);
 
     // *Params スキーマを探す
     for (const [schemaName, schema] of Object.entries(schemas)) {
-      if (!schemaName.endsWith('Params')) continue;
+      if (!schemaName.endsWith("Params")) continue;
 
       // Zodスキーマの shape を取得
       const zodSchema = schema as { shape?: Record<string, { _def?: { typeName?: string } }> };
-      const shape = zodSchema.shape;
-      if (!shape) continue;
+      const {shape} = zodSchema;
+      if (shape === undefined) continue;
 
       const nullableFields: string[] = [];
 
       for (const [fieldName, fieldSchema] of Object.entries(shape)) {
         // ZodNullable かチェック（_def.typeName）
+        // eslint-disable-next-line no-underscore-dangle
         const typeName = fieldSchema?._def?.typeName;
-        if (typeName === 'ZodNullable') {
+        if (typeName === "ZodNullable") {
           nullableFields.push(fieldName);
         }
       }
@@ -102,7 +103,7 @@ function getNullableFieldsFromZodSchemas(workspaceRoot: string): Map<string, str
 // キャッシュ
 let cachedNullableFields: Map<string, string[]> | null = null;
 
-export default createCheck({
+export const policyCheck = createASTChecker({
   filePattern: /-handler\.ts$/,
 
   visitor: (node, ctx) => {
@@ -112,15 +113,15 @@ export default createCheck({
     const hasExport = node.modifiers?.some(
       (mod) => mod.kind === ts.SyntaxKind.ExportKeyword
     );
-    if (!hasExport) return;
+    if (hasExport !== true) return;
 
     // ワークスペースルートを取得
     const sourceFile = node.getSourceFile();
     const filePath = sourceFile.fileName;
-    const workspaceRoot = filePath.split('/server/')[0];
+    const workspaceRoot = filePath.split("/server/")[0];
 
     // Zodスキーマからnullableフィールドを取得（キャッシュ）
-    if (!cachedNullableFields) {
+    if (cachedNullableFields === null) {
       cachedNullableFields = getNullableFieldsFromZodSchemas(workspaceRoot);
     }
 
@@ -130,11 +131,11 @@ export default createCheck({
       const varName = declaration.name.text;
 
       // Handlerで終わる名前のみチェック
-      if (!varName.endsWith('Handler')) continue;
+      if (!varName.endsWith("Handler")) continue;
 
       // 初期化子を取得
-      const initializer = declaration.initializer;
-      if (!initializer) continue;
+      const {initializer} = declaration;
+      if (initializer === undefined) continue;
 
       // 関数全体のテキストを取得
       const functionText = initializer.getText();
@@ -144,12 +145,12 @@ export default createCheck({
 
       // ハンドラー内で使用されている schemas.XXXParams を検出
       const schemaMatch = functionText.match(/schemas\.(\w+Params)\.safeParse/);
-      if (!schemaMatch) continue;
+      if (schemaMatch === null) continue;
 
       const schemaName = schemaMatch[1];
 
       // このスキーマのnullableフィールドを取得
-      const nullableFields = cachedNullableFields.get(schemaName) || [];
+      const nullableFields = cachedNullableFields.get(schemaName) ?? [];
       if (nullableFields.length === 0) continue;
 
       // nullableフィールドがそのまま渡されていないかチェック
@@ -192,7 +193,7 @@ export default createCheck({
           ctx.report(
             declaration,
             `ハンドラー関数 "${varName}" で nullable フィールド "${field}" が直接渡されています。\n` +
-              `■ ${schemaName} の nullableフィールド: ${nullableFields.join(', ')}\n` +
+              `■ ${schemaName} の nullableフィールド: ${nullableFields.join(", ")}\n` +
               `■ null を undefined に変換してください: body.${field} === null ? undefined : body.${field}\n` +
               `■ 3値を区別するため "in" チェックも推奨: ...("${field}" in body && { ${field}: ... })`
           );
@@ -215,7 +216,7 @@ export default createCheck({
         ctx.report(
           declaration,
           `ハンドラー関数 "${varName}" で null チェック後に undefined への変換が不足している可能性があります。\n` +
-            `■ パターン: body.field === null ? undefined : body.field を使用してください。`
+            "■ パターン: body.field === null ? undefined : body.field を使用してください。"
         );
       }
     }

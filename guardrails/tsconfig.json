@@ -4,7 +4,6 @@
     "module": "ESNext",
     "moduleResolution": "Node",
     "outDir": "./dist",
-    "rootDir": ".",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -16,6 +15,15 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["index.ts", "review/**/*.ts", "procedure/**/*.ts"],
-  "exclude": ["node_modules", "dist", "constitution", "policy"]
+  "include": [
+    "review/**/*.ts",
+    "procedure/**/*.ts",
+    "policy/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "constitution",
+    "**/register-tools.ts"
+  ]
 }

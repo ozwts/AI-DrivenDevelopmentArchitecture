@@ -6,6 +6,7 @@
  * @concept ハンドラー関数の命名規則
  *
  * ハンドラー関数は `build{Action}{Entity}Handler` 形式で命名する。
+ * Actionは複数語（PascalCase）も許可される。
  *
  * | HTTPメソッド      | Action           | 例                                                      |
  * | ----------------- | ---------------- | ------------------------------------------------------- |
@@ -14,10 +15,12 @@
  * | GET（リスト取得） | List             | `buildListProjectsHandler`, `buildListTodosHandler`     |
  * | PATCH（更新）     | Update           | `buildUpdateProjectHandler`, `buildUpdateTodoHandler`   |
  * | DELETE            | Delete           | `buildDeleteProjectHandler`, `buildDeleteTodoHandler`   |
+ * | その他            | 複数語も可       | `buildSemanticSearchProjectHandler`                     |
  *
  * **ファイル名との整合性:**
  * - `build{Action}{Entity}Handler` → `{action}-{entity}-handler.ts`
  * - 例: `buildCreateProjectHandler` → `create-project-handler.ts`
+ * - 例: `buildSemanticSearchProjectHandler` → `semantic-search-project-handler.ts`
  *
  * @example-good
  * ```typescript
@@ -27,8 +30,8 @@
  * // get-project-handler.ts
  * export const buildGetProjectHandler = ({ container }) => async (c) => { ... };
  *
- * // list-projects-handler.ts
- * export const buildListProjectsHandler = ({ container }) => async (c) => { ... };
+ * // semantic-search-project-handler.ts
+ * export const buildSemanticSearchProjectHandler = ({ container }) => async (c) => { ... };
  * ```
  *
  * @example-bad
@@ -42,50 +45,49 @@
  * ```
  */
 
-import * as ts from 'typescript';
-import * as path from 'path';
-import { glob } from 'glob';
-import createCheck from '../../check-builder';
+import * as ts from "typescript";
+import * as path from "path";
+import { glob } from "glob";
+import { createASTChecker } from "../../../../ast-checker";
 
-// ハンドラー命名パターン: build{Action}{Entity}Handler
-const HANDLER_PATTERN = /^build([A-Z][a-zA-Z]+)([A-Z][a-zA-Z]+)Handler$/;
+// ハンドラー命名パターン: build{何か}Handler（Actionとエンティティは後で分離）
+const HANDLER_PATTERN = /^build([A-Z][a-zA-Z]+(?:[A-Z][a-zA-Z]+)*)Handler$/;
 
 // 動的にドメインモデルからエンティティ名を取得
-function getEntityNamesFromDomain(workspaceRoot: string): string[] {
-  const entityPattern = path.join(workspaceRoot, 'server/src/domain/model/**/*.entity.ts');
+const getEntityNamesFromDomain = (workspaceRoot: string): string[] => {
+  const entityPattern = path.join(workspaceRoot, "server/src/domain/model/**/*.entity.ts");
   const entityFiles = glob.sync(entityPattern);
 
   const entityNames: string[] = [];
   for (const file of entityFiles) {
     // ファイル名からエンティティ名を抽出: user.entity.ts -> User
-    const basename = path.basename(file, '.entity.ts');
+    const basename = path.basename(file, ".entity.ts");
     const entityName = basename.charAt(0).toUpperCase() + basename.slice(1);
     entityNames.push(entityName);
   }
 
   // 複数形も追加（リスト取得用）: User -> Users
   const pluralNames = entityNames.map((name) => {
-    if (name.endsWith('y')) {
-      return name.slice(0, -1) + 'ies'; // Category -> Categories
+    if (name.endsWith("y")) {
+      return `${name.slice(0, -1)  }ies`; // Category -> Categories
     }
-    return name + 's'; // User -> Users
+    return `${name  }s`; // User -> Users
   });
 
   return [...entityNames, ...pluralNames];
 }
 
 // PascalCase を kebab-case に変換
-function toKebabCase(str: string): string {
-  return str
-    .replace(/([A-Z])/g, '-$1')
+const toKebabCase = (str: string): string =>
+  str
+    .replace(/([A-Z])/g, "-$1")
     .toLowerCase()
-    .replace(/^-/, '');
-}
+    .replace(/^-/, "");
 
 // キャッシュ（パフォーマンス向上）
 let cachedEntityNames: string[] | null = null;
 
-export default createCheck({
+export const policyCheck = createASTChecker({
   filePattern: /-handler\.ts$/,
 
   visitor: (node, ctx) => {
@@ -95,15 +97,15 @@ export default createCheck({
     const hasExport = node.modifiers?.some(
       (mod) => mod.kind === ts.SyntaxKind.ExportKeyword
     );
-    if (!hasExport) return;
+    if (hasExport !== true) return;
 
     // ワークスペースルートを取得
     const sourceFile = node.getSourceFile();
     const filePath = sourceFile.fileName;
-    const workspaceRoot = filePath.split('/server/')[0];
+    const workspaceRoot = filePath.split("/server/")[0];
 
     // エンティティ名を取得（キャッシュ）
-    if (!cachedEntityNames) {
+    if (cachedEntityNames === null) {
       cachedEntityNames = getEntityNamesFromDomain(workspaceRoot);
     }
 
@@ -113,32 +115,48 @@ export default createCheck({
       const varName = declaration.name.text;
 
       // Handlerで終わる名前のみチェック
-      if (!varName.includes('Handler')) continue;
+      if (!varName.includes("Handler")) continue;
 
       // build...Handler パターンかチェック
       const match = HANDLER_PATTERN.exec(varName);
 
-      if (!match) {
+      if (match === null) {
         ctx.report(
           declaration,
           `ハンドラー関数 "${varName}" が命名規則に従っていません。\n` +
-            `■ build{Action}{Entity}Handler 形式で命名してください。\n` +
-            `■ 例: buildCreateProjectHandler, buildGetTodoHandler`
+            "■ build{Action}{Entity}Handler 形式で命名してください。\n" +
+            "■ 例: buildCreateProjectHandler, buildGetTodoHandler, buildSemanticSearchProjectHandler"
         );
         continue;
       }
 
-      const action = match[1];
-      const entity = match[2];
+      const actionAndEntity = match[1]; // 例: "GetProject", "SemanticSearchProject", "ListProjects"
 
-      // エンティティ名がドメインモデルに存在するかチェック
-      if (cachedEntityNames.length > 0 && !cachedEntityNames.includes(entity)) {
+      // エンティティ名リストから末尾が一致するものを探す（長い方から試す）
+      const sortedEntityNames = [...cachedEntityNames].sort((a, b) => b.length - a.length);
+      const entity = sortedEntityNames.find((name) => actionAndEntity.endsWith(name));
+
+      if (entity === undefined) {
         ctx.report(
           declaration,
-          `ハンドラー関数 "${varName}" のエンティティ "${entity}" がドメインモデルに存在しません。\n` +
-            `■ 有効なエンティティ: ${cachedEntityNames.filter((n) => !n.endsWith('s') || n.endsWith('ss')).join(', ')}\n` +
-            `■ ドメインモデル（*.entity.ts）に対応するエンティティを追加してください。`
+          `ハンドラー関数 "${varName}" のエンティティが特定できません。\n` +
+            `■ 有効なエンティティ: ${cachedEntityNames.filter((n) => !n.endsWith("s") || n.endsWith("ss")).join(", ")}\n` +
+            "■ build{Action}{Entity}Handler 形式で命名してください。"
         );
+        continue;
+      }
+
+      // Actionを逆算
+      const action = actionAndEntity.slice(0, -entity.length);
+
+      if (action.length === 0) {
+        ctx.report(
+          declaration,
+          `ハンドラー関数 "${varName}" にActionがありません。\n` +
+            "■ build{Action}{Entity}Handler 形式で命名してください。\n" +
+            "■ 例: buildCreateProjectHandler, buildGetTodoHandler"
+        );
+        continue;
       }
 
       // ファイル名との整合性チェック

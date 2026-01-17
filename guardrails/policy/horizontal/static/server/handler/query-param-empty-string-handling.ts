@@ -57,10 +57,10 @@
  * ```
  */
 
-import * as ts from 'typescript';
-import createCheck from '../../check-builder';
+import * as ts from "typescript";
+import { createASTChecker } from "../../../../ast-checker";
 
-export default createCheck({
+export const policyCheck = createASTChecker({
   filePattern: /-handler\.ts$/,
 
   visitor: (node, ctx) => {
@@ -70,7 +70,7 @@ export default createCheck({
     const hasExport = node.modifiers?.some(
       (mod) => mod.kind === ts.SyntaxKind.ExportKeyword
     );
-    if (!hasExport) return;
+    if (hasExport !== true) return;
 
     for (const declaration of node.declarationList.declarations) {
       if (!ts.isIdentifier(declaration.name)) continue;
@@ -78,23 +78,23 @@ export default createCheck({
       const varName = declaration.name.text;
 
       // Handlerで終わる名前のみチェック
-      if (!varName.endsWith('Handler')) continue;
+      if (!varName.endsWith("Handler")) continue;
 
       // 初期化子を取得
-      const initializer = declaration.initializer;
-      if (!initializer) continue;
+      const {initializer} = declaration;
+      if (initializer === undefined) continue;
 
       // 関数全体のテキストを取得
       const functionText = initializer.getText();
 
       // c.req.query() を使用しているかチェック
       const queryUsageMatch = functionText.match(/c\.req\.query\s*\(\s*["'](\w+)["']\s*\)/g);
-      if (!queryUsageMatch) continue;
+      if (queryUsageMatch === null) continue;
 
       // 各クエリパラメータについてチェック
       for (const usage of queryUsageMatch) {
         const paramNameMatch = usage.match(/["'](\w+)["']/);
-        if (!paramNameMatch) continue;
+        if (paramNameMatch === null) continue;
 
         const paramName = paramNameMatch[1];
 
@@ -112,9 +112,9 @@ export default createCheck({
           ctx.report(
             declaration,
             `ハンドラー関数 "${varName}" でクエリパラメータ "${paramName}" の空文字列チェックが見つかりません。\n` +
-              `■ c.req.query() は空文字列を返す可能性があります。\n` +
-              `■ パターン: if (param !== undefined && param !== "") { ... }\n` +
-              `■ 正規化: const value = param !== "" ? param : undefined;`
+              "■ c.req.query() は空文字列を返す可能性があります。\n" +
+              "■ パターン: if (param !== undefined && param !== \"\") { ... }\n" +
+              "■ 正規化: const value = param !== \"\" ? param : undefined;"
           );
         }
       }

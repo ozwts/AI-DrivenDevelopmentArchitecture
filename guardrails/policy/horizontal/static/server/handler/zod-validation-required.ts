@@ -47,10 +47,10 @@
  * ```
  */
 
-import * as ts from 'typescript';
-import createCheck from '../../check-builder';
+import * as ts from "typescript";
+import { createASTChecker } from "../../../../ast-checker";
 
-export default createCheck({
+export const policyCheck = createASTChecker({
   filePattern: /-handler\.ts$/,
 
   visitor: (node, ctx) => {
@@ -60,7 +60,7 @@ export default createCheck({
     const hasExport = node.modifiers?.some(
       (mod) => mod.kind === ts.SyntaxKind.ExportKeyword
     );
-    if (!hasExport) return;
+    if (hasExport !== true) return;
 
     for (const declaration of node.declarationList.declarations) {
       if (!ts.isIdentifier(declaration.name)) continue;
@@ -68,11 +68,11 @@ export default createCheck({
       const varName = declaration.name.text;
 
       // Handlerで終わる名前のみチェック
-      if (!varName.endsWith('Handler')) continue;
+      if (!varName.endsWith("Handler")) continue;
 
       // 初期化子を取得
-      const initializer = declaration.initializer;
-      if (!initializer) continue;
+      const {initializer} = declaration;
+      if (initializer === undefined) continue;
 
       // 関数全体のテキストを取得
       const functionText = initializer.getText();
@@ -91,8 +91,8 @@ export default createCheck({
         ctx.report(
           declaration,
           `ハンドラー関数 "${varName}" で Zod バリデーションが見つかりません。\n` +
-            `■ c.req.json() で取得したボディは .safeParse() で検証してください。\n` +
-            `■ バリデーションエラー時は 400 Bad Request を返してください。`
+            "■ c.req.json() で取得したボディは .safeParse() で検証してください。\n" +
+            "■ バリデーションエラー時は 400 Bad Request を返してください。"
         );
       }
 
@@ -101,7 +101,7 @@ export default createCheck({
         ctx.report(
           declaration,
           `ハンドラー関数 "${varName}" でクエリパラメータの Zod バリデーションが見つかりません。\n` +
-            `■ c.req.query() で取得したパラメータは .safeParse() で検証してください。`
+            "■ c.req.query() で取得したパラメータは .safeParse() で検証してください。"
         );
       }
     }

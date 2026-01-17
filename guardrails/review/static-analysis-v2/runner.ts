@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import * as path from "path";
 import * as fs from "fs";
 import { fileURLToPath } from "url";
-import type { CheckModule, Violation } from "../../policy/horizontal/static/types";
+import type { CheckModule, Violation } from "../../policy/ast-checker";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -74,7 +74,7 @@ export class CheckRunner {
       try {
         // 動的import
         const module = await import(checkPath);
-        const checkModule: CheckModule = module.default;
+        const checkModule: CheckModule = module.policyCheck;
 
         if (
           checkModule !== null &&

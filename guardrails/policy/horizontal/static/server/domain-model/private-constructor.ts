@@ -40,17 +40,17 @@
  * ```
  */
 
-import * as ts from 'typescript';
-import createCheck from '../../check-builder';
+import * as ts from "typescript";
+import { createASTChecker } from "../../../../ast-checker";
 
-export default createCheck({
+export const policyCheck = createASTChecker({
   filePattern: /\.(entity|vo)\.ts$/,
 
   visitor: (node, ctx) => {
     if (!ts.isClassDeclaration(node)) return;
 
     // クラス名を取得（レポート用）
-    const className = node.name?.text ?? 'Anonymous';
+    const className = node.name?.text ?? "Anonymous";
 
     // コンストラクタを探す
     for (const member of node.members) {
@@ -61,7 +61,7 @@ export default createCheck({
         (m) => m.kind === ts.SyntaxKind.PrivateKeyword
       );
 
-      if (!hasPrivate) {
+      if (hasPrivate !== true) {
         ctx.report(
           member,
           `クラス "${className}" のコンストラクタにprivate修飾子がありません。ファクトリメソッド（from()）パターンを使用してください。`

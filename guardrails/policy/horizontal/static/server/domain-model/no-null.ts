@@ -34,10 +34,10 @@
  * ```
  */
 
-import * as ts from 'typescript';
-import createCheck from '../../check-builder';
+import * as ts from "typescript";
+import { createASTChecker } from "../../../../ast-checker";
 
-export default createCheck({
+export const policyCheck = createASTChecker({
   filePattern: /\.(entity|vo)\.ts$/,
 
   visitor: (node, ctx) => {
@@ -49,7 +49,7 @@ export default createCheck({
       if (ts.isLiteralTypeNode(type) && type.literal.kind === ts.SyntaxKind.NullKeyword) {
         ctx.report(
           node,
-          'null型の使用は禁止されています。undefinedを使用してください。'
+          "null型の使用は禁止されています。undefinedを使用してください。"
         );
         return;
       }

@@ -28,11 +28,11 @@
  * ```
  */
 
-import * as ts from 'typescript';
-import * as path from 'path';
-import createCheck from '../../check-builder';
+import * as ts from "typescript";
+import * as path from "path";
+import { createASTChecker } from "../../../../ast-checker";
 
-export default createCheck({
+export const policyCheck = createASTChecker({
   filePattern: /\.repository\.ts$/,
 
   visitor: (node, ctx) => {
@@ -44,7 +44,7 @@ export default createCheck({
     const fileName = path.basename(filePath);
 
     // リポジトリファイル名からエンティティ名を取得
-    const repoEntityName = fileName.replace('.repository.ts', '');
+    const repoEntityName = fileName.replace(".repository.ts", "");
 
     // ディレクトリ名を取得
     const dirName = path.basename(path.dirname(filePath));
@@ -55,7 +55,7 @@ export default createCheck({
         node,
         `リポジトリ "${fileName}" はアグリゲートディレクトリ "${dirName}" と一致しません。` +
           `1アグリゲート = 1リポジトリの原則に従い、"${dirName}.repository.ts" のみ配置してください。` +
-          `子エンティティは集約ルートのリポジトリ経由で永続化します。`
+          "子エンティティは集約ルートのリポジトリ経由で永続化します。"
       );
     }
   },

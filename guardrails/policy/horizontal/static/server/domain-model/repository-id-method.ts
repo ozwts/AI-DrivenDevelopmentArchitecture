@@ -56,10 +56,10 @@
  * ```
  */
 
-import * as ts from 'typescript';
-import createCheck from '../../check-builder';
+import * as ts from "typescript";
+import { createASTChecker } from "../../../../ast-checker";
 
-export default createCheck({
+export const policyCheck = createASTChecker({
   filePattern: /\.repository\.ts$/,
 
   visitor: (node, ctx) => {
@@ -69,16 +69,16 @@ export default createCheck({
     const typeName = node.name.text;
 
     // Repositoryで終わる型のみチェック
-    if (!typeName.endsWith('Repository')) return;
+    if (!typeName.endsWith("Repository")) return;
 
     // 型がオブジェクト型リテラルかチェック
     if (!ts.isTypeLiteralNode(node.type)) return;
 
     // {entityName}Id()メソッドを探す
     // リポジトリ名から予想されるエンティティ名を取得
-    const entityName = typeName.replace('Repository', '');
+    const entityName = typeName.replace("Repository", "");
     const expectedIdMethod =
-      entityName.charAt(0).toLowerCase() + entityName.slice(1) + 'Id';
+      `${entityName.charAt(0).toLowerCase() + entityName.slice(1)  }Id`;
 
     const hasIdMethod = node.type.members.some((member) => {
       if (!ts.isPropertySignature(member) && !ts.isMethodSignature(member))
@@ -87,7 +87,7 @@ export default createCheck({
 
       const memberName = member.name.text;
       // {entityName}Id または任意の*Id メソッドを許可
-      return memberName === expectedIdMethod || memberName.endsWith('Id');
+      return memberName === expectedIdMethod || memberName.endsWith("Id");
     });
 
     if (!hasIdMethod) {

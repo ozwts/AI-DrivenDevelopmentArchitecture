@@ -42,17 +42,17 @@
  * ```
  */
 
-import * as ts from 'typescript';
-import * as path from 'path';
-import createCheck from '../../check-builder';
+import * as ts from "typescript";
+import * as path from "path";
+import { createASTChecker } from "../../../../ast-checker";
 
-export default createCheck({
+export const policyCheck = createASTChecker({
   filePattern: /\.entity\.ts$/,
 
   visitor: (node, ctx) => {
     if (!ts.isClassDeclaration(node)) return;
 
-    const className = node.name?.text ?? 'Anonymous';
+    const className = node.name?.text ?? "Anonymous";
     const sourceFile = node.getSourceFile();
     const filePath = sourceFile.fileName;
 
@@ -61,7 +61,7 @@ export default createCheck({
     const dirName = path.basename(path.dirname(filePath));
 
     // エンティティ名を取得（例: "task.entity.ts" → "task"）
-    const entityName = fileName.replace('.entity.ts', '');
+    const entityName = fileName.replace(".entity.ts", "");
 
     // ディレクトリ名と一致する場合は集約ルート → チェック不要
     if (entityName === dirName) return;
@@ -70,26 +70,26 @@ export default createCheck({
     for (const member of node.members) {
       if (!ts.isPropertyDeclaration(member)) continue;
 
-      const propName = ts.isIdentifier(member.name) ? member.name.text : '';
+      const propName = ts.isIdentifier(member.name) ? member.name.text : "";
       const typeNode = member.type;
 
-      if (!typeNode) continue;
+      if (typeNode === undefined) continue;
 
       // 配列型かチェック
       if (ts.isArrayTypeNode(typeNode)) {
         // 配列の要素型を取得
-        const elementType = typeNode.elementType;
+        const {elementType} = typeNode;
 
         // 要素型がTypeReference（クラス参照）かチェック
         if (ts.isTypeReferenceNode(elementType)) {
-          const typeName = elementType.typeName;
+          const {typeName} = elementType;
           if (ts.isIdentifier(typeName)) {
             // Entity配列を持っている場合はエラー
             ctx.report(
               member,
               `子エンティティ "${className}" がエンティティ配列 "${propName}: ${typeName.text}[]" を持っています。` +
-                `集約階層は1階層（親-子）までに制限してください。孫エンティティは別集約として設計するか、` +
-                `設計を見直してください。`
+                "集約階層は1階層（親-子）までに制限してください。孫エンティティは別集約として設計するか、" +
+                "設計を見直してください。"
             );
           }
         }

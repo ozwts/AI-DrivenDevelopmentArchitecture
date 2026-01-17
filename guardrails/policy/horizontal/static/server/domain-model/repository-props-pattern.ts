@@ -56,8 +56,8 @@
  * ```
  */
 
-import * as ts from 'typescript';
-import createCheck from '../../check-builder';
+import * as ts from "typescript";
+import { createASTChecker } from "../../../../ast-checker";
 
 // 引数なしで許可されるメソッド名パターン
 const NO_ARGS_ALLOWED = [
@@ -65,7 +65,7 @@ const NO_ARGS_ALLOWED = [
   /^findAll$/, // findAll()は引数なしでOK
 ];
 
-export default createCheck({
+export const policyCheck = createASTChecker({
   filePattern: /\.repository\.ts$/,
 
   visitor: (node, ctx) => {
@@ -77,7 +77,7 @@ export default createCheck({
 
     // PropertySignatureの場合、関数型かどうかチェック
     if (ts.isPropertySignature(node)) {
-      if (!node.type || !ts.isFunctionTypeNode(node.type)) return;
+      if (node.type === undefined || !ts.isFunctionTypeNode(node.type)) return;
 
       const funcType = node.type;
       const params = funcType.parameters;
@@ -90,14 +90,14 @@ export default createCheck({
       // 引数が1つで、型がオブジェクト型リテラルまたはpropsで始まる名前かチェック
       if (params.length === 1) {
         const param = params[0];
-        const paramName = ts.isIdentifier(param.name) ? param.name.text : '';
+        const paramName = ts.isIdentifier(param.name) ? param.name.text : "";
 
-        if (paramName === 'props' || paramName.startsWith('props')) {
+        if (paramName === "props" || paramName.startsWith("props")) {
           return; // OK
         }
 
         // 型がオブジェクト型リテラルかチェック
-        if (param.type && ts.isTypeLiteralNode(param.type)) {
+        if (param.type !== undefined && ts.isTypeLiteralNode(param.type)) {
           ctx.report(
             node,
             `リポジトリメソッド "${methodName}" の引数名は "props" にしてください。例: ${methodName}(props: { ... })`
@@ -127,9 +127,9 @@ export default createCheck({
       // 引数が1つで、propsという名前かチェック
       if (params.length === 1) {
         const param = params[0];
-        const paramName = ts.isIdentifier(param.name) ? param.name.text : '';
+        const paramName = ts.isIdentifier(param.name) ? param.name.text : "";
 
-        if (paramName === 'props' || paramName.startsWith('props')) {
+        if (paramName === "props" || paramName.startsWith("props")) {
           return; // OK
         }
       }

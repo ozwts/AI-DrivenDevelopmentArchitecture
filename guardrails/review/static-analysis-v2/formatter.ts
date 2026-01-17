@@ -1,4 +1,4 @@
-import type { Violation } from "../../policy/horizontal/static/types";
+import type { Violation } from "../../policy/ast-checker";
 
 /**
  * 違反情報をMarkdown形式でフォーマット

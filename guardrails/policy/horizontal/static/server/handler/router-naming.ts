@@ -46,34 +46,35 @@
  * ```
  */
 
-import * as ts from 'typescript';
-import * as path from 'path';
-import { glob } from 'glob';
-import createCheck from '../../check-builder';
+import * as ts from "typescript";
+import * as path from "path";
+import { glob } from "glob";
+import { createASTChecker } from "../../../../ast-checker";
 
 // ルーター命名パターン: build{Entity}Router
 const ROUTER_PATTERN = /^build([A-Z][a-zA-Z]+)Router$/;
 
-// 動的にドメインモデルからエンティティ名を取得
-function getEntityNamesFromDomain(workspaceRoot: string): string[] {
-  const entityPattern = path.join(workspaceRoot, 'server/src/domain/model/**/*.entity.ts');
-  const entityFiles = glob.sync(entityPattern);
+// 動的にドメインモデルから集約ルート（リポジトリが存在するエンティティ）を取得
+const getAggregateRootsFromDomain = (workspaceRoot: string): string[] => {
+  // *.repository.ts ファイルから集約ルートを特定
+  const repositoryPattern = path.join(workspaceRoot, "server/src/domain/model/**/*.repository.ts");
+  const repositoryFiles = glob.sync(repositoryPattern);
 
-  const entityNames: string[] = [];
-  for (const file of entityFiles) {
-    // ファイル名からエンティティ名を抽出: user.entity.ts -> User
-    const basename = path.basename(file, '.entity.ts');
-    const entityName = basename.charAt(0).toUpperCase() + basename.slice(1);
-    entityNames.push(entityName);
+  const aggregateRoots: string[] = [];
+  for (const file of repositoryFiles) {
+    // ファイル名から集約ルート名を抽出: user.repository.ts -> User
+    const basename = path.basename(file, ".repository.ts");
+    const aggregateName = basename.charAt(0).toUpperCase() + basename.slice(1);
+    aggregateRoots.push(aggregateName);
   }
 
-  return entityNames;
-}
+  return aggregateRoots;
+};
 
 // キャッシュ（パフォーマンス向上）
 let cachedEntityNames: string[] | null = null;
 
-export default createCheck({
+export const policyCheck = createASTChecker({
   filePattern: /-router\.ts$/,
 
   visitor: (node, ctx) => {
@@ -83,16 +84,16 @@ export default createCheck({
     const hasExport = node.modifiers?.some(
       (mod) => mod.kind === ts.SyntaxKind.ExportKeyword
     );
-    if (!hasExport) return;
+    if (hasExport !== true) return;
 
     // ワークスペースルートを取得
     const sourceFile = node.getSourceFile();
     const filePath = sourceFile.fileName;
-    const workspaceRoot = filePath.split('/server/')[0];
+    const workspaceRoot = filePath.split("/server/")[0];
 
-    // エンティティ名を取得（キャッシュ）
-    if (!cachedEntityNames) {
-      cachedEntityNames = getEntityNamesFromDomain(workspaceRoot);
+    // 集約ルート名を取得（キャッシュ）
+    if (cachedEntityNames === null) {
+      cachedEntityNames = getAggregateRootsFromDomain(workspaceRoot);
     }
 
     for (const declaration of node.declarationList.declarations) {
@@ -101,30 +102,30 @@ export default createCheck({
       const varName = declaration.name.text;
 
       // Routerを含む名前のみチェック
-      if (!varName.includes('Router')) continue;
+      if (!varName.includes("Router")) continue;
 
       // build...Router パターンかチェック
       const match = ROUTER_PATTERN.exec(varName);
 
-      if (!match) {
+      if (match === null) {
         ctx.report(
           declaration,
           `ルーター関数 "${varName}" が命名規則に従っていません。\n` +
-            `■ build{Entity}Router 形式で命名してください。\n` +
-            `■ 例: buildProjectRouter, buildTodoRouter, buildUserRouter`
+            "■ build{Entity}Router 形式で命名してください。\n" +
+            "■ 例: buildProjectRouter, buildTodoRouter, buildUserRouter"
         );
         continue;
       }
 
       const entity = match[1];
 
-      // エンティティ名がドメインモデルに存在するかチェック
+      // 集約ルート（リポジトリが存在するエンティティ）に存在するかチェック
       if (cachedEntityNames.length > 0 && !cachedEntityNames.includes(entity)) {
         ctx.report(
           declaration,
-          `ルーター関数 "${varName}" のエンティティ "${entity}" がドメインモデルに存在しません。\n` +
-            `■ 有効なエンティティ: ${cachedEntityNames.join(', ')}\n` +
-            `■ ドメインモデル（*.entity.ts）に対応するエンティティを追加してください。`
+          `ルーター関数 "${varName}" のエンティティ "${entity}" が集約ルートに存在しません。\n` +
+            `■ 有効な集約ルート: ${cachedEntityNames.join(", ")}\n` +
+            "■ ルーターは集約ルート単位で作成してください（*.repository.ts が存在するエンティティのみ）。"
         );
       }
     }

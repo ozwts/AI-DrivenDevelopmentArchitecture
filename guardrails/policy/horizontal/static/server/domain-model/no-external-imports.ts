@@ -48,8 +48,8 @@
  * ```
  */
 
-import * as ts from 'typescript';
-import createCheck from '../../check-builder';
+import * as ts from "typescript";
+import { createASTChecker } from "../../../../ast-checker";
 
 // 許可するインポートパターン
 const ALLOWED_IMPORT_PATTERNS = [
@@ -57,13 +57,13 @@ const ALLOWED_IMPORT_PATTERNS = [
   /^@\/util\//, // @/util/のみ許可
 ];
 
-export default createCheck({
+export const policyCheck = createASTChecker({
   filePattern: /\.(entity|vo|repository)\.ts$/,
 
   visitor: (node, ctx) => {
     if (!ts.isImportDeclaration(node)) return;
 
-    const moduleSpecifier = node.moduleSpecifier;
+    const {moduleSpecifier} = node;
     if (!ts.isStringLiteral(moduleSpecifier)) return;
 
     const importPath = moduleSpecifier.text;
@@ -77,7 +77,7 @@ export default createCheck({
       ctx.report(
         node,
         `インポート "${importPath}" はドメインモデルで禁止されています。` +
-          `許可されているのは @/domain/ と @/util/ のみです。`
+          "許可されているのは @/domain/ と @/util/ のみです。"
       );
     }
   },

@@ -49,10 +49,10 @@
  * ```
  */
 
-import * as ts from 'typescript';
-import createCheck from '../../check-builder';
+import * as ts from "typescript";
+import { createASTChecker } from "../../../../ast-checker";
 
-export default createCheck({
+export const policyCheck = createASTChecker({
   filePattern: /\.vo\.ts$/,
 
   visitor: (node, ctx) => {
@@ -65,7 +65,7 @@ export default createCheck({
     const name = propertyName.text;
 
     // アンダースコアで始まるプライベートフィールドを検出
-    if (name.startsWith('_')) {
+    if (name.startsWith("_")) {
       ctx.report(
         node,
         `アンダースコアプレフィックス "${name}" の使用は禁止されています。ES2022プライベートフィールド（#${name.slice(1)}）を使用してください。`

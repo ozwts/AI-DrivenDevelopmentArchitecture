@@ -57,17 +57,17 @@
  * ```
  */
 
-import * as ts from 'typescript';
-import createCheck from '../../check-builder';
+import * as ts from "typescript";
+import { createASTChecker } from "../../../../ast-checker";
 
 // ビジネスロジックの兆候パターン
 const BUSINESS_LOGIC_PATTERNS = [
-  { pattern: /new\s+Date\s*\(\)/, message: 'new Date() の呼び出し。日時はUseCase層で生成してください。' },
-  { pattern: /Date\.now\s*\(\)/, message: 'Date.now() の呼び出し。日時はUseCase層で生成してください。' },
-  { pattern: /Math\.(floor|ceil|round|random)/, message: 'Math関数の呼び出し。計算はUseCase層で実施してください。' },
-  { pattern: /\.filter\s*\([^)]*=>/, message: 'filterによるデータ操作。ビジネスロジックはUseCase層で実施してください。' },
-  { pattern: /\.reduce\s*\([^)]*=>/, message: 'reduceによる集計処理。ビジネスロジックはUseCase層で実施してください。' },
-  { pattern: /\.sort\s*\([^)]*=>/, message: 'sortによる並び替え。ビジネスロジックはUseCase層で実施してください。' },
+  { pattern: /new\s+Date\s*\(\)/, message: "new Date() の呼び出し。日時はUseCase層で生成してください。" },
+  { pattern: /Date\.now\s*\(\)/, message: "Date.now() の呼び出し。日時はUseCase層で生成してください。" },
+  { pattern: /Math\.(floor|ceil|round|random)/, message: "Math関数の呼び出し。計算はUseCase層で実施してください。" },
+  { pattern: /\.filter\s*\([^)]*=>/, message: "filterによるデータ操作。ビジネスロジックはUseCase層で実施してください。" },
+  { pattern: /\.reduce\s*\([^)]*=>/, message: "reduceによる集計処理。ビジネスロジックはUseCase層で実施してください。" },
+  { pattern: /\.sort\s*\([^)]*=>/, message: "sortによる並び替え。ビジネスロジックはUseCase層で実施してください。" },
 ];
 
 // 許可されるパターン（誤検知防止）
@@ -76,7 +76,7 @@ const ALLOWED_PATTERNS = [
   /formatZodError/,                 // Zodエラーフォーマットは許可
 ];
 
-export default createCheck({
+export const policyCheck = createASTChecker({
   filePattern: /-handler\.ts$/,
 
   visitor: (node, ctx) => {
@@ -86,7 +86,7 @@ export default createCheck({
     const hasExport = node.modifiers?.some(
       (mod) => mod.kind === ts.SyntaxKind.ExportKeyword
     );
-    if (!hasExport) return;
+    if (hasExport !== true) return;
 
     for (const declaration of node.declarationList.declarations) {
       if (!ts.isIdentifier(declaration.name)) continue;
@@ -94,11 +94,11 @@ export default createCheck({
       const varName = declaration.name.text;
 
       // Handlerで終わる名前のみチェック
-      if (!varName.endsWith('Handler')) continue;
+      if (!varName.endsWith("Handler")) continue;
 
       // 初期化子を取得
-      const initializer = declaration.initializer;
-      if (!initializer) continue;
+      const {initializer} = declaration;
+      if (initializer === undefined) continue;
 
       // 関数全体のテキストを取得
       const functionText = initializer.getText();
@@ -116,7 +116,7 @@ export default createCheck({
             declaration,
             `ハンドラー関数 "${varName}" でビジネスロジックの兆候が検出されました。\n` +
               `■ ${message}\n` +
-              `■ ハンドラーは薄いアダプターに保ち、ロジックはUseCase層に委譲してください。`
+              "■ ハンドラーは薄いアダプターに保ち、ロジックはUseCase層に委譲してください。"
           );
         }
       }

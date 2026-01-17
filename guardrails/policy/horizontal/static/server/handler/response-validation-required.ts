@@ -47,10 +47,10 @@
  * ```
  */
 
-import * as ts from 'typescript';
-import createCheck from '../../check-builder';
+import * as ts from "typescript";
+import { createASTChecker } from "../../../../ast-checker";
 
-export default createCheck({
+export const policyCheck = createASTChecker({
   filePattern: /-handler\.ts$/,
 
   visitor: (node, ctx) => {
@@ -60,7 +60,7 @@ export default createCheck({
     const hasExport = node.modifiers?.some(
       (mod) => mod.kind === ts.SyntaxKind.ExportKeyword
     );
-    if (!hasExport) return;
+    if (hasExport !== true) return;
 
     for (const declaration of node.declarationList.declarations) {
       if (!ts.isIdentifier(declaration.name)) continue;
@@ -68,11 +68,11 @@ export default createCheck({
       const varName = declaration.name.text;
 
       // Handlerで終わる名前のみチェック
-      if (!varName.endsWith('Handler')) continue;
+      if (!varName.endsWith("Handler")) continue;
 
       // 初期化子を取得
-      const initializer = declaration.initializer;
-      if (!initializer) continue;
+      const {initializer} = declaration;
+      if (initializer === undefined) continue;
 
       // 関数全体のテキストを取得
       const functionText = initializer.getText();
@@ -83,7 +83,7 @@ export default createCheck({
 
       // safeParse呼び出しが2回あるかチェック（入力 + 出力）
       const safeParseMatches = functionText.match(/\.safeParse\s*\(/g);
-      const safeParseCount = safeParseMatches ? safeParseMatches.length : 0;
+      const safeParseCount = safeParseMatches !== null ? safeParseMatches.length : 0;
 
       // c.json() の呼び出しをカウント（成功時のレスポンス）
       const hasSuccessResponse = /return\s+c\.json\s*\(/.test(functionText);
@@ -100,8 +100,8 @@ export default createCheck({
           ctx.report(
             declaration,
             `ハンドラー関数 "${varName}" で出力バリデーションが見つかりません。\n` +
-              `■ レスポンスデータは .safeParse() で検証してください。\n` +
-              `■ OpenAPI仕様との不一致を早期検出できます。`
+              "■ レスポンスデータは .safeParse() で検証してください。\n" +
+              "■ OpenAPI仕様との不一致を早期検出できます。"
           );
         }
       }

@@ -68,17 +68,17 @@
  * ```
  */
 
-import * as ts from 'typescript';
-import createCheck from '../../check-builder';
+import * as ts from "typescript";
+import { createASTChecker } from "../../../../ast-checker";
 
-export default createCheck({
+export const policyCheck = createASTChecker({
   filePattern: /\.(entity|vo)\.ts$/,
 
   visitor: (node, ctx) => {
     // クラス全体のメソッドをチェック
     if (!ts.isMethodDeclaration(node)) return;
     if (!ts.isIdentifier(node.name)) return;
-    if (!node.body) return;
+    if (node.body === undefined) return;
 
     const methodName = node.name.text;
     const sourceFile = node.getSourceFile();
@@ -89,8 +89,8 @@ export default createCheck({
       ctx.report(
         node,
         `【MECE違反の可能性】メソッド "${methodName}" 内で .length チェックを検出しました。\n` +
-          `■ 文字列長チェック（minLength/maxLength）はHandler層（OpenAPI/Zod）の責務です。\n` +
-          `■ 配列長チェックが必要な場合は、ビジネスルールとして妥当か確認してください。`
+          "■ 文字列長チェック（minLength/maxLength）はHandler層（OpenAPI/Zod）の責務です。\n" +
+          "■ 配列長チェックが必要な場合は、ビジネスルールとして妥当か確認してください。"
       );
     }
 
@@ -99,8 +99,8 @@ export default createCheck({
       ctx.report(
         node,
         `【MECE違反の可能性】メソッド "${methodName}" 内で正規表現テスト（.test()）を検出しました。\n` +
-          `■ 形式チェック（email, uuid, pattern等）はHandler層（OpenAPI format/pattern）の責務です。\n` +
-          `■ ドメイン固有ルール（会社ドメインのみ等）の場合はこの警告を無視できます。`
+          "■ 形式チェック（email, uuid, pattern等）はHandler層（OpenAPI format/pattern）の責務です。\n" +
+          "■ ドメイン固有ルール（会社ドメインのみ等）の場合はこの警告を無視できます。"
       );
     }
 
@@ -109,7 +109,7 @@ export default createCheck({
       ctx.report(
         node,
         `【MECE違反の可能性】メソッド "${methodName}" 内で正規表現リテラルを検出しました。\n` +
-          `■ 形式チェックはHandler層（OpenAPI format/pattern）の責務です。`
+          "■ 形式チェックはHandler層（OpenAPI format/pattern）の責務です。"
       );
     }
 
@@ -118,8 +118,8 @@ export default createCheck({
       ctx.report(
         node,
         `【MECE違反の可能性】メソッド "${methodName}" 内で typeof チェックを検出しました。\n` +
-          `■ 型チェックはHandler層（OpenAPI/Zod）の責務です。\n` +
-          `■ Domain層では型は既にバリデーション済みとして扱ってください。`
+          "■ 型チェックはHandler層（OpenAPI/Zod）の責務です。\n" +
+          "■ Domain層では型は既にバリデーション済みとして扱ってください。"
       );
     }
 
@@ -128,7 +128,7 @@ export default createCheck({
       ctx.report(
         node,
         `【MECE違反の可能性】メソッド "${methodName}" 内で数値バリデーション（isNaN/isFinite等）を検出しました。\n` +
-          `■ 数値形式チェックはHandler層（OpenAPI type: number）の責務です。`
+          "■ 数値形式チェックはHandler層（OpenAPI type: number）の責務です。"
       );
     }
 
@@ -137,7 +137,7 @@ export default createCheck({
       ctx.report(
         node,
         `【MECE違反の可能性】メソッド "${methodName}" 内で空文字チェックを検出しました。\n` +
-          `■ 必須性チェック（minLength: 1）はHandler層（OpenAPI/Zod）の責務です。`
+          "■ 必須性チェック（minLength: 1）はHandler層（OpenAPI/Zod）の責務です。"
       );
     }
 
@@ -146,8 +146,8 @@ export default createCheck({
       ctx.report(
         node,
         `【MECE違反の可能性】メソッド "${methodName}" 内で .trim() を検出しました。\n` +
-          `■ 入力値の正規化はHandler層の責務です。\n` +
-          `■ Domain層に到達するデータは正規化済みであるべきです。`
+          "■ 入力値の正規化はHandler層の責務です。\n" +
+          "■ Domain層に到達するデータは正規化済みであるべきです。"
       );
     }
   },

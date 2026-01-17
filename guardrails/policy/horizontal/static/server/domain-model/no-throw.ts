@@ -52,10 +52,10 @@
  * ```
  */
 
-import * as ts from 'typescript';
-import createCheck from '../../check-builder';
+import * as ts from "typescript";
+import { createASTChecker } from "../../../../ast-checker";
 
-export default createCheck({
+export const policyCheck = createASTChecker({
   filePattern: /\.(entity|vo)\.ts$/,
 
   visitor: (node, ctx) => {
@@ -63,7 +63,7 @@ export default createCheck({
 
     ctx.report(
       node,
-      'throw文の使用は禁止されています。Result型（Result.err()）を使用してエラーを表現してください。'
+      "throw文の使用は禁止されています。Result型（Result.err()）を使用してエラーを表現してください。"
     );
   },
 });

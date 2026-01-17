@@ -2,7 +2,7 @@
  * カスタム静的解析ハンドラー（TypeScript Compiler API）
  */
 
-import { runStaticAnalysisV2 } from "./index";
+import { runStaticAnalysisV2 } from "./runner";
 import { formatViolations } from "./formatter";
 
 /**

@@ -88,8 +88,8 @@
  * ```
  */
 
-import * as ts from 'typescript';
-import createCheck from '../../check-builder';
+import * as ts from "typescript";
+import { createASTChecker } from "../../../../ast-checker";
 
 // 外部依存を示唆する型名パターン
 const EXTERNAL_DEPENDENCY_PATTERNS = [
@@ -103,7 +103,7 @@ const EXTERNAL_DEPENDENCY_PATTERNS = [
   /Provider$/,
 ];
 
-export default createCheck({
+export const policyCheck = createASTChecker({
   filePattern: /\.(entity|vo)\.ts$/,
 
   visitor: (node, ctx) => {
@@ -112,7 +112,7 @@ export default createCheck({
       const params = node.parameters;
 
       for (const param of params) {
-        if (!param.type) continue;
+        if (param.type === undefined) continue;
 
         const typeText = param.type.getText();
 
@@ -121,13 +121,13 @@ export default createCheck({
           if (pattern.test(typeText)) {
             const methodName = ts.isMethodDeclaration(node) && ts.isIdentifier(node.name)
               ? node.name.text
-              : 'constructor';
+              : "constructor";
 
             ctx.report(
               param,
               `メソッド "${methodName}" の引数に外部依存型 "${typeText}" が含まれています。\n` +
-                `■ 外部依存する不変条件はUseCase層で検証してください。\n` +
-                `■ Domain層は外部依存ゼロを維持します。`
+                "■ 外部依存する不変条件はUseCase層で検証してください。\n" +
+                "■ Domain層は外部依存ゼロを維持します。"
             );
             break;
           }
@@ -146,37 +146,37 @@ export default createCheck({
         (mod) => mod.kind === ts.SyntaxKind.AsyncKeyword
       );
 
-      if (isAsync) {
+      if (isAsync === true) {
         ctx.report(
           node,
           `メソッド "${methodName}" がasyncです。\n` +
-            `■ Domain層（Entity/VO）は外部依存ゼロを維持し、同期的に動作すべきです。\n` +
-            `■ 非同期処理が必要な場合はUseCase層で実装してください。`
+            "■ Domain層（Entity/VO）は外部依存ゼロを維持し、同期的に動作すべきです。\n" +
+            "■ 非同期処理が必要な場合はUseCase層で実装してください。"
         );
       }
 
       // 3. 戻り値型にPromiseが含まれていないかチェック
-      if (node.type) {
+      if (node.type !== undefined) {
         const returnTypeText = node.type.getText();
         if (/Promise/.test(returnTypeText)) {
           ctx.report(
             node,
             `メソッド "${methodName}" の戻り値型にPromiseが含まれています。\n` +
-              `■ Domain層（Entity/VO）は同期的に動作すべきです。\n` +
-              `■ 非同期処理が必要な場合はUseCase層で実装してください。`
+              "■ Domain層（Entity/VO）は同期的に動作すべきです。\n" +
+              "■ 非同期処理が必要な場合はUseCase層で実装してください。"
           );
         }
       }
 
       // 4. メソッドボディ内にawaitが含まれていないかチェック
-      if (node.body) {
+      if (node.body !== undefined) {
         const bodyText = node.body.getText();
         if (/\bawait\b/.test(bodyText)) {
           ctx.report(
             node,
             `メソッド "${methodName}" 内でawaitが使用されています。\n` +
-              `■ Domain層（Entity/VO）は外部依存ゼロを維持し、同期的に動作すべきです。\n` +
-              `■ 非同期処理が必要な場合はUseCase層で実装してください。`
+              "■ Domain層（Entity/VO）は外部依存ゼロを維持し、同期的に動作すべきです。\n" +
+              "■ 非同期処理が必要な場合はUseCase層で実装してください。"
           );
         }
       }
@@ -184,18 +184,18 @@ export default createCheck({
 
     // 5. クラスプロパティに外部依存型が含まれていないかチェック
     if (ts.isPropertyDeclaration(node)) {
-      if (!node.type) return;
+      if (node.type === undefined) return;
 
       const typeText = node.type.getText();
-      const propName = ts.isIdentifier(node.name) ? node.name.text : 'property';
+      const propName = ts.isIdentifier(node.name) ? node.name.text : "property";
 
       for (const pattern of EXTERNAL_DEPENDENCY_PATTERNS) {
         if (pattern.test(typeText)) {
           ctx.report(
             node,
             `プロパティ "${propName}" に外部依存型 "${typeText}" が含まれています。\n` +
-              `■ Domain層（Entity/VO）は外部依存ゼロを維持します。\n` +
-              `■ 外部サービスへの参照はUseCase層で注入してください。`
+              "■ Domain層（Entity/VO）は外部依存ゼロを維持します。\n" +
+              "■ 外部サービスへの参照はUseCase層で注入してください。"
           );
           break;
         }

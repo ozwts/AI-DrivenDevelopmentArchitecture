@@ -36,19 +36,19 @@
  * ```
  */
 
-import * as ts from 'typescript';
-import * as fs from 'fs';
-import * as path from 'path';
-import * as yaml from 'js-yaml';
-import createCheck from '../../../horizontal/static/check-builder';
+import * as ts from "typescript";
+import * as fs from "fs";
+import * as path from "path";
+import * as yaml from "js-yaml";
+import { createASTChecker } from "../../../../ast-checker";
 
 // OpenAPIドキュメントの型定義
-interface OpenAPIDocument {
+type OpenAPIDocument = {
   paths: Record<string, Record<string, unknown>>;
 }
 
 // ルート情報
-interface RouteInfo {
+type RouteInfo = {
   method: string;
   path: string;
 }
@@ -59,28 +59,28 @@ let cachedOpenAPIRoutes: Map<string, RouteInfo> | null = null;
 /**
  * OpenAPI仕様からルート一覧を抽出
  */
-function getOpenAPIRoutes(workspaceRoot: string): Map<string, RouteInfo> {
-  if (cachedOpenAPIRoutes) {
+const getOpenAPIRoutes = (workspaceRoot: string): Map<string, RouteInfo> => {
+  if (cachedOpenAPIRoutes !== null) {
     return cachedOpenAPIRoutes;
   }
 
   const routes = new Map<string, RouteInfo>();
-  const specPath = path.join(workspaceRoot, 'contracts/api/todo-app.openapi.yaml');
+  const specPath = path.join(workspaceRoot, "contracts/api/todo-app.openapi.yaml");
 
   try {
-    const content = fs.readFileSync(specPath, 'utf8');
+    const content = fs.readFileSync(specPath, "utf8");
     const document = yaml.load(content) as OpenAPIDocument;
 
-    if (!document.paths) {
+    if (document.paths === undefined) {
       return routes;
     }
 
     for (const [pathUrl, methods] of Object.entries(document.paths)) {
-      if (!methods || typeof methods !== 'object') continue;
+      if (methods === undefined || typeof methods !== "object") continue;
 
       for (const method of Object.keys(methods)) {
         // OpenAPI仕様のメタ情報はスキップ
-        if (method === 'parameters' || method === '$ref' || method === 'summary') {
+        if (method === "parameters" || method === "$ref" || method === "summary") {
           continue;
         }
 
@@ -99,41 +99,32 @@ function getOpenAPIRoutes(workspaceRoot: string): Map<string, RouteInfo> {
 }
 
 /**
- * OpenAPIパスパラメータ形式をHono形式に変換
- * /todos/{todoId} → /todos/:todoId
- */
-function convertToHonoPath(openApiPath: string): string {
-  return openApiPath.replace(/\{([^}]+)\}/g, ':$1');
-}
-
-/**
  * Honoパスパラメータ形式をOpenAPI形式に変換
  * /todos/:todoId → /todos/{todoId}
  */
-function convertToOpenAPIPath(honoPath: string): string {
-  return honoPath.replace(/:([^/]+)/g, '{$1}');
-}
+const convertToOpenAPIPath = (honoPath: string): string =>
+  honoPath.replace(/:([^/]+)/g, "{$1}");
 
 /**
  * ルーターのベースパスを推測
  * todo-router.ts → /todos
  */
-function inferBasePath(filePath: string): string | null {
+const inferBasePath = (filePath: string): string | null => {
   const fileName = path.basename(filePath);
   const match = fileName.match(/^(\w+)-router\.ts$/);
 
-  if (!match) return null;
+  if (match === null) return null;
 
   const entityName = match[1];
 
   // 複数形に変換
-  if (entityName.endsWith('y')) {
+  if (entityName.endsWith("y")) {
     return `/${entityName.slice(0, -1)}ies`;
   }
   return `/${entityName}s`;
 }
 
-export default createCheck({
+export const policyCheck = createASTChecker({
   filePattern: /-router\.ts$/,
 
   visitor: (node, ctx) => {
@@ -143,9 +134,9 @@ export default createCheck({
     const filePath = node.fileName;
 
     // hono-handler配下のみ
-    if (!filePath.includes('/hono-handler/')) return;
+    if (!filePath.includes("/hono-handler/")) return;
 
-    const workspaceRoot = filePath.split('/server/')[0];
+    const workspaceRoot = filePath.split("/server/")[0];
     const openAPIRoutes = getOpenAPIRoutes(workspaceRoot);
 
     if (openAPIRoutes.size === 0) {
@@ -154,7 +145,7 @@ export default createCheck({
 
     // ルーターのベースパスを推測
     const basePath = inferBasePath(filePath);
-    if (!basePath) return;
+    if (basePath === null || basePath === "") return;
 
     // ファイル内容を取得
     const sourceText = node.getText();
@@ -166,15 +157,15 @@ export default createCheck({
     // router.get("/path", handler) 形式
     const routePattern =
       /\.\s*(get|post|put|patch|delete)\s*\(\s*["']([^"']+)["']\s*,/gi;
-    let match;
+    let match = routePattern.exec(sourceText);
 
-    while ((match = routePattern.exec(sourceText)) !== null) {
+    while (match !== null) {
       const method = match[1].toUpperCase();
       const routePath = match[2];
 
       // ベースパスと結合してフルパスを構築
       let fullPath: string;
-      if (routePath === '/') {
+      if (routePath === "/") {
         fullPath = basePath;
       } else {
         fullPath = basePath + routePath;
@@ -184,6 +175,8 @@ export default createCheck({
       const openAPIPath = convertToOpenAPIPath(fullPath);
       const routeKey = `${method} ${openAPIPath}`;
       implementedRoutes.set(routeKey, { method, path: openAPIPath });
+
+      match = routePattern.exec(sourceText);
     }
 
     // このルーターに関係するOpenAPIルートをフィルタリング
@@ -214,27 +207,27 @@ export default createCheck({
     if (missingImplementations.length > 0) {
       const routeList = missingImplementations
         .map((r) => `  - ${r.method} ${r.path}`)
-        .join('\n');
+        .join("\n");
 
       ctx.report(
         node,
         `ルーター "${path.basename(filePath)}" でOpenAPI仕様に定義されているルートが未実装です。\n` +
           `■ 未実装ルート:\n${routeList}\n` +
-          `■ OpenAPI仕様に対応するハンドラーを実装してください。`
+          "■ OpenAPI仕様に対応するハンドラーを実装してください。"
       );
     }
 
     if (undocumentedRoutes.length > 0) {
       const routeList = undocumentedRoutes
         .map((r) => `  - ${r.method} ${r.path}`)
-        .join('\n');
+        .join("\n");
 
       ctx.report(
         node,
         `ルーター "${path.basename(filePath)}" でOpenAPI仕様に定義されていないルートが実装されています。\n` +
           `■ 未定義ルート:\n${routeList}\n` +
-          `■ OpenAPI仕様を更新するか、不要な実装を削除してください。`,
-        'warning'
+          "■ OpenAPI仕様を更新するか、不要な実装を削除してください。",
+        "warning"
       );
     }
   },

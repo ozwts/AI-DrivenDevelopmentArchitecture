@@ -37,13 +37,13 @@
  * ```
  */
 
-import * as ts from 'typescript';
-import createCheck from '../../check-builder';
+import * as ts from "typescript";
+import { createASTChecker } from "../../../../ast-checker";
 
 // 禁止する汎用的なフィールド名
-const GENERIC_NAMES = ['value', 'val', 'data', '_value', '_val'];
+const GENERIC_NAMES = ["value", "val", "data", "_value", "_val"];
 
-export default createCheck({
+export const policyCheck = createASTChecker({
   filePattern: /\.vo\.ts$/,
 
   visitor: (node, ctx) => {
@@ -59,7 +59,7 @@ export default createCheck({
         ctx.report(
           node,
           `プライベートフィールド "#${propertyName.text}" は汎用的な名前です。` +
-            `ドメイン固有の意味のある名前（#email, #amount, #status等）を使用してください。`
+            "ドメイン固有の意味のある名前（#email, #amount, #status等）を使用してください。"
         );
       }
     }

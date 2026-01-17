@@ -53,17 +53,17 @@
  * ```
  */
 
-import * as ts from 'typescript';
-import * as path from 'path';
-import createCheck from '../../check-builder';
+import * as ts from "typescript";
+import * as path from "path";
+import { createASTChecker } from "../../../../ast-checker";
 
-export default createCheck({
+export const policyCheck = createASTChecker({
   filePattern: /\.entity\.ts$/,
 
   visitor: (node, ctx) => {
     if (!ts.isClassDeclaration(node)) return;
 
-    const className = node.name?.text ?? 'Anonymous';
+    const className = node.name?.text ?? "Anonymous";
     const sourceFile = node.getSourceFile();
     const filePath = sourceFile.fileName;
 
@@ -72,13 +72,13 @@ export default createCheck({
     const dirName = path.basename(path.dirname(filePath));
 
     // エンティティ名を取得（例: "attachment.entity.ts" → "attachment"）
-    const entityName = fileName.replace('.entity.ts', '');
+    const entityName = fileName.replace(".entity.ts", "");
 
     // ディレクトリ名と一致する場合は集約ルート → チェック不要
     if (entityName === dirName) return;
 
     // 子エンティティの場合、親ID（ディレクトリ名 + Id）がないかチェック
-    const parentIdName = dirName + 'Id';
+    const parentIdName = `${dirName  }Id`;
 
     for (const member of node.members) {
       if (!ts.isPropertyDeclaration(member)) continue;
@@ -90,7 +90,7 @@ export default createCheck({
         ctx.report(
           member,
           `子エンティティ "${className}" に親ID "${propName}" を含めることは禁止されています。` +
-            `親子関係は集約ルートが管理し、永続化層でマッピングしてください。`
+            "親子関係は集約ルートが管理し、永続化層でマッピングしてください。"
         );
       }
     }

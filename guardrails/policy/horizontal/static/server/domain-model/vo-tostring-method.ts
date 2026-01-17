@@ -74,23 +74,23 @@
  * ```
  */
 
-import * as ts from 'typescript';
-import createCheck from '../../check-builder';
+import * as ts from "typescript";
+import { createASTChecker } from "../../../../ast-checker";
 
-export default createCheck({
+export const policyCheck = createASTChecker({
   filePattern: /\.vo\.ts$/,
 
   visitor: (node, ctx) => {
     if (!ts.isClassDeclaration(node)) return;
 
     // クラス名を取得
-    const className = node.name?.text ?? 'Anonymous';
+    const className = node.name?.text ?? "Anonymous";
 
     // toString()メソッドを探す
     const hasToString = node.members.some((member) => {
       if (!ts.isMethodDeclaration(member)) return false;
       if (!ts.isIdentifier(member.name)) return false;
-      return member.name.text === 'toString';
+      return member.name.text === "toString";
     });
 
     if (!hasToString) {

@@ -30,10 +30,10 @@
  * ```
  */
 
-import * as ts from 'typescript';
-import createCheck from '../../check-builder';
+import * as ts from "typescript";
+import { createASTChecker } from "../../../../ast-checker";
 
-export default createCheck({
+export const policyCheck = createASTChecker({
   filePattern: /\.(entity|vo)\.ts$/,
 
   visitor: (node, ctx) => {
@@ -46,7 +46,7 @@ export default createCheck({
         m => m.kind === ts.SyntaxKind.ReadonlyKeyword
       );
 
-      if (!hasReadonly && member.name && ts.isIdentifier(member.name)) {
+      if (hasReadonly !== true && member.name !== undefined && ts.isIdentifier(member.name)) {
         ctx.report(member, `プロパティ "${member.name.text}" にreadonly修飾子がありません。`);
       }
     }

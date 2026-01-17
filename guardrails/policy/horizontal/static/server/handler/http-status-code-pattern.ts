@@ -56,10 +56,10 @@
  * ```
  */
 
-import * as ts from 'typescript';
-import createCheck from '../../check-builder';
+import * as ts from "typescript";
+import { createASTChecker } from "../../../../ast-checker";
 
-export default createCheck({
+export const policyCheck = createASTChecker({
   filePattern: /-handler\.ts$/,
 
   visitor: (node, ctx) => {
@@ -69,7 +69,7 @@ export default createCheck({
     const hasExport = node.modifiers?.some(
       (mod) => mod.kind === ts.SyntaxKind.ExportKeyword
     );
-    if (!hasExport) return;
+    if (hasExport !== true) return;
 
     for (const declaration of node.declarationList.declarations) {
       if (!ts.isIdentifier(declaration.name)) continue;
@@ -77,15 +77,15 @@ export default createCheck({
       const varName = declaration.name.text;
 
       // Handlerで終わる名前のみチェック
-      if (!varName.endsWith('Handler')) continue;
+      if (!varName.endsWith("Handler")) continue;
 
       // ハンドラータイプを判定
       const isCreateHandler = /^build(Create|Register)/.test(varName);
       const isDeleteHandler = /^buildDelete/.test(varName);
 
       // 初期化子を取得
-      const initializer = declaration.initializer;
-      if (!initializer) continue;
+      const {initializer} = declaration;
+      if (initializer === undefined) continue;
 
       // 関数全体のテキストを取得
       const functionText = initializer.getText();
@@ -100,7 +100,7 @@ export default createCheck({
           ctx.report(
             declaration,
             `ハンドラー関数 "${varName}" で POST 成功時に 200 を返しています。\n` +
-              `■ リソース作成成功時は 201 Created を返してください。`
+              "■ リソース作成成功時は 201 Created を返してください。"
           );
         }
       }
@@ -114,8 +114,8 @@ export default createCheck({
           ctx.report(
             declaration,
             `ハンドラー関数 "${varName}" で DELETE 成功時に 200 を返しています。\n` +
-              `■ 削除成功時は 204 No Content を返してください。\n` +
-              `■ c.body(null, 204) を使用してください。`
+              "■ 削除成功時は 204 No Content を返してください。\n" +
+              "■ c.body(null, 204) を使用してください。"
           );
         }
       }
@@ -126,7 +126,7 @@ export default createCheck({
         ctx.report(
           declaration,
           `ハンドラー関数 "${varName}" で ValidationError に 500 を返しています。\n` +
-            `■ ValidationError は 400 Bad Request を返してください。`
+            "■ ValidationError は 400 Bad Request を返してください。"
         );
       }
     }

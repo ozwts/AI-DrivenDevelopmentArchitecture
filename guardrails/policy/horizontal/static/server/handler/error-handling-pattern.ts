@@ -57,10 +57,10 @@
  * ```
  */
 
-import * as ts from 'typescript';
-import createCheck from '../../check-builder';
+import * as ts from "typescript";
+import { createASTChecker } from "../../../../ast-checker";
 
-export default createCheck({
+export const policyCheck = createASTChecker({
   filePattern: /-handler\.ts$/,
 
   visitor: (node, ctx) => {
@@ -70,7 +70,7 @@ export default createCheck({
     const hasExport = node.modifiers?.some(
       (mod) => mod.kind === ts.SyntaxKind.ExportKeyword
     );
-    if (!hasExport) return;
+    if (hasExport !== true) return;
 
     for (const declaration of node.declarationList.declarations) {
       if (!ts.isIdentifier(declaration.name)) continue;
@@ -78,11 +78,11 @@ export default createCheck({
       const varName = declaration.name.text;
 
       // Handlerで終わる名前のみチェック
-      if (!varName.endsWith('Handler')) continue;
+      if (!varName.endsWith("Handler")) continue;
 
       // 初期化子を取得
-      const initializer = declaration.initializer;
-      if (!initializer) continue;
+      const {initializer} = declaration;
+      if (initializer === undefined) continue;
 
       // 関数全体のテキストを取得
       const functionText = initializer.getText();
@@ -98,8 +98,8 @@ export default createCheck({
         ctx.report(
           declaration,
           `ハンドラー関数 "${varName}" で Result 型チェックが見つかりません。\n` +
-            `■ UseCase.execute() の結果は .isOk() または .isErr() でチェックしてください。\n` +
-            `■ エラー時は handleError() 関数を使用してHTTPステータスに変換してください。`
+            "■ UseCase.execute() の結果は .isOk() または .isErr() でチェックしてください。\n" +
+            "■ エラー時は handleError() 関数を使用してHTTPステータスに変換してください。"
         );
       }
 
@@ -110,8 +110,8 @@ export default createCheck({
         ctx.report(
           declaration,
           `ハンドラー関数 "${varName}" で handleError 関数が使用されていません。\n` +
-            `■ Result型のエラーは handleError() で適切なHTTPステータスに変換してください。\n` +
-            `■ 独自のエラーハンドリングは handleError() に集約してください。`
+            "■ Result型のエラーは handleError() で適切なHTTPステータスに変換してください。\n" +
+            "■ 独自のエラーハンドリングは handleError() に集約してください。"
         );
       }
     }

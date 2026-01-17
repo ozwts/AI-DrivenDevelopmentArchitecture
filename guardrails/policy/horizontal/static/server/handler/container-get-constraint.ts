@@ -44,8 +44,8 @@
  * ```
  */
 
-import * as ts from 'typescript';
-import createCheck from '../../check-builder';
+import * as ts from "typescript";
+import { createASTChecker } from "../../../../ast-checker";
 
 // 許可される型パターン
 const ALLOWED_TYPE_PATTERNS = [
@@ -64,32 +64,32 @@ const FORBIDDEN_TYPE_PATTERNS = [
   /Provider$/,
 ];
 
-export default createCheck({
+export const policyCheck = createASTChecker({
   filePattern: /-handler\.ts$/,
 
   visitor: (node, ctx) => {
     // container.get<Type>(...) の呼び出しを検出
     if (!ts.isCallExpression(node)) return;
 
-    const expression = node.expression;
+    const {expression} = node;
 
     // container.get パターンをチェック
     if (!ts.isPropertyAccessExpression(expression)) return;
-    if (expression.name.text !== 'get') return;
+    if (expression.name.text !== "get") return;
 
     // 左辺が container かチェック（変数名で判断）
     const object = expression.expression;
     if (!ts.isIdentifier(object)) return;
-    if (object.text !== 'container') return;
+    if (object.text !== "container") return;
 
     // 型引数を取得
     const typeArgs = node.typeArguments;
-    if (!typeArgs || typeArgs.length === 0) return;
+    if (typeArgs === undefined || typeArgs.length === 0) return;
 
     const typeArg = typeArgs[0];
     if (!ts.isTypeReferenceNode(typeArg)) return;
 
-    const typeName = typeArg.typeName;
+    const {typeName} = typeArg;
     if (!ts.isIdentifier(typeName)) return;
 
     const typeText = typeName.text;
@@ -105,16 +105,16 @@ export default createCheck({
       ctx.report(
         node,
         `ハンドラーで container.get<${typeText}>() を使用しています。\n` +
-          `■ ハンドラーで取得できるのは Logger と UseCase のみです。\n` +
-          `■ Repository/Client/Service等はUseCase層で注入してください。`
+          "■ ハンドラーで取得できるのは Logger と UseCase のみです。\n" +
+          "■ Repository/Client/Service等はUseCase層で注入してください。"
       );
     } else {
       // 許可リストにも禁止リストにもない場合も警告
       ctx.report(
         node,
         `ハンドラーで container.get<${typeText}>() を使用しています。\n` +
-          `■ ハンドラーで取得できるのは Logger と UseCase のみです。\n` +
-          `■ この型がUseCaseでない場合は、UseCase層で注入してください。`
+          "■ ハンドラーで取得できるのは Logger と UseCase のみです。\n" +
+          "■ この型がUseCaseでない場合は、UseCase層で注入してください。"
       );
     }
   },

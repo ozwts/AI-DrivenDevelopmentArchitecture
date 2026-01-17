@@ -10,7 +10,7 @@
     "project": "./tsconfig.json"
   },
   "plugins": ["@typescript-eslint", "unused-imports"],
-  "ignorePatterns": ["dist/", "node_modules/", "constitution/", "policy/"],
+  "ignorePatterns": ["dist/", "node_modules/", "constitution/", "**/register-tools.ts", "index.ts"],
   "rules": {
     "@typescript-eslint/array-type": [
       "error",
@@ -42,6 +42,7 @@
     "import/prefer-default-export": "off",
     "max-classes-per-file": "off",
     "no-console": ["error", { "allow": ["error"] }],
+    "no-continue": "off",
     "no-undef": "off",
     "no-underscore-dangle": ["error", { "allow": ["__filename", "__dirname"] }],
     "no-unused-vars": "off",

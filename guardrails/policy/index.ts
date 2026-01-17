@@ -4,27 +4,36 @@
  * ポリシー定義とその情報提供機能
  */
 
-// ========================================
-// List Policies（ポリシー一覧）
-// ========================================
+// AST Checker
 export {
-  // 責務定義
+  type Violation,
+  type CheckMetadata,
+  type CheckModule,
+  type ASTCheckerDefinition,
+  type ASTCheckerContext,
+  createASTChecker,
+} from "./ast-checker";
+
+// ポリシー一覧機能
+export {
   type ListPoliciesResponsibility,
+  type ListPoliciesHandlerInput,
+  type WorkspaceInfo,
+  type LayerInfo,
+  type CheckInfo,
   LIST_HORIZONTAL_POLICIES_RESPONSIBILITY,
   LIST_VERTICAL_POLICIES_RESPONSIBILITY,
-  // ハンドラー
-  createListHorizontalPoliciesHandler,
-  createListVerticalPoliciesHandler,
-  type ListPoliciesHandlerInput,
-} from "./horizontal";
+} from "./responsibilities";
 
 export {
   scanHorizontalStatic,
   scanHorizontalSemantic,
   scanVerticalSemantic,
-  type WorkspaceInfo,
-  type LayerInfo,
-  type CheckInfo,
-} from "./horizontal/scanner";
+} from "./scanner";
 
-export { formatPolicyList } from "./horizontal/formatter";
+export { formatPolicyList } from "./formatter";
+
+export {
+  createListHorizontalPoliciesHandler,
+  createListVerticalPoliciesHandler,
+} from "./handler";

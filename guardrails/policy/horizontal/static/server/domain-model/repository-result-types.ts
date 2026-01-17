@@ -50,15 +50,56 @@
  * ```
  */
 
-import * as ts from 'typescript';
-import createCheck from '../../check-builder';
+import * as ts from "typescript";
+import { createASTChecker } from "../../../../ast-checker";
 
 // Result型を返さなくてよいメソッド名パターン
 const EXEMPT_METHODS = [
   /Id$/, // todoId, attachmentId, projectId 等のID生成メソッド
 ];
 
-export default createCheck({
+/**
+ * 型ノードが Result 型を含むかチェック
+ */
+const checkForResultType = (typeNode: ts.TypeNode): boolean => {
+  // Promise<Result<...>> の場合
+  if (ts.isTypeReferenceNode(typeNode)) {
+    const {typeName} = typeNode;
+    if (ts.isIdentifier(typeName)) {
+      if (typeName.text === "Promise") {
+        const typeArgs = typeNode.typeArguments;
+        if (typeArgs !== undefined && typeArgs.length > 0) {
+          return checkForResultType(typeArgs[0]);
+        }
+      }
+      if (typeName.text === "Result") {
+        return true;
+      }
+      // 型エイリアス（FindByIdResult等）の場合は許可
+      // 命名規則で Result を含む名前は許可
+      if (typeName.text.includes("Result")) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+};
+
+/**
+ * 型ノードが Promise 型かチェック
+ */
+const isPromiseType = (typeNode: ts.TypeNode): boolean => {
+  if (ts.isTypeReferenceNode(typeNode)) {
+    const {typeName} = typeNode;
+    if (ts.isIdentifier(typeName) && typeName.text === "Promise") {
+      return true;
+    }
+  }
+  return false;
+};
+
+export const policyCheck = createASTChecker({
   filePattern: /\.repository\.ts$/,
 
   visitor: (node, ctx) => {
@@ -78,18 +119,18 @@ export default createCheck({
 
     if (ts.isPropertySignature(node)) {
       // PropertySignature の場合、関数型かどうかチェック
-      if (!node.type || !ts.isFunctionTypeNode(node.type)) return;
+      if (node.type === undefined || !ts.isFunctionTypeNode(node.type)) return;
       returnType = node.type.type;
     } else {
       // MethodSignature の場合
       returnType = node.type;
     }
 
-    if (!returnType) {
+    if (returnType === undefined) {
       ctx.report(
         node,
         `リポジトリメソッド "${methodName}" に戻り値型が定義されていません。\n` +
-          `■ Promise<Result<T, E>> 形式で明示的に定義してください。`
+          "■ Promise<Result<T, E>> 形式で明示的に定義してください。"
       );
       return;
     }
@@ -102,8 +143,8 @@ export default createCheck({
       ctx.report(
         node,
         `リポジトリメソッド "${methodName}" の戻り値型 "${typeText}" が Result 型ではありません。\n` +
-          `■ 明示的なエラーハンドリングのため、Promise<Result<T, E>> を使用してください。\n` +
-          `■ 型エイリアス（FindByIdResult等）を使用する場合は、名前に "Result" を含めてください。`
+          "■ 明示的なエラーハンドリングのため、Promise<Result<T, E>> を使用してください。\n" +
+          "■ 型エイリアス（FindByIdResult等）を使用する場合は、名前に \"Result\" を含めてください。"
       );
     }
 
@@ -112,50 +153,9 @@ export default createCheck({
       ctx.report(
         node,
         `リポジトリメソッド "${methodName}" がPromiseを返していません。\n` +
-          `■ リポジトリメソッドは非同期（Promise<Result<T, E>>）であるべきです。\n` +
-          `■ ID生成メソッド（xxxId()）の場合はこの警告を無視できます。`
+          "■ リポジトリメソッドは非同期（Promise<Result<T, E>>）であるべきです。\n" +
+          "■ ID生成メソッド（xxxId()）の場合はこの警告を無視できます。"
       );
     }
   },
 });
-
-/**
- * 型ノードが Result 型を含むかチェック
- */
-function checkForResultType(typeNode: ts.TypeNode): boolean {
-  // Promise<Result<...>> の場合
-  if (ts.isTypeReferenceNode(typeNode)) {
-    const typeName = typeNode.typeName;
-    if (ts.isIdentifier(typeName)) {
-      if (typeName.text === 'Promise') {
-        const typeArgs = typeNode.typeArguments;
-        if (typeArgs && typeArgs.length > 0) {
-          return checkForResultType(typeArgs[0]);
-        }
-      }
-      if (typeName.text === 'Result') {
-        return true;
-      }
-      // 型エイリアス（FindByIdResult等）の場合は許可
-      // 命名規則で Result を含む名前は許可
-      if (typeName.text.includes('Result')) {
-        return true;
-      }
-    }
-  }
-
-  return false;
-}
-
-/**
- * 型ノードが Promise 型かチェック
- */
-function isPromiseType(typeNode: ts.TypeNode): boolean {
-  if (ts.isTypeReferenceNode(typeNode)) {
-    const typeName = typeNode.typeName;
-    if (ts.isIdentifier(typeName) && typeName.text === 'Promise') {
-      return true;
-    }
-  }
-  return false;
-}

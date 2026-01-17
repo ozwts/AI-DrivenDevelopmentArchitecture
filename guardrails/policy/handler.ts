@@ -2,20 +2,13 @@
  * ポリシーリストハンドラー
  */
 
+import type { ListPoliciesHandlerInput, WorkspaceInfo } from "./responsibilities";
 import {
   scanHorizontalStatic,
   scanHorizontalSemantic,
   scanVerticalSemantic,
 } from "./scanner";
 import { formatPolicyList } from "./formatter";
-
-/**
- * ポリシーリストハンドラー入力
- */
-export type ListPoliciesHandlerInput = {
-  type?: "static" | "semantic";
-  guardrailsRoot: string;
-};
 
 /**
  * Horizontal ポリシーリストハンドラー
@@ -36,9 +29,11 @@ export const createListHorizontalPoliciesHandler =
 
     // タイプに応じてスキャン
     const staticWorkspaces =
-      !type || type === "static" ? scanHorizontalStatic(guardrailsRoot) : [];
+      typeof type === "undefined" || type === "static"
+        ? scanHorizontalStatic(guardrailsRoot)
+        : [];
     const semanticWorkspaces =
-      !type || type === "semantic"
+      typeof type === "undefined" || type === "semantic"
         ? scanHorizontalSemantic(guardrailsRoot)
         : [];
 
@@ -68,9 +63,11 @@ export const createListVerticalPoliciesHandler =
     }
 
     // タイプに応じてスキャン（現在はsemanticのみ）
-    const staticWorkspaces: any[] = []; // 将来用
+    const staticWorkspaces: WorkspaceInfo[] = []; // 将来用
     const semanticWorkspaces =
-      !type || type === "semantic" ? scanVerticalSemantic(guardrailsRoot) : [];
+      typeof type === "undefined" || type === "semantic"
+        ? scanVerticalSemantic(guardrailsRoot)
+        : [];
 
     // 結果整形
     return formatPolicyList(

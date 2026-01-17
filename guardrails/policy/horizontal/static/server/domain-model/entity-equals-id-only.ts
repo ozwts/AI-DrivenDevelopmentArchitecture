@@ -47,26 +47,26 @@
  * ```
  */
 
-import * as ts from 'typescript';
-import createCheck from '../../check-builder';
+import * as ts from "typescript";
+import { createASTChecker } from "../../../../ast-checker";
 
-export default createCheck({
+export const policyCheck = createASTChecker({
   filePattern: /\.entity\.ts$/,
 
   visitor: (node, ctx) => {
     if (!ts.isMethodDeclaration(node)) return;
 
     // equals メソッドかチェック
-    if (!ts.isIdentifier(node.name) || node.name.text !== 'equals') return;
+    if (!ts.isIdentifier(node.name) || node.name.text !== "equals") return;
 
     // メソッドボディをチェック
-    const body = node.body;
-    if (!body) return;
+    const {body} = node;
+    if (body === undefined) return;
 
     // this.xxx と other.xxx のアクセスを収集
     const accessedProperties = new Set<string>();
 
-    function collectPropertyAccesses(n: ts.Node): void {
+    const collectPropertyAccesses = (n: ts.Node): void => {
       // this.xxx または other.xxx パターンを検出
       if (ts.isPropertyAccessExpression(n)) {
         const obj = n.expression;
@@ -78,36 +78,36 @@ export default createCheck({
         }
 
         // other.xxx の場合（パラメータ名がotherの場合）
-        if (ts.isIdentifier(obj) && obj.text === 'other') {
+        if (ts.isIdentifier(obj) && obj.text === "other") {
           accessedProperties.add(propName);
         }
       }
 
       ts.forEachChild(n, collectPropertyAccesses);
-    }
+    };
 
     collectPropertyAccesses(body);
 
     // 'id' 以外のプロパティにアクセスしている場合はエラー
     const nonIdProperties = Array.from(accessedProperties).filter(
-      (prop) => prop !== 'id'
+      (prop) => prop !== "id"
     );
 
     if (nonIdProperties.length > 0) {
       ctx.report(
         node,
-        `equals()メソッドが "id" 以外のプロパティ [${nonIdProperties.join(', ')}] を参照しています。` +
-          `Entityの同一性はIDのみで判断してください。複合キーは禁止されています。`
+        `equals()メソッドが "id" 以外のプロパティ [${nonIdProperties.join(", ")}] を参照しています。` +
+          "Entityの同一性はIDのみで判断してください。複合キーは禁止されています。"
       );
     }
 
     // 'id' プロパティにアクセスしていない場合も警告
-    if (!accessedProperties.has('id')) {
+    if (!accessedProperties.has("id")) {
       ctx.report(
         node,
-        `equals()メソッドが "id" プロパティを参照していません。` +
-          `Entityの同一性はIDで判断してください。`,
-        'warning'
+        "equals()メソッドが \"id\" プロパティを参照していません。" +
+          "Entityの同一性はIDで判断してください。",
+        "warning"
       );
     }
   },

@@ -61,16 +61,16 @@
  * ```
  */
 
-import * as ts from 'typescript';
-import createCheck from '../../check-builder';
+import * as ts from "typescript";
+import { createASTChecker } from "../../../../ast-checker";
 
-export default createCheck({
+export const policyCheck = createASTChecker({
   filePattern: /\.repository\.ts$/,
 
   visitor: (node, ctx) => {
     // classで定義されている場合はエラー
     if (ts.isClassDeclaration(node)) {
-      const className = node.name?.text ?? 'Anonymous';
+      const className = node.name?.text ?? "Anonymous";
       ctx.report(
         node,
         `リポジトリ "${className}" はclassではなくtype aliasで定義してください。リポジトリインターフェースは型定義であり、実装と分離するためにtype aliasを使用します。`
@@ -81,7 +81,7 @@ export default createCheck({
     // interfaceで定義されている場合もエラー（type aliasを推奨）
     if (ts.isInterfaceDeclaration(node)) {
       const interfaceName = node.name.text;
-      if (interfaceName.includes('Repository')) {
+      if (interfaceName.includes("Repository")) {
         ctx.report(
           node,
           `リポジトリ "${interfaceName}" はinterfaceではなくtype aliasで定義してください。type aliasを使用することで、オブジェクト型リテラルとして定義できます。`

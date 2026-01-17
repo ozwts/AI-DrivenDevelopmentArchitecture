@@ -75,23 +75,23 @@
  * ```
  */
 
-import * as ts from 'typescript';
-import createCheck from '../../check-builder';
+import * as ts from "typescript";
+import { createASTChecker } from "../../../../ast-checker";
 
-export default createCheck({
+export const policyCheck = createASTChecker({
   filePattern: /\.(entity|vo)\.ts$/,
 
   visitor: (node, ctx) => {
     if (!ts.isClassDeclaration(node)) return;
 
     // クラス名を取得
-    const className = node.name?.text ?? 'Anonymous';
+    const className = node.name?.text ?? "Anonymous";
 
     // static from()メソッドを探す
     const hasStaticFrom = node.members.some((member) => {
       if (!ts.isMethodDeclaration(member)) return false;
       if (!ts.isIdentifier(member.name)) return false;
-      if (member.name.text !== 'from') return false;
+      if (member.name.text !== "from") return false;
 
       // staticかどうかチェック
       const hasStatic = member.modifiers?.some(

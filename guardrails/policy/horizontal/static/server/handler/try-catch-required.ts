@@ -43,62 +43,15 @@
  * ```
  */
 
-import * as ts from 'typescript';
-import createCheck from '../../check-builder';
-
-export default createCheck({
-  filePattern: /-handler\.ts$/,
-
-  visitor: (node, ctx) => {
-    // エクスポートされた変数宣言をチェック
-    if (!ts.isVariableStatement(node)) return;
-
-    const hasExport = node.modifiers?.some(
-      (mod) => mod.kind === ts.SyntaxKind.ExportKeyword
-    );
-    if (!hasExport) return;
-
-    for (const declaration of node.declarationList.declarations) {
-      if (!ts.isIdentifier(declaration.name)) continue;
-
-      const varName = declaration.name.text;
-
-      // Handlerで終わる名前のみチェック
-      if (!varName.endsWith('Handler')) continue;
-
-      // 初期化子を取得（アロー関数チェーン）
-      const initializer = declaration.initializer;
-      if (!initializer) continue;
-
-      // 内側の関数を探す（buildXxxHandler = ({ container }) => async (c) => { ... }）
-      const innerFunction = findInnerAsyncFunction(initializer);
-      if (!innerFunction) continue;
-
-      // 関数ボディをチェック
-      const body = innerFunction.body;
-      if (!body || !ts.isBlock(body)) continue;
-
-      // try-catchがあるかチェック
-      const hasTryCatch = body.statements.some((stmt) => ts.isTryStatement(stmt));
-
-      if (!hasTryCatch) {
-        ctx.report(
-          declaration,
-          `ハンドラー関数 "${varName}" に try-catch がありません。\n` +
-            `■ 予期しない例外をキャッチするため、try-catch で囲んでください。\n` +
-            `■ catch節で logger.error() を呼び出し、500エラーを返してください。`
-        );
-      }
-    }
-  },
-});
+import * as ts from "typescript";
+import { createASTChecker } from "../../../../ast-checker";
 
 /**
  * アロー関数チェーンから内側のasync関数を探す
  */
-function findInnerAsyncFunction(node: ts.Node): ts.ArrowFunction | undefined {
+const findInnerAsyncFunction = (node: ts.Node): ts.ArrowFunction | undefined => {
   if (ts.isArrowFunction(node)) {
-    const body = node.body;
+    const {body} = node;
 
     // ボディがさらにアロー関数の場合、再帰的に探す
     if (ts.isArrowFunction(body)) {
@@ -109,7 +62,7 @@ function findInnerAsyncFunction(node: ts.Node): ts.ArrowFunction | undefined {
     const isAsync = node.modifiers?.some(
       (mod) => mod.kind === ts.SyntaxKind.AsyncKeyword
     );
-    if (isAsync) {
+    if (isAsync === true) {
       return node;
     }
 
@@ -120,4 +73,51 @@ function findInnerAsyncFunction(node: ts.Node): ts.ArrowFunction | undefined {
   }
 
   return undefined;
-}
+};
+
+export const policyCheck = createASTChecker({
+  filePattern: /-handler\.ts$/,
+
+  visitor: (node, ctx) => {
+    // エクスポートされた変数宣言をチェック
+    if (!ts.isVariableStatement(node)) return;
+
+    const hasExport = node.modifiers?.some(
+      (mod) => mod.kind === ts.SyntaxKind.ExportKeyword
+    );
+    if (hasExport !== true) return;
+
+    for (const declaration of node.declarationList.declarations) {
+      if (!ts.isIdentifier(declaration.name)) continue;
+
+      const varName = declaration.name.text;
+
+      // Handlerで終わる名前のみチェック
+      if (!varName.endsWith("Handler")) continue;
+
+      // 初期化子を取得（アロー関数チェーン）
+      const {initializer} = declaration;
+      if (initializer === undefined) continue;
+
+      // 内側の関数を探す（buildXxxHandler = ({ container }) => async (c) => { ... }）
+      const innerFunction = findInnerAsyncFunction(initializer);
+      if (innerFunction === undefined) continue;
+
+      // 関数ボディをチェック
+      const {body} = innerFunction;
+      if (body === undefined || !ts.isBlock(body)) continue;
+
+      // try-catchがあるかチェック
+      const hasTryCatch = body.statements.some((stmt) => ts.isTryStatement(stmt));
+
+      if (!hasTryCatch) {
+        ctx.report(
+          declaration,
+          `ハンドラー関数 "${varName}" に try-catch がありません。\n` +
+            "■ 予期しない例外をキャッチするため、try-catch で囲んでください。\n" +
+            "■ catch節で logger.error() を呼び出し、500エラーを返してください。"
+        );
+      }
+    }
+  },
+});

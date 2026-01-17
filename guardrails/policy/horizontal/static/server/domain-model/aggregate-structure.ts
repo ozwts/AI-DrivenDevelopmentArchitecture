@@ -45,21 +45,21 @@
  * ```
  */
 
-import * as ts from 'typescript';
-import * as fs from 'fs';
-import * as path from 'path';
-import createCheck from '../../check-builder';
+import * as ts from "typescript";
+import * as fs from "fs";
+import * as path from "path";
+import { createASTChecker } from "../../../../ast-checker";
 
 // 必須ファイルのサフィックス（アグリゲート名に続く部分）
 const REQUIRED_FILE_SUFFIXES = [
-  '.entity.ts',
-  '.entity.dummy.ts',
-  '.entity.small.test.ts',
-  '.repository.ts',
-  '.repository.dummy.ts',
+  ".entity.ts",
+  ".entity.dummy.ts",
+  ".entity.small.test.ts",
+  ".repository.ts",
+  ".repository.dummy.ts",
 ];
 
-export default createCheck({
+export const policyCheck = createASTChecker({
   // 集約ルートEntity（ディレクトリ名と一致するEntity）のみをチェック起点とする
   filePattern: /\.entity\.ts$/,
 
@@ -71,15 +71,15 @@ export default createCheck({
     const filePath = sourceFile.fileName;
 
     // domain/model 配下のみを対象
-    if (!filePath.includes('/domain/model/')) return;
+    if (!filePath.includes("/domain/model/")) return;
 
     // テスト・ダミーファイルは除外
-    if (filePath.includes('.test.') || filePath.includes('.dummy.')) return;
+    if (filePath.includes(".test.") || filePath.includes(".dummy.")) return;
 
     // ディレクトリ名とファイル名を取得
     const dir = path.dirname(filePath);
     const aggregate = path.basename(dir);
-    const entityName = path.basename(filePath, '.entity.ts');
+    const entityName = path.basename(filePath, ".entity.ts");
 
     // 集約ルートのみチェック（ディレクトリ名と一致するEntityのみ）
     // 子エンティティ（attachment.entity.ts等）は除外
@@ -105,11 +105,11 @@ export default createCheck({
 
     // 不足ファイルがあればエラー報告
     if (missingFiles.length > 0) {
-      const missingList = missingFiles.map((f) => `  - ${f}`).join('\n');
+      const missingList = missingFiles.map((f) => `  - ${f}`).join("\n");
       ctx.report(
         node,
         `アグリゲート "${aggregate}" に必須ファイルが不足しています:\n${missingList}\n` +
-          `■ 1アグリゲート = 1ディレクトリの原則に従い、上記ファイルを作成してください。`
+          "■ 1アグリゲート = 1ディレクトリの原則に従い、上記ファイルを作成してください。"
       );
     }
   },
